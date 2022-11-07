@@ -8,25 +8,32 @@ path = ""
 print("Třídění .Normal a .Height souborů...")
 
 # zadejte cestu k souboru:
-#path = input("Zadejte cestu k souboru (pokud se aplikace už nachází v daném souboru -> enter): ")
+path_found = 0
+while path_found == 0:
+    path = input("Zadejte cestu k souboru (pokud se aplikace už nachází v daném souboru -> enter): ")
 
-path = "D:/JHV\Kamery\JHV_Data/L_St_145/A"
+    #path = "D:/JHV\Kamery\JHV_Data/L_St_145/A"
 
-#spusteni v souboru, kde se aplikace aktualne nachazi
-if path == "":
-    path = os.getcwd()
+    #spusteni v souboru, kde se aplikace aktualne nachazi
+    if path == "":
+        path = os.getcwd()
 
-#opravy cesty k souboru:
+    #opravy cesty k souboru:
 
-backslash = "\ "
+    backslash = "\ "
 
-if backslash[0] in path:
-    newPath = path.replace(os.sep, '/')
-    path = newPath
+    if backslash[0] in path:
+        newPath = path.replace(os.sep, '/')
+        path = newPath
 
-if path.endswith('/') == False:
-    newPath = path + "/"
-    path = newPath
+    if path.endswith('/') == False:
+        newPath = path + "/"
+        path = newPath
+
+    if not os.path.exists(path):
+        print("zadaná cesta k souboru nebyla nalezena")
+    else:
+        path_found = 1
 
 #vyhledavani slozek se soubory
 folder_name = ['3D','Normal','NOK'] #default
