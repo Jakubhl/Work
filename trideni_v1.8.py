@@ -31,7 +31,7 @@ while path_found == 0:
         path = newPath
 
     if not os.path.exists(path):
-        print("zadaná cesta k souboru nebyla nalezena")
+        print("zadaná cesta k souborům nebyla nalezena")
     else:
         path_found = 1
 
