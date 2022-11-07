@@ -187,9 +187,9 @@ if advanced_mode.casefold() == "y":
             hide_cnt = input("Nezadali jste správné číslo, zvolte znovu:")
 
         
-example_folder_name = "221013_092241_0000000842_21_&Cam1Img.Height"
-hide_cnt_from_start = len("221013_092241_0000000842_21_&Cam1Img.Height") - int(hide_cnt)
-print("příklad zkáceného souboru: ", example_folder_name[0:hide_cnt_from_start])
+    example_folder_name = "221013_092241_0000000842_21_&Cam1Img.Height"
+    hide_cnt_from_start = len("221013_092241_0000000842_21_&Cam1Img.Height") - int(hide_cnt)
+    print("příklad zkáceného souboru: ", example_folder_name[0:hide_cnt_from_start])
 
 #print("making arrays...")
 
