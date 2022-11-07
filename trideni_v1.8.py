@@ -7,10 +7,10 @@ import shutil
 path = ""
 print("Třídění .Normal a .Height souborů...")
 
-# zadejte cestu k souboru:
+# zadejte cestu k souborům:
 path_found = 0
 while path_found == 0:
-    path = input("Zadejte cestu k souboru (pokud se aplikace už nachází v daném souboru -> enter): ")
+    path = input("Zadejte cestu k souborům (pokud se aplikace už nachází v dané složce -> enter): ")
 
     #path = "D:/JHV\Kamery\JHV_Data/L_St_145/A"
 
