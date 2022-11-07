@@ -165,7 +165,6 @@ for x in range(0,2):
 
 
 advanced_mode = input("Advanced mode?: (Y/n)")
-hide_cnt = 0
 
 if advanced_mode.casefold() == "y":
     hide_cnt = input("Zadejte počet zakrytých znaků od konce názvu souboru (defaut: 19, smazané znaky: _21_&Cam1Img.Height): ")
@@ -188,9 +187,9 @@ if advanced_mode.casefold() == "y":
 
         
     example_folder_name = "221013_092241_0000000842_21_&Cam1Img.Height"
-    hide_cnt_from_start = len("221013_092241_0000000842_21_&Cam1Img.Height") - int(hide_cnt)
     print("příklad zkáceného souboru: ", example_folder_name[0:hide_cnt_from_start])
 
+hide_cnt_from_start = len("221013_092241_0000000842_21_&Cam1Img.Height") - int(hide_cnt)
 #print("making arrays...")
 
 for files in names:
