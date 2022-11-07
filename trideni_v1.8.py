@@ -1,7 +1,8 @@
 import os
 import shutil
 
-#verze 1.7 pocita s vice slozkama se stejnymi soubory
+#verze 1.8 umoznuje analýzu existujících slozek a vyber defautnich slozek pro presun
+# - je osetrena situace zadani spatnich znaku do inputu
 
 path = ""
 print("Třídění .Normal a .Height souborů...")
