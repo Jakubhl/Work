@@ -1,13 +1,15 @@
-import os
-import shutil
+
 
 #verze 1.8 umoznuje analýzu existujících slozek a vyber defautnich slozek pro presun
-# - je osetrena situace zadani spatnich znaku do inputu
+# - je osetrena situace zadani spatnich znaku do inputu funkci is_input_right
+
+import os
+import shutil
 
 path = ""
 print("Třídění .Normal a .Height souborů...")
 
-# zadejte cestu k souborům:
+# zadejte cestu k souboru:
 path_found = 0
 while path_found == 0:
     path = input("Zadejte cestu k souborům (pokud se aplikace už nachází v dané složce -> enter): ")
@@ -18,7 +20,7 @@ while path_found == 0:
     if path == "":
         path = os.getcwd()
 
-    #opravy cesty k souboru:
+    #opravy cesty k souborům:
 
     backslash = "\ "
 
@@ -35,6 +37,7 @@ while path_found == 0:
     else:
         path_found = 1
 
+
 #vyhledavani slozek se soubory
 folder_name = ['3D','Normal','NOK'] #default
 folders = []
@@ -50,6 +53,25 @@ for files in os.listdir(path):
 
 dir_height = []
 dir_normal = []
+
+#funkce pro overeni spravneho inputu
+def is_input_right(range_from, range_to):
+    wrong_input = 1
+    is_input_right.right_input = input("vepište číslo v rozsahu: {}-{}: ".format(range_from,range_to-1))
+
+    while wrong_input == 1:
+        if is_input_right.right_input.isdigit():
+
+            if int(is_input_right.right_input) not in range(range_from,range_to):
+                is_input_right.right_input = input("zadali jste číslo mimo rozsah (vepište číslo v rozsahu: {}-{}): ".format(range_from,range_to-1))
+
+            else:
+                wrong_input = 0
+
+        else:
+            is_input_right.right_input = input("Nezadali jste číslo (vepište číslo {}-{}): ".format(range_from,range_to-1))
+
+    return is_input_right.right_input
 
 #hledani, ktera slozka obsahuje jake soubory- nastavi se jako primarni:
 for i in range(0,len(folders)):
@@ -82,36 +104,29 @@ for i in range(0,len(folders)):
         dir_height.append(folders[i])
 
 #Voleni defaultni slozky (pripad vice slozek se stejnymi soubory)--------------------------------------------------------------------------------------------------------
-select_normal_dir = 0
-select_height_dir = 0
+
 is_selected_normal_dir = 0
 is_selected_height_dir = 0
-wrong_input = 1
 
 while is_selected_normal_dir == 0:
     if len(dir_normal) > 1:
         print("Seznam složek s .normal soubory: ",dir_normal)
-        select_normal_dir = input("Bylo nalezeno více složek se soubory .normal, zvolte defaultní (vepište číslo 0-{}): ".format(len(dir_normal)-1))
-        #smycka, dokud neni spravne vepsano:
-        while wrong_input == 1:
-            while select_normal_dir.isdigit() and is_selected_normal_dir==0:
-                if int(select_normal_dir)<0 or int(select_normal_dir)>len(dir_normal):
-                    select_normal_dir = input("zadali jste špatné číslo (vepište číslo 0-{}): ".format(len(dir_normal)-1))
-                else:
-                    print("Pro .normal soubory byla zvolena složka: ", dir_normal[int(select_normal_dir)])
-                    #ruseni nezvolenych slozek (presun souborů ke trideni):
-                    folder_name[1] = dir_normal[int(select_normal_dir)]
-                    for i in range (0,len(dir_normal)):
-                        if i != int(select_normal_dir):
-                            for files in os.listdir(path + dir_normal[i]):
-                                shutil.move(path + dir_normal[i] + "/" + files, path + files)
-                            #odstraneni prazdne nevyuzite slozky:
-                            os.rmdir(path + dir_normal[i])
-                    is_selected_normal_dir = 1
-                    wrong_input = 0
+        print("Bylo nalezeno více složek se soubory .normal, zvolte defaultní (vepište číslo 0-{}): ".format(len(dir_normal)-1))
+        #voani funkce pro spravnou zadanou hodnotu
+        is_input_right(0, len(dir_normal))
+        select_normal_dir = is_input_right.right_input
 
-            while not select_normal_dir.isdigit():
-                select_normal_dir = input("Nezadali jste číslo (vepište číslo 0-{}): ".format(len(dir_normal)-1))
+        print("Pro .normal soubory byla zvolena složka: ", dir_normal[int(select_normal_dir)])
+        #ruseni nezvolenych slozek (presun souborů ke trideni):
+        folder_name[1] = dir_normal[int(select_normal_dir)]
+        for i in range (0,len(dir_normal)):
+            if i != int(select_normal_dir):
+                for files in os.listdir(path + dir_normal[i]):
+                    shutil.move(path + dir_normal[i] + "/" + files, path + files)
+                #odstraneni prazdne nevyuzite slozky:
+                os.rmdir(path + dir_normal[i])
+        is_selected_normal_dir = 1
+            
     else:
         if len(dir_normal) != 0:
             folder_name[1] = dir_normal[0]
@@ -121,30 +136,25 @@ while is_selected_normal_dir == 0:
             print("Nebyla nalezena žádná složka s .normal soubory, byla vytvořena automaticky: ",folder_name[1])
             is_selected_normal_dir = 1
 
-wrong_input = 1
+
 while is_selected_height_dir == 0:
     if len(dir_height) > 1:
         print("Seznam složek s .height soubory: ",dir_height)
-        select_height_dir = input("Bylo nalezeno více složek se soubory .height, zvolte defaultní (vepište číslo 0-{}): ".format(len(dir_height)-1))
-        while wrong_input == 1:
-            while select_height_dir.isdigit() and is_selected_height_dir==0:
-                if int(select_height_dir)<0 or int(select_height_dir)>len(dir_height):
-                    select_height_dir = input("Zadali jste špatné číslo (vepište číslo 0-{}): ".format(len(dir_height)-1))
-                else:
-                    print("Pro .height soubory byla zvolena složka: ", dir_height[int(select_height_dir)])
-                    #ruseni nezvolenych slozek (presun souborů ke trideni):
-                    folder_name[0] = dir_height[int(select_height_dir)]
-                    for i in range (0,len(dir_height)):
-                        if i != int(select_height_dir):
-                            for files in os.listdir(path + dir_height[i]):
-                                shutil.move(path + dir_height[i] + "/" + files, path + files)
-                            #odstraneni prazdne nevyuzite slozky:
-                            os.rmdir(path + dir_height[i])
-                    is_selected_height_dir = 1
-                    wrong_input = 0
+        print("Bylo nalezeno více složek se soubory .height, zvolte defaultní (vepište číslo 0-{}): ".format(len(dir_height)-1))
+        is_input_right(0, len(dir_height))
+        select_height_dir = is_input_right.right_input
+        
+        print("Pro .height soubory byla zvolena složka: ", dir_height[int(select_height_dir)])
+        #ruseni nezvolenych slozek (presun souborů ke trideni):
+        folder_name[0] = dir_height[int(select_height_dir)]
+        for i in range (0,len(dir_height)):
+            if i != int(select_height_dir):
+                for files in os.listdir(path + dir_height[i]):
+                    shutil.move(path + dir_height[i] + "/" + files, path + files)
+                #odstraneni prazdne nevyuzite slozky:
+                os.rmdir(path + dir_height[i])
+        is_selected_height_dir = 1
 
-            while not select_height_dir.isdigit():
-                select_height_dir = input("Nezadali jste číslo (vepište číslo 0-{}): ".format(len(dir_height)-1))
     else:
         if len(dir_height) != 0:
             folder_name[0] = dir_height[0]
@@ -172,31 +182,19 @@ for x in range(0,2):
 
 
 advanced_mode = input("Advanced mode?: (Y/n)")
+example_folder_name = "221013_092241_0000000842_21_&Cam1Img.Height"
 
 if advanced_mode.casefold() == "y":
-    hide_cnt = input("Zadejte počet zakrytých znaků od konce názvu souboru (defaut: 19, smazané znaky: _21_&Cam1Img.Height): ")
+    print("Zadejte počet zakrytých znaků od konce názvu souboru (defaut: 19, smazané znaky: _21_&Cam1Img.Height): ")
     #kontrola
-    wrong_input = 1
-    while wrong_input == 1:     
-        #smycka, dokud neni spravne vepsano:
-        if hide_cnt.isdigit():
-            if int(hide_cnt) > len("221013_100908_0000000852_20_&Cam1Img.Normal"):
-                hide_cnt = input("Zadané číslo {} je příliš vysoké, maximum znaků: 43, zvolte znovu:".format(hide_cnt))
-
-            elif int(hide_cnt) < 0:
-                hide_cnt = input("Zadané číslo {} je příliš nízké, zvolte znovu:".format(hide_cnt))
-
-            elif int(hide_cnt) in range (0,43):
-                        wrong_input = 0
-        #případ, kdy byl stisknut např enter nebo vožen string
-        else:
-            hide_cnt = input("Nezadali jste správné číslo, zvolte znovu:")
-
-        
-    example_folder_name = "221013_092241_0000000842_21_&Cam1Img.Height"
+    is_input_right(0, len(example_folder_name)+1)
+    hide_cnt = is_input_right.right_input
+    hide_cnt_from_start = len(example_folder_name) - int(hide_cnt)
     print("příklad zkáceného souboru: ", example_folder_name[0:hide_cnt_from_start])
 
-hide_cnt_from_start = len("221013_092241_0000000842_21_&Cam1Img.Height") - int(hide_cnt)
+else:
+    hide_cnt_from_start = len(example_folder_name) - int(hide_cnt)
+
 #print("making arrays...")
 
 for files in names:
@@ -291,4 +289,5 @@ print("počet OK .height souborů: ", height_count)
 print("celkový počet NOK souborů: ",nok_count)
         
 #k=input("press close to exit")
+
 
