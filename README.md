@@ -2,10 +2,11 @@
 Analýza, kontrola a třídění souborů (.height, .normal) z kamer...
 
 - vloží se cesta ke složce se soubory (Algoritmus ošetřen proti špatně zadané složce)
-- nezáleží pokud jsou soubory: - smíchané přímo v cestě nebo ve složce
-                               - uložené ve více složkách (volí se základní)
-                               - jiného typu - např.: .txt atp.
-                               - různé délky v názvu
+- nezáleží pokud jsou soubory: 
+-- smíchané přímo v cestě nebo ve složce
+-- uložené ve více složkách (volí se základní)
+-- jiného typu - např.: .txt atp.
+-- různé délky v názvu
                               
 - Algoritmus odstraňuje nevyužité, prázdné složky v cestě
 - Algoritmus je ošetřen proti špatnému inputu ze strany uživatele
