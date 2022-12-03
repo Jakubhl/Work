@@ -14,18 +14,18 @@ Analýza, kontrola a třídění souborů (.height, .normal) z kamer...
 ## Verze 1.8.2:
 - základní kontrola bez možnosti vstoupit do "advanced modu"
 
-![ukázka verze 1.8.2](images/obrazek182.png)
+![ukázka verze 1.8.2](images/obrazek182.PNG)
 
 ## Verze 2.3:
 - Umožnuje vstoupit do "advanced modu", kde si lze zvolit způsob třídění a to buď: 
 1) zvlášť do složek podle čísla kamery (s prefixem _Cam a číslem kamery)
 
-![ukázka verze 2.3-camera](images/23cam.png)
+![ukázka verze 2.3-camera](images/23cam.PNG)
 
 2) zvlášť do složek podle čísla funkce (s prefixem _Func a číslem funkce)
 
-![ukázka verze 2.3-function](images/23func.png)
+![ukázka verze 2.3-function](images/23func.PNG)
 
 3) obojí zároveň
 
-![ukázka verze 2.3-both](images/23both.png)
+![ukázka verze 2.3-both](images/23both.PNG)
