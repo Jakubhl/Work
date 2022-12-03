@@ -1,7 +1,7 @@
 # Work
 Analýza, kontrola a třídění souborů (.height, .normal) z kamer...
 
-- vloží se cesta ke složce se soubory (Algoritmus ošetřen proti špatně zadané složce)
+- vloží se cesta ke složce se soubory (Algoritmus ošetřen proti špatně zadané cestě)
 - nezáleží pokud jsou soubory: 
   - smíchané přímo v cestě nebo ve složce
   - uložené ve více složkách (volí se základní)
