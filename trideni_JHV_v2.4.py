@@ -34,6 +34,7 @@ def remove_empty_dirs(exception):
                     os.rmdir(path + dirs)
         print("Přebytečné složky odstraněny")
         print("")
+
 #funkce pro overeni spravneho inputu
 class input_check:
     def __init__(self,range_from, range_to):
@@ -229,9 +230,9 @@ print("")
 # zadejte cestu k souboru:
 path_found = 0
 while path_found == 0:
-    #path = input("Zadejte cestu k souborům (pokud se aplikace už nachází v dané složce -> enter): ")
+    path = input("Zadejte cestu k souborům (pokud se aplikace už nachází v dané složce -> enter): ")
 
-    path = "D:/JHV\Kamery\JHV_Data/L_St_145/A"
+    #path = "D:/JHV\Kamery\JHV_Data/L_St_145/A"
 
     #spusteni v souboru, kde se aplikace aktualne nachazi
     if path == "":
@@ -294,26 +295,20 @@ if advanced_mode.casefold() == "y":
     sort_by = int(inp.is_input_right())
 
     if sort_by == 1:
-        #while(v.sort_by_function_done != True):
         v.sort_by_function()
         print(" - Třídění podle funkce: hotovo")
-        #while(v.creating_folders_done != True):
         v.creating_folders()
         print(" - Vytváření složek: hotovo")
-        #while(v.moving_files_done != True):
         v.moving_files()
         print(" - Přesouvání souborů: hotovo")
         print("")
         remove_empty_dirs(0)
 
     if sort_by == 2:
-        #while(v.sort_by_camera_done != True):
         v.sort_by_camera()
         print(" - Třídění podle kamery: hotovo")
-        #while(v.creating_folders_done != True):
         v.creating_folders()
         print(" - Vytváření složek: hotovo")
-        #while(v.moving_files_done != True):
         v.moving_files()
         print(" - Přesouvání souborů: hotovo")
         print("")
@@ -321,7 +316,7 @@ if advanced_mode.casefold() == "y":
 
 print(" - Třídění dokončeno")
 
-#k = input("stisknětě jakýkoliv znak pro zavření")
+k = input("stisknětě jakýkoliv znak pro zavření")
 
 
 
