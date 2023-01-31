@@ -1,4 +1,4 @@
-# -verze 2.3 umožňuje v advanced módu třídění podle čísla kamery, podle cisla funkce i oboje zaroven
+ # -verze 2.3 umožňuje v advanced módu třídění podle čísla kamery, podle cisla funkce i oboje zaroven
 #///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 import os
 import shutil
