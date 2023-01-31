@@ -29,3 +29,6 @@ Analýza, kontrola a třídění souborů (.height, .normal) z kamer...
 3) obojí zároveň
 
 ![ukázka verze 2.3-both](images/23both.PNG)
+
+## Verze 2.4:
+- Univerzální verze vůči více formátům souboru. Umožňuje základní třídění pouze do NOK složky
