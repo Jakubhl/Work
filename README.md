@@ -31,4 +31,4 @@ Analýza, kontrola a třídění souborů (.height, .normal) z kamer...
 ![ukázka verze 2.3-both](images/23both.PNG)
 
 ## Verze 2.4:
-- Univerzální verze vůči více formátům souboru. Umožňuje základní třídění pouze do NOK složky
+- Univerzální verze vůči více formátům souboru (Nepracuje tedy, jako původně pouze se soubory typu: ".Height" a ".Normal", ale s neomezeným počtem typů). Umožňuje stejné možnosti třídění, jako předchozí verze 2.3. Algoritmus funguje na principu předpokladu podobné syntaxe názvu souboru (je splitován znaky "_")
