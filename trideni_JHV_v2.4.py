@@ -60,21 +60,43 @@ class input_check:
 
 class verification:
     def __init__(self):
-        self.cameras_clear = []
-        self.functions_clear = []
-        self.sort_by_camera_done = False
-        self.sort_by_function_done = False
-        self.creating_folders_done = False
-        self.moving_files_done = False
-        self.both_arr = []
         self.cam_number_digits = 5 + 4 #az peticiferne cislo kamery (+ 4 znaky za &)
         self.error = 0
+        self.functions_arr = []
+        self.cameras_arr = []
+        self.both_arr = []
 
     def Collect_files(self):
         for i in range(0,len(folders)):
             for files in os.listdir(path + folders[i]):
                 shutil.move(path + folders[i] + "/" + files , path + '/' + files)
 
+    def Get_cam_number(file_for_analyze):
+        if "&" in file_for_analyze:
+            files_split = file_for_analyze.split("&")
+            files_split = files_split[1] # prava strana od &
+            files_split = files_split.split(".")
+            files_split = files_split[0] # leva strana od tecky
+            files_split = re.findall(r'\d+', files_split)
+            cam_number = ' '.join([str(elem) for elem in files_split]) #ziskani stringu z pole
+
+            return cam_number
+        else:
+            print("Chyba: soubor {} neobsahuje rozhodovaci symbol \"&\"".format(file_for_analyze))
+
+        
+        
+    def Get_func_number(file_for_analyze):
+        files_split = file_for_analyze.split("&")
+        files_split = files_split[0] # leva strana od &
+        files_split = files_split.split("_") 
+        if len(files_split) != 0:
+            arr_pos = len(files_split) -2 #-2, protože pole se pocita od nuly a nezajima nas znak _ před &
+            func_number = files_split[arr_pos] 
+
+            return func_number
+        else:
+            print("Chyba: soubor {} neobsahuje rozhodovaci symbol \"_\", potrebny pro urceni cisla funkce".format(file_for_analyze))
     def Sorting_files(self):
         n = 0
         example_folder_name = "221013_092241_0000000842_21_" #&Cam1Img.Height.bmp" #uz pracuju s takto orizlym...
@@ -140,68 +162,44 @@ class verification:
             print("")
         
     def sort_by_camera(self):
-        cameras = []
         camera_num = 0
-        files_split = ""
-
         for files in os.listdir(path + folder_name[0]): #hledani v OK slozce
-            # zjišťování všech čísel kamer
-            if "&Cam" in files:
-                files_split = files.split("_")
-                files_split = files_split[4] # čtvrtá sekce podle _
-                camera_num = re.findall(r'\d+', files_split[0:self.cam_number_digits]) # pocita az s peticifernym cislem kamery
-                if not camera_num in cameras:
-                    cameras.append(camera_num)
-                    cameras.sort()
-
+            if "&Cam" in files: #pouze pro overeni, zda se jedna o uzitecny soubor
+                camera_num = verification.Get_cam_number(files)
+                if not camera_num in self.cameras_arr:
+                    self.cameras_arr.append(camera_num)
+                    self.cameras_arr.sort()
+                    
         print(" - Nalezená čísla kamer: ")
-        self.cameras_clear = [str(item).strip("\'\"\[\]") for item in cameras]
-        print(self.cameras_clear)
+        print(self.cameras_arr)
         print("")
 
-        self.sort_by_camera_done = True
         
     def sort_by_function(self):
-        functions = []
         func_num = 0
-        files_split = ""
-
         for files in os.listdir(path + folder_name[0]): #hledani v OK slozce
-            files_split = files.split("_")
-            # zjišťování všech čísel funkci
             if "&Cam" in files: #pouze pro overeni, zda se jedna o uzitecny soubor
-                func_num = re.findall(r'\d+', files_split[3]) # čísla, třetí sekce podle _
-                if not func_num in functions:
-                    functions.append(func_num)
-                    functions.sort()
+                func_num = verification.Get_func_number(files)
+                if not func_num in self.functions_arr:
+                    self.functions_arr.append(func_num)
+                    self.functions_arr.sort()
 
         print(" - Nalezená čísla funkcí: ")
-        self.functions_clear = [str(item).strip("\'\"\[\]") for item in functions]
-        print(self.functions_clear)
+        print(self.functions_arr)
         print("")
 
-        self.sort_by_function_done = True
-
+        
     def sort_by_both(self):
-        camera_num = 0
-        func_num = 0
-        files_split = ""
         both_name = ""
-
         for files in os.listdir(path + folder_name[0]): #hledani v OK slozce
             # zjišťování všech čísel kamer
             if "&Cam" in files:#pouze pro overeni, zda se jedna o uzitecny soubor
-                files_split = files.split("_")
-                files_split = files_split[4] # čtvrtá sekce podle _
-                camera_num = re.findall(r'\d+', files_split[0:self.cam_number_digits]) # pocita az s peticifernym cislem kamery (-4)
-
-                files_split = files.split("_")
-                files_split = files_split[3] 
-                func_num = re.findall(r'\d+', files_split) # čísla, třetí sekce podle _
-                both_name = prefix_Cam + str(camera_num).strip("\'\"\[\]") + "_" + prefix_func + str(func_num).strip("\'\"\[\]")
+                func_num = verification.Get_func_number(files)
+                camera_num = verification.Get_cam_number(files)
+                both_name = prefix_Cam + str(camera_num) + "_" + prefix_func + str(func_num)
                 if not both_name in self.both_arr:
                     self.both_arr.append(both_name)
-
+                
         print(" - Složky pro vytvoření")           
         print(self.both_arr)
         print("")
@@ -209,8 +207,8 @@ class verification:
     def creating_folders(self):
 
         if sort_by == 1:
-            for i in range(0,len(self.functions_clear)):
-                new_folder_name = prefix_func + self.functions_clear[i]
+            for i in range(0,len(self.functions_arr)):
+                new_folder_name = prefix_func + self.functions_arr[i]
                 if not os.path.exists(path + new_folder_name):
                     os.mkdir(path + new_folder_name)
                     if not new_folder_name in folder_name:
@@ -218,8 +216,8 @@ class verification:
 
         #vytvareni slozek pro kamery:
         if sort_by == 2:
-            for i in range(0,len(self.cameras_clear)):
-                new_folder_name = prefix_Cam + self.cameras_clear[i]
+            for i in range(0,len(self.cameras_arr)):
+                new_folder_name = prefix_Cam + self.cameras_arr[i]
                 if not os.path.exists(path + new_folder_name):
                     os.mkdir(path + new_folder_name) 
                     if not new_folder_name in folder_name:
@@ -233,51 +231,35 @@ class verification:
                     if not new_folder_name in folder_name:
                         folder_name.append(new_folder_name)
 
-        self.creating_folders_done = True
 
     def moving_files(self):
         files_split = ""
         #presun souboru do slozek:
         if sort_by == 1:
             for files in os.listdir(path + folder_name[0]): #v OK slozce
-                files_split = files.split("_")
+                func_num = verification.Get_func_number(files)
                 for items in folder_name:
-                    if (prefix_func + files_split[3]) == items:
+                    if (prefix_func + func_num) == items:
                         if not os.path.exists(path + items + "/" + files):
                             shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
 
         if sort_by == 2:
             for files in os.listdir(path + folder_name[0]): #v OK slozce
-                files_split = files.split("_")
-                files_split = files_split[4] # čtvrtá sekce podle _
-                files_split = re.findall(r'\d+', files_split[0:self.cam_number_digits]) # pocita az s peticifernym cislem kamery
-                files_split = ' '.join([str(elem) for elem in files_split]) #ziskani stringu z pole
+                camera_num = verification.Get_cam_number(files)
                 for items in folder_name:
-                    if str((prefix_Cam + files_split)) == items:
+                    if (prefix_Cam + camera_num) == items:
                         if not os.path.exists(path + items + "/" + files):
                             shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
-
         
         if sort_by == 3:
-            function_part = 0
-            camera_part = 0
-
             for files in os.listdir(path + folder_name[0]): #v OK slozce
-                files_split = files.split("_")
-                function_part = files_split[3]
-                #cislo kamery:
-                files_split = files.split("_")
-                files_split = files_split[4] # čtvrtá sekce podle _
-                files_split = re.findall(r'\d+', files_split[0:self.cam_number_digits]) # pocita az s peticifernym cislem kamery
-                files_split = ' '.join([str(elem) for elem in files_split]) #ziskani stringu z pole
-                camera_part = files_split
-
+                func_num = verification.Get_func_number(files)
+                camera_num = verification.Get_cam_number(files)
                 for items in folder_name:
-                    if (prefix_Cam + camera_part + "_" + prefix_func + function_part) == items:
+                    if (prefix_Cam + camera_num + "_" + prefix_func + func_num) == items:
                         if not os.path.exists(path + items + "/" + files):
                             shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
 
-        self.moving_files_done = True
         
 
 #MAIN//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////        
@@ -289,9 +271,9 @@ print("")
 path_found = 0
 stop_while = 0
 while path_found == 0 and stop_while == 0:
-    path = input("Zadejte cestu k souborům (pokud se aplikace už nachází v dané složce -> enter): ")
+    #path = input("Zadejte cestu k souborům (pokud se aplikace už nachází v dané složce -> enter): ")
 
-    #path = "D:/JHV\Kamery\JHV_Data/L_St_145/A"
+    path = "D:/JHV\Kamery\JHV_Data/L_St_145/A"
 
     #spusteni v souboru, kde se aplikace aktualne nachazi
     if path == "":
@@ -346,7 +328,7 @@ if path_found == 1:
     remove_empty_dirs(0)
 
     if v.error == 1:
-        print("Chyba: v zadané cestě nebyly nalezeny žádné soubory, třídění ukončeno")
+        print("Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &), třídění ukončeno")
 
     else:
         #uvedeni do advanced modu:
@@ -390,7 +372,7 @@ if path_found == 1:
 
         print(" - Třídění dokončeno")
 
-k = input("stisknětě jakýkoliv znak pro zavření")
+#k = input("stisknětě jakýkoliv znak pro zavření")
 
 
 
