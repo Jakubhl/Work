@@ -124,19 +124,25 @@ class verification:
         ok_count = 0
         cutting_condition = "&"
         count=0
-        hide_cnt_from_start = len(example_file_name_cut) - int(hide_cnt)
 
         # výtah z názvu vhodný pro porovnání:
         for files in os.listdir(path):
             if ".bmp" in files:
                 files_arr.append(files) #pole s plnými názvy pro přesun
                 files_cut = files.split(cutting_condition)
-                if len(files_cut[0]) > len(example_file_name_cut) or len(files_cut[0]) < len(example_file_name_cut):
-                    n = len(files_cut[0]) - len(example_file_name_cut) # (=43)
-                    files_arr_cut.append(files[0:(hide_cnt_from_start + n)])
+                files_cut = files_cut[0]
+                hide_cnt_from_start = len(files_cut) - int(hide_cnt)
+                files_arr_cut.append(files_cut[0:(hide_cnt_from_start)])
+
+                """
+                if len(files_cut) > len(example_file_name_cut) or len(files_cut) < len(example_file_name_cut):
+                    n = len(example_file_name_cut) -  len(files_cut) # (=43)
+                    files_arr_cut.append(files_cut[0:(hide_cnt_from_start + n)])
                     n = 0
-                else:
-                    files_arr_cut.append(files[0:hide_cnt_from_start])
+                else: 
+                    files_arr_cut.append(files_cut[0:hide_cnt_from_start])
+                """
+            
 
         for i in range(0,len(files_arr_cut)):
         
@@ -273,9 +279,9 @@ print("")
 path_found = 0
 stop_while = 0
 while path_found == 0 and stop_while == 0:
-    #path = input("Zadejte cestu k souborům (pokud se aplikace už nachází v dané složce -> enter): ")
+    path = input("Zadejte cestu k souborům (pokud se aplikace už nachází v dané složce -> enter): ")
 
-    path = "D:/JHV\Kamery\JHV_Data/L_St_145/A"
+    #path = "D:/JHV\Kamery\JHV_Data/L_St_145/A"
 
     #spusteni v souboru, kde se aplikace aktualne nachazi
     if path == "":
@@ -349,6 +355,7 @@ if path_found == 1:
         print("Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &), třídění ukončeno")
 
     else:
+
         def advance_sort(sort_by):
             if sort_by == 1:
                 v.sort_by_function()
@@ -419,6 +426,7 @@ if path_found == 1:
                 hide_cnt_from_start = len(example_file_name_cut) - int(hide_cnt)
                 print("Porovnává se: ", example_file_name_cut[0:hide_cnt_from_start])
                 print("")
+
                 v.Collect_files()
                 v.Sorting_files()
 
@@ -432,7 +440,7 @@ if path_found == 1:
 
         print(" - Třídění dokončeno")
 
-#k = input("stisknětě jakýkoliv znak pro zavření")
+k = input("stisknětě jakýkoliv znak pro zavření")
 
 
 
