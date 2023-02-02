@@ -65,8 +65,11 @@ class verification:
         self.functions_arr = []
         self.cameras_arr = []
         self.both_arr = []
+        self.files_type_arr = []
 
     def Collect_files(self):
+        folders = sync_folders()
+        
         for i in range(0,len(folders)):
             for files in os.listdir(path + folders[i]):
                 shutil.move(path + folders[i] + "/" + files , path + '/' + files)
@@ -85,7 +88,6 @@ class verification:
             print("Chyba: soubor {} neobsahuje rozhodovaci symbol \"&\"".format(file_for_analyze))
 
         
-        
     def Get_func_number(file_for_analyze):
         files_split = file_for_analyze.split("&")
         files_split = files_split[0] # leva strana od &
@@ -97,13 +99,24 @@ class verification:
             return func_number
         else:
             print("Chyba: soubor {} neobsahuje rozhodovaci symbol \"_\", potrebny pro urceni cisla funkce".format(file_for_analyze))
+    
+
+    def Get_suffix(self):
+        files_type = ""
+        #zjišťování počtu typů souborů
+        for files in os.listdir(path):
+            if ".bmp" in files:
+                files_type = files.split(".")
+                if not files_type[1] in self.files_type_arr:
+                    self.files_type_arr.append(files_type[1])
+
+        if self.files_type_arr != []: #pokud byl nalezen
+            print(" - Nalezené typy souborů: ")
+            print(self.files_type_arr)
+            print("")
+
     def Sorting_files(self):
         n = 0
-        example_folder_name = "221013_092241_0000000842_21_" #&Cam1Img.Height.bmp" #uz pracuju s takto orizlym...
-        hide_cnt = 4 #23   # defaultní počet zakrytých znaků při porovnávání normal a height souborů
-        hide_cnt_from_start = len(example_folder_name) - int(hide_cnt)
-        files_type = ""
-        files_type_arr = []
         files_arr_cut = []
         files_arr = []
         files_cut = 0
@@ -111,26 +124,15 @@ class verification:
         ok_count = 0
         cutting_condition = "&"
         count=0
-
-        #zjišťování počtu typů souborů
-        for files in os.listdir(path):
-            if "&Cam" in files:
-                files_type = files.split(".")
-                if not files_type[1] in files_type_arr:
-                    files_type_arr.append(files_type[1])           
-        
-        if files_type_arr != []: #pokud nebyl žádný nalezen
-            print(" - Nalezené typy souborů: ")
-            print(files_type_arr)
-            print("")
+        hide_cnt_from_start = len(example_file_name_cut) - int(hide_cnt)
 
         # výtah z názvu vhodný pro porovnání:
         for files in os.listdir(path):
-            if "&Cam" in files:
+            if ".bmp" in files:
                 files_arr.append(files) #pole s plnými názvy pro přesun
                 files_cut = files.split(cutting_condition)
-                if len(files_cut[0]) > len(example_folder_name) or len(files_cut[0]) < len(example_folder_name):
-                    n = len(files_cut[0]) - len(example_folder_name) # (=43)
+                if len(files_cut[0]) > len(example_file_name_cut) or len(files_cut[0]) < len(example_file_name_cut):
+                    n = len(files_cut[0]) - len(example_file_name_cut) # (=43)
                     files_arr_cut.append(files[0:(hide_cnt_from_start + n)])
                     n = 0
                 else:
@@ -142,7 +144,7 @@ class verification:
                 if files == files_arr_cut[i]:
                     count+=1
 
-            if count == len(files_type_arr): # overeni zda je od vsech typu souboru jeden
+            if count == len(self.files_type_arr): # overeni zda je od vsech typu souboru jeden
                 ok_count += 1
                 shutil.move(path + '/' + files_arr[i] , path + folder_name[0] + "/" + files_arr[i]) #přesun do OK složky
                 count = 0
@@ -164,7 +166,7 @@ class verification:
     def sort_by_camera(self):
         camera_num = 0
         for files in os.listdir(path + folder_name[0]): #hledani v OK slozce
-            if "&Cam" in files: #pouze pro overeni, zda se jedna o uzitecny soubor
+            if ".bmp" in files: #pouze pro overeni, zda se jedna o uzitecny soubor
                 camera_num = verification.Get_cam_number(files)
                 if not camera_num in self.cameras_arr:
                     self.cameras_arr.append(camera_num)
@@ -178,7 +180,7 @@ class verification:
     def sort_by_function(self):
         func_num = 0
         for files in os.listdir(path + folder_name[0]): #hledani v OK slozce
-            if "&Cam" in files: #pouze pro overeni, zda se jedna o uzitecny soubor
+            if ".bmp" in files: #pouze pro overeni, zda se jedna o uzitecny soubor
                 func_num = verification.Get_func_number(files)
                 if not func_num in self.functions_arr:
                     self.functions_arr.append(func_num)
@@ -193,7 +195,7 @@ class verification:
         both_name = ""
         for files in os.listdir(path + folder_name[0]): #hledani v OK slozce
             # zjišťování všech čísel kamer
-            if "&Cam" in files:#pouze pro overeni, zda se jedna o uzitecny soubor
+            if ".bmp" in files:#pouze pro overeni, zda se jedna o uzitecny soubor
                 func_num = verification.Get_func_number(files)
                 camera_num = verification.Get_cam_number(files)
                 both_name = prefix_Cam + str(camera_num) + "_" + prefix_func + str(func_num)
@@ -298,7 +300,6 @@ while path_found == 0 and stop_while == 0:
 
 if path_found == 1:
     folder_name = ['OK','NOK'] #default
-    folders = []
     sort_by = 0
 
     #vytvareni zakladnich slozek:
@@ -308,20 +309,37 @@ if path_found == 1:
 
     #ochrana aby se za nazvy slozek nebral nejaky soubor z kamery, vytvareni seznamu slozek...
     print("Analýza složek... ")
-    for files in os.listdir(path):
-        #ignorace ostatnich typu souboru:   
-        if not ".exe" in files:
-            if not ".bmp" in files:
-                if not ".txt" in files:
-                    if not ".v" in files:
-                        folders.append(files)
+    def sync_folders():
+        folders = []
+        for files in os.listdir(path):
+            #ignorace ostatnich typu souboru:   
+            if not ".exe" in files:
+                if not ".bmp" in files:
+                    if not ".txt" in files:
+                        if not ".v" in files:
+                            folders.append(files)
+        return folders
 
+    folders = sync_folders()
+    #vzorek pro automatickou úpravu různě dlouhých jmen (první blok v sorting_files), delší= zakreje méně znaků, kratší = více...
+    example_file_name = ""
+    for i in range(0, len(folders)):
+        for files in os.listdir(path+folders[i]):
+            if ".bmp" in files:
+                if example_file_name == "":
+                    example_file_name = files
+                    
+    example_file_name_cut = example_file_name.split("&")
+    example_file_name_cut = example_file_name_cut[0]
+    #example_file_name = "221013_092241_0000000842_21_" #&Cam1Img.Height.bmp" #uz pracuju s takto orizlym...
+    hide_cnt = 4 #23   # defaultní počet zakrytých znaků při porovnávání normal a height souborů od & doleva
 
     #naschromáždění souborů na jedno místo
     v=verification()
     v.Collect_files()
 
-    #třídění do polí
+    #třídění do polí, zjišťování suffixu
+    v.Get_suffix()
     v.Sorting_files()
 
     #odstranění prázdných složek včetně základních (exception = 0)
@@ -331,15 +349,7 @@ if path_found == 1:
         print("Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &), třídění ukončeno")
 
     else:
-        #uvedeni do advanced modu:
-        #jakýkoliv jiný znak je brán jako ne:
-        advanced_mode = input("Nastavit možnosti podrobnějšího třídění?: (Y/n)")
-        if advanced_mode.casefold() == "y":
-            print("Třídit podle čísla funkce? (1) ,podle čísla kamery? (2) nebo podle funkce i kamery? (3):")
-            #ověření správného vstupu:
-            inp = input_check(1, 4)
-            sort_by = int(inp.is_input_right())
-
+        def advance_sort(sort_by):
             if sort_by == 1:
                 v.sort_by_function()
                 print(" - Třídění podle funkce: hotovo")
@@ -350,7 +360,7 @@ if path_found == 1:
                 print("")
                 remove_empty_dirs(0)
 
-            if sort_by == 2:
+            elif sort_by == 2:
                 v.sort_by_camera()
                 print(" - Třídění podle kamery: hotovo")
                 v.creating_folders()
@@ -360,7 +370,7 @@ if path_found == 1:
                 print("")
                 remove_empty_dirs(0)
 
-            if sort_by == 3:
+            elif sort_by == 3:
                 v.sort_by_both()
                 print(" - Třídění podle kamery a funkce: hotovo")
                 v.creating_folders()
@@ -369,6 +379,56 @@ if path_found == 1:
                 print(" - Přesouvání souborů: hotovo")
                 print("")
                 remove_empty_dirs(0)
+
+        #uvedeni do advanced modu:
+        #jakýkoliv jiný znak je brán jako ne:
+        advanced_mode = input("Nastavit možnosti podrobnějšího třídění?: (Y/n)")
+        if advanced_mode.casefold() == "y":
+            print("Třídit podle čísla funkce? (1), podle čísla kamery? (2), podle funkce i kamery? (3) nebo manuálně nastavit počet zakrytých znaků? (4):")
+            #ověření správného vstupu:
+            inp = input_check(1, 5)
+            sort_by = int(inp.is_input_right())
+            advance_sort(sort_by)
+
+            if sort_by == 4:
+                decrease = 0
+                file_name_letters = []
+                file_name_letters_position = 28 #default
+                file_name_letters_position_arr = []
+                print("Zadejte počet zakrytých znaků od & vlevo, default 4: (221013_092241_0000000842  |<=|  _21_&Cam1Img.Height.bmp) ")
+                print("")
+
+                for letters in example_file_name_cut:
+                    if file_name_letters_position < 10:
+                        file_name_letters.append(letters + "|")
+                    else:
+                        file_name_letters.append(" " + letters + "|") #pridani mezery
+
+                    decrease +=1
+                    file_name_letters_position  = len(example_file_name_cut) - decrease
+                    file_name_letters_position_arr.append(str(file_name_letters_position + 1) + "|")
+
+                file_name_letters = ''.join([str(elem) for elem in file_name_letters])
+                file_name_letters_position_arr = ''.join([str(elem) for elem in file_name_letters_position_arr])
+
+                print("znak:         ", file_name_letters, "&CamxImg.xxxxxx.bmp") 
+                print("počet zakrytí:", file_name_letters_position_arr)
+
+                inp = input_check(1, len(example_file_name_cut)+1)
+                hide_cnt = int(inp.is_input_right())
+                hide_cnt_from_start = len(example_file_name_cut) - int(hide_cnt)
+                print("Porovnává se: ", example_file_name_cut[0:hide_cnt_from_start])
+                print("")
+                v.Collect_files()
+                v.Sorting_files()
+
+                advanced_mode = input("Nastavit možnosti podrobnějšího třídění?: (Y/n)")
+                if advanced_mode.casefold() == "y":
+                    print("Třídit podle čísla funkce? (1), podle čísla kamery? (2), podle funkce i kamery? (3)")
+                    #ověření správného vstupu:
+                    inp = input_check(1, 4)
+                    sort_by = int(inp.is_input_right())
+                    advance_sort(sort_by)
 
         print(" - Třídění dokončeno")
 
