@@ -32,5 +32,10 @@ Analýza, kontrola a třídění souborů (.height, .normal) z kamer...
 
 ## Verze 2.4:
 - Univerzální verze vůči více formátům souboru (Nepracuje tedy, jako původně pouze se soubory typu: ".Height" a ".Normal", ale s neomezeným počtem typů).
-- Umožňuje stejné možnosti třídění, jako předchozí verze 2.3. 
-- Algoritmus funguje na principu předpokladu podobné syntaxe názvu souboru (je splitován znaky "_")
+- Umožňuje stejné možnosti třídění, jako předchozí verze 2.3. + manuální nastavení počtu zakrytých znaků
+- Algoritmus funguje na principu předpokladu podobné syntaxe názvu souboru (je splitován znakem "&")
+- Ošetřeno chybovým hlášením
+
+![ukázka verze 2.4-both](images/24_slozky.PNG)
+
+![ukázka mannual. módu 2.4](images/24_manual.PNG)

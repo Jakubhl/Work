@@ -124,6 +124,7 @@ class verification:
         ok_count = 0
         cutting_condition = "&"
         count=0
+        error_length = 0
 
         # výtah z názvu vhodný pro porovnání:
         for files in os.listdir(path):
@@ -132,23 +133,16 @@ class verification:
                 files_cut = files.split(cutting_condition)
                 files_cut = files_cut[0]
                 hide_cnt_from_start = len(files_cut) - int(hide_cnt)
-                files_arr_cut.append(files_cut[0:(hide_cnt_from_start)])
-
-                """
-                if len(files_cut) > len(example_file_name_cut) or len(files_cut) < len(example_file_name_cut):
-                    n = len(example_file_name_cut) -  len(files_cut) # (=43)
-                    files_arr_cut.append(files_cut[0:(hide_cnt_from_start + n)])
-                    n = 0
-                else: 
-                    files_arr_cut.append(files_cut[0:hide_cnt_from_start])
-                """
-            
+                files_arr_cut.append(files_cut[0:(hide_cnt_from_start)])        
 
         for i in range(0,len(files_arr_cut)):
-        
+
             for files in files_arr_cut:
+                if len(files) != len(files_arr_cut[i]):
+                    error_length = 1
                 if files == files_arr_cut[i]:
                     count+=1
+            
 
             if count == len(self.files_type_arr): # overeni zda je od vsech typu souboru jeden
                 ok_count += 1
@@ -159,6 +153,10 @@ class verification:
                 nok_count += 1
                 shutil.move(path + '/' + files_arr[i] , path + folder_name[1] + "/" + files_arr[i]) #přesun do NOK složky
                 count = 0
+        
+        if error_length == 1:
+            print("Upozornění: délka názvu před \"&\" některých souborů v dané cestě se liší (možná nefunkční manuální definice zakrytých znaků)")
+            print("")
 
         if files_arr == []:
             print("Chyba: Nebyly nalezeny žádné soubory")
