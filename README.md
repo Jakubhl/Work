@@ -37,6 +37,7 @@ Analýza, kontrola a třídění souborů (.height, .normal) z kamer...
 - Ošetřeno chybovým hlášením
 
 - Nejprve je provedeno základní třídění do OK a NOK složky:
+
 ![ukázka verze 2.4 základ](images/24_basic.PNG)
 
 - Dodatečné třídění umožňuje stejné možnosti třídění, jako předchozí verze 2.3. + manuální nastavení počtu zakrytých znaků:
