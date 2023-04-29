@@ -19,6 +19,3 @@ detekce dvojic - dvojice prekopirovat do stage 2 do slozky PAIRS s rozdelenim A 
 2023_04_13-07_11_09_PALETKA_   0020   _&Cam2Img.Height
 
 max paletek: 55
-nemusi stoupat inkrementalne (muzou chybet => chybova hlaska: paleta chybi)
-
-to opakovani bych zrusil u 2.4 a udelal lite verze + ukoncit nebo advanced? aby to bylo jen jednou...

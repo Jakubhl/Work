@@ -274,10 +274,10 @@ def whole_function():
             print(" - Třídění dokončeno")
             print("")
 
-    repeat = input("Opakovat? (Y/y) nebo stisknětě libovolný znak pro zavření: ")
-    if repeat.casefold() == "y":
-        whole_function()
-        repeat = ""
+    #repeat = input("Opakovat? (Y/y) nebo stisknětě libovolný znak pro zavření: ")
+    #if repeat.casefold() == "y":
+    #    whole_function()
+    #    repeat = ""
 
 whole_function() #pouze jednou pri spusteni...
 
