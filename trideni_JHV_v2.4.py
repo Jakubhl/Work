@@ -12,6 +12,8 @@ def whole_function():
 
 
     def remove_empty_dirs(exception):
+        removed_count = 0
+        folders = sync_folders()
         if exception == 1:
             for dirs in folders: # pole folders uz je filtrovano od ostatnich souboru...
                 if (dirs != folder_name[0]) and (dirs != folder_name[1]) and (dirs != folder_name[2]):
@@ -22,7 +24,10 @@ def whole_function():
                         if number_of_files == 0:
                             print("Odstraněna prázdná složka: ", dirs)
                             os.rmdir(path + dirs)
-            print("Přebytečné složky odstraněny")
+                            removed_count +=1
+            if removed_count != 0:
+                print("- Přebytečné složky odstraněny")
+                print("")
                         
         else:
             for dirs in folders: # pole folders uz je filtrovano od ostatnich souboru...
@@ -33,8 +38,10 @@ def whole_function():
                     if number_of_files == 0:
                         print("Odstraněna prázdná složka: ", dirs)
                         os.rmdir(path + dirs)
-            print("Přebytečné složky odstraněny")
-            print("")
+                        removed_count +=1
+            if removed_count != 0:
+                print("- Přebytečné složky odstraněny")
+                print("")
 
     #funkce pro overeni spravneho inputu
     class input_check:
@@ -339,7 +346,8 @@ def whole_function():
                     if not ".bmp" in files:
                         if not ".txt" in files:
                             if not ".v" in files:
-                                folders.append(files)
+                                if not ".xml" in files:
+                                    folders.append(files)
             return folders
 
         folders = sync_folders()
@@ -413,7 +421,7 @@ def whole_function():
 
             #uvedeni do advanced modu:
             #jakýkoliv jiný znak je brán jako ne:
-            advanced_mode = input("Nastavit možnosti podrobnějšího třídění?: (Y/n)")
+            advanced_mode = input("Nastavit možnosti podrobnějšího třídění?: (Y/[libovolny znak pro uzavreni])")
             if advanced_mode.casefold() == "y":
                 print("Třídit podle typu souboru? (1) čísla funkce? (2), podle čísla kamery? (3), podle funkce i kamery? (4) nebo manuálně nastavit počet zakrytých znaků? (5):")
                 #ověření správného vstupu:
@@ -454,7 +462,7 @@ def whole_function():
                     v.Collect_files()
                     v.Sorting_files()
 
-                    advanced_mode = input("Nastavit možnosti podrobnějšího třídění?: (Y/y)")
+                    advanced_mode = input("Nastavit možnosti podrobnějšího třídění?: (Y/[libovolny znak pro uzavreni])")
                     if advanced_mode.casefold() == "y":
                         print("Třídit podle typu souboru? (1) čísla funkce? (2), podle čísla kamery? (3), podle funkce i kamery? (4)")
                         #ověření správného vstupu:
