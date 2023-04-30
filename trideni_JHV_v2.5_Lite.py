@@ -1,4 +1,3 @@
-# -verze 2.4 je univerzální vůči počtu formátů souborů
 #///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 import os
 import shutil
@@ -9,9 +8,10 @@ def whole_function():
     prefix_ID = "ID_"
     prefix_Cam = "Cam"
     list_of_pairs = []
-    pair_folders = []
+    increment = []
     max_number_of_pallets = 55
     file_list = []
+    pair_folders = []
 
     def remove_empty_dirs(exception):
         removed_count = 0
@@ -83,7 +83,7 @@ def whole_function():
             self.pair_folder = "PAIRS"
             folders = sync_folders()
             if self.pair_folder in folders:
-                shutil.rmtree(path + self.pair_folder) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! vzdy odstrani celou s nakopirovanymi soubory, nevratne
+                shutil.rmtree(path + self.pair_folder) #vzdy odstrani celou slozku s nakopirovanymi soubory, nevratne
                 
             folders = sync_folders() #synchronizace pri moznem smazani slozky PAIR
             for i in range(0,len(folders)):
@@ -231,19 +231,15 @@ def whole_function():
             print("Seznam cisel chybejicich palet v rade za sebou: ")
             print(lost_pallets)
             print("")
-            #kopirovani do zvlastni slozky------------------------------------------------------------------
-            
-            
             
             if len(list_of_pairs) != 0: #jestli nejake vubec jsou...
                 #vytvoreni slozky:
                 if not os.path.exists(path + self.pair_folder):
                     os.mkdir(path + self.pair_folder)
                 j=0
-                
                 x=0
                 act_round_number = 0
-                
+                #kopirovani do zvlastni slozky------------------------------------------------------------------
                 for numbers in list_of_pairs:
                     for files in file_list:
                         
@@ -282,7 +278,7 @@ def whole_function():
                     new_folder_name = prefix_ID + list_of_pairs[i]
                     if not os.path.exists(path + self.pair_folder + "/" + new_folder_name):
                         os.mkdir(path + self.pair_folder + "/" + new_folder_name)
-                        if not new_folder_name in pair_folders:
+                        if not new_folder_name in increment:
                             pair_folders.append(new_folder_name)            
 
         def moving_files(self):
@@ -365,14 +361,16 @@ def whole_function():
         print("Analýza složek... ")
         def sync_folders():
             folders = []
-            for files in os.listdir(path):
-                #ignorace ostatnich typu souboru:   
-                if not ".exe" in files:
-                    if not ".bmp" in files:
-                        if not ".txt" in files:
-                            if not ".v" in files:
-                                if not ".xml" in files:
-                                    folders.append(files)
+            unsupported_formats = [".exe",".pdf",".ifz",".bmp",".txt",".v",".xml",".changed",".doc",".docx",".xls",".xlsx",".ppt",".pptx",".csv",".py",".msi"]
+            if os.path.exists(path):
+                for files in os.listdir(path):
+                    #ignorace ostatnich typu souboru:
+                    unsupported_format =0
+                    for suffixes in unsupported_formats:
+                        if suffixes in files:
+                            unsupported_format +=1
+                    if unsupported_format ==0:
+                        folders.append(files)
             return folders
 
         folders = sync_folders()

@@ -51,7 +51,6 @@ Analýza, kontrola a třídění souborů z průmyslových kamer
 
 
 ## Verze 2.5 Lite:
----PROZATIM NUTNO NASTAVIT CESTU AZ DO SLOZEK A NEBO B-----
 
 - Zvláštní verze pro kontrolu odeslaných dvojic (i trojice... neomezeně) souborů za sebou (obsluha odejme paletu a opět vloží tu samou)
 
@@ -68,3 +67,6 @@ Analýza, kontrola a třídění souborů z průmyslových kamer
 - Ve složce PAIRS:
 
 ![ukázka verze 2.5 Lite pairs](images/25pairs.PNG)
+
+## Verze 2.5:
+- Stejné jako 2.5 Lite, jen je programovaná na spuštění ve složce, kde se nacházejí jednotlivé složky s datumy (2023_04_13) -> složky A/B -> složky Height/Normal/Gray se soubory... a projde je všechny postupně

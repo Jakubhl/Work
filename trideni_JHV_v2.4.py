@@ -340,14 +340,16 @@ def whole_function():
         print("Analýza složek... ")
         def sync_folders():
             folders = []
-            for files in os.listdir(path):
-                #ignorace ostatnich typu souboru:   
-                if not ".exe" in files:
-                    if not ".bmp" in files:
-                        if not ".txt" in files:
-                            if not ".v" in files:
-                                if not ".xml" in files:
-                                    folders.append(files)
+            unsupported_formats = [".exe",".pdf",".ifz",".bmp",".txt",".v",".xml",".changed",".doc",".docx",".xls",".xlsx",".ppt",".pptx",".csv",".py",".msi"]
+            if os.path.exists(path):
+                for files in os.listdir(path):
+                    #ignorace ostatnich typu souboru:
+                    unsupported_format =0
+                    for suffixes in unsupported_formats:
+                        if suffixes in files:
+                            unsupported_format +=1
+                    if unsupported_format ==0:
+                        folders.append(files)
             return folders
 
         folders = sync_folders()
