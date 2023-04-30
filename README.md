@@ -69,4 +69,4 @@ Analýza, kontrola a třídění souborů z průmyslových kamer
 ![ukázka verze 2.5 Lite pairs](images/25pairs.PNG)
 
 ## Verze 2.5:
-- Stejné jako 2.5 Lite, jen je programovaná na spuštění ve složce, kde se nacházejí jednotlivé složky s datumy (2023_04_13) -> složky A/B -> složky Height/Normal/Gray se soubory... a projde je všechny postupně
+- Stejné jako 2.5 Lite, jen je programovaná na spuštění ve složce, kde se nacházejí jednotlivé složky s datumy (2023_04_13) -> složky A/B -> složky Height/Normal/Grey se soubory... a projde je všechny postupně
