@@ -328,7 +328,7 @@ def whole_function():
     path_found = 0
     stop_while = 0
     while path_found == 0 and stop_while == 0:
-        print("Upozorneni: funguje pouze o 3 slozky vzdalene... (JHV_Data <-ZDE \2023_04_13\A)")
+        print("Upozorneni: funguje pouze o 3 slozky vzdalene... (JHV_Data <-ZDE /2023_04_13/A)")
         print("")
         path = input("Zadejte cestu k souborům (pokud se aplikace už nachází v dané složce -> enter): ")
 
@@ -510,12 +510,12 @@ def whole_function():
                 advance_sort(sort_by)  # defaultni rozdeleni do slozek
                 print(" - Třídění dokončeno")
 
-        """
+        
         repeat = input("Opakovat? (Y/y) nebo stisknětě libovolný znak pro zavření: ")
         if repeat.casefold() == "y":
             whole_function()
             repeat = ""
-        """
+        
 
 whole_function() #pouze jednou pri spusteni...
 
