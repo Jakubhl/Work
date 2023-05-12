@@ -134,7 +134,7 @@ def whole_function():
                     
                 else:
                     nok_count += 1
-                    shutil.move(path + '/' + files_arr[i] , path + folder_name[0] + "/" + files_arr[i]) #přesun do NOK složky
+                    shutil.move(path + '/' + files_arr[i] , path + folder_name[0] + "/" + files_arr[i]) #přesun do Temp složky
                     count = 0
             
             #if error_length == 1:
@@ -146,7 +146,7 @@ def whole_function():
                 self.error = 1
 
             else:
-                print(" - NOK soubory nezastoupené všemi formáty, celkem: {}".format(nok_count))
+                print(" - Nepáry, celkem: {}".format(nok_count))
                 print(" - OK soubory zastoupené všemi formáty, celkem: {}".format(ok_count))
                 print("")
 
@@ -208,7 +208,7 @@ def whole_function():
             path_found = 1
 
     if path_found == 1:
-        folder_name = ['NOK'] #default
+        folder_name = ['Temp'] #default
         sort_by = 0
 
         #vytvareni zakladnich slozek:
