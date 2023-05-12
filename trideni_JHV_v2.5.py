@@ -142,7 +142,7 @@ def whole_function():
 
                 if count == len(self.files_type_arr): # overeni zda je od vsech typu souboru jeden
                     ok_count += 1
-                    shutil.move(path + self.files_arr[i] , path + folder_name[0] + "/" + self.files_arr[i]) #přesun do OK složky
+                    #shutil.move(path + self.files_arr[i] , path + folder_name[0] + "/" + self.files_arr[i]) #přesun do OK složky
                     count = 0
                     
                 else:
@@ -159,7 +159,7 @@ def whole_function():
                 self.error = 1
 
             else:
-                print(" - NOK soubory nezastoupené všemi formáty, celkem: {}".format(nok_count))
+                print(" - Nepáry, celkem: {}".format(nok_count))
                 print(" - OK soubory zastoupené všemi formáty, celkem: {}".format(ok_count))
                 print("")
         
@@ -174,98 +174,104 @@ def whole_function():
             
             
             #hledani vice souboru (dvojic)---------------------------------------------------------------------------
-            if os.path.exists(path + folder_name[0]):
-                for files in os.listdir(path + folder_name[0]): #hledani v OK slozce
-                    if ".bmp" in files: #pouze pro overeni, zda se jedna o uzitecny soubor
-                        numbers = verification.Get_func_number(files)
-                        if len(numbers) == 4:
-                            keep_searching = True
-                            file_list.append(files + "_" + str(round_number))
-                            while(keep_searching == True): #while cyklus kvuli moznym chybejicim paletkam
-                                if numbers[1] != "9": #nevsimame si cisel 900+
-                                    if increment>max_number_of_pallets:
-                                        increment=0
-                                        round_number +=1
-                                    if increment < 10:
-                                        compare_num = "000"+str(increment)
-                                    if increment >= 10:
-                                        compare_num = "00"+str(increment)
-                                    if compare_num == numbers:
-                                        count +=1
-                                        
-                                        if count > len(self.files_type_arr):
-                                            if numbers not in list_of_pairs: # blok pro zajisteni pouze jednoho vyskytu v poli v rade V JEDNE SADE (0-55)
-                                                if len(list_of_pairs_clear) != 0:
-                                                    if list_of_pairs_clear[len(list_of_pairs_clear)-1] != numbers:
-                                                        list_of_pairs_clear.append(numbers)
-                                                else:
+            for files in os.listdir(path): #hledani v OK slozce
+                if ".bmp" in files: #pouze pro overeni, zda se jedna o uzitecny soubor
+                    numbers = verification.Get_func_number(files)
+                    if len(numbers) == 4:
+                        keep_searching = True
+                        pair_file_list.append(files + "_" + str(round_number))
+                        while(keep_searching == True): #while cyklus kvuli moznym chybejicim paletkam
+                            if numbers[1] != "9": #nevsimame si cisel 900+
+                                if increment>max_number_of_pallets:
+                                    increment=0
+                                    round_number +=1
+                                if increment < 10:
+                                    compare_num = "000"+str(increment)
+                                if increment >= 10:
+                                    compare_num = "00"+str(increment)
+                                if compare_num == numbers:
+                                    count +=1
+                                    
+                                    if count > len(self.files_type_arr):
+                                        if numbers not in list_of_pairs: # blok pro zajisteni pouze jednoho vyskytu v poli v rade V JEDNE SADE (0-55)
+                                            if len(list_of_pairs_clear) != 0:
+                                                if list_of_pairs_clear[len(list_of_pairs_clear)-1] != numbers:
                                                     list_of_pairs_clear.append(numbers)
+                                            else:
+                                                list_of_pairs_clear.append(numbers)
 
-                                                numbers = numbers + "_sada_cislo_" + str(round_number)
-                                                if len(list_of_pairs) != 0:
-                                                    if list_of_pairs[len(list_of_pairs)-1] != numbers:
-                                                        list_of_pairs.append(numbers)
-                                                else:
+                                            numbers = numbers + "_sada_cislo_" + str(round_number)
+                                            if len(list_of_pairs) != 0:
+                                                if list_of_pairs[len(list_of_pairs)-1] != numbers:
                                                     list_of_pairs.append(numbers)
+                                            else:
+                                                list_of_pairs.append(numbers)
 
-                                        keep_searching = False #zavolame dalsi cislo...
+                                    keep_searching = False #zavolame dalsi cislo...
 
-                                    else:
-                                        if(count < len(self.files_type_arr)): #ztracena jen pokud tam je mene jak dva soubory
-                                            lost_pallets.append(compare_num)
-                                        increment+=1
-                                        if count >= 4:
-                                            list_of_pair_count.append(count) #pocet souboru, ktere musi algoritmus vyhledat
-                                        count = 0
-                                            
                                 else:
-                                    keep_searching = False
-                        else:
-                            print("Chyba: delka ID pred znakem: _& neni rovna 4... ",files)
-                print("Nalezeny seznam dvojic v rade za sebou podle ID:")
+                                    if(count < len(self.files_type_arr)): #ztracena jen pokud tam je mene jak dva soubory
+                                        lost_pallets.append(compare_num)
+                                    increment+=1
+                                    if count >= 4:
+                                        list_of_pair_count.append(count) #pocet souboru, ktere musi algoritmus vyhledat
+                                    count = 0
+                                        
+                            else:
+                                keep_searching = False
+                    else:
+                        print("Chyba: delka ID pred znakem: _& neni rovna 4... ",files)
+
+            if len(list_of_pairs_clear) !=0:
+                print("- Nalezeny seznam dvojic v rade za sebou podle ID:")
                 print(list_of_pairs_clear)
                 print("")
-                print("Kazda v poctu souboru:")
+                print("- Kazda v poctu souboru:")
                 print(list_of_pair_count)
                 print("")
-                print("Seznam cisel chybejicich palet v rade za sebou: ")
+            else:
+                print("- Dvojice nenalezeny")
+                print("")
+
+            if len(lost_pallets) !=0:
+                print("- Seznam cisel chybejicich palet v rade za sebou: ")
                 print(lost_pallets)
                 print("")
-                
-                if len(list_of_pairs) != 0: #jestli nejake vubec jsou...
-                    #vytvoreni slozky:
-                    if not os.path.exists(path + self.pair_folder):
-                        os.mkdir(path + self.pair_folder)
-                    j=0
-                    x=0
-                    act_round_number = 0
-                    #kopirovani do zvlastni slozky------------------------------------------------------------------
-                    for numbers in list_of_pairs:
-                        for files in file_list:
-                            
-                            files_splitted = files.split("_")
-                            act_round_number = files_splitted[8]
-                            q=0
-                            files_full_name = ""
-
-                            for characters in files_splitted:#takto slozite pro pripad viceciferneho cisla kola
-                                if q<8 and q<1:
-                                    files_full_name =  files_full_name + characters
-                                if q<8 and q>=1:
-                                    files_full_name =  files_full_name +"_"+ characters
-                                q+=1
-
-                            if (numbers[:4] == verification.Get_func_number(files)) and (numbers.split("_")[3] == files.split("_")[8]):
-                                if j < int(list_of_pair_count[x]):
-                                    if not os.path.exists(path + self.pair_folder + '/' + files_full_name):
-                                        shutil.copy(path + folder_name[0] + "/" + files_full_name , path + self.pair_folder + '/' + files_full_name)
-                                    j+=1  
-                        j=0
-                        x+=1
             else:
+                print("- Chybejici palety nenalezeny")
                 print("")
-                print("Klicova slozka: ",path+folder_name[0] ," nenalezena\n- Vse jsou NOK soubory?")
-                print("")
+
+            if len(list_of_pairs) != 0: #jestli nejake vubec jsou...
+                #vytvoreni slozky s páry:
+                if not os.path.exists(path + self.pair_folder):
+                    os.mkdir(path + self.pair_folder)
+                j=0
+                x=0
+                act_round_number = 0
+                #kopirovani do zvlastni slozky------------------------------------------------------------------
+                for numbers in list_of_pairs:
+                    for files in pair_file_list:                    
+                        files_splitted = files.split("_")
+                        act_round_number = files_splitted[8]
+                        q=0
+                        files_full_name = ""
+
+                        for characters in files_splitted:#takto slozite pro pripad viceciferneho cisla kola
+                            if q<8 and q<1:
+                                files_full_name =  files_full_name + characters
+                            if q<8 and q>=1:
+                                files_full_name =  files_full_name +"_"+ characters
+                            q+=1
+
+                        if (numbers[:4] == verification.Get_func_number(files)) and (numbers.split("_")[3] == files.split("_")[8]):
+                            if j < int(list_of_pair_count[x]):
+                                if not os.path.exists(path + self.pair_folder + '/' + files_full_name):
+                                    #shutil.copy(path + folder_name[0] + "/" + files_full_name , path + self.pair_folder + '/' + files_full_name)
+                                    shutil.copy(path + files_full_name , path + self.pair_folder + '/' + files_full_name)
+                                j+=1  
+                    j=0
+                    x+=1
+            
         def creating_folders(self):
             #podle typu souboru:
             if sort_by == 0:
@@ -277,18 +283,27 @@ def whole_function():
                             folder_name.append(new_folder_name)
 
             if sort_by == 4:
-                for i in range(0,len(list_of_pairs)):
-                    new_folder_name = prefix_ID + list_of_pairs[i]
+                 for i in range(0,len(self.files_type_arr)):
+                    new_folder_name = self.files_type_arr[i]
                     if not os.path.exists(path + self.pair_folder + "/" + new_folder_name):
                         os.mkdir(path + self.pair_folder + "/" + new_folder_name)
-                        if not new_folder_name in increment:
-                            pair_folders.append(new_folder_name)            
+                        if not new_folder_name in pair_folders:
+                            pair_folders.append(new_folder_name)    
 
         def moving_files(self):
             files_split = ""
             #presun souboru do slozek:
             if sort_by == 0:
-                if os.path.exists(path + folder_name[0]):
+                for files in os.listdir(path): #v OK slozce
+                    if ".bmp" in files:
+                        for items in folder_name: #pro vsechny slozky...
+                            if items in files:
+                                if not os.path.exists(path + items + "/" + files):
+                                    shutil.move(path + files, path + items + "/" + files)
+
+
+
+                """if os.path.exists(path + folder_name[0]):
                     for files in os.listdir(path + folder_name[0]): #v OK slozce
                         for items in folder_name: #pro vsechny slozky...
                             if items in files:
@@ -296,39 +311,29 @@ def whole_function():
                                     shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
                 else:
                     print("")
-                    print("Klicova slozka: ",path+folder_name[0] ," nenalezena\n- Vse jsou NOK soubory?")
-                    print("")
+                    print("Klíčová složka: ",path+folder_name[0] ," nenalezena\n- Vše jsou nepáry?")
+                    print("")"""
+
+
+
             if sort_by == 4:
-                #for files in os.listdir(path + self.pair_folder): #v PAIR slozce
-                for files in file_list:
-                    #func_num = verification.Get_func_number(files)
-                    for items in pair_folders:
-                        if ((prefix_ID + files.split("_")[6]) == items[:4+len(prefix_ID)]) and (files.split("_")[8] == items.split("_")[4]):
-                            if not os.path.exists(path + self.pair_folder+"/"+ items + "/" + files):
-
-                                files_splitted = files.split("_")
-                                q=0
-                                files_full_name = ""
-
-                                for characters in files_splitted:#takto slozite pro pripad viceciferneho cisla kola
-                                    if q<8 and q<1:
-                                        files_full_name =  files_full_name + characters
-                                    if q<8 and q>=1:
-                                        files_full_name =  files_full_name +"_"+ characters
-                                    q+=1
-
-                                shutil.move(path + self.pair_folder + "/" + files_full_name, path + self.pair_folder + "/" +items + "/" + files_full_name)                               
+                for files in os.listdir(path + self.pair_folder):
+                    if ".bmp" in files:
+                        for items in pair_folders:
+                            if files.split(".")[1] == items:
+                                if not os.path.exists(path + self.pair_folder + "/" +items + "/" + files):
+                                    shutil.move(path + self.pair_folder + "/" + files, path + self.pair_folder + "/" +items + "/" + files)
 
     #MAIN//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////        
     path = ""
     print(" - Třídění souborů z průmyslových kamer...")
     print("")
 
-    # zadejte cestu k souboru:
+    # zadejte cestu k souborum:
     path_found = 0
     stop_while = 0
     while path_found == 0 and stop_while == 0:
-        print("Upozorneni: funguje pouze o 3 slozky vzdalene... (JHV_Data <-ZDE /2023_04_13/A)")
+        print("Upozornění: funguje pouze o 3 slozky vzdalene... (v cestě, kde se nacházejí složky s datumy)")
         print("")
         path = input("Zadejte cestu k souborům (pokud se aplikace už nachází v dané složce -> enter): ")
 
@@ -336,7 +341,7 @@ def whole_function():
         #path = "D:\JHV\Kamery\JHV_Data/2023_04_13\A"
         #path = "D:\JHV\Kamery\JHV_Data"
 
-        #spusteni v souboru, kde se aplikace aktualne nachazi
+        #spusteni v ceste, kde se aplikace aktualne nachazi
         if path == "":
             path = os.getcwd()
 
@@ -359,8 +364,8 @@ def whole_function():
             path_found = 1
 
     if path_found == 1:
-        folder_name = ['OK','NOK'] #default
-        basic_folder_name = ['OK','NOK'] #default
+        folder_name = ['OK','Temp'] 
+        basic_folder_name = ['OK','Temp'] #default
         sort_by = 0
 
 
@@ -377,7 +382,6 @@ def whole_function():
                         if suffixes in files:
                             unsupported_format +=1
                     if unsupported_format ==0:
-                        #if files != "PAIRS":
                         folders.append(files)
                                         
             return folders
@@ -395,122 +399,136 @@ def whole_function():
 
         #STAGE2///////////////////////////////////////////////////
         path_list_not_found_st2  = []
+        paths_to_folders = []
         if len(path_list_not_found) != 0:
             for paths in path_list_not_found:
                 folders = sync_folders(paths)
                 for folds in folders:
                     count = 0
-                    for files in os.listdir(paths + "/" + folds):
+                    path_x = paths + "/" + folds
+
+                    for files in os.listdir(path_x):
                         if ".bmp" in files:
                             count+=1
+                        if (path_x.split("/")[-1] == "A") or (path_x.split("/")[-1] == "B"):
+                            count+=1
+                            if not path_x + "/" in paths_to_folders:
+                                paths_to_folders.append(path_x + "/")
+
+
                     if count ==0:
                         path_list_not_found_st2.append(paths + "/"  + folds)
         else:
             print("Chyba: aplikace programovana na pruchod 3 slozek, tzn.: path + \"2023_04_13/A/Height\" \n-Pro primy pristup do slozky zvolte lite verzi programu")
 
         #STAGE3///////////////////////////////////////////////////
+        cont = "n"
         path_list_not_found_st3  = []
-        paths_to_folders = []
         if len(path_list_not_found_st2) != 0:
             for paths in path_list_not_found_st2:
                 folders = sync_folders(paths)
                 for folds in folders:
                     count = 0
                     for files in os.listdir(paths + "/" + folds):
-                        if ".bmp" in files:
+                        if (".bmp" in files) or (paths.split("/")[-1] == "A") or (paths.split("/")[-1] == "B"):
                             count+=1
-                            if not paths+ "/" +folds in path_list_to_sort:
-                                path_list_to_sort.append(paths + "/"  + folds)
-                                if paths.split("/")[-1] == "A" or paths.split("/")[-1] == "B":
-                                    if not paths + "/" in paths_to_folders:
-                                        paths_to_folders.append(paths + "/")
+                            if paths.split("/")[-1] == "A" or paths.split("/")[-1] == "B":
+                                if not paths + "/" in paths_to_folders:
+                                    paths_to_folders.append(paths + "/")
                                 
                     if count ==0:
                         path_list_not_found_st3.append(paths + "/"  + folds)
 
             print("")
             #print("soubory pro trideni nalezeny ve slozkach: ",path_list_to_sort)
-            #print("")
-            print("Seznam slozek pro overeni: ",paths_to_folders)
-            print("")      
+
+            print("- Chystam se projit tyto cesty:\n",paths_to_folders)
+            print("")
+            cont = input("ANO/NE? (enter/n): ") #CONTINUE?
+            #print("Seznam slozek pro overeni: ",paths_to_folders)
+            print("")
         else:
             print("Chyba: aplikace programovana na pruchod 3 slozek, tzn.: path + \"2023_04_13/A/Height\" \n-Pro primy pristup do slozky zvolte lite verzi programu")
 
-        # HLAVNI FOR CYKLUS //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////    
-        for paths in paths_to_folders:
-            path=paths
-            print("")
-            print("//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////")
-            print("- Provadim trideni v ceste: ",path)
-            print("//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////")
-            print("")
+        if cont == "":
+            # HLAVNI FOR CYKLUS //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////    
+            for paths in paths_to_folders:
+                path=paths
+                print("")
+                print("//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////")
+                print("- Provadim trideni v ceste: ",path)
+                print("//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////")
+                print("")
 
-            pair_folders = []
-            list_of_pairs = []
-            increment = []
-            file_list = []
-            #vytvareni zakladnich slozek:
-            for x in range(0,len(basic_folder_name)):
-                if not os.path.exists(path + basic_folder_name[x]):
-                    os.mkdir(path + basic_folder_name[x] + "/")
+                pair_folders = []
+                list_of_pairs = []
+                pair_file_list = []
+                #vytvareni zakladnich slozek:
+                """for x in range(0,len(basic_folder_name)):
+                    if not os.path.exists(path + basic_folder_name[x]):
+                        os.mkdir(path + basic_folder_name[x] + "/")"""
+                        
+                if not os.path.exists(path + basic_folder_name[1]): #vytvareni slozky pro nepary
+                    os.mkdir(path + basic_folder_name[1] + "/")
+                #vzorek pro automatickou úpravu různě dlouhých jmen (první blok v sorting_files), delší= zakreje méně znaků, kratší = více...
+                example_file_name = "221013_092241_0000000842_21_&Cam1Img.Height.bmp"
+                                
+                example_file_name_cut = example_file_name.split("&")
+                example_file_name_cut = example_file_name_cut[0]
+                #example_file_name = "221013_092241_0000000842_21_" #&Cam1Img.Height.bmp" #uz pracuju s takto orizlym...
+                hide_cnt = 4 #23   # defaultní počet zakrytých znaků při porovnávání normal a height souborů od & doleva
+                #naschromáždění souborů na jedno místo
 
-            #vzorek pro automatickou úpravu různě dlouhých jmen (první blok v sorting_files), delší= zakreje méně znaků, kratší = více...
-            example_file_name = "221013_092241_0000000842_21_&Cam1Img.Height.bmp"
-            """for i in range(0, len(folders)):
-                for files in os.listdir(path+folders[i]):
-                    if ".bmp" in files:
-                        if example_file_name == "":
-                            example_file_name = files"""
-                            
-            example_file_name_cut = example_file_name.split("&")
-            example_file_name_cut = example_file_name_cut[0]
-            #example_file_name = "221013_092241_0000000842_21_" #&Cam1Img.Height.bmp" #uz pracuju s takto orizlym...
-            hide_cnt = 4 #23   # defaultní počet zakrytých znaků při porovnávání normal a height souborů od & doleva
-            #naschromáždění souborů na jedno místo
+                v=verification()
+                v.Collect_files()
 
-            v=verification()
-            v.Collect_files()
+                #třídění do polí, zjišťování suffixu
+                v.Get_suffix()
 
-            #třídění do polí, zjišťování suffixu
-            v.Get_suffix()
-            v.Sorting_files()
+                v.creating_folders()
+                print(" - Vytváření složek: hotovo")
 
-            #odstranění prázdných složek včetně základních (exception = 0)
-            remove_empty_dirs(0)
+                v.Sorting_files()
 
-            if v.error == 1:
-                print("Chyba: v zadané cestě: ",path," nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &), třídění ukončeno")
+                #odstranění prázdných složek včetně základních (exception = 0)
+                remove_empty_dirs(0)
 
-            else:
-                def advance_sort(sort_by):
-                    if sort_by == 0:
-                        v.creating_folders()
-                        print(" - Vytváření složek: hotovo")
-                        v.moving_files()
-                        print(" - Přesouvání souborů: hotovo")
-                        print("")
-                        remove_empty_dirs(0)
+                if v.error == 1:
+                    print("Chyba: v zadané cestě: ",path," nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &), třídění ukončeno")
 
-                    #kontrola dvojic
-                    if sort_by == 4:
-                        v.sort_by_ID()
-                        print(" - Kontrola dvojic: hotovo")
-                        if list_of_pairs != 0:
+                else:
+                    def advance_sort(sort_by):
+                        if sort_by == 0:
                             v.creating_folders()
                             print(" - Vytváření složek: hotovo")
                             v.moving_files()
                             print(" - Přesouvání souborů: hotovo")
                             print("")
-                        else: 
-                            print(" - Nebyly nalezeny zadne dvojice")
-                                        
-                sort_by = 4
-                advance_sort(sort_by)
-                sort_by = 0
-                advance_sort(sort_by)  # defaultni rozdeleni do slozek
-                print(" - Třídění dokončeno")
+                            remove_empty_dirs(0)
 
-        
+                        #kontrola dvojic
+                        if sort_by == 4:
+                            v.sort_by_ID()
+                            print(" - Kontrola dvojic: hotovo")
+                            if len(list_of_pairs) != 0:
+                                v.creating_folders()
+                                print(" - Vytváření složek: hotovo")
+                                v.moving_files()
+                                print(" - Přesouvání souborů: hotovo")
+                                print("")
+                            else: 
+                                print(" - Nebyly nalezeny zadne dvojice")
+                                            
+                    sort_by = 4
+                    advance_sort(sort_by)
+                    sort_by = 0
+                    advance_sort(sort_by)  # defaultni rozdeleni do slozek
+                    print(" - Třídění pro cestu: ",path," dokončeno")
+
+        else:
+            print("")
+            print("- Trideni zruseno uzivatelem")
+            print("")
         repeat = input("Opakovat? (Y/y) nebo stisknětě libovolný znak pro zavření: ")
         if repeat.casefold() == "y":
             whole_function()

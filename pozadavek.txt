@@ -19,3 +19,7 @@ detekce dvojic - dvojice prekopirovat do stage 2 do slozky PAIRS s rozdelenim A 
 2023_04_13-07_11_09_PALETKA_   0020   _&Cam2Img.Height
 
 max paletek: 55
+
+12.5.2023
+-Do pairs pouze rozdelit na height/normal
+-Chyba - nekdy se zastavi na ok slozce, smichane soubory

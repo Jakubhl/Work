@@ -151,7 +151,7 @@ def whole_function():
                     
                 else:
                     nok_count += 1
-                    shutil.move(path + '/' + self.files_arr[i] , path + folder_name[1] + "/" + self.files_arr[i]) #přesun do NOK složky
+                    shutil.move(path + '/' + self.files_arr[i] , path + folder_name[1] + "/" + self.files_arr[i]) #přesun do temp složky
                     count = 0
             
             if error_length == 1:
@@ -163,7 +163,7 @@ def whole_function():
                 self.error = 1
 
             else:
-                print(" - NOK soubory nezastoupené všemi formáty, celkem: {}".format(nok_count))
+                print(" - Nepáry, celkem: {}".format(nok_count))
                 print(" - OK soubory zastoupené všemi formáty, celkem: {}".format(ok_count))
                 print("")
         
@@ -222,15 +222,25 @@ def whole_function():
                                     
                         else:
                             keep_searching = False
-            print("Nalezeny seznam dvojic v rade za sebou podle ID:")
-            print(list_of_pairs_clear)
-            print("")
-            print("Kazda v poctu souboru:")
-            print(list_of_pair_count)
-            print("")
-            print("Seznam cisel chybejicich palet v rade za sebou: ")
-            print(lost_pallets)
-            print("")
+
+            if len(list_of_pairs_clear) !=0:
+                print("- Nalezeny seznam dvojic v rade za sebou podle ID:")
+                print(list_of_pairs_clear)
+                print("")
+                print("- Kazda v poctu souboru:")
+                print(list_of_pair_count)
+                print("")
+            else:
+                print("- Dvojice nenalezeny")
+                print("")
+
+            if len(lost_pallets) !=0:
+                print("- Seznam cisel chybejicich palet v rade za sebou: ")
+                print(lost_pallets)
+                print("")
+            else:
+                print("- Chybejici palety nenalezeny")
+                print("")
             
             if len(list_of_pairs) != 0: #jestli nejake vubec jsou...
                 #vytvoreni slozky:
@@ -274,12 +284,12 @@ def whole_function():
                             folder_name.append(new_folder_name)
 
             if sort_by == 4:
-                for i in range(0,len(list_of_pairs)):
-                    new_folder_name = prefix_ID + list_of_pairs[i]
+                 for i in range(0,len(self.files_type_arr)):
+                    new_folder_name = self.files_type_arr[i]
                     if not os.path.exists(path + self.pair_folder + "/" + new_folder_name):
                         os.mkdir(path + self.pair_folder + "/" + new_folder_name)
-                        if not new_folder_name in increment:
-                            pair_folders.append(new_folder_name)            
+                        if not new_folder_name in pair_folders:
+                            pair_folders.append(new_folder_name)    
 
         def moving_files(self):
             files_split = ""
@@ -292,25 +302,12 @@ def whole_function():
                                 shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
 
             if sort_by == 4:
-                #for files in os.listdir(path + self.pair_folder): #v PAIR slozce
-                for files in file_list:
-                    #func_num = verification.Get_func_number(files)
-                    for items in pair_folders:
-                        if ((prefix_ID + files.split("_")[6]) == items[:4+len(prefix_ID)]) and (files.split("_")[8] == items.split("_")[4]):
-                            if not os.path.exists(path + self.pair_folder+"/"+ items + "/" + files):
-
-                                files_splitted = files.split("_")
-                                q=0
-                                files_full_name = ""
-
-                                for characters in files_splitted:#takto slozite pro pripad viceciferneho cisla kola
-                                    if q<8 and q<1:
-                                        files_full_name =  files_full_name + characters
-                                    if q<8 and q>=1:
-                                        files_full_name =  files_full_name +"_"+ characters
-                                    q+=1
-
-                                shutil.move(path + self.pair_folder + "/" + files_full_name, path + self.pair_folder + "/" +items + "/" + files_full_name)                               
+                for files in os.listdir(path + self.pair_folder):
+                    if ".bmp" in files:
+                        for items in pair_folders:
+                            if files.split(".")[1] == items:
+                                if not os.path.exists(path + self.pair_folder + "/" +items + "/" + files):
+                                    shutil.move(path + self.pair_folder + "/" + files, path + self.pair_folder + "/" +items + "/" + files)                             
 
     #MAIN//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////        
     path = ""
@@ -349,7 +346,7 @@ def whole_function():
             path_found = 1
 
     if path_found == 1:
-        folder_name = ['OK','NOK'] #default
+        folder_name = ['OK','Temp'] #default
         sort_by = 0
 
         #vytvareni zakladnich slozek:

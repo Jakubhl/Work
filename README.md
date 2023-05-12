@@ -52,7 +52,7 @@ Analýza, kontrola a třídění souborů z průmyslových kamer
 
 ## Verze 2.5 Lite:
 
-- Zvláštní verze pro kontrolu odeslaných dvojic (i trojice... neomezeně) souborů za sebou (obsluha odejme paletu a opět vloží tu samou)
+- Zvláštní verze pro kontrolu odeslaných dvojic (i trojice... neomezeně) souborů za sebou (obsluha odejme paletu a opět vloží tu samou...)
 
 - funguje pouze pro případ názvu v tomto tvaru: 2023_04_13-07_11_09_xxxx_   0020   _&Cam2Img.Height
 	- tzn. musi se jednat o čtyřciferné číslo nalevo od _&
@@ -60,7 +60,7 @@ Analýza, kontrola a třídění souborů z průmyslových kamer
 	- maximálni počet palet v sadě je přednastaven na: 55
 
 
-- Nalezené dvojice kopíruje do složky: "PAIRS", ve které je podrobně roztřídí do samostatných složek podle ID a aktuální sady
+- Nalezené dvojice kopíruje do složky: "PAIRS", ve které je rovněž roztřídí podle suffixu (.Normal/.Height...)
 
 ![ukázka verze 2.5 Lite](images/25basic.PNG)
 
@@ -69,4 +69,4 @@ Analýza, kontrola a třídění souborů z průmyslových kamer
 ![ukázka verze 2.5 Lite pairs](images/25pairs.PNG)
 
 ## Verze 2.5:
-- Stejné jako 2.5 Lite, jen je programovaná na spuštění ve složce, kde se nacházejí jednotlivé složky s datumy (2023_04_13) -> složky A/B -> složky Height/Normal/Grey se soubory... a projde je všechny postupně
+- Stejné jako 2.5 Lite, jen je programovaná na spuštění ve složce, kde se nacházejí jednotlivé složky s datumy (2023_04_13) -> rozhoduje se podle složky A/B -> složky Height/Normal/Grey se soubory... a projde je všechny postupně s dotazem o povolení
