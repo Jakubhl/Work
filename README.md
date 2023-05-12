@@ -49,7 +49,6 @@ Analýza, kontrola a třídění souborů z průmyslových kamer
 
 ![ukázka mannual. módu 2.4](images/24_manual.PNG)
 
-
 ## Verze 2.5 Lite:
 
 - Zvláštní verze pro kontrolu odeslaných dvojic (i trojice... neomezeně) souborů za sebou (obsluha odejme paletu a opět vloží tu samou...)
