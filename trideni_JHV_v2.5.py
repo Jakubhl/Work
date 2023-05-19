@@ -3,16 +3,6 @@ import os
 import shutil
 import re
 
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
 
 def whole_function():
 
@@ -35,7 +25,7 @@ def whole_function():
                             os.rmdir(path + dirs)
                             removed_count += 1
             if removed_count != 0:
-                print(bcolors.OKGREEN +"- Přebytečné složky odstraněny" + bcolors.ENDC)
+                print("- Přebytečné složky odstraněny" )
                 print("")
                         
         else:
@@ -49,7 +39,7 @@ def whole_function():
                         os.rmdir(path + dirs)
                         removed_count += 1
             if removed_count != 0:
-                print(bcolors.OKGREEN +"- Přebytečné složky odstraněny"+ bcolors.ENDC)
+                print("- Přebytečné složky odstraněny")
                 print("")
 
     #funkce pro overeni spravneho inputu
@@ -164,11 +154,11 @@ def whole_function():
                     count = 0
             
             if error_length == 1:
-                print(bcolors.WARNING +"- Upozornění: délka názvu před \"&\" některých souborů v dané cestě se liší (možná nefunkční manuální definice zakrytých znaků)" + bcolors.ENDC)
+                print("- Upozornění: délka názvu před \"&\" některých souborů v dané cestě se liší (možná nefunkční manuální definice zakrytých znaků)" )
                 print("")
 
             if self.files_arr == []:
-                print(bcolors.FAIL +"- Chyba: V ceste: ",path," Nebyly nalezeny žádné soubory" + bcolors.ENDC)
+                print("- Chyba: V ceste: ",path," Nebyly nalezeny žádné soubory" )
                 self.error = 1
 
             else:
@@ -236,7 +226,7 @@ def whole_function():
                             keep_searching = False
                 else:
                     if mes_send == False: #at nezaspamuje cely terminal...
-                        print(bcolors.FAIL +"- Chyba: delka ID pred znakem: _& neni rovna 4...\n",files,"\n V ceste:",path + bcolors.ENDC)
+                        print("- Chyba: delka ID pred znakem: _& neni rovna 4...\n",files,"\n V ceste:",path )
                         mes_send = True
 
             if len(list_of_pairs_clear) !=0:
@@ -337,7 +327,7 @@ def whole_function():
     path_found = 0
     stop_while = 0
     while path_found == 0 and stop_while == 0:
-        print(bcolors.WARNING +"- Upozornění: funguje pouze o 3 slozky vzdalene... (v cestě, kde se nacházejí složky s datumy)" + bcolors.ENDC)
+        print("- Upozornění: funguje pouze o 3 slozky vzdalene... (v cestě, kde se nacházejí složky s datumy)")
         print("")
         path = input("Zadejte cestu k souborům (pokud se aplikace už nachází v dané složce -> enter): ")
 
@@ -363,7 +353,7 @@ def whole_function():
 
         if not os.path.exists(path):
             print(path)
-            print(bcolors.FAIL +"Zadaná cesta k souborům nebyla nalezena" + bcolors.ENDC)
+            print("Zadaná cesta k souborům nebyla nalezena")
             stop_while = 1 #ochrana proti neustalemu vypisovani
         else:
             path_found = 1
@@ -425,7 +415,7 @@ def whole_function():
                     if count ==0:
                         path_list_not_found_st2.append(paths + "/"  + folds)
         else:
-            print(bcolors.FAIL +"- Chyba: aplikace programovana na pruchod 3 slozek, tzn.: path + \"2023_04_13/A/Height\" \n-Pro primy pristup do slozky zvolte lite verzi programu" + bcolors.ENDC)
+            print("- Chyba: aplikace programovana na pruchod 3 slozek, tzn.: path + \"2023_04_13/A/Height\" \n-Pro primy pristup do slozky zvolte lite verzi programu")
 
         #STAGE3///////////////////////////////////////////////////
         path_list_not_found_st3  = []
@@ -446,7 +436,7 @@ def whole_function():
 
             
         elif paths_to_folders == 0:
-            print(bcolors.FAIL +"- Chyba: aplikace programovana na pruchod 3 slozek, tzn.: path + \"2023_04_13/A/Height\" \n-Pro primy pristup do slozky zvolte lite verzi programu" + bcolors.ENDC)
+            print("- Chyba: aplikace programovana na pruchod 3 slozek, tzn.: path + \"2023_04_13/A/Height\" \n-Pro primy pristup do slozky zvolte lite verzi programu")
 
         if len(paths_to_folders) !=0:
             print("")
@@ -491,48 +481,48 @@ def whole_function():
                 v.Get_suffix()
 
                 v.creating_folders()
-                #print(bcolors.OKGREEN +" - Vytváření složek: hotovo" + bcolors.ENDC)
+                #print(" - Vytváření složek: hotovo" )
 
                 v.Sorting_files()
 
                 if v.error == 1:
-                    print(bcolors.FAIL +"Chyba: v zadané cestě: ",path," nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &), třídění ukončeno"+ bcolors.ENDC)
+                    print("Chyba: v zadané cestě: ",path," nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &), třídění ukončeno")
 
                 else:
-                    def advance_sort(sort_by):
-                        #odstranění prázdných složek včetně základních (exception = 0)
-                        remove_empty_dirs(0)
+                    #odstranění prázdných složek včetně základních (exception = 0)
+                    remove_empty_dirs(0)
 
+                    def advance_sort(sort_by):
                         if sort_by == 0:
                             v.creating_folders()
-                            #print(bcolors.OKGREEN + "- Vytváření složek: hotovo" + bcolors.ENDC)
+                            #print( "- Vytváření složek: hotovo" )
                             v.moving_files()
-                            #print(bcolors.OKGREEN + "- Přesouvání souborů: hotovo" + bcolors.ENDC)
+                            #print( "- Přesouvání souborů: hotovo" )
                             #print("")
                             remove_empty_dirs(0)
 
                         #kontrola dvojic
                         if sort_by == 4:
                             v.sort_by_ID()
-                            print(bcolors.OKGREEN + "- Kontrola dvojic: hotovo" + bcolors.ENDC)
+                            print( "- Kontrola dvojic: hotovo")
                             if len(list_of_pairs) != 0:
                                 v.creating_folders()
-                                print(bcolors.OKGREEN + "- Vytváření složek: hotovo" + bcolors.ENDC)
+                                print( "- Vytváření složek: hotovo")
                                 v.moving_files()
-                                print(bcolors.OKGREEN + "- Přesouvání souborů: hotovo" + bcolors.ENDC)
+                                print( "- Přesouvání souborů: hotovo")
                                 print("")
                             else: 
-                                print(bcolors.WARNING + "- Nebyly nalezeny zadne dvojice" + bcolors.ENDC)
+                                print("- Nebyly nalezeny zadne dvojice")
                                             
                     sort_by = 4
                     advance_sort(sort_by)
                     sort_by = 0
                     advance_sort(sort_by)  # defaultni rozdeleni do slozek
-                    print(bcolors.OKGREEN +"- Třídění pro cestu: ",path," dokončeno" + bcolors.ENDC)
+                    print("- Třídění pro cestu: ",path," dokončeno" )
 
         else:
             print("")
-            print(bcolors.FAIL +"- Trideni zruseno uzivatelem"+ bcolors.ENDC)
+            print("- Trideni zruseno uzivatelem")
             print("")
         repeat = input("Opakovat? (Y/y) nebo stisknětě libovolný znak pro zavření: ")
         if repeat.casefold() == "y":

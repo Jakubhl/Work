@@ -407,6 +407,7 @@ def whole_function():
         else:
             #odstranění prázdných složek včetně základních (exception = 0)
             remove_empty_dirs(0)
+            
             def advance_sort(sort_by):
                 if sort_by == 0:
                     v.creating_folders()
