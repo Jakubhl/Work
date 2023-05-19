@@ -3,6 +3,17 @@ import os
 import shutil
 import re
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 def whole_function():
 
     prefix_ID = "ID_"
@@ -20,11 +31,11 @@ def whole_function():
                         for files in os.listdir(path + dirs):
                             number_of_files +=1
                         if number_of_files == 0:
-                            print("Odstraněna prázdná složka: ", dirs)
+                            #print("Odstraněna prázdná složka: ", dirs)
                             os.rmdir(path + dirs)
                             removed_count += 1
             if removed_count != 0:
-                print("- Přebytečné složky odstraněny")
+                print(bcolors.OKGREEN +"- Přebytečné složky odstraněny" + bcolors.ENDC)
                 print("")
                         
         else:
@@ -34,11 +45,11 @@ def whole_function():
                     for files in os.listdir(path + dirs):
                         number_of_files +=1
                     if number_of_files == 0:
-                        print("Odstraněna prázdná složka: ", dirs)
+                        #print("Odstraněna prázdná složka: ", dirs)
                         os.rmdir(path + dirs)
                         removed_count += 1
             if removed_count != 0:
-                print("- Přebytečné složky odstraněny")
+                print(bcolors.OKGREEN +"- Přebytečné složky odstraněny"+ bcolors.ENDC)
                 print("")
 
     #funkce pro overeni spravneho inputu
@@ -96,7 +107,7 @@ def whole_function():
 
                 return func_number
             else:
-                print("Chyba: soubor {} neobsahuje rozhodovaci symbol \"_\", potrebny pro urceni cisla funkce".format(file_for_analyze))
+                print("- Chyba: soubor {} neobsahuje rozhodovaci symbol \"_\", potrebny pro urceni cisla funkce".format(file_for_analyze))
 
         def Get_suffix(self):
             files_type = ""
@@ -131,6 +142,8 @@ def whole_function():
                     files_cut = files_cut[0]
                     hide_cnt_from_start = len(files_cut) - int(hide_cnt)
                     files_arr_cut.append(files_cut[0:(hide_cnt_from_start)])        
+            #trideni podle jmena...
+            self.files_arr = sorted(self.files_arr)
 
             for i in range(0,len(files_arr_cut)):
 
@@ -151,76 +164,80 @@ def whole_function():
                     count = 0
             
             if error_length == 1:
-                print("Upozornění: délka názvu před \"&\" některých souborů v dané cestě se liší (možná nefunkční manuální definice zakrytých znaků)")
+                print(bcolors.WARNING +"- Upozornění: délka názvu před \"&\" některých souborů v dané cestě se liší (možná nefunkční manuální definice zakrytých znaků)" + bcolors.ENDC)
                 print("")
 
             if self.files_arr == []:
-                print("Chyba: V ceste: ",path," Nebyly nalezeny žádné soubory")
+                print(bcolors.FAIL +"- Chyba: V ceste: ",path," Nebyly nalezeny žádné soubory" + bcolors.ENDC)
                 self.error = 1
 
             else:
-                print(" - Nepáry, celkem: {}".format(nok_count))
-                print(" - OK soubory zastoupené všemi formáty, celkem: {}".format(ok_count))
+                print("- Nepáry, celkem: {}".format(nok_count))
+                print("- OK soubory zastoupené všemi formáty, celkem: {}".format(ok_count))
                 print("")
         
         def sort_by_ID(self):
-            increment=0
             compare_num = ""
             count = 0
             lost_pallets = []
+            pair_file_list = []
             round_number = 0
             list_of_pairs_clear = []
             list_of_pair_count = []
-            
+            ref_file = self.files_arr[0]
+            increment=int(verification.Get_func_number(ref_file)) #reference aby palety nezacinaly vzdy on nuly
             
             #hledani vice souboru (dvojic)---------------------------------------------------------------------------
-            for files in os.listdir(path): #hledani v OK slozce
-                if ".bmp" in files: #pouze pro overeni, zda se jedna o uzitecny soubor
-                    numbers = verification.Get_func_number(files)
-                    if len(numbers) == 4:
-                        keep_searching = True
-                        pair_file_list.append(files + "_" + str(round_number))
-                        while(keep_searching == True): #while cyklus kvuli moznym chybejicim paletkam
-                            if numbers[1] != "9": #nevsimame si cisel 900+
-                                if increment>max_number_of_pallets:
-                                    increment=0
-                                    round_number +=1
-                                if increment < 10:
-                                    compare_num = "000"+str(increment)
-                                if increment >= 10:
-                                    compare_num = "00"+str(increment)
-                                if compare_num == numbers:
-                                    count +=1
-                                    
-                                    if count > len(self.files_type_arr):
-                                        if numbers not in list_of_pairs: # blok pro zajisteni pouze jednoho vyskytu v poli v rade V JEDNE SADE (0-55)
-                                            if len(list_of_pairs_clear) != 0:
-                                                if list_of_pairs_clear[len(list_of_pairs_clear)-1] != numbers:
-                                                    list_of_pairs_clear.append(numbers)
-                                            else:
+            mes_send = False #jen jednou za slozku... at nespamuje
+            for files in self.files_arr: #hledani v listu se soubory
+                #if ".bmp" in files: #pouze pro overeni, zda se jedna o uzitecny soubor
+                numbers = verification.Get_func_number(files)
+                if len(numbers) == 4:
+                    keep_searching = True
+                    pair_file_list.append(files + "_" + str(round_number))
+                    while(keep_searching == True): #while cyklus kvuli moznym chybejicim paletkam
+                        if numbers[1] != "9": #nevsimame si cisel 900+
+                            if increment>max_number_of_pallets:
+                                increment=0
+                                round_number +=1
+                            if increment < 10:
+                                compare_num = "000"+str(increment)
+                            if increment >= 10:
+                                compare_num = "00"+str(increment)
+                            if compare_num == numbers:
+                                count +=1
+                                
+                                if count > len(self.files_type_arr):
+                                    if numbers not in list_of_pairs: # blok pro zajisteni pouze jednoho vyskytu v poli v rade V JEDNE SADE (0-55)
+                                        if len(list_of_pairs_clear) != 0:
+                                            if list_of_pairs_clear[len(list_of_pairs_clear)-1] != numbers:
                                                 list_of_pairs_clear.append(numbers)
+                                        else:
+                                            list_of_pairs_clear.append(numbers)
 
-                                            numbers = numbers + "_sada_cislo_" + str(round_number)
-                                            if len(list_of_pairs) != 0:
-                                                if list_of_pairs[len(list_of_pairs)-1] != numbers:
-                                                    list_of_pairs.append(numbers)
-                                            else:
-                                                list_of_pairs.append(numbers)
+                                        numbers_with_round = numbers + "_sada_cislo_" + str(round_number)
+                                        if len(list_of_pairs) != 0:
+                                            if list_of_pairs[len(list_of_pairs)-1] != numbers_with_round:
+                                                list_of_pairs.append(numbers_with_round)
+                                        else:
+                                            list_of_pairs.append(numbers_with_round)
 
-                                    keep_searching = False #zavolame dalsi cislo...
+                                keep_searching = False #zavolame dalsi cislo...
 
-                                else:
-                                    if(count < len(self.files_type_arr)): #ztracena jen pokud tam je mene jak dva soubory
-                                        lost_pallets.append(compare_num)
-                                    increment+=1
-                                    if count >= 4:
-                                        list_of_pair_count.append(count) #pocet souboru, ktere musi algoritmus vyhledat
-                                    count = 0
-                                        
                             else:
-                                keep_searching = False
-                    else:
-                        print("Chyba: delka ID pred znakem: _& neni rovna 4... ",files)
+                                if(count < len(self.files_type_arr)): #ztracena jen pokud tam je mene jak dva soubory
+                                    lost_pallets.append(compare_num)
+                                increment+=1
+                                if count >= len(self.files_type_arr)*2:
+                                    list_of_pair_count.append(count) #pocet souboru, ktere musi algoritmus vyhledat
+                                count = 0
+                                    
+                        else:
+                            keep_searching = False
+                else:
+                    if mes_send == False: #at nezaspamuje cely terminal...
+                        print(bcolors.FAIL +"- Chyba: delka ID pred znakem: _& neni rovna 4...\n",files,"\n V ceste:",path + bcolors.ENDC)
+                        mes_send = True
 
             if len(list_of_pairs_clear) !=0:
                 print("- Nalezeny seznam dvojic v rade za sebou podle ID:")
@@ -229,15 +246,17 @@ def whole_function():
                 print("- Kazda v poctu souboru:")
                 print(list_of_pair_count)
                 print("")
-            else:
-                print("- Dvojice nenalezeny")
-                print("")
+            #else:
+                #print("")
+                #print("- Dvojice nenalezeny")
+                #print("")
 
             if len(lost_pallets) !=0:
                 print("- Seznam cisel chybejicich palet v rade za sebou: ")
                 print(lost_pallets)
                 print("")
             else:
+                print("")
                 print("- Chybejici palety nenalezeny")
                 print("")
 
@@ -270,7 +289,7 @@ def whole_function():
                                     shutil.copy(path + files_full_name , path + self.pair_folder + '/' + files_full_name)
                                 j+=1  
                     j=0
-                    x+=1
+                x+=1
             
         def creating_folders(self):
             #podle typu souboru:
@@ -301,21 +320,6 @@ def whole_function():
                                 if not os.path.exists(path + items + "/" + files):
                                     shutil.move(path + files, path + items + "/" + files)
 
-
-
-                """if os.path.exists(path + folder_name[0]):
-                    for files in os.listdir(path + folder_name[0]): #v OK slozce
-                        for items in folder_name: #pro vsechny slozky...
-                            if items in files:
-                                if not os.path.exists(path + items + "/" + files):
-                                    shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
-                else:
-                    print("")
-                    print("Klíčová složka: ",path+folder_name[0] ," nenalezena\n- Vše jsou nepáry?")
-                    print("")"""
-
-
-
             if sort_by == 4:
                 for files in os.listdir(path + self.pair_folder):
                     if ".bmp" in files:
@@ -326,20 +330,21 @@ def whole_function():
 
     #MAIN//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////        
     path = ""
-    print(" - Třídění souborů z průmyslových kamer...")
+    print("- Třídění souborů z průmyslových kamer...")
     print("")
 
     # zadejte cestu k souborum:
     path_found = 0
     stop_while = 0
     while path_found == 0 and stop_while == 0:
-        print("Upozornění: funguje pouze o 3 slozky vzdalene... (v cestě, kde se nacházejí složky s datumy)")
+        print(bcolors.WARNING +"- Upozornění: funguje pouze o 3 slozky vzdalene... (v cestě, kde se nacházejí složky s datumy)" + bcolors.ENDC)
         print("")
         path = input("Zadejte cestu k souborům (pokud se aplikace už nachází v dané složce -> enter): ")
 
         #path = "D:/JHV\Kamery\JHV_Data/L_St_145/A"
         #path = "D:\JHV\Kamery\JHV_Data/2023_04_13\A"
         #path = "D:\JHV\Kamery\JHV_Data"
+        #path = "I:\Test trideni"
 
         #spusteni v ceste, kde se aplikace aktualne nachazi
         if path == "":
@@ -358,7 +363,7 @@ def whole_function():
 
         if not os.path.exists(path):
             print(path)
-            print("Zadaná cesta k souborům nebyla nalezena")
+            print(bcolors.FAIL +"Zadaná cesta k souborům nebyla nalezena" + bcolors.ENDC)
             stop_while = 1 #ochrana proti neustalemu vypisovani
         else:
             path_found = 1
@@ -369,11 +374,11 @@ def whole_function():
         sort_by = 0
 
 
-          #ochrana aby se za nazvy slozek nebral nejaky soubor z kamery, vytvareni seznamu slozek...
+        #ochrana aby se za nazvy slozek nebral nejaky soubor z kamery, vytvareni seznamu slozek...
         print("Analýza složek... ")
         def sync_folders(path_to_search):
             folders = []
-            unsupported_formats = [".exe",".pdf",".ifz",".bmp",".txt",".v",".xml",".changed",".doc",".docx",".xls",".xlsx",".ppt",".pptx",".csv",".py",".msi"]
+            unsupported_formats = [".exe",".pdf",".ifz",".bmp",".txt",".v",".xml",".changed",".doc",".docx",".xls",".xlsx",".ppt",".pptx",".csv",".py",".msi",".jpg"]
             if os.path.exists(path_to_search):
                 for files in os.listdir(path_to_search):
                     #ignorace ostatnich typu souboru:
@@ -386,6 +391,7 @@ def whole_function():
                                         
             return folders
         #STAGE1///////////////////////////////////////////////////
+        cont = "n"
         folders = sync_folders(path)
         path_list_not_found  = []
         path_list_to_sort = []
@@ -419,10 +425,9 @@ def whole_function():
                     if count ==0:
                         path_list_not_found_st2.append(paths + "/"  + folds)
         else:
-            print("Chyba: aplikace programovana na pruchod 3 slozek, tzn.: path + \"2023_04_13/A/Height\" \n-Pro primy pristup do slozky zvolte lite verzi programu")
+            print(bcolors.FAIL +"- Chyba: aplikace programovana na pruchod 3 slozek, tzn.: path + \"2023_04_13/A/Height\" \n-Pro primy pristup do slozky zvolte lite verzi programu" + bcolors.ENDC)
 
         #STAGE3///////////////////////////////////////////////////
-        cont = "n"
         path_list_not_found_st3  = []
         if len(path_list_not_found_st2) != 0:
             for paths in path_list_not_found_st2:
@@ -439,16 +444,16 @@ def whole_function():
                     if count ==0:
                         path_list_not_found_st3.append(paths + "/"  + folds)
 
-            print("")
-            #print("soubory pro trideni nalezeny ve slozkach: ",path_list_to_sort)
+            
+        elif paths_to_folders == 0:
+            print(bcolors.FAIL +"- Chyba: aplikace programovana na pruchod 3 slozek, tzn.: path + \"2023_04_13/A/Height\" \n-Pro primy pristup do slozky zvolte lite verzi programu" + bcolors.ENDC)
 
+        if len(paths_to_folders) !=0:
+            print("")
             print("- Chystam se projit tyto cesty:\n",paths_to_folders)
             print("")
             cont = input("ANO/NE? (enter/n): ") #CONTINUE?
-            #print("Seznam slozek pro overeni: ",paths_to_folders)
             print("")
-        else:
-            print("Chyba: aplikace programovana na pruchod 3 slozek, tzn.: path + \"2023_04_13/A/Height\" \n-Pro primy pristup do slozky zvolte lite verzi programu")
 
         if cont == "":
             # HLAVNI FOR CYKLUS //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////    
@@ -486,48 +491,48 @@ def whole_function():
                 v.Get_suffix()
 
                 v.creating_folders()
-                print(" - Vytváření složek: hotovo")
+                #print(bcolors.OKGREEN +" - Vytváření složek: hotovo" + bcolors.ENDC)
 
                 v.Sorting_files()
 
-                #odstranění prázdných složek včetně základních (exception = 0)
-                remove_empty_dirs(0)
-
                 if v.error == 1:
-                    print("Chyba: v zadané cestě: ",path," nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &), třídění ukončeno")
+                    print(bcolors.FAIL +"Chyba: v zadané cestě: ",path," nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &), třídění ukončeno"+ bcolors.ENDC)
 
                 else:
                     def advance_sort(sort_by):
+                        #odstranění prázdných složek včetně základních (exception = 0)
+                        remove_empty_dirs(0)
+
                         if sort_by == 0:
                             v.creating_folders()
-                            print(" - Vytváření složek: hotovo")
+                            #print(bcolors.OKGREEN + "- Vytváření složek: hotovo" + bcolors.ENDC)
                             v.moving_files()
-                            print(" - Přesouvání souborů: hotovo")
-                            print("")
+                            #print(bcolors.OKGREEN + "- Přesouvání souborů: hotovo" + bcolors.ENDC)
+                            #print("")
                             remove_empty_dirs(0)
 
                         #kontrola dvojic
                         if sort_by == 4:
                             v.sort_by_ID()
-                            print(" - Kontrola dvojic: hotovo")
+                            print(bcolors.OKGREEN + "- Kontrola dvojic: hotovo" + bcolors.ENDC)
                             if len(list_of_pairs) != 0:
                                 v.creating_folders()
-                                print(" - Vytváření složek: hotovo")
+                                print(bcolors.OKGREEN + "- Vytváření složek: hotovo" + bcolors.ENDC)
                                 v.moving_files()
-                                print(" - Přesouvání souborů: hotovo")
+                                print(bcolors.OKGREEN + "- Přesouvání souborů: hotovo" + bcolors.ENDC)
                                 print("")
                             else: 
-                                print(" - Nebyly nalezeny zadne dvojice")
+                                print(bcolors.WARNING + "- Nebyly nalezeny zadne dvojice" + bcolors.ENDC)
                                             
                     sort_by = 4
                     advance_sort(sort_by)
                     sort_by = 0
                     advance_sort(sort_by)  # defaultni rozdeleni do slozek
-                    print(" - Třídění pro cestu: ",path," dokončeno")
+                    print(bcolors.OKGREEN +"- Třídění pro cestu: ",path," dokončeno" + bcolors.ENDC)
 
         else:
             print("")
-            print("- Trideni zruseno uzivatelem")
+            print(bcolors.FAIL +"- Trideni zruseno uzivatelem"+ bcolors.ENDC)
             print("")
         repeat = input("Opakovat? (Y/y) nebo stisknětě libovolný znak pro zavření: ")
         if repeat.casefold() == "y":

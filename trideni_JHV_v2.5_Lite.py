@@ -134,7 +134,10 @@ def whole_function():
                     files_cut = files.split(cutting_condition)
                     files_cut = files_cut[0]
                     hide_cnt_from_start = len(files_cut) - int(hide_cnt)
-                    files_arr_cut.append(files_cut[0:(hide_cnt_from_start)])        
+                    files_arr_cut.append(files_cut[0:(hide_cnt_from_start)])      
+
+            #trideni podle jmena...
+            self.files_arr = sorted(self.files_arr)
 
             for i in range(0,len(files_arr_cut)):
 
@@ -168,21 +171,24 @@ def whole_function():
                 print("")
         
         def sort_by_ID(self):
-            increment=0
             compare_num = ""
             count = 0
             lost_pallets = []
+            pair_file_list = []
             round_number = 0
             list_of_pairs_clear = []
             list_of_pair_count = []
-            
+            ref_file = self.files_arr[0]
+            increment=int(verification.Get_func_number(ref_file)) #reference aby palety nezacinaly vzdy on nuly
             
             #hledani vice souboru (dvojic)---------------------------------------------------------------------------
-            for files in os.listdir(path + folder_name[0]): #hledani v OK slozce
-                if ".bmp" in files: #pouze pro overeni, zda se jedna o uzitecny soubor
-                    numbers = verification.Get_func_number(files)
+            mes_send = False #jen jednou za slozku... at nespamuje
+            for files in self.files_arr: #hledani v listu se soubory
+                #if ".bmp" in files: #pouze pro overeni, zda se jedna o uzitecny soubor
+                numbers = verification.Get_func_number(files)
+                if len(numbers) == 4:
                     keep_searching = True
-                    file_list.append(files + "_" + str(round_number))
+                    pair_file_list.append(files + "_" + str(round_number))
                     while(keep_searching == True): #while cyklus kvuli moznym chybejicim paletkam
                         if numbers[1] != "9": #nevsimame si cisel 900+
                             if increment>max_number_of_pallets:
@@ -203,12 +209,12 @@ def whole_function():
                                         else:
                                             list_of_pairs_clear.append(numbers)
 
-                                        numbers = numbers + "_sada_cislo_" + str(round_number)
+                                        numbers_with_round = numbers + "_sada_cislo_" + str(round_number)
                                         if len(list_of_pairs) != 0:
-                                            if list_of_pairs[len(list_of_pairs)-1] != numbers:
-                                                list_of_pairs.append(numbers)
+                                            if list_of_pairs[len(list_of_pairs)-1] != numbers_with_round:
+                                                list_of_pairs.append(numbers_with_round)
                                         else:
-                                            list_of_pairs.append(numbers)
+                                            list_of_pairs.append(numbers_with_round)
 
                                 keep_searching = False #zavolame dalsi cislo...
 
@@ -216,12 +222,16 @@ def whole_function():
                                 if(count < len(self.files_type_arr)): #ztracena jen pokud tam je mene jak dva soubory
                                     lost_pallets.append(compare_num)
                                 increment+=1
-                                if count >= 4:
+                                if count >= len(self.files_type_arr)*2:
                                     list_of_pair_count.append(count) #pocet souboru, ktere musi algoritmus vyhledat
                                 count = 0
                                     
                         else:
                             keep_searching = False
+                else:
+                    if mes_send == False: #at nezaspamuje cely terminal...
+                        print("- Chyba: delka ID pred znakem: _& neni rovna 4...\n",files,"\n V ceste:",path)
+                        mes_send = True
 
             if len(list_of_pairs_clear) !=0:
                 print("- Nalezeny seznam dvojic v rade za sebou podle ID:")
@@ -230,20 +240,18 @@ def whole_function():
                 print("- Kazda v poctu souboru:")
                 print(list_of_pair_count)
                 print("")
-            else:
-                print("- Dvojice nenalezeny")
-                print("")
 
             if len(lost_pallets) !=0:
                 print("- Seznam cisel chybejicich palet v rade za sebou: ")
                 print(lost_pallets)
                 print("")
             else:
+                print("")
                 print("- Chybejici palety nenalezeny")
                 print("")
-            
+
             if len(list_of_pairs) != 0: #jestli nejake vubec jsou...
-                #vytvoreni slozky:
+                #vytvoreni slozky s páry:
                 if not os.path.exists(path + self.pair_folder):
                     os.mkdir(path + self.pair_folder)
                 j=0
@@ -251,8 +259,7 @@ def whole_function():
                 act_round_number = 0
                 #kopirovani do zvlastni slozky------------------------------------------------------------------
                 for numbers in list_of_pairs:
-                    for files in file_list:
-                        
+                    for files in pair_file_list:                    
                         files_splitted = files.split("_")
                         act_round_number = files_splitted[8]
                         q=0
@@ -269,9 +276,10 @@ def whole_function():
                             if j < int(list_of_pair_count[x]):
                                 if not os.path.exists(path + self.pair_folder + '/' + files_full_name):
                                     shutil.copy(path + folder_name[0] + "/" + files_full_name , path + self.pair_folder + '/' + files_full_name)
+                                    
                                 j+=1  
                     j=0
-                    x+=1
+                x+=1
 
         def creating_folders(self):
             #podle typu souboru:
@@ -322,7 +330,6 @@ def whole_function():
 
         #path = "D:/JHV\Kamery\JHV_Data/L_St_145/A"
         #path = "D:\JHV\Kamery\JHV_Data/2023_04_13\A"
-
         #spusteni v souboru, kde se aplikace aktualne nachazi
         if path == "":
             path = os.getcwd()
@@ -358,7 +365,7 @@ def whole_function():
         print("Analýza složek... ")
         def sync_folders():
             folders = []
-            unsupported_formats = [".exe",".pdf",".ifz",".bmp",".txt",".v",".xml",".changed",".doc",".docx",".xls",".xlsx",".ppt",".pptx",".csv",".py",".msi"]
+            unsupported_formats = [".exe",".pdf",".ifz",".bmp",".txt",".v",".xml",".changed",".doc",".docx",".xls",".xlsx",".ppt",".pptx",".csv",".py",".msi",".jpg"]
             if os.path.exists(path):
                 for files in os.listdir(path):
                     #ignorace ostatnich typu souboru:
@@ -393,13 +400,13 @@ def whole_function():
         v.Get_suffix()
         v.Sorting_files()
 
-        #odstranění prázdných složek včetně základních (exception = 0)
-        remove_empty_dirs(0)
-
         if v.error == 1:
             print("Chyba: v zadané cestě: ",path," nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &), třídění ukončeno")
+        
 
         else:
+            #odstranění prázdných složek včetně základních (exception = 0)
+            remove_empty_dirs(0)
             def advance_sort(sort_by):
                 if sort_by == 0:
                     v.creating_folders()
