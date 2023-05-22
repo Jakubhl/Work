@@ -170,7 +170,6 @@ def whole_function():
             compare_num = ""
             count = 0
             lost_pallets = []
-            pair_file_list = []
             round_number = 0
             list_of_pairs_clear = []
             list_of_pair_count = []
