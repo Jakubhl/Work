@@ -302,9 +302,9 @@ def whole_function():
     path_found = 0
     stop_while = 0
     while path_found == 0 and stop_while == 0:
-        path = input("Zadejte cestu k souborům (pokud se aplikace už nachází v dané složce -> enter): ")
+        #path = input("Zadejte cestu k souborům (pokud se aplikace už nachází v dané složce -> enter): ")
 
-        #path = "D:/JHV\Kamery\JHV_Data/L_St_145/A"
+        path = "D:/JHV\Kamery\JHV_Data/L_St_145/A"
 
         #spusteni v souboru, kde se aplikace aktualne nachazi
         if path == "":
@@ -340,7 +340,7 @@ def whole_function():
         print("Analýza složek... ")
         def sync_folders():
             folders = []
-            unsupported_formats = [".exe",".pdf",".ifz",".bmp",".txt",".v",".xml",".changed",".doc",".docx",".xls",".xlsx",".ppt",".pptx",".csv",".py",".msi"]
+            unsupported_formats = [".exe",".pdf",".ifz",".bmp",".txt",".v",".xml",".changed",".doc",".docx",".xls",".xlsx",".ppt",".pptx",".csv",".py",".msi",".jpg",".img",".png"]
             if os.path.exists(path):
                 for files in os.listdir(path):
                     #ignorace ostatnich typu souboru:
