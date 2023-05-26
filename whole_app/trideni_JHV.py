@@ -4,7 +4,12 @@ import os
 import shutil
 import re
 
-def path_check(path_raw):  
+prefix_func = "Func_"
+prefix_Cam = "Cam"
+folder_name = ['OK','Temp'] #default
+output = []
+
+def path_check(path_raw):
     #path = ""
     path=path_raw
     print(" - Třídění souborů z průmyslových kamer...")
@@ -32,11 +37,6 @@ def path_check(path_raw):
                 os.mkdir(path + folder_name[x] + "/")
 
         return path
-
-prefix_func = "Func_"
-prefix_Cam = "Cam"
-folder_name = ['OK','Temp'] #default
-output = []
 
 def whole_sorting_function(path_given,selected_sort):
     path = path_given
@@ -275,37 +275,45 @@ def whole_sorting_function(path_given,selected_sort):
             files_split = ""
             #presun souboru do slozek:
             if sort_by == 1:
-                for files in os.listdir(path + folder_name[0]): #v OK slozce
-                    for items in folder_name:
-                        if items in files:
-                            if not os.path.exists(path + items + "/" + files):
-                                shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
-
+                if os.path.exists(path + folder_name[0]):
+                    for files in os.listdir(path + folder_name[0]): #v OK slozce
+                        for items in folder_name:
+                            if items in files:
+                                if not os.path.exists(path + items + "/" + files):
+                                    shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
+                else:
+                    output.append("Třídění ukončeno - vše jsou Nepáry (u souborů nebyly zastoupeny všechny formáty nalezené v cestě)")
             if sort_by == 2:
-                for files in os.listdir(path + folder_name[0]): #v OK slozce
-                    func_num = verification.Get_func_number(files)
-                    for items in folder_name:
-                        if (prefix_func + func_num) == items:
-                            if not os.path.exists(path + items + "/" + files):
-                                shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
-
+                if os.path.exists(path + folder_name[0]):
+                    for files in os.listdir(path + folder_name[0]): #v OK slozce
+                        func_num = verification.Get_func_number(files)
+                        for items in folder_name:
+                            if (prefix_func + func_num) == items:
+                                if not os.path.exists(path + items + "/" + files):
+                                    shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
+                else:
+                    output.append("Třídění ukončeno - vše jsou Nepáry (u souborů nebyly zastoupeny všechny formáty nalezené v cestě)")
             if sort_by == 3:
-                for files in os.listdir(path + folder_name[0]): #v OK slozce
-                    camera_num = verification.Get_cam_number(files)
-                    for items in folder_name:
-                        if (prefix_Cam + camera_num) == items:
-                            if not os.path.exists(path + items + "/" + files):
-                                shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
-            
+                if os.path.exists(path + folder_name[0]):
+                    for files in os.listdir(path + folder_name[0]): #v OK slozce
+                        camera_num = verification.Get_cam_number(files)
+                        for items in folder_name:
+                            if (prefix_Cam + camera_num) == items:
+                                if not os.path.exists(path + items + "/" + files):
+                                    shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
+                else:
+                    output.append("Třídění ukončeno - vše jsou Nepáry (u souborů nebyly zastoupeny všechny formáty nalezené v cestě)")
             if sort_by == 4:
-                for files in os.listdir(path + folder_name[0]): #v OK slozce
-                    func_num = verification.Get_func_number(files)
-                    camera_num = verification.Get_cam_number(files)
-                    for items in folder_name:
-                        if (prefix_Cam + camera_num + "_" + prefix_func + func_num) == items:
-                            if not os.path.exists(path + items + "/" + files):
-                                shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
-
+                if os.path.exists(path + folder_name[0]):
+                    for files in os.listdir(path + folder_name[0]): #v OK slozce
+                        func_num = verification.Get_func_number(files)
+                        camera_num = verification.Get_cam_number(files)
+                        for items in folder_name:
+                            if (prefix_Cam + camera_num + "_" + prefix_func + func_num) == items:
+                                if not os.path.exists(path + items + "/" + files):
+                                    shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
+                else:
+                    output.append("Třídění ukončeno - vše jsou Nepáry (u souborů nebyly zastoupeny všechny formáty nalezené v cestě)")
     #ochrana aby se za nazvy slozek nebral nejaky soubor z kamery, vytvareni seznamu slozek...
 
     def sync_folders():

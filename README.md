@@ -69,3 +69,6 @@ Analýza, kontrola a třídění souborů z průmyslových kamer
 
 ## Verze 2.5:
 - Stejné jako 2.5 Lite, jen je programovaná na spuštění ve složce, kde se nacházejí jednotlivé složky s datumy (2023_04_13) -> rozhoduje se podle složky A/B -> složky Height/Normal/Grey se soubory... a projde je všechny postupně s dotazem o povolení
+
+## Aplikace s GUI
+- Je nutné stáhnout zip soubor kvůli načítání obrázků, poté si lze třeba vytvořit shortcut exe souboru a přesunout si jej na plochu
