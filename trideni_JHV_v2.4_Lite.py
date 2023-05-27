@@ -82,7 +82,8 @@ def whole_function():
             
             for i in range(0,len(folders)):
                 for files in os.listdir(path + folders[i]):
-                    shutil.move(path + folders[i] + "/" + files , path + '/' + files)     
+                    if ".bmp" in files:
+                        shutil.move(path + folders[i] + "/" + files , path + '/' + files)     
 
         def Get_suffix(self):
             files_type = ""

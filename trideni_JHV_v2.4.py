@@ -82,7 +82,8 @@ def whole_function():
             
             for i in range(0,len(folders)):
                 for files in os.listdir(path + folders[i]):
-                    shutil.move(path + folders[i] + "/" + files , path + '/' + files)
+                    if ".bmp" in files:
+                        shutil.move(path + folders[i] + "/" + files , path + '/' + files)
 
         def Get_cam_number(file_for_analyze):
             if "&" in file_for_analyze:
@@ -302,9 +303,9 @@ def whole_function():
     path_found = 0
     stop_while = 0
     while path_found == 0 and stop_while == 0:
-        #path = input("Zadejte cestu k souborům (pokud se aplikace už nachází v dané složce -> enter): ")
+        path = input("Zadejte cestu k souborům (pokud se aplikace už nachází v dané složce -> enter): ")
 
-        path = "D:/JHV\Kamery\JHV_Data/L_St_145/A"
+        #path = "D:/JHV\Kamery\JHV_Data/L_St_145/A"
 
         #spusteni v souboru, kde se aplikace aktualne nachazi
         if path == "":
