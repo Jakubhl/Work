@@ -72,3 +72,4 @@ Analýza, kontrola a třídění souborů z průmyslových kamer
 
 ## Aplikace s GUI
 - Je nutné stáhnout zip soubor kvůli načítání obrázků, poté si lze třeba vytvořit shortcut exe souboru a přesunout si jej na plochu
+- Byl přídán konfigurační text file pro definování základní cesty ve file exploreru

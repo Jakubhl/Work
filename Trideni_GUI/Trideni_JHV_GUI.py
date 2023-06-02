@@ -1,15 +1,57 @@
 import customtkinter
+import os
 from PIL import Image, ImageTk
 import trideni_JHV as Trideni
-
+from tkinter import filedialog
 
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 
 root=customtkinter.CTk()
-root.geometry("1200x900")
+root.geometry("1200x800")
 root.wm_iconbitmap('JHV.ico')
 root.title("Třídění souborů z průmyslových kamer")
+#root.attributes('-fullscreen', True)
+
+
+
+
+def browseDirectories():
+    programme_path = os.getcwd()
+    if os.path.exists(programme_path+"/"+"Default_path.txt"):
+        f = open("Default_path.txt", "r")
+        start_path = str(f.read())
+        if not os.path.exists(start_path):
+            start_path = ""
+            console.configure(text="")
+            console.configure(text="Konfigurační soubor obsahuje neplatnou cestu")
+
+    else:
+        console.configure(text="")
+        console.configure(text="Chybí konfigurační soubor s počáteční cestou...\n(Založte s názvem: Default_path.txt)")
+        start_path=""
+
+    if(start_path != ""):
+        foldername_path = filedialog.askdirectory(initialdir = start_path,
+                                            title = "Select a Directory",
+                                            )
+    else:
+        foldername_path = filedialog.askdirectory(initialdir = "/",
+                                            title = "Select a Directory",
+                                            )
+
+    check = Trideni.path_check(foldername_path)
+    if check == False:
+        console.configure(text="")
+        console.configure(text = "Zadaná cesta: "+foldername_path+" nebyla nalezena")
+    else:
+        if foldername_path != "":
+            entry1.delete("0","100")
+            entry1.insert("0", foldername_path)
+            console.configure(text="")
+            console.configure(text = "Byla vložena cesta: " + foldername_path)
+            
+   
 
 def start():
     #if checkbox.get()+checkbox2.get()+checkbox3.get()+checkbox4.get()+checkbox5.get() == 0:
@@ -116,52 +158,64 @@ def view_image(which_one):
         images.configure(image =manual_24)"""
 
 
+    
 frame = customtkinter.CTkFrame(master=root)
-frame.pack(pady=20,padx=60,fill="both",expand=True)
+frame.pack(pady=20,padx=20,fill="both",expand=False)
+frame2 = customtkinter.CTkFrame(master=root)
+frame2.pack(pady=0,padx=20,fill="both",expand=False)
+frame3 = customtkinter.CTkScrollableFrame(master=root)
+frame3.pack(pady=20,padx=20,fill="both",expand=True)
 
-logo = customtkinter.CTkImage(Image.open("logo2.bmp"),size=(400, 49))
+logo = customtkinter.CTkImage(Image.open("logo2.bmp"),size=(571, 70))
 
-image_logo = customtkinter.CTkLabel(master = frame,text = " ",image =logo)
+image_logo = customtkinter.CTkLabel(master = frame,text = "",image =logo)
 image_logo.pack()
 
-#step_1 = customtkinter.CTkLabel(master = frame,text = "1) Zadejte cestu k souborum z kamery\n(zkopírovat do schránky nabo vložit aplikaci přímo do požadované složky a stisknout enter)",
-step_1 = customtkinter.CTkLabel(master = frame,text = "1) Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)",
-justify = "left",font=("Arial",20,"bold"))
-step_1.pack(pady = 12,padx =10,anchor ="w")
+#step_1 = customtkinter.CTkLabel(master = frame,text = "1) Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)",
+#justify = "left",font=("Arial",20,"bold"))
+#step_1.pack(pady = 12,padx =10,anchor ="w",side = customtkinter.TOP)
 
-entry1 = customtkinter.CTkEntry(master = frame, width = 600,placeholder_text="Zadejde cestu ke složce pro analýzu")
-entry1.pack(pady = 12,padx =10,anchor ="w")
 
-step_2 = customtkinter.CTkLabel(master = frame,text = "2) Nastavte způsob třídění nebo ponechte základní nastavení",justify = "left",font=("Arial",20,"bold"))
-step_2.pack(pady = 12,padx =10,anchor ="w")
 
-checkbox = customtkinter.CTkCheckBox(master = frame, text = "Třídit podle typů souborů",command = selected)
+entry1 = customtkinter.CTkEntry(master = frame2,placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)")
+entry1.pack(pady = 12,padx =10,anchor ="w",side="left",fill="both",expand=True)
+tree = customtkinter.CTkButton(master = frame2, width = 200,text = "EXPLORER", command = browseDirectories,font=("Arial",20,"bold"))
+tree.pack(pady = 12,padx =10,anchor ="w",side="left")
+
+"""step_2 = customtkinter.CTkLabel(master = frame3,text = "2) Nastavte způsob třídění nebo ponechte základní nastavení",justify = "left",font=("Arial",20,"bold"))
+step_2.pack(pady = 12,padx =10,anchor ="w")"""
+
+checkbox = customtkinter.CTkCheckBox(master = frame3, text = "Třídit podle typů souborů",command = selected)
 checkbox.pack(pady =12,padx=10,anchor ="w")
-checkbox2 = customtkinter.CTkCheckBox(master = frame, text = "Třídit podle čísla funkce",command = selected2)
+checkbox2 = customtkinter.CTkCheckBox(master = frame3, text = "Třídit podle čísla funkce",command = selected2)
 checkbox2.pack(pady =12,padx=10,anchor ="w")
-checkbox3 = customtkinter.CTkCheckBox(master = frame, text = "Třídit podle čísla kamery",command = selected3)
+checkbox3 = customtkinter.CTkCheckBox(master = frame3, text = "Třídit podle čísla kamery",command = selected3)
 checkbox3.pack(pady =12,padx=10,anchor ="w")
-checkbox4 = customtkinter.CTkCheckBox(master = frame, text = "Třídit podle čísla funkce i kamery",command = selected4)
+checkbox4 = customtkinter.CTkCheckBox(master = frame3, text = "Třídit podle čísla funkce i kamery",command = selected4)
 checkbox4.pack(pady =12,padx=10,anchor ="w")
 """checkbox5 = customtkinter.CTkCheckBox(master = frame, text = "Manuálně nastavit počet zakrytých znaků pro rozhodování",command = selected5)
 checkbox5.pack(pady =12,padx=10,anchor ="w")"""
 
 #misto pro zobrazovani obrazku
-images = customtkinter.CTkLabel(master = frame,text = "")
+images = customtkinter.CTkLabel(master = frame3,text = "")
 images.pack()
-name_example = customtkinter.CTkLabel(master = frame,text = "",font=("Arial",16,"bold"))
+name_example = customtkinter.CTkLabel(master = frame3,text = "",font=("Arial",16,"bold"))
 name_example.pack(pady = 12,padx =10)
 
 #default:
 checkbox.select()
 view_image(1)
 
-button = customtkinter.CTkButton(master = frame, text = "SPUSTIT", command = start,font=("Arial",20,"bold"))
+button = customtkinter.CTkButton(master = frame3, text = "SPUSTIT", command = start,font=("Arial",20,"bold"))
 button.pack(pady =12,padx=10)
 button._set_dimensions(300,60)
 
-console = customtkinter.CTkLabel(master = frame,text = " ",font=("Arial",15))
+console = customtkinter.CTkLabel(master = frame3,text = " ",font=("Arial",15))
 console.pack(pady =12,padx=10)
+
+
+"""tree_output = customtkinter.CTkLabel(master = frame2,text=" ",justify="left",font=("Arial",15))
+tree_output.pack(pady = 12,padx =10,anchor="w",side="left")"""
 
 
 

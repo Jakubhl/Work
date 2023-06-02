@@ -4,10 +4,12 @@ import os
 import shutil
 import re
 
+
 prefix_func = "Func_"
 prefix_Cam = "Cam"
 folder_name = ['OK','Temp'] #default
 output = []
+
 
 def path_check(path_raw):
     #path = ""
@@ -38,6 +40,7 @@ def path_check(path_raw):
 
         return path
 
+
 def whole_sorting_function(path_given,selected_sort):
     path = path_given
     sort_by = selected_sort
@@ -49,7 +52,7 @@ def whole_sorting_function(path_given,selected_sort):
             for dirs in folders: # pole folders uz je filtrovano od ostatnich souboru...
                 if (dirs != folder_name[0]) and (dirs != folder_name[1]) and (dirs != folder_name[2]):
                     number_of_files = 0
-                    if os.path.exists(path + dirs):
+                    if os.path.isdir(path + dirs):
                         for files in os.listdir(path + dirs):
                             number_of_files +=1
                         if number_of_files == 0:
@@ -59,7 +62,7 @@ def whole_sorting_function(path_given,selected_sort):
         else:
             for dirs in folders: # pole folders uz je filtrovano od ostatnich souboru...
                 number_of_files = 0
-                if os.path.exists(path + dirs):
+                if os.path.isdir(path + dirs):
                     for files in os.listdir(path + dirs):
                         number_of_files +=1
                     if number_of_files == 0:
@@ -104,9 +107,12 @@ def whole_sorting_function(path_given,selected_sort):
             folders = sync_folders()
             
             for i in range(0,len(folders)):
-                for files in os.listdir(path + folders[i]):
-                    if ".bmp" in files:
-                        shutil.move(path + folders[i] + "/" + files , path + '/' + files)
+                if os.path.isdir(path + folders[i]):
+                    for files in os.listdir(path + folders[i]):
+                        if ".bmp" in files:
+                            if os.path.exists(path + folders[i] + "/" + files):
+                                shutil.move(path + folders[i] + "/" + files , path + '/' + files)
+                            
 
         def Get_cam_number(file_for_analyze):
             if "&" in file_for_analyze:
@@ -178,12 +184,14 @@ def whole_sorting_function(path_given,selected_sort):
 
                 if count == len(self.files_type_arr): # overeni zda je od vsech typu souboru jeden
                     ok_count += 1
-                    shutil.move(path + '/' + files_arr[i] , path + folder_name[0] + "/" + files_arr[i]) #přesun do OK složky
+                    if os.path.exists(path + '/' + files_arr[i]):
+                        shutil.move(path + '/' + files_arr[i] , path + folder_name[0] + "/" + files_arr[i]) #přesun do OK složky
                     count = 0
                     
                 else:
                     nok_count += 1
-                    shutil.move(path + '/' + files_arr[i] , path + folder_name[1] + "/" + files_arr[i]) #přesun do Temp složky
+                    if os.path.exists(path + '/' + files_arr[i]):
+                        shutil.move(path + '/' + files_arr[i] , path + folder_name[1] + "/" + files_arr[i]) #přesun do Temp složky
                     count = 0
 
             if files_arr == []:
@@ -337,10 +345,11 @@ def whole_sorting_function(path_given,selected_sort):
     #vzorek pro automatickou úpravu různě dlouhých jmen (první blok v sorting_files), delší= zakreje méně znaků, kratší = více...
     example_file_name = ""
     for i in range(0, len(folders)):
-        for files in os.listdir(path+folders[i]):
-            if ".bmp" in files:
-                if example_file_name == "":
-                    example_file_name = files
+        if os.path.isdir(path+folders[i]):
+            for files in os.listdir(path+folders[i]):
+                if ".bmp" in files:
+                    if example_file_name == "":
+                        example_file_name = files
                     
     example_file_name_cut = example_file_name.split("&")
     example_file_name_cut = example_file_name_cut[0]

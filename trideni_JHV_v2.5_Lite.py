@@ -88,7 +88,8 @@ def whole_function():
             folders = sync_folders() #synchronizace pri moznem smazani slozky PAIR
             for i in range(0,len(folders)):
                 for files in os.listdir(path + folders[i]):
-                    shutil.move(path + folders[i] + "/" + files , path + '/' + files)
+                    if ".bmp" in files:
+                        shutil.move(path + folders[i] + "/" + files , path + '/' + files)
             
         def Get_func_number(file_for_analyze):
             files_split = file_for_analyze.split("&")
