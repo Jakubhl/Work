@@ -17,7 +17,7 @@ def whole_function():
             for dirs in folders: # pole folders uz je filtrovano od ostatnich souboru...
                 if (dirs != folder_name[0]) and (dirs != folder_name[1]) and (dirs != folder_name[2]):
                     number_of_files = 0
-                    if os.path.exists(path + dirs):
+                    if os.path.isdir(path + dirs):
                         for files in os.listdir(path + dirs):
                             number_of_files +=1
                         if number_of_files == 0:
@@ -31,7 +31,7 @@ def whole_function():
         else:
             for dirs in folders: # pole folders uz je filtrovano od ostatnich souboru...
                 number_of_files = 0
-                if os.path.exists(path + dirs):
+                if os.path.isdir(path + dirs):
                     for files in os.listdir(path + dirs):
                         number_of_files +=1
                     if number_of_files == 0:
@@ -84,9 +84,11 @@ def whole_function():
                 
             folders = sync_folders(path) #synchronizace pri moznem smazani slozky PAIR
             for i in range(0,len(folders)):
-                for files in os.listdir(path + folders[i]):
-                    if ".bmp" in files:
-                        shutil.move(path + folders[i] + "/" + files , path + '/' + files)
+                if os.path.isdir(path + folders[i]):
+                    for files in os.listdir(path + folders[i]):
+                        if ".bmp" in files:
+                            if os.path.exists(path + folders[i] + "/" + files):
+                                shutil.move(path + folders[i] + "/" + files , path + '/' + files)
             
         def Get_func_number(file_for_analyze):
             files_split = file_for_analyze.split("&")
@@ -151,7 +153,8 @@ def whole_function():
                     
                 else:
                     nok_count += 1
-                    shutil.move(path + '/' + self.files_arr[i] , path + folder_name[1] + "/" + self.files_arr[i]) #přesun do NOK složky
+                    if os.path.exists(path + '/' + self.files_arr[i]):
+                        shutil.move(path + '/' + self.files_arr[i] , path + folder_name[1] + "/" + self.files_arr[i]) #přesun do NOK složky
                     count = 0
             
             if error_length == 1:
@@ -368,7 +371,7 @@ def whole_function():
         print("Analýza složek... ")
         def sync_folders(path_to_search):
             folders = []
-            unsupported_formats = [".exe",".pdf",".ifz",".bmp",".txt",".v",".xml",".changed",".doc",".docx",".xls",".xlsx",".ppt",".pptx",".csv",".py",".msi",".jpg"]
+            unsupported_formats = [".exe",".pdf",".ifz",".bmp",".txt",".v",".xml",".changed",".doc",".docx",".xls",".xlsx",".ppt",".pptx",".csv",".py",".msi",".jpg",".img",".png"]
             if os.path.exists(path_to_search):
                 for files in os.listdir(path_to_search):
                     #ignorace ostatnich typu souboru:
@@ -377,8 +380,7 @@ def whole_function():
                         if suffixes in files:
                             unsupported_format +=1
                     if unsupported_format ==0:
-                        folders.append(files)
-                                        
+                        folders.append(files)                          
             return folders
         #STAGE1///////////////////////////////////////////////////
         cont = "n"
@@ -435,7 +437,7 @@ def whole_function():
                         path_list_not_found_st3.append(paths + "/"  + folds)
 
             
-        elif paths_to_folders == 0:
+        if len(paths_to_folders) == 0:
             print("- Chyba: aplikace programovana na pruchod 3 slozek, tzn.: path + \"2023_04_13/A/Height\" \n-Pro primy pristup do slozky zvolte lite verzi programu")
 
         if len(paths_to_folders) !=0:

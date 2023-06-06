@@ -18,7 +18,7 @@ def whole_function():
             for dirs in folders: # pole folders uz je filtrovano od ostatnich souboru...
                 if (dirs != folder_name[0]) and (dirs != folder_name[1]) and (dirs != folder_name[2]):
                     number_of_files = 0
-                    if os.path.exists(path + dirs):
+                    if os.path.isdir(path + dirs):
                         for files in os.listdir(path + dirs):
                             number_of_files +=1
                         if number_of_files == 0:
@@ -32,7 +32,7 @@ def whole_function():
         else:
             for dirs in folders: # pole folders uz je filtrovano od ostatnich souboru...
                 number_of_files = 0
-                if os.path.exists(path + dirs):
+                if os.path.isdir(path + dirs):
                     for files in os.listdir(path + dirs):
                         number_of_files +=1
                     if number_of_files == 0:
@@ -83,7 +83,8 @@ def whole_function():
             for i in range(0,len(folders)):
                 for files in os.listdir(path + folders[i]):
                     if ".bmp" in files:
-                        shutil.move(path + folders[i] + "/" + files , path + '/' + files)
+                        if os.path.exists(path + folders[i] + "/" + files ):
+                            shutil.move(path + folders[i] + "/" + files , path + '/' + files)
 
         def Get_cam_number(file_for_analyze):
             if "&" in file_for_analyze:
@@ -157,12 +158,14 @@ def whole_function():
 
                 if count == len(self.files_type_arr): # overeni zda je od vsech typu souboru jeden
                     ok_count += 1
-                    shutil.move(path + '/' + files_arr[i] , path + folder_name[0] + "/" + files_arr[i]) #přesun do OK složky
+                    if os.path.exists(path + '/' + files_arr[i]):
+                        shutil.move(path + '/' + files_arr[i] , path + folder_name[0] + "/" + files_arr[i]) #přesun do OK složky
                     count = 0
                     
                 else:
                     nok_count += 1
-                    shutil.move(path + '/' + files_arr[i] , path + folder_name[1] + "/" + files_arr[i]) #přesun do Temp složky
+                    if os.path.exists(path + '/' + files_arr[i]):
+                        shutil.move(path + '/' + files_arr[i] , path + folder_name[1] + "/" + files_arr[i]) #přesun do Temp složky
                     count = 0
             
             if error_length == 1:

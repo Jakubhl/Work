@@ -83,7 +83,8 @@ def whole_function():
             for i in range(0,len(folders)):
                 for files in os.listdir(path + folders[i]):
                     if ".bmp" in files:
-                        shutil.move(path + folders[i] + "/" + files , path + '/' + files)     
+                        if os.path.exists(path + folders[i] + "/" + files):
+                            shutil.move(path + folders[i] + "/" + files , path + '/' + files)     
 
         def Get_suffix(self):
             files_type = ""
@@ -135,7 +136,8 @@ def whole_function():
                     
                 else:
                     nok_count += 1
-                    shutil.move(path + '/' + files_arr[i] , path + folder_name[0] + "/" + files_arr[i]) #přesun do Temp složky
+                    if os.path.exists(path + '/' + files_arr[i]):
+                        shutil.move(path + '/' + files_arr[i] , path + folder_name[0] + "/" + files_arr[i]) #přesun do Temp složky
                     count = 0
             
             #if error_length == 1:
@@ -222,7 +224,7 @@ def whole_function():
         print("Analýza složek... ")
         def sync_folders():
             folders = []
-            unsupported_formats = [".exe",".pdf",".ifz",".bmp",".txt",".v",".xml",".changed",".doc",".docx",".xls",".xlsx",".ppt",".pptx",".csv",".py",".msi"]
+            unsupported_formats = [".exe",".pdf",".ifz",".bmp",".txt",".v",".xml",".changed",".doc",".docx",".xls",".xlsx",".ppt",".pptx",".csv",".py",".msi",".jpg",".img",".png"]
             if os.path.exists(path):
                 for files in os.listdir(path):
                     #ignorace ostatnich typu souboru:
