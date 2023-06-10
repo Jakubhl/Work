@@ -18,7 +18,7 @@ def whole_function():
             for dirs in folders: # pole folders uz je filtrovano od ostatnich souboru...
                 if (dirs != folder_name[0]) and (dirs != folder_name[1]) and (dirs != folder_name[2]):
                     number_of_files = 0
-                    if os.path.exists(path + dirs):
+                    if os.path.isdir(path + dirs):
                         for files in os.listdir(path + dirs):
                             number_of_files +=1
                         if number_of_files == 0:
@@ -32,7 +32,7 @@ def whole_function():
         else:
             for dirs in folders: # pole folders uz je filtrovano od ostatnich souboru...
                 number_of_files = 0
-                if os.path.exists(path + dirs):
+                if os.path.isdir(path + dirs):
                     for files in os.listdir(path + dirs):
                         number_of_files +=1
                     if number_of_files == 0:
@@ -173,8 +173,9 @@ def whole_function():
                     if ".bmp" in files:
                         for items in folder_name:
                             if items in files:
-                                if not os.path.exists(path + items + "/" + files):
-                                    shutil.move(path + files, path + items + "/" + files)     
+                                if os.path.exists(path + files):
+                                    if not os.path.exists(path + items + "/" + files):
+                                        shutil.move(path + files, path + items + "/" + files)     
 
     #MAIN//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////        
     path = ""

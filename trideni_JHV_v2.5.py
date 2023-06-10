@@ -310,16 +310,18 @@ def whole_function():
                     if ".bmp" in files:
                         for items in folder_name: #pro vsechny slozky...
                             if items in files:
-                                if not os.path.exists(path + items + "/" + files):
-                                    shutil.move(path + files, path + items + "/" + files)
+                                if os.path.exists(path + files):
+                                    if not os.path.exists(path + items + "/" + files):
+                                        shutil.move(path + files, path + items + "/" + files)
 
             if sort_by == 4:
                 for files in os.listdir(path + self.pair_folder):
                     if ".bmp" in files:
                         for items in pair_folders:
                             if files.split(".")[1] == items:
-                                if not os.path.exists(path + self.pair_folder + "/" +items + "/" + files):
-                                    shutil.move(path + self.pair_folder + "/" + files, path + self.pair_folder + "/" +items + "/" + files)
+                                if os.path.exists(path + self.pair_folder + "/" + files):
+                                    if not os.path.exists(path + self.pair_folder + "/" +items + "/" + files):
+                                        shutil.move(path + self.pair_folder + "/" + files, path + self.pair_folder + "/" +items + "/" + files)
 
     #MAIN//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////        
     path = ""

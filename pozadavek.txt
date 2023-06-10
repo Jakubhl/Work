@@ -23,3 +23,8 @@ max paletek: 55
 12.5.2023
 -Do pairs pouze rozdelit na height/normal
 -Chyba - nekdy se zastavi na ok slozce, smichane soubory
+
+09.06.2023
+-rozlisovat i soubory .png
+-prochazet datumovku
+-nevytvaret slozky pred spustenim

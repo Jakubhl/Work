@@ -267,24 +267,27 @@ def whole_function():
                 for files in os.listdir(path + folder_name[0]): #v OK slozce
                     for items in folder_name:
                         if items in files:
-                            if not os.path.exists(path + items + "/" + files):
-                                shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
+                            if os.path.exists(path + folder_name[0] + "/" + files):
+                                if not os.path.exists(path + items + "/" + files):
+                                    shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
 
             if sort_by == 2:
                 for files in os.listdir(path + folder_name[0]): #v OK slozce
                     func_num = verification.Get_func_number(files)
                     for items in folder_name:
                         if (prefix_func + func_num) == items:
-                            if not os.path.exists(path + items + "/" + files):
-                                shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
+                            if os.path.exists(path + folder_name[0] + "/" + files):
+                                if not os.path.exists(path + items + "/" + files):
+                                    shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
 
             if sort_by == 3:
                 for files in os.listdir(path + folder_name[0]): #v OK slozce
                     camera_num = verification.Get_cam_number(files)
                     for items in folder_name:
                         if (prefix_Cam + camera_num) == items:
-                            if not os.path.exists(path + items + "/" + files):
-                                shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
+                            if os.path.exists(path + folder_name[0] + "/" + files):
+                                if not os.path.exists(path + items + "/" + files):
+                                    shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
             
             if sort_by == 4:
                 for files in os.listdir(path + folder_name[0]): #v OK slozce
@@ -292,8 +295,9 @@ def whole_function():
                     camera_num = verification.Get_cam_number(files)
                     for items in folder_name:
                         if (prefix_Cam + camera_num + "_" + prefix_func + func_num) == items:
-                            if not os.path.exists(path + items + "/" + files):
-                                shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
+                            if os.path.exists(path + folder_name[0] + "/" + files):
+                                if not os.path.exists(path + items + "/" + files):
+                                    shutil.move(path + folder_name[0] + "/" + files, path + items + "/" + files)
 
             
 

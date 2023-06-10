@@ -6,15 +6,13 @@ from tkinter import filedialog
 
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
-
 root=customtkinter.CTk()
 root.geometry("1200x800")
 root.wm_iconbitmap('JHV.ico')
 root.title("Třídění souborů z průmyslových kamer")
 #root.attributes('-fullscreen', True)
 
-
-
+more_dirs = False
 
 def browseDirectories():
     programme_path = os.getcwd()
@@ -51,7 +49,6 @@ def browseDirectories():
             console.configure(text="")
             console.configure(text = "Byla vložena cesta: " + foldername_path)
             
-   
 
 def start():
     #if checkbox.get()+checkbox2.get()+checkbox3.get()+checkbox4.get()+checkbox5.get() == 0:
@@ -84,51 +81,59 @@ def sort_files(path):
         selected_sort = 3
     if checkbox4.get() == 1:
         selected_sort = 4
-
+    if checkbox6.get() == 1:
+        more_dirs = True
+    else:
+        more_dirs = False
 
     Trideni.output = []
-    Trideni.whole_sorting_function(path,selected_sort)
+    Trideni.output_console2 = []
+
+    Trideni.whole_sorting_function(path,selected_sort,more_dirs)
     output_text = ""
+    output_text2 = ""
     for i in range(0,len(Trideni.output)):
         output_text = output_text + Trideni.output[i] + "\n"
-
     console.configure(text = output_text)
-    """if checkbox5.get() == 1:
-        Trideni.whole_sorting_function(path,5)  """  
+
+    for i in range(0,len(Trideni.output_console2)):
+        output_text2 = output_text2 + Trideni.output_console2[i] + "\n"
+    console2.configure(text = output_text2)
+
 def selected():
     console.configure(text = " ")
     view_image(1)
     checkbox2.deselect()
     checkbox3.deselect()
     checkbox4.deselect()
-    #checkbox5.deselect()
 def selected2():
     console.configure(text = " ")
     view_image(2)
     checkbox.deselect()
     checkbox3.deselect()
     checkbox4.deselect()
-    #checkbox5.deselect()
 def selected3():
     console.configure(text = " ")
     view_image(3)
     checkbox.deselect()
     checkbox2.deselect()
     checkbox4.deselect()
-    #checkbox5.deselect()
 def selected4():
     console.configure(text = " ")
     view_image(4)
     checkbox.deselect()
     checkbox2.deselect()
     checkbox3.deselect()
-    #checkbox5.deselect()
-"""def selected5():
-    view_image(5)
-    checkbox2.deselect()
-    checkbox3.deselect()
-    checkbox4.deselect()
-    checkbox.deselect()"""
+    
+def selected6():
+    if checkbox6.get() == 1:
+        dirs_more = customtkinter.CTkImage(Image.open("more_dirs.png"),size=(400, 56))
+        images2.configure(image =dirs_more)
+    else:
+        dirs_one = customtkinter.CTkImage(Image.open("dirs_ba.png"),size=(188, 62))
+        images2.configure(image =dirs_one)
+        
+
 
 def view_image(which_one):
     #if checkbox.get()+checkbox2.get()+checkbox3.get()+checkbox4.get()+checkbox5.get() == 0:
@@ -136,7 +141,6 @@ def view_image(which_one):
         nothing = customtkinter.CTkImage(Image.open("nothing.png"),size=(1, 1))
         images.configure(image = nothing)
         name_example.configure(text = "")
-
     if which_one == 1:
         type_24 = customtkinter.CTkImage(Image.open("24_type.png"),size=(447, 175))
         images.configure(image =type_24)
@@ -153,37 +157,31 @@ def view_image(which_one):
         both_24 = customtkinter.CTkImage(Image.open("24_both.png"),size=(1106, 210))
         images.configure(image =both_24)
         name_example.configure(text = "221013_092241_0000000842_  => 21 <=  _&  => Cam1 <=  Img.Height.bmp")
-    """if which_one == 5:
-        manual_24 = customtkinter.CTkImage(Image.open("24_manual.png"),size=(1003, 128))
-        images.configure(image =manual_24)"""
 
-
-    
 frame = customtkinter.CTkFrame(master=root)
-frame.pack(pady=20,padx=20,fill="both",expand=False)
+frame.pack(pady=20,padx=20,fill="both",expand=False,side = "top")
 frame2 = customtkinter.CTkFrame(master=root)
-frame2.pack(pady=0,padx=20,fill="both",expand=False)
-frame3 = customtkinter.CTkScrollableFrame(master=root)
-frame3.pack(pady=20,padx=20,fill="both",expand=True)
+frame2.pack(pady=0,padx=20,fill="both",expand=False,side = "top")
+
+frame5 = customtkinter.CTkScrollableFrame(master=root)
+frame5.pack(pady=0,padx=0,fill="both",expand=True,side = "bottom")
+
+frame3 = customtkinter.CTkFrame(master=root)
+frame3.pack(pady=10,padx=5,fill="both",expand=True,side="left")
+frame4 = customtkinter.CTkScrollableFrame(master=root)
+frame4.pack(pady=10,padx=5,fill="both",expand=True,side="right")
+
+
 
 logo = customtkinter.CTkImage(Image.open("logo2.bmp"),size=(571, 70))
 
 image_logo = customtkinter.CTkLabel(master = frame,text = "",image =logo)
 image_logo.pack()
 
-#step_1 = customtkinter.CTkLabel(master = frame,text = "1) Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)",
-#justify = "left",font=("Arial",20,"bold"))
-#step_1.pack(pady = 12,padx =10,anchor ="w",side = customtkinter.TOP)
-
-
-
 entry1 = customtkinter.CTkEntry(master = frame2,placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)")
 entry1.pack(pady = 12,padx =10,anchor ="w",side="left",fill="both",expand=True)
 tree = customtkinter.CTkButton(master = frame2, width = 200,text = "EXPLORER", command = browseDirectories,font=("Arial",20,"bold"))
 tree.pack(pady = 12,padx =10,anchor ="w",side="left")
-
-"""step_2 = customtkinter.CTkLabel(master = frame3,text = "2) Nastavte způsob třídění nebo ponechte základní nastavení",justify = "left",font=("Arial",20,"bold"))
-step_2.pack(pady = 12,padx =10,anchor ="w")"""
 
 checkbox = customtkinter.CTkCheckBox(master = frame3, text = "Třídit podle typů souborů",command = selected)
 checkbox.pack(pady =12,padx=10,anchor ="w")
@@ -193,32 +191,31 @@ checkbox3 = customtkinter.CTkCheckBox(master = frame3, text = "Třídit podle č
 checkbox3.pack(pady =12,padx=10,anchor ="w")
 checkbox4 = customtkinter.CTkCheckBox(master = frame3, text = "Třídit podle čísla funkce i kamery",command = selected4)
 checkbox4.pack(pady =12,padx=10,anchor ="w")
-"""checkbox5 = customtkinter.CTkCheckBox(master = frame, text = "Manuálně nastavit počet zakrytých znaků pro rozhodování",command = selected5)
-checkbox5.pack(pady =12,padx=10,anchor ="w")"""
+
+checkbox6 = customtkinter.CTkCheckBox(master = frame4, text = "Projít více složek s datumy?",command = selected6)
+checkbox6.pack(pady =12,padx=10,anchor="w")
+images2 = customtkinter.CTkLabel(master = frame4,text = "")
+images2.pack()
+console2 = customtkinter.CTkLabel(master = frame4,text = " ",font=("Arial",15))
+console2.pack(pady =12,padx=10)
 
 #misto pro zobrazovani obrazku
-images = customtkinter.CTkLabel(master = frame3,text = "")
+images = customtkinter.CTkLabel(master = frame5,text = "")
 images.pack()
-name_example = customtkinter.CTkLabel(master = frame3,text = "",font=("Arial",16,"bold"))
+name_example = customtkinter.CTkLabel(master = frame5,text = "",font=("Arial",16,"bold"))
 name_example.pack(pady = 12,padx =10)
 
 #default:
 checkbox.select()
 view_image(1)
+selected6()
 
-button = customtkinter.CTkButton(master = frame3, text = "SPUSTIT", command = start,font=("Arial",20,"bold"))
+button = customtkinter.CTkButton(master = frame5, text = "SPUSTIT", command = start,font=("Arial",20,"bold"))
 button.pack(pady =12,padx=10)
 button._set_dimensions(300,60)
 
-console = customtkinter.CTkLabel(master = frame3,text = " ",font=("Arial",15))
-console.pack(pady =12,padx=10)
-
-
-"""tree_output = customtkinter.CTkLabel(master = frame2,text=" ",justify="left",font=("Arial",15))
-tree_output.pack(pady = 12,padx =10,anchor="w",side="left")"""
-
-
-
+console = customtkinter.CTkLabel(master = frame5,text = " ",justify = "left",font=("Arial",15))
+console.pack(pady =10,padx=10)
 
 root.mainloop()
 
