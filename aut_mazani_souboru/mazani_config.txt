@@ -4,4 +4,4 @@ D:/JHV/Kamery/mazani_test
 
 # Zadejte v měsících, jak staré soubory se mají odstranit
 
-5
+0
