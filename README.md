@@ -14,40 +14,41 @@ Analýza, kontrola a třídění souborů z průmyslových kamer
 	- Funguje na principu předpokladu podobné syntaxe názvu souboru (je splitován znakem "&")
 	- Ošetřeno chybovým hlášením
 
-## Verze 2.4 Lite:
+## Verze 3.0 Lite:
 - základní, rychlá kontrola bez možnosti vstoupit do "advanced modu"
 
-![ukázka verze 2.4 Lite](images/24lite.PNG)
+![ukázka verze 3.0 Lite](images/24lite.PNG)
 
-## Verze 2.4:
+## Verze 3.0:
 - Umožnuje vstoupit do "advanced modu", kde si lze zvolit způsob třídění souborů
+- Nově lze spustit i v adresáři, kde se nachází více složek (například s datumem) a projde je všechny postupně (aut. detekce s potvrzením)
 
-![ukázka verze 2.4 moznosti](images/24_moznosti.PNG)
+![ukázka verze 3.0 moznosti](images/24_moznosti.PNG)
 
 - Nejprve je provedeno základní třídění do OK a NOK složky:
 
-![ukázka verze 2.4 základ](images/24_basic.PNG)
+![ukázka verze 3.0 základ](images/24_basic.PNG)
 
 1) třídění podle typu souboru (jako 2.4 Lite)
 
-![ukázka verze 2.4 - podle typu](images/24_type.PNG)
+![ukázka verze 3.0 - podle typu](images/24_type.PNG)
 
 
 2) zvlášť do složek podle čísla funkce (s prefixem _Func a číslem funkce)
 
-![ukázka verze 2.4-funkce](images/24func.PNG)
+![ukázka verze 3.0-funkce](images/24func.PNG)
 
 3) zvlášť do složek podle čísla kamery (s prefixem _Cam a číslem kamery)
 
-![ukázka verze 2.4-camera](images/24cam.PNG)
+![ukázka verze 3.0-camera](images/24cam.PNG)
 
 4) obojí zároveň
 
-![ukázka verze 2.4-both](images/24both.PNG)
+![ukázka verze 3.0-both](images/24both.PNG)
 
 5) manuální mód (manuální nastavení počtu zakrytých znaků)
 
-![ukázka mannual. módu 2.4](images/24_manual.PNG)
+![ukázka mannual. módu 3.0](images/24_manual.PNG)
 
 ## Verze 2.5 Lite:
 
@@ -73,3 +74,4 @@ Analýza, kontrola a třídění souborů z průmyslových kamer
 ## Aplikace s GUI
 - Je nutné stáhnout zip soubor kvůli načítání obrázků, poté si lze třeba vytvořit shortcut exe souboru a přesunout si jej na plochu
 - Byl přídán konfigurační text file pro definování základní cesty ve file exploreru
+- Nově lze i nastavit cestu k adresáři, kde se nachází více složek (například s datumem) a projde je všechny postupně
