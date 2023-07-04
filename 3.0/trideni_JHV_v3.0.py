@@ -286,7 +286,7 @@ def subfolders_check(path_given):
 def main():
     path_raw = ""
     path_raw = input("Zadejte cestu k souborům (pokud se aplikace už nachází v dané složce -> enter): ")
-    #path_raw = "D:\JHV\Kamery\JHV_Data/"
+    #path_raw = "D:\JHV\Kamery\JHV_Data/2023_04_13\A"
 
     #spusteni v souboru, kde se aplikace aktualne nachazi
     if path_raw == "":
@@ -318,7 +318,8 @@ def main():
             print("-Zkouším, zda nejsem v adresáři s více složkami (například v adresáři se složkami s datumy)")
             result = subfolders_check(path)
             if result == False:
-                print("-Ne, nejsem...\nTřídění ukončeno\n")
+                print("-Ne, nejsem... Zadejte správnou cestu\nTřídění ukončeno\n")
+                main() #konec, znovu
             else:
                 print(f"Ano, jsem... Mám spustit třídění pro všechny nalezené cesty?\n\n{result}\n")
                 confirm = input("[y/Y] / [libovolný znak pro ukončení]:")
@@ -339,6 +340,7 @@ def main():
 
                             s.Sorting_files("by_format",None)
                             folds.remove_empty(folders)
+                main() #konec, znovu
 
         if error != True:
             advanced_mode = input("Nastavit možnosti podrobnějšího třídění?: [Y/y] / [libovolný znak pro uzavření]: ")
@@ -346,7 +348,9 @@ def main():
                 picked = False
                 while(picked == False):
                     sort_option = input("Třídit podle formátu? (0) čísla funkce? (1), podle čísla kamery? (2), podle funkce i kamery? (3)\n")
+                    folders = folds.sync_folders()
                     s=Sorting(path) #refresh promennych
+                    
                     if int(sort_option) == 0:
                         s.Collect_files()
                         formats_found = s.Get_suffix()
@@ -355,36 +359,44 @@ def main():
                         s.Sorting_files("by_format",None)
                         folds.remove_empty(folders)
                         picked = True
+                        main() #konec, znovu
 
                     elif int(sort_option) == 1:
                         s.Collect_files()
+                        s.Get_suffix()
                         functions_found = s.Get_func_list()
                         for functions in functions_found:
                             folds.make_dir(prefix_func + functions)
                         s.Sorting_files("by_func_number",functions_found)
                         folds.remove_empty(folders)
                         picked = True
+                        main() #konec, znovu
 
                     elif int(sort_option) == 2:
                         s.Collect_files()
+                        s.Get_suffix()
                         cam_numbers_found = s.Get_cam_num_list()
                         for cam_num in cam_numbers_found:
                             folds.make_dir(prefix_Cam + cam_num)
                         s.Sorting_files("by_cam_number",cam_numbers_found)
                         folds.remove_empty(folders)
                         picked = True
+                        main() #konec, znovu
 
                     elif int(sort_option) == 3:
                         s.Collect_files()
+                        s.Get_suffix()
                         both_found = s.Get_both_list()
                         for both in both_found:
                             folds.make_dir(both)
                         s.Sorting_files("by_both",both_found)
                         folds.remove_empty(folders)
                         picked = True
+                        main() #konec, znovu
                     else:
                         print("-Mimo rozsah, zkuste znovu")
             else:
                 print("-Třídění ukončeno")
+                main() #konec, znovu
 
 main()
