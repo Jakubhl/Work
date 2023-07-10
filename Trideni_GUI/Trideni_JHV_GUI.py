@@ -1,7 +1,7 @@
 import customtkinter
 import os
 from PIL import Image, ImageTk
-import trideni_JHV as Trideni
+import trideni_JHV_v3_gui as Trideni
 from tkinter import filedialog
 
 customtkinter.set_appearance_mode("dark")
