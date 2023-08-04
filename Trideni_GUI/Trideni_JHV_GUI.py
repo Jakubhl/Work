@@ -159,12 +159,12 @@ def view_image(which_one):
         name_example.configure(text = "221013_092241_0000000842_  => 21 <=  _&  => Cam1 <=  Img.Height.bmp")
 
 frame = customtkinter.CTkFrame(master=root)
-frame.pack(pady=20,padx=20,fill="both",expand=False,side = "top")
+frame.pack(pady=10,padx=5,fill="both",expand=False,side = "top")
 frame2 = customtkinter.CTkFrame(master=root)
-frame2.pack(pady=0,padx=20,fill="both",expand=False,side = "top")
+frame2.pack(pady=0,padx=5,fill="both",expand=False,side = "top")
 
 frame5 = customtkinter.CTkScrollableFrame(master=root)
-frame5.pack(pady=0,padx=0,fill="both",expand=True,side = "bottom")
+frame5.pack(pady=0,padx=5,fill="both",expand=True,side = "bottom")
 
 frame3 = customtkinter.CTkFrame(master=root)
 frame3.pack(pady=10,padx=5,fill="both",expand=True,side="left")
