@@ -28,3 +28,8 @@ max paletek: 55
 -rozlisovat i soubory .png
 -prochazet datumovku
 -nevytvaret slozky pred spustenim
+
+13.11.2023
+-pridat aplikaci na trideni dvojic do aplikace s GUI
+-zrusit trideni uvnitr pair slozky i vne
+-bude pridana moznost volby na pocet cisel ID a maximalni pocet "paletek"
