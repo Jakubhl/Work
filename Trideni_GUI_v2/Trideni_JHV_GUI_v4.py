@@ -139,6 +139,12 @@ def selected(): #tridit podle typu souboru
     labelxx2.grid(column =0,row=7,pady =1,padx=10)
     labelxxx2 = customtkinter.CTkLabel(master = frame6,width=200,text = "",justify = "left",font=("Arial",12))
     labelxxx2.grid(column =0,row=8,pady =1,padx=10)
+    labelx3 = customtkinter.CTkLabel(master = frame6,width=200,text = "",justify = "left",font=("Arial",12))
+    labelx3.grid(column =0,row=6,pady =1,padx=10)
+    labelxx3 = customtkinter.CTkLabel(master = frame6,width=200,text = "",justify = "left",font=("Arial",12))
+    labelxx3.grid(column =0,row=7,pady =1,padx=10)
+    labelxxx3 = customtkinter.CTkLabel(master = frame6,width=200,text = "",justify = "left",font=("Arial",12))
+    labelxxx3.grid(column =0,row=8,pady =1,padx=10)
 
 def selected2(): #tridit polde cisla funkce (ID)
     clear_frame(frame6)
