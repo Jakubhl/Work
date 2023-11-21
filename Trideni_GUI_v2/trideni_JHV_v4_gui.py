@@ -4,8 +4,8 @@ import re
 
 #globals:
 nok_folder = "Temp"
-prefix_func = "Func_"
-prefix_Cam = "Cam_"
+#prefix_func = "Func_"
+#prefix_Cam = "Cam_"
 supported_formats = ["bmp","png"]
 pair_folder = "PAIRS"
 forbidden_folders = [pair_folder]
@@ -31,12 +31,16 @@ def path_check(path_raw):
 
     else:
         return path
-def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_given,ID_num_of_digits_given):
+def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_given,by_which_ID_number,prefix_func,prefix_Cam):
+    global max_num_of_pallets
     max_num_of_pallets = max_num_of_pallets_given
-    ID_num_of_digits = ID_num_of_digits_given
+    ID_num_of_digits = 4 #default
     path = path_given
     sort_option = selected_sort-1
     more_dirs = more_dir
+    #num_of_dots = num_of_dots_in_file_name
+    num_of_dots = 0 #default - urci se automaticky
+    by_which_ID_num = by_which_ID_number
 
     class Folders:
         def __init__(self,path):
@@ -80,29 +84,40 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
             self.files_type_arr = []
             self.file_list = []
 
-        def Collect_files(self):
+        def Collect_files(self): #vykona se jako prvni
             #folds = Folders(self.path)
+            global num_of_dots
             folders = Folders(self.path).sync_folders()
-
+            num_of_dots_set = False
             for i in range(0,len(folders)):
                 for files in os.listdir(self.path + folders[i]):
-                    if len(files.split(".")) == 3:
-                        if files.split(".")[2] in supported_formats:
-                            if os.path.exists(self.path + folders[i] + "/" + files):
-                                shutil.move(self.path + folders[i] + "/" + files , self.path + '/' + files)
+                    if num_of_dots_set == False: #automaticke urceni poctu tecek v souboru
+                        for formats in supported_formats:
+                            if ("." + formats) in files:
+                                num_of_dots = (len(files.split(".")) -1)
+                                num_of_dots_set = True
+                    if num_of_dots_set == True:
+                        if len(files.split(".")) == num_of_dots+1:
+                            if files.split(".")[num_of_dots] in supported_formats:
+                                if os.path.exists(self.path + folders[i] + "/" + files):
+                                    shutil.move(self.path + folders[i] + "/" + files , self.path + '/' + files)
 
         def Get_cam_number(file_for_analyze):
             if "&" in file_for_analyze:
                 files_split = file_for_analyze.split("&")
                 files_split = files_split[1] # prava strana od &
-                files_split = files_split.split(".")
+                files_split = files_split.split(".") #od prvni tecky... neni treba upravovat podle tecek v nazvu souboru
                 files_split = files_split[0] # leva strana od tecky
                 files_split = re.findall(r'\d+', files_split)
                 cam_number = ' '.join([str(elem) for elem in files_split]) #ziskani stringu z pole
 
                 return cam_number
             else:
-                output.append("-Chyba: soubor {} neobsahuje rozhodovaci symbol \"&\"\n".format(file_for_analyze))
+                #output.append("-Chyba: soubor {} neobsahuje rozhodovaci symbol \"&\"\n".format(file_for_analyze))
+                #oprava spamu:
+                error_message = "-Chyba: V cestě jsou soubory, které neobsahují rozhodovací symbol \"&\"\n"
+                if not error_message in output:
+                    output.append(error_message)
                 return False
 
         def Get_cam_num_list(self):
@@ -115,18 +130,38 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
             return cam_num_list
             
         def Get_func_number(file_for_analyze):
-            files_split = file_for_analyze.split("&")
-            files_split = files_split[0] # leva strana od &
-            files_split = files_split.split("_") 
-            if len(files_split) != 0:
-                arr_pos = len(files_split) -2 #-2, protože pole se pocita od nuly a nezajima nas znak _ před &
-                func_number = files_split[arr_pos] 
+            global ID_num_of_digits
+            if "&" in file_for_analyze:
+                files_split = file_for_analyze.split("&")
+                files_split = files_split[0] # leva strana od &
+                files_split = files_split.split("_") 
+                if len(files_split) != 0:
+                    arr_pos = len(files_split) -2 #-2, protože pole se pocita od nuly a nezajima nas znak _ před &
+                    func_number = files_split[arr_pos] 
+                    ID_num_of_digits = len(func_number) #automaticke urceni poctu cifer v ID
 
-                return func_number
+                    if by_which_ID_num == "":
+                        return func_number
+                    else:
+                        if int(by_which_ID_num) <= ID_num_of_digits:
+                            return func_number[by_which_ID_num-1]
+                        else:
+                            error_message = "-Chyba: Zvolili jste třídit podle cifry, která neodpovídá délce ID souborů\n"
+                            if not error_message in output:
+                                output.append(error_message)
+                            return False
+                else:
+                    #oprava spamu:
+                    error_message1 = "-Chyba: V cestě jsou soubory, které neobsahují rozhodovací symbol \"_\", potřebný pro určení čísla funkce\n"
+                    if not error_message1 in output:
+                        output.append(error_message1)
+                    return False
             else:
-                output.append("-Chyba: soubor {} neobsahuje rozhodovaci symbol \"_\", potrebny pro urceni cisla funkce\n".format(file_for_analyze))
+                error_message2 = "-Chyba: V cestě jsou soubory, které neobsahují rozhodovací symbol \"&\"\n"
+                if not error_message2 in output:
+                    output.append(error_message2)
                 return False
-
+            
         def Get_func_list(self):
             func_list = []
             for files in self.file_list:
@@ -149,14 +184,29 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
 
         def Get_suffix(self):
             files_type = ""
+            num_of_dots_set = False
+            global num_of_dots
             #zjišťování počtu typů souborů
             for files in os.listdir(self.path):
-                if len(files.split(".")) == 3:
-                    if files.split(".")[2] in supported_formats:
-                        self.file_list.append(files)
-                        files_type = files.split(".")
-                        if not files_type[1] in self.files_type_arr:
-                            self.files_type_arr.append(files_type[1])
+                if num_of_dots_set == False: #automaticke urceni poctu tecek v souboru
+                    for formats in supported_formats:
+                        if ("." + formats) in files:
+                            num_of_dots = (len(files.split(".")) -1)
+                            num_of_dots_set = True
+                
+                if num_of_dots_set == True:
+                    if len(files.split(".")) == (num_of_dots+1):
+                        if files.split(".")[num_of_dots] in supported_formats:
+                            self.file_list.append(files)
+                            files_type = files.split(".")
+                            if num_of_dots > 1:
+                                if not files_type[num_of_dots-1] in self.files_type_arr:
+                                    self.files_type_arr.append(files_type[num_of_dots-1])
+                            else:
+                                if not files_type[num_of_dots] in self.files_type_arr:
+                                    self.files_type_arr.append(files_type[num_of_dots])
+            if len(self.file_list) == 0:
+                output.append("Nebyly nalezeny žádné vhodné soubory ke zpracování\n")
 
             if self.files_type_arr != []: #pokud byl nalezen
                 output.append(f"-Nalezené typy souborů: {self.files_type_arr}\n")
@@ -164,8 +214,7 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
             return self.files_type_arr
                 
         def Sorting_files(self,sort_option,folder_list):
-            n = 0
-            hide_cnt = 4
+            hide_cnt = ID_num_of_digits + 2
             files_arr_cut = []
             files_cut = 0
             nok_count = 0
@@ -178,8 +227,7 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
                 files_cut = files.split(cutting_condition)
                 files_cut = files_cut[0]
                 hide_cnt_from_start = len(files_cut) - int(hide_cnt)
-                files_arr_cut.append(files_cut[0:(hide_cnt_from_start)])        
-
+                files_arr_cut.append(files_cut[0:(hide_cnt_from_start)]) 
             for i in range(0,len(files_arr_cut)):
 
                 for files in files_arr_cut:
@@ -192,7 +240,7 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
                     ok_count += 1
                     if sort_option == "by_format":
                         for formats in self.files_type_arr:
-                            if self.file_list[i].split(".")[1] == formats:
+                            if self.file_list[i].split(".")[(num_of_dots-2)] == formats:
                                 if os.path.exists(self.path + self.file_list[i]):
                                     shutil.move(self.path + self.file_list[i] , self.path + formats + "/" + self.file_list[i])
 
@@ -219,7 +267,8 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
                     nok_count += 1
                     if os.path.exists(self.path + self.file_list[i]):
                         shutil.move(self.path + self.file_list[i] , self.path + nok_folder + "/" + self.file_list[i]) #přesun do Temp složky
-                    #del self.file_list[i]
+                    if sort_option == "pairs":
+                        self.file_list.pop(i) #ostraneni souboru z pole, aby se s nim dale nepracovalo
                     count = 0
             
             #if error_length == 1:
@@ -234,17 +283,15 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
                 output.append(" - Nepáry, celkem: {}".format(nok_count))
                 output.append(" - OK soubory zastoupené všemi formáty, celkem: {}".format(ok_count))
             return self.error
-        
-        def sort_by_ID(self, path_given, max_num_of_pallets, ID_num_of_digits):
-            path = path_given
-            max_number_of_pallets = max_num_of_pallets
-            ID_number_of_digits = ID_num_of_digits
-
+            
+        def sort_by_ID(self,path, max_num_of_pallets, ID_num_of_digits):
+            max_number_of_pallets = int(max_num_of_pallets)
             list_of_pairs = []
-            pair_file_list = []
             lost_pallets = []
             list_of_pairs_clear = []
             list_of_pair_count = []
+            files_to_copy_part1 = []
+            files_to_copy=[]
 
             compare_num = ""
             count = 0
@@ -253,94 +300,109 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
             increment=int(Sorting.Get_func_number(ref_file)) #reference aby palety nezacinaly vzdy on nuly
             
             #hledani vice souboru (dvojic)---------------------------------------------------------------------------
-            mes_send = False #jen jednou za slozku... at nespamuje
+            #mes_send = False #jen jednou za slozku... at nespamuje
+            stop = False
             for files in self.file_list: #hledani v listu se soubory
-                #if ".bmp" in files: #pouze pro overeni, zda se jedna o uzitecny soubor
-                numbers = Sorting.Get_func_number(files)
-                if len(numbers) == ID_number_of_digits:
+                if stop == False:
+                    numbers = Sorting.Get_func_number(files) #tady se automaticky nastavi ID_num_of_digits
                     keep_searching = True
-                    pair_file_list.append(files + "_" + str(round_number))
                     while(keep_searching == True): #while cyklus kvuli moznym chybejicim paletkam
-                        if numbers[1] != "9": #nevsimame si cisel 900+
-                            if increment>max_number_of_pallets:
-                                increment=0
-                                round_number +=1
-                            if increment < 10:
-                                compare_num = "000"+str(increment)
-                            if increment >= 10:
-                                compare_num = "00"+str(increment)
-                            if compare_num == numbers:
-                                count +=1
-                                
-                                if count > len(self.files_type_arr):
-                                    if numbers not in list_of_pairs: # blok pro zajisteni pouze jednoho vyskytu v poli v rade V JEDNE SADE (0-55)
-                                        if len(list_of_pairs_clear) != 0:
-                                            if list_of_pairs_clear[len(list_of_pairs_clear)-1] != numbers:
-                                                list_of_pairs_clear.append(numbers)
-                                        else:
-                                            list_of_pairs_clear.append(numbers)
-
-                                        numbers_with_round = numbers + "_sada_cislo_" + str(round_number)
-                                        if len(list_of_pairs) != 0:
-                                            if list_of_pairs[len(list_of_pairs)-1] != numbers_with_round:
-                                                list_of_pairs.append(numbers_with_round)
-                                        else:
-                                            list_of_pairs.append(numbers_with_round)
-
-                                keep_searching = False #zavolame dalsi cislo...
-
-                            else:
-                                if(count < len(self.files_type_arr)): #ztracena jen pokud tam je mene jak dva soubory
-                                    lost_pallets.append(compare_num)
-                                increment+=1
-                                if count >= len(self.files_type_arr)*2:
-                                    list_of_pair_count.append(count) #pocet souboru, ktere musi algoritmus vyhledat
-                                count = 0
-                                    
-                        else:
+                        if round_number > 10000: #zacykleni programu 10000 kol hledani se zda byt dostacujici, vypocetni doba: 5s
+                            output.append(f"Došlo k zacyklení programu, nejspíše neodpovídá nastavení maximálního počtu palet {max_number_of_pallets} (max ID) v oběhu\nNebo soubory postrádají příponu")
+                            stop = True
                             keep_searching = False
-                else:
-                    if mes_send == False: #at nezaspamuje cely terminal...
-                        output.append("- Chyba: délka ID před znakem: _& není rovna ",ID_number_of_digits,"...\n",files,"\n V cestě:",path )
-                        mes_send = True
+                            
+                        if increment>max_number_of_pallets:
+                            increment=0
+                            round_number +=1
+                        if increment < 10:
+                            compare_num = ((ID_num_of_digits-1)*"0")+str(increment)
+                        if increment >= 10:
+                            compare_num = ((ID_num_of_digits-2)*"0")+str(increment)
+                        if increment >= 100:
+                            compare_num = ((ID_num_of_digits-3)*"0")+str(increment)
+                        if increment >= 1000:
+                            compare_num = ((ID_num_of_digits-4)*"0")+str(increment)
+                        if increment >= 10000:
+                            compare_num = ((ID_num_of_digits-5)*"0")+str(increment)
+                        if increment >= 100000:
+                            compare_num = ((ID_num_of_digits-6)*"0")+str(increment)
+                        if compare_num == numbers:
+                            count +=1
+
+                            files_to_copy_part1.append(files + "_" + str(round_number))
+                            
+                            if count > len(self.files_type_arr):
+                                files_to_copy.append(files + "_" + str(round_number)) #utvareni pole, pro nasledne kopirovani do PAIR slozky
+                                for items in files_to_copy_part1:
+                                    if not items in files_to_copy:
+                                        files_to_copy.append(items)
+
+                                if numbers not in list_of_pairs: # blok pro zajisteni pouze jednoho vyskytu v poli v rade V JEDNE SADE (0-max_num_of_pallets)
+                                    if len(list_of_pairs_clear) != 0:
+                                        if list_of_pairs_clear[len(list_of_pairs_clear)-1] != numbers:
+                                            list_of_pairs_clear.append(numbers)
+                                    else:
+                                        list_of_pairs_clear.append(numbers)
+
+                                    numbers_with_round = numbers + "_sada_cislo_" + str(round_number)
+                                    if len(list_of_pairs) != 0:
+                                        if list_of_pairs[len(list_of_pairs)-1] != numbers_with_round:
+                                            list_of_pairs.append(numbers_with_round)
+                                    else:
+                                        list_of_pairs.append(numbers_with_round)
+
+                            keep_searching = False #zavolame dalsi cislo...
+
+                        else:
+                            if(count < len(self.files_type_arr)): #ztracena jen pokud tam je mene jak dva soubory
+                                lost_pallets.append(compare_num)
+                            increment+=1
+                            if count > len(self.files_type_arr):
+                                list_of_pair_count.append(count) #pocet souboru, ktere musi algoritmus vyhledat
+                            count = 0
+                            files_to_copy_part1 = [] #resetuje se kazde kolo, jsou to ty prvni "podezrele" soubory, ktere se doplni do pole files_to_copy, kdyz jich je vice nez pocet typu souboru
+                                           
 
             if len(list_of_pairs_clear) !=0:
-                output.append("- Nalezený seznam dvojic v řadě za sebou podle ID:",list_of_pairs_clear,"\n- Každá v počtu souborů:",list_of_pair_count)
+                output.append(f"- Nalezený seznam dvojic v řadě za sebou podle ID: {list_of_pairs_clear}\n- Každá v počtu souborů: {list_of_pair_count}")
 
-            if len(lost_pallets) !=0:
-                output.append("- Seznam čísel chybějících palet v řadě za sebou: ",lost_pallets)
-            else:
-                output.append("- Žádné chybějící palety nubyly nenalezeny")
+            if len(lost_pallets) ==0:
+                output.append("- Žádné chybějící palety nebyly nenalezeny")
 
             if len(list_of_pairs) != 0: #jestli nejake vubec jsou...
                 #vytvoreni slozky s páry:
                 if not os.path.exists(path + pair_folder):
                     os.mkdir(path + pair_folder)
-                j=0
-                x=0
+                num_of_files_copied=0
+                num_of_files_to_copy=0
                 #kopirovani do zvlastni slozky------------------------------------------------------------------
                 for numbers in list_of_pairs:
-                    for files in pair_file_list:                    
+                    for files in files_to_copy:                    
                         files_splitted = files.split("_")
-                        q=0
+                        num_of_character=0
                         files_full_name = ""
-
                         for characters in files_splitted:#takto slozite pro pripad viceciferneho cisla kola
-                            if q<8 and q<1:
+                            #skladame nazev bez koncovky, kterou jsme pridali z duvodu urceni kola, prvni charakter nema znak _ pred sebou...
+                            if num_of_character==0: 
                                 files_full_name =  files_full_name + characters
-                            if q<8 and q>=1:
+                            if num_of_character>0 and num_of_character<(len(files_splitted)-1):
                                 files_full_name =  files_full_name +"_"+ characters
-                            q+=1
-
-                        if (numbers[:4] == Sorting.Get_func_number(files)) and (numbers.split("_")[3] == files.split("_")[8]):
-                            if j < int(list_of_pair_count[x]):
-                                if not os.path.exists(path + pair_folder + '/' + files_full_name): #jestli uz tam jsou nebude je to kopirovat znova...
+                            num_of_character+=1
+                        #priklad numbers: 0026_sada_cislo_24
+                        #priklad files.split("_"): ['2023', '11', '15-17', '00', '21', 'PALETKA', '0047', '&Cam2Img.Height.bmp', '41'] -> posledni cislo v poli predstavuje cislo kola
+                        if (numbers[:ID_num_of_digits] == Sorting.Get_func_number(files)) and (numbers.split("_")[3] == files.split("_")[(len(files_splitted)-1)]):
+                            if num_of_files_copied < int(list_of_pair_count[num_of_files_to_copy]):
+                                if not os.path.exists(path + pair_folder + '/' + files_full_name):
                                     shutil.copy(path + files_full_name , path + pair_folder + '/' + files_full_name)
-                                j+=1  
-                    j=0
-                x+=1
+                                num_of_files_copied+=1  
+                    num_of_files_copied=0
+                    num_of_files_to_copy+=1
+
     def subfolders_check(path_given):
         #STAGE1///////////////////////////////////////////////////
+        global num_of_dots
+        num_of_dots_set = False
         path = path_given
         fold = Folders(path)
         folders = fold.sync_folders()
@@ -348,9 +410,15 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
         for folds in folders:
             count = 0
             for files in os.listdir(path + folds):
-                if len(files.split(".")) == 3: #tri bloky rozdelene teckou x.x.bmp/png
-                    if files.split(".")[2] in supported_formats:
-                        count+=1
+                if num_of_dots_set == False: #automaticke urceni poctu tecek v souboru
+                    for formats in supported_formats:
+                        if ("." + formats) in files:
+                            num_of_dots = (len(files.split(".")) -1)
+                            num_of_dots_set = True
+                if num_of_dots_set == True:
+                    if len(files.split(".")) == num_of_dots+1: #tri bloky rozdelene teckou x.x.bmp/png
+                        if files.split(".")[num_of_dots] in supported_formats:
+                            count+=1
             if count ==0:
                 path_list_not_found.append(path + folds)
         
@@ -366,12 +434,18 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
                     path_x = paths + "/" + folds
                     
                     for files in os.listdir(path_x):
-                        if len(files.split(".")) == 3:
-                            if files.split(".")[2] in supported_formats:
-                                count+=1
-                                if os.path.isdir(path_x + "/"):
-                                    if not path_x + "/" in paths_to_folders:
-                                        paths_to_folders.append(path_x + "/")
+                        if num_of_dots_set == False: #automaticke urceni poctu tecek v souboru
+                            for formats in supported_formats:
+                                if ("." + formats) in files:
+                                    num_of_dots = (len(files.split(".")) -1)
+                                    num_of_dots_set = True
+                        if num_of_dots_set == True:
+                            if len(files.split(".")) == num_of_dots+1:
+                                if files.split(".")[num_of_dots] in supported_formats:
+                                    count+=1
+                                    if os.path.isdir(path_x + "/"):
+                                        if not path_x + "/" in paths_to_folders:
+                                            paths_to_folders.append(path_x + "/")
                     if count ==0:
                         path_list_not_found_st2.append(paths + "/"  + folds)
         #STAGE3///////////////////////////////////////////////////
@@ -383,12 +457,18 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
                 for folds in folders:
                     count = 0
                     for files in os.listdir(paths + "/" + folds):
-                        if len(files.split(".")) == 3:
-                            if files.split(".")[2] in supported_formats:
-                                count+=1
-                                if os.path.isdir(paths + "/"):
-                                    if not paths + "/" in paths_to_folders:
-                                        paths_to_folders.append(paths + "/")                           
+                        if num_of_dots_set == False: #automaticke urceni poctu tecek v souboru
+                            for formats in supported_formats:
+                                if ("." + formats) in files:
+                                    num_of_dots = (len(files.split(".")) -1)
+                                    num_of_dots_set = True
+                        if num_of_dots_set == True:
+                            if len(files.split(".")) == num_of_dots+1:
+                                if files.split(".")[num_of_dots] in supported_formats:
+                                    count+=1
+                                    if os.path.isdir(paths + "/"):
+                                        if not paths + "/" in paths_to_folders:
+                                            paths_to_folders.append(paths + "/")                           
                     if count ==0:
                         path_list_not_found_st3.append(paths + "/"  + folds)
 
@@ -398,6 +478,7 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
             return False
 
     def main():
+        global max_num_of_pallets
         if more_dirs == True:
             result = subfolders_check(path)
             if result == False:
@@ -405,7 +486,7 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
             else:
                 output_console2.append("- Prochazím tyto cesty: ")
                 for items in result:
-                    output_console2.append(items+"\n")
+                    output_console2.append(items)
 
                 for paths in result:
                     if os.path.exists(paths):
@@ -454,21 +535,18 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
                             folders = folds.sync_folders()
                             folds.remove_empty(folders)
 
-                        elif int(sort_option) == 4: #hledani dvojic (nejprve podle formatu, pote v kazde slozce hleda dvojice) jnak by neslo kdyby uz byly ve slozkach nebo naopak
+                        elif int(sort_option) == 4: #hledani dvojic, collect ze slozek a vytvoreni slozky se vsema dvojicema - potom si mohou dotridit jinym programem
                             s.Collect_files() 
-                            formats_found = s.Get_suffix()
-                            for formats in formats_found:
-                                folds.make_dir(formats)
-                            s.Sorting_files("by_format",None)
+                            s.Get_suffix() #pro ziskani pole se vsema podporovanyma souborama
+                            s.Sorting_files("pairs",None) #pro presun lichych souboru do nok slozky
+                            if int(max_num_of_pallets) == 55: #defaultni hodnota, ktera nebyla zmenena - muzeme si dovolit automatickou detekci
+                                ID_list = s.Get_func_list()
+                                max_num_of_pallets = int(max(ID_list))
+                            s.sort_by_ID(paths,max_num_of_pallets,ID_num_of_digits)
                             folders = folds.sync_folders()
                             folds.remove_empty(folders)
-         
-                            for formats in formats_found: #hledání bude provedeno ve všech složkách podle suffixu
-                                s.Get_suffix() #nutne pro vytvoreni pole se soubory v kazde slozce
-                                s.sort_by_ID(path+formats,max_num_of_pallets,ID_num_of_digits)
-                            
+                              
         else: #nebylo zaskrtnuto prochazet vice souboru
-
             folds = Folders(path) #definice cesty pro classu folders
             folds.make_dir(nok_folder) #vytvoreni zakladnich slozek
             folders = folds.sync_folders()
@@ -512,18 +590,16 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
                 folders = folds.sync_folders()
                 folds.remove_empty(folders)
 
-            elif int(sort_option) == 4:  #hledani dvojic (nejprve podle formatu, pote v kazde slozce hleda dvojice) jnak by neslo kdyby uz byly ve slozkach nebo naopak
+            elif int(sort_option) == 4:  #hledani dvojic, collect ze slozek a vytvoreni slozky se vsema dvojicema - potom si mohou dotridit jinym programem
                 s.Collect_files() 
-                formats_found = s.Get_suffix()
-                for formats in formats_found:
-                    folds.make_dir(formats)
-                s.Sorting_files("by_format",None)
+                s.Get_suffix() #pro ziskani pole se vsema podporovanyma souborama
+                s.Sorting_files("pairs",None) #pro presun lichych souboru do nok slozky
+                if int(max_num_of_pallets) == 55: #defaultni hodnota, ktera nebyla zmenena - muzeme si dovolit automatickou detekci
+                    ID_list = s.Get_func_list()
+                    max_num_of_pallets = int(max(ID_list))
+                s.sort_by_ID(path,max_num_of_pallets,ID_num_of_digits)
                 folders = folds.sync_folders()
                 folds.remove_empty(folders)
-
-                for formats in formats_found: #hledání bude provedeno ve všech složkách podle suffixu
-                    s.Get_suffix() #nutne pro vytvoreni pole se soubory v kazde slozce
-                    s.sort_by_ID(path+formats,max_num_of_pallets,ID_num_of_digits)
 
         if s.error == True:
             output.append("Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &)\nNebo je vložená cestak souborům ob více, jak jednu složku")
