@@ -38,8 +38,96 @@ def menu():
     sorting_button.grid(column =1,row=2,pady =20,padx=0)
     deleting_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Možnosti mazání souborů", command = lambda: Deleting_option(list_of_menu_frames),font=("Arial",25,"bold"))
     deleting_button.grid(column =1,row=3,pady =0,padx=0)
-    convert_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Možnosti konvertování souborů", command = lambda: Sorting_option(list_of_menu_frames),font=("Arial",25,"bold"))
+    convert_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Možnosti konvertování souborů", command = lambda: Converting_option(list_of_menu_frames),font=("Arial",25,"bold"))
     convert_button.grid(column =1,row=4,pady =20,padx=0)
+
+    root.mainloop()
+
+def Converting_option(list_of_menu_frames):
+    #cisteni menu widgets
+    for frames in list_of_menu_frames: 
+        frames.pack_forget()
+        frames.grid_forget()
+        frames.destroy()
+
+    #cisteni pred vstupem do menu
+    def call_menu():
+        list_of_frames = [frame_with_logo,frame_path_input,bottom_frame1,bottom_frame2]
+        for frames in list_of_frames:
+            frames.pack_forget()
+            frames.grid_forget()
+            frames.destroy()
+        menu()
+
+    #definice EXPLORERU
+    def browseDirectories():
+        programme_path = os.getcwd()
+        if os.path.exists(programme_path+"/"+"Default_path.txt"):
+            f = open("Default_path.txt", "r")
+            start_path = str(f.read())
+            if not os.path.exists(start_path):
+                start_path = ""
+                console.configure(text="")
+                console.configure(text="Konfigurační soubor obsahuje neplatnou cestu")
+
+        else:
+            console.configure(text="")
+            console.configure(text="Chybí konfigurační soubor s počáteční cestou...\n(Založte s názvem: Default_path.txt)")
+            start_path=""
+
+        if(start_path != ""):
+            foldername_path = filedialog.askdirectory(initialdir = start_path,
+                                                title = "Select a Directory",
+                                                )
+        else:
+            foldername_path = filedialog.askdirectory(initialdir = "/",
+                                                title = "Select a Directory",
+                                                )
+
+        check = Trideni.path_check(foldername_path)
+        if check == False:
+            console.configure(text="")
+            console.configure(text = "Zadaná cesta: "+foldername_path+" nebyla nalezena")
+        else:
+            if foldername_path != "":
+                entry1.delete("0","100")
+                entry1.insert("0", foldername_path)
+                console.configure(text="")
+                console.configure(text = "Byla vložena cesta: " + foldername_path)
+    def start():
+        print("s")
+
+    #definice ramcu
+    frame_with_logo = customtkinter.CTkFrame(master=root)
+    frame_with_logo.pack(pady=0,padx=5,fill="both",expand=False,side = "top")
+    frame_path_input = customtkinter.CTkFrame(master=root)
+    frame_path_input.pack(pady=5,padx=5,fill="both",expand=False,side = "top")
+    bottom_frame2 = customtkinter.CTkScrollableFrame(master=root)
+    bottom_frame2.pack(pady=5,padx=5,fill="both",expand=True,side = "bottom")
+    bottom_frame1 = customtkinter.CTkFrame(master=root,height = 80)
+    bottom_frame1.pack(pady=0,padx=5,fill="x",expand=False,side = "bottom")
+    #checkbox_frame = customtkinter.CTkFrame(master=root,width=400)
+    #checkbox_frame.pack(pady=0,padx=5,fill="y",expand=False,side="left")
+    #frame_right = customtkinter.CTkScrollableFrame(master=root)
+    #frame_right.pack(pady=0,padx=5,fill="both",expand=True,side="right")
+    
+
+    logo = customtkinter.CTkImage(Image.open("images/logo.png"),size=(961, 125))
+    image_logo = customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
+    image_logo.pack()
+
+    menu_button = customtkinter.CTkButton(master = frame_path_input, width = 180, text = "MENU", command = lambda: call_menu(),font=("Arial",20,"bold"))
+    menu_button.pack(pady =12,padx=10,anchor ="w",side="left")
+    entry1 = customtkinter.CTkEntry(master = frame_path_input,placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)")
+    entry1.pack(pady = 12,padx =0,anchor ="w",side="left",fill="both",expand=True)
+    tree = customtkinter.CTkButton(master = frame_path_input, width = 180,text = "EXPLORER", command = browseDirectories,font=("Arial",20,"bold"))
+    tree.pack(pady = 12,padx =10,anchor ="w",side="left")
+
+    button = customtkinter.CTkButton(master = bottom_frame2, text = "KONVERTOVAT", command = start,font=("Arial",20,"bold"))
+    button.pack(pady =20,padx=10)
+    button._set_dimensions(300,60)
+    console = customtkinter.CTkLabel(master = bottom_frame2,text = " ",justify = "left",font=("Arial",15))
+    console.pack(pady =10,padx=10)
 
     root.mainloop()
 
