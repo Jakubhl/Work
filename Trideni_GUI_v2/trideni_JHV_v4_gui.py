@@ -7,17 +7,17 @@ nok_folder = "Temp"
 #prefix_func = "Func_"
 #prefix_Cam = "Cam_"
 
-supported_formats = []
-file1 = open('supported_formats.txt', 'r')
-Lines = file1.readlines()
-unwanted_chars = ["\n","\"","[","]"]
-for chars in unwanted_chars:
-    if chars in Lines[2]:
-        Lines[2] = Lines[2].replace(chars,"")
+#supported_formats = []
+#file1 = open('supported_formats.txt', 'r')
+#Lines = file1.readlines()
+#unwanted_chars = ["\n","\"","[","]"]
+#for chars in unwanted_chars:
+#    if chars in Lines[2]:
+#        Lines[2] = Lines[2].replace(chars,"")
     
-list1 = Lines[2].split(",")
-for items in list1:
-    supported_formats.append(str(items))
+#list1 = Lines[2].split(",")
+#for items in list1:
+#    supported_formats.append(str(items))
 #supported_formats = ["bmp","png"]
 pair_folder = "PAIRS"
 forbidden_folders = [pair_folder]
@@ -26,9 +26,6 @@ output_console2 = []
 
 def path_check(path_raw):
     path=path_raw
-    #print("-Třídění souborů z průmyslových kamer...\n")
-
-    #opravy cesty k souborům:
     backslash = "\ "
     if backslash[0] in path:
         newPath = path.replace(os.sep, '/')
@@ -43,7 +40,7 @@ def path_check(path_raw):
 
     else:
         return path
-def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_given,by_which_ID_number,prefix_func,prefix_Cam):
+def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_given,by_which_ID_number,prefix_func,prefix_Cam,supported_formats):
     global max_num_of_pallets
     max_num_of_pallets = max_num_of_pallets_given
     ID_num_of_digits = 4 #default

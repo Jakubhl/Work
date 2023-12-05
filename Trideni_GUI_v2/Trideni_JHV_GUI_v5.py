@@ -1,5 +1,6 @@
 import customtkinter
 import os
+import re
 from PIL import Image, ImageTk
 import trideni_JHV_v4_gui as Trideni
 import mazani_v1 as Deleting
@@ -16,10 +17,26 @@ root.title("Zpracování souborů z průmyslových kamer")
 logo_set = False
 
 def read_text_file_data():
+    """
+    Funkce vraci data z textoveho souboru Recources.txt
+
+    data jsou v poradi:
+
+    0 supported_formats_sorting\n
+    1 supported_formats_deleting\n
+    2 path_repaired\n
+    3 files_to_keep\n
+    4 cutoff_date\n
+    5 prefix_function\n
+    6 prefix_camera\n
+    7 maximalized\n
+    8 max_pallets\n
+    """
+
     if os.path.exists('Recources.txt'):
         cutoff_date = ["","",""]
-        recources_file = open('Recources.txt', 'r')
-        Lines = recources_file.readlines()
+        with open('Recources.txt','r',encoding='utf-8',errors='replace') as recources_file:
+            Lines = recources_file.readlines()
         supported_formats_sorting = []
         supported_formats_deleting = []
         unwanted_chars = ["\n","\"","[","]"]
@@ -37,15 +54,9 @@ def read_text_file_data():
             supported_formats_deleting.append(str(items))
         
         inserted_path = Lines[6].replace("\n","")
+        inserted_path = str(inserted_path)
 
         path_repaired = Trideni.path_check(inserted_path)
-        if path_repaired == False:
-            #console.configure(text = "Zadaná cesta: "+inserted_path+" nebyla nalezena")
-            print("Zadaná cesta: "+inserted_path+" nebyla nalezena")
-        else:
-            if inserted_path != "":
-                #console.configure(text = "Byla vložena cesta: " + inserted_path)
-                print("Byla vložena cesta: " + path_repaired)
 
         Lines[8] = Lines[8].replace("\n","")
         files_to_keep = int(Lines[8])
@@ -57,12 +68,230 @@ def read_text_file_data():
             i+=1
             cutoff_date[i-1] = items
 
+        Lines[12] = Lines[12].replace("\n","")
+        Lines[12] = Lines[12].replace("\"","")
+        Lines[12] = Lines[12].replace("/","")
+        if str(Lines[12]) != "":
+            prefix_function = Lines[12]
+        else:
+            prefix_function = "Func_"
+
+        Lines[14] = Lines[14].replace("\n","")
+        Lines[14] = Lines[14].replace("\"","")
+        Lines[14] = Lines[14].replace("/","")
+        if str(Lines[14]) != "":
+            prefix_camera = Lines[14]
+        else:
+            prefix_camera = "Cam_"
+
+        #spoustet v maximalizovanem okne?
+        Lines[16] = Lines[16].replace("\n","")
+        if str(Lines[16]) != "":
+            maximalized = Lines[16]
+        else:
+            maximalized = "ne"
+        #maximalni pocet palet v obehu
+        Lines[18] = Lines[18].replace("\n","")
+        if str(Lines[18]) != "":
+            max_pallets = int(Lines[18])
+        else:
+            max_pallets = 55
+
+        return [supported_formats_sorting,supported_formats_deleting,path_repaired,files_to_keep,cutoff_date,prefix_function,prefix_camera,maximalized,max_pallets]
     else:
         print("Chybí konfigurační soubor Recources.txt")
+        return [False,False,False,False,False]
+
+data_read_in_txt = read_text_file_data()
+if data_read_in_txt[7] == "ano":
+    root.attributes('-fullscreen', True)
+
+def write_text_file_data(input_data,which_parameter):
+    """
+    Funkce zapisuje data do textoveho souboru Recources.txt
+
+    vraci vystupni zpravu: report
+
+    which_parameter je bud: 
     
-    return [supported_formats_sorting,supported_formats_deleting,path_repaired,files_to_keep,cutoff_date]
+    1 add_supported_sorting_formats\n
+    2 add_supported_deleting_formats\n
+    3 pop_supported_sorting_formats\n
+    4 pop_supported_deleting_formats\n
+    5 default_path\n
+    6 default_files_to_keep\n
+    7 default_cutoff_date\n
+    8 new_default_prefix_cam\n
+    9 new_default_prefix_func\n
+    10 maximalized\n
+    11 pallets_set\n
+    """
+    unwanted_chars = ["\"","\n"," ","."]
+    if os.path.exists('Recources.txt'):
+        report = ""
+        with open('Recources.txt', 'r',encoding='utf-8',errors='replace') as recources:
+            lines = recources.readlines()
+
+        supported_formats_sorting = []
+        supported_formats_deleting = []
+        found_formats = lines[2].split(",")
+        for items in found_formats:
+            items = items.replace("\n","")
+            supported_formats_sorting.append(str(items))
+        found_formats = lines[4].split(",")
+        for items in found_formats:
+            items = items.replace("\n","")
+            supported_formats_deleting.append(str(items))
+
+        if which_parameter == "add_supported_sorting_formats":
+            corrected_input = str(input_data)
+            for items in unwanted_chars:
+                corrected_input = corrected_input.replace(items,"")
+            if str(corrected_input) not in supported_formats_sorting:
+                supported_formats_sorting.append(str(corrected_input))
+                report = (f"Byl přidán formát: \"{corrected_input}\" do podporovaných formátů pro možnosti třídění")
+            else:
+                report =  (f"Formát: \"{corrected_input}\" je již součástí podporovaných formátů možností třídění")
+        
+        if which_parameter == "add_supported_deleting_formats":
+            corrected_input = str(input_data)
+            for items in unwanted_chars:
+                corrected_input = corrected_input.replace(items,"")
+            if str(corrected_input) not in supported_formats_deleting:
+                supported_formats_deleting.append(str(corrected_input))
+                report =  (f"Byl přidán formát: \"{corrected_input}\" do podporovaných formátů pro možnosti mazání")
+            else:
+                report =  (f"Formát: \"{corrected_input}\" je již součástí podporovaných formátů možností mazání")
+            
+        if which_parameter == "pop_supported_sorting_formats":
+            poped = 0
+            found = False
+            range_to = len(supported_formats_sorting)
+            for i in range(0,range_to):
+                if i < range_to:
+                    if str(input_data) == supported_formats_sorting[i] and len(str(input_data)) == len(supported_formats_sorting[i]):
+                        supported_formats_sorting.pop(i)
+                        poped+=1
+                        range_to = range_to - poped
+                        report =  (f"Z podporovaných formátů možností třídění byl odstraněn formát: \"{input_data}\"")
+                        found = True
+            if found == False:
+                report =  (f"Formát: \"{input_data}\" nebyl nalezen v podporovaných formátech možností třídění, nemůže tedy být odstraněn")
+            
+        if which_parameter == "pop_supported_deleting_formats":
+            poped = 0
+            found = False
+            range_to = len(supported_formats_deleting)
+            for i in range(0,range_to):
+                if i < range_to:
+                    if str(input_data) == supported_formats_deleting[i] and len(str(input_data)) == len(supported_formats_deleting[i]):
+                        supported_formats_deleting.pop(i)
+                        poped+=1
+                        range_to = range_to - poped
+                        report =  (f"Z podporovaných formátů možností mazání byl odstraněn formát: \".{input_data}\"")
+                        found = True
+            if found == False:
+                report =  (f"Formát: \"{input_data}\" nebyl nalezen v podporovaných formátech možností mazání, nemůže tedy být odstraněn")
+        
+        if which_parameter == "default_path":
+            lines[6] = lines[6].replace("\n","")
+            lines[6] = str(input_data)+"\n"
+            report = (f"Základní cesta přenastavena na: {str(input_data)}")
+        
+        if which_parameter == "default_files_to_keep":
+            lines[8] = lines[8].replace("\n","")
+            lines[8] = str(input_data)+"\n"
+        
+        if which_parameter == "default_cutoff_date":
+            lines[10] = lines[10].replace("\n","")
+            lines[10] = str(input_data[0])+"."+str(input_data[1])+"."+str(input_data[2])+"\n"
+
+        if which_parameter == "new_default_prefix_cam":
+            lines[12] = lines[12].replace("\n","")
+            lines[12] = lines[12].replace("\"","")
+            lines[12] = lines[12].replace("/","")
+            lines[12] = str(input_data)+"\n"
+            report = (f"Základní název složek pro třídění podle kamery přenastaven na: {str(input_data)}")
+
+        if which_parameter == "new_default_prefix_func":
+            lines[14] = lines[14].replace("\n","")
+            lines[14] = lines[14].replace("\"","")
+            lines[14] = lines[14].replace("/","")
+            lines[14] = str(input_data)+"\n"
+            report = (f"Základní název složek pro třídění podle funkce přenastaven na: {str(input_data)}")
+
+        if which_parameter == "maximalized":
+            lines[16] = str(input_data) + "\n"
+
+        if which_parameter == "pallets_set":
+            lines[18] = str(input_data) + "\n"
+
+        #navraceni poli zpet do stringu radku:
+        lines[2] = ""
+        lines[4] = ""
+        for items in supported_formats_sorting:
+            if lines[2] == "":
+                lines[2] = lines[2] + str(items)
+            else:
+                lines[2] = lines[2] + "," + str(items)
+        for items in supported_formats_deleting:
+            if lines[4] == "":
+                lines[4] = lines[4] + str(items)
+            else:
+                lines[4] = lines[4] + "," + str(items)
+        lines[2] = lines[2]+"\n"
+        lines[4] = lines[4]+"\n"
+
+        # Write the modified lines back to the file
+        with open('Recources.txt', 'w',encoding='utf-8',errors='replace') as recources2:
+            recources2.writelines(lines)
+
+        return report
+    else:
+        print("Chybí konfigurační soubor Recources.txt")
+        return "Chybí konfigurační soubor Recources.txt"
+
+#definice EXPLORERU
+def browseDirectories():
+    """
+    Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
+
+    Výstupní data:
+
+    0: výstupní chybová hlášení
+    1: opravená cesta
+    """
+    corrected_path = ""
+    output= ""
+    text_file_data = read_text_file_data()
+    start_path = str(text_file_data[2]) #defaultni cesta
+    if start_path != False:
+        if not os.path.exists(start_path):
+            start_path = ""
+            output="Konfigurační soubor obsahuje neplatnou cestu"
+
+    else:
+        output="Chybí konfigurační soubor Recources.txt s počáteční cestou...\n"
+        start_path=""
+
+    if(start_path != ""):
+        foldername_path = filedialog.askdirectory(initialdir = start_path,
+                                            title = "Select a Directory",
+                                            )
+    else:
+        foldername_path = filedialog.askdirectory(initialdir = "/",
+                                            title = "Select a Directory",
+                                            )
+
+    check = Trideni.path_check(foldername_path)
+    corrected_path = check
+    
+    return [output,corrected_path]
 
 def menu():
+    """
+    Funkce spouští základní menu při spuštění aplikace
+    """
     global logo_set
 
     if logo_set == False:
@@ -96,6 +325,9 @@ def menu():
     root.mainloop()
 
 def Advanced_option(list_of_menu_frames):
+    """
+    Funkce umožňuje nastavit základní parametry, které ukládá do textového souboru
+    """
     #cisteni menu widgets
     for frames in list_of_menu_frames: 
         frames.pack_forget()
@@ -103,7 +335,10 @@ def Advanced_option(list_of_menu_frames):
         frames.destroy()
     #cisteni pred vstupem do menu
     def call_menu():
-        list_of_frames = [bottom_frame,bottom_frame2]
+        """
+        Funkce čistí všechny zaplněné rámečky a funguje, jako tlačítko zpět do menu
+        """
+        list_of_frames = [top_frame,bottom_frame_default_path,bottom_frame_with_date,bottom_frame_with_files_to_keep,bottom_frame_sorting_formats,bottom_frame_deleting_formats,main_console_frame]
         for frames in list_of_frames:
             frames.pack_forget()
             frames.grid_forget()
@@ -114,38 +349,121 @@ def Advanced_option(list_of_menu_frames):
         for widget in frame.winfo_children():
             widget.destroy()
 
-    bottom_frame2 = customtkinter.CTkFrame(master=root)
-    bottom_frame2.pack(pady=5,padx=5,fill="both",expand=True,side = "bottom")
-    bottom_frame = customtkinter.CTkFrame(master=root,height = 80)
-    bottom_frame.pack(pady=0,padx=5,fill="x",expand=False,side = "bottom")
-    
-    label0 = customtkinter.CTkLabel(master = bottom_frame,height=20,text = "Nastavte požadované parametry (nastavení bude uloženo i po vypnutí aplikace): ",justify = "left",font=("Arial",16,"bold"))
-    label0.grid(column =0,row=0,sticky = tk.W,pady =0,padx=10)
-    menu_button = customtkinter.CTkButton(master = bottom_frame, width = 180, text = "MENU", command = lambda: call_menu(),font=("Arial",20,"bold"))
-    menu_button.grid(column =0,row=0,sticky = tk.W,pady =0,padx=1000)
+    main_console_frame = customtkinter.CTkFrame(master=root)
+    main_console_frame.pack(pady=5,padx=5,fill="both",expand=True,side = "bottom")
+    bottom_frame_deleting_formats = customtkinter.CTkFrame(master=root,height = 200)
+    bottom_frame_deleting_formats.pack(pady=5,padx=5,fill="x",expand=False,side = "bottom")
+    bottom_frame_sorting_formats = customtkinter.CTkFrame(master=root,height = 200)
+    bottom_frame_sorting_formats.pack(pady=5,padx=5,fill="x",expand=False,side = "bottom")
+    bottom_frame_with_files_to_keep = customtkinter.CTkFrame(master=root,height = 200)
+    bottom_frame_with_files_to_keep.pack(pady=5,padx=5,fill="x",expand=False,side = "bottom")
+    bottom_frame_with_date = customtkinter.CTkFrame(master=root,height = 200)
+    bottom_frame_with_date.pack(pady=5,padx=5,fill="x",expand=False,side = "bottom")
+    bottom_frame_default_path = customtkinter.CTkFrame(master=root,height = 200)
+    bottom_frame_default_path.pack(pady=5,padx=5,fill="x",expand=False,side = "bottom")
+    top_frame = customtkinter.CTkFrame(master=root,height = 200)
+    top_frame.pack(pady=5,padx=5,fill="x",expand=False,side = "bottom")
 
-    def setting_widgets(main_console_text,console_bottom_frame2_1_text,console_bottom_frame_2_text):
-        clear_frame(bottom_frame2)
+    def maximalized():
+        option = checkbox_maximalized.get()
+        if option == 1:
+            write_text_file_data("ano","maximalized")
+        else:
+            write_text_file_data("ne","maximalized")
+
+    label0 = customtkinter.CTkLabel(master = top_frame,height=20,text = "Nastavte požadované parametry (nastavení bude uloženo i po vypnutí aplikace): ",justify = "left",font=("Arial",16,"bold"))
+    label0.grid(column =0,row=0,sticky = tk.W,pady =0,padx=10)
+    menu_button = customtkinter.CTkButton(master = top_frame, width = 180, text = "MENU", command = lambda: call_menu(),font=("Arial",20,"bold"))
+    menu_button.grid(column =0,row=0,sticky = tk.W,pady =0,padx=1000)
+    checkbox_maximalized = customtkinter.CTkCheckBox(master = top_frame, text = "Spouštět v maximalizovaném okně",command = lambda: maximalized())
+    checkbox_maximalized.grid(column =0,row=1,sticky = tk.W,pady =0,padx=10)
+    
+    if read_text_file_data()[7] == "ano":
+        checkbox_maximalized.select()
+    else:
+        checkbox_maximalized.deselect()
+
+    def setting_widgets(main_console_text,exception):
+        clear_frame(bottom_frame_with_date)
+        clear_frame(bottom_frame_with_files_to_keep)
+        clear_frame(bottom_frame_sorting_formats)
+        clear_frame(bottom_frame_deleting_formats)
+        clear_frame(main_console_frame)
+        clear_frame(bottom_frame_default_path)
+
         text_file_data = read_text_file_data()
-        cutoff_date = text_file_data[4]
+        if exception == False:
+            cutoff_date = text_file_data[4]
+        else:
+            cutoff_date = exception
+
         files_to_keep = text_file_data[3]
+        default_prefix_cam =text_file_data[5]
+        default_prefix_func=text_file_data[6]
+        default_max_num_of_pallets=text_file_data[8]
+
+        def call_browseDirectories():
+            output = browseDirectories()
+            if output[0] != "":
+                main_console.configure(text="")
+                main_console.configure(text=output[0])
+            else:
+                if str(output[1]) != "/":
+                    path_set.delete("0","200")
+                    path_set.insert("0", output[1])
+
+                    console_input = write_text_file_data(output[1],"default_path")
+                    main_console.configure(text=console_input)
+                    default_path_insert_console.configure(text = "")
+                    default_path_insert_console.configure(text = "Aktuálně nastavená základní cesta k souborům: " + str(output[1]))
+                    main_console.configure(text="")
+                    main_console.configure(text=f"Byla vložena cesta: {output[1]}")
+
+        def save_path():
+            path_given = str(path_set.get())
+            path_check = Trideni.path_check(path_given)
+            main_console.configure(text="")
+            if path_check != False and path_check != "/":
+                console_input = write_text_file_data(path_check,"default_path")
+                main_console.configure(text=console_input)
+                default_path_insert_console.configure(text = "")
+                default_path_insert_console.configure(text = "Aktuálně nastavená základní cesta k souborům: " + str(path_check))
+            elif path_check != "/":
+                main_console.configure(text=f"Zadaná cesta: {path_given} nebyla nalezena, nebude tedy uložena")
+        
+        row_index = 0
+        if text_file_data[2] != False:
+            default_path_old = "Aktuálně nastavená základní cesta k souborům: " + str(text_file_data[2])
+            placeholder_path = str(text_file_data[2])
+        else:
+            default_path_old = "Aktuálně nastavená základní cesta k souborům v Recources.txt je neplatná"
+            placeholder_path = ""
+        label5 = customtkinter.CTkLabel(master = bottom_frame_default_path,height=20,text = "Nastavte základní cestu k souborům při spuštění:",justify = "left",font=("Arial",12,"bold"))
+        path_set = customtkinter.CTkEntry(master = bottom_frame_default_path,width=700,height=30,placeholder_text=placeholder_path)
+        button_save5 = customtkinter.CTkButton(master = bottom_frame_default_path,width=50,height=30, text = "Uložit", command = lambda: save_path(),font=("Arial",12,"bold"))
+        button_explorer = customtkinter.CTkButton(master = bottom_frame_default_path,width=100,height=30, text = "EXPLORER", command = lambda: call_browseDirectories(),font=("Arial",12,"bold"))
+        default_path_insert_console=customtkinter.CTkLabel(master = bottom_frame_default_path,height=30,text =default_path_old,justify = "left",font=("Arial",12))
+        label5.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
+        path_set.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
+        button_save5.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=710)
+        button_explorer.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=760)
+        default_path_insert_console.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
 
         def set_default_cutoff_date():
-            #main_console_text = ""
-            console_bottom_frame2_1_text = ""
+            main_console_text = ""
             input_month = set_month.get()
             if input_month != "":
                 if input_month.isdigit():
                     if int(input_month) < 13 and int(input_month) > 0:
                         cutoff_date[1] = int(input_month)
-                        console_bottom_frame2_1.configure(text="")
-                        console_bottom_frame2_1_text = "Datum přenastaveno na: "+ str(cutoff_date[0])+ "."+str(cutoff_date[1])+"."+ str(cutoff_date[2])
+                        main_console.configure(text="")
+                        main_console_text = "Datum přenastaveno na: "+ str(cutoff_date[0])+ "."+str(cutoff_date[1])+"."+ str(cutoff_date[2])
                     else:
-                        console_bottom_frame2_1.configure(text="")
-                        console_bottom_frame2_1_text = "Měsíc: " + str(input_month) + " je mimo rozsah"
+                        main_console.configure(text="")
+                        main_console_text = "Měsíc: " + str(input_month) + " je mimo rozsah"
                 else:
-                    console_bottom_frame2_1.configure(text="")
-                    console_bottom_frame2_1_text = "U nastavení měsíce jste nezadali číslo"
+                    main_console.configure(text="")
+                    main_console_text = "U nastavení měsíce jste nezadali číslo"
 
             input_day = set_day.get()
             max_days_in_month = Deleting.calc_days_in_month(int(cutoff_date[1]))
@@ -154,52 +472,56 @@ def Advanced_option(list_of_menu_frames):
                 if input_day.isdigit():
                     if int(input_day) <= int(max_days_in_month) and int(input_day) > 0:
                         cutoff_date[0] = int(input_day)
-                        console_bottom_frame2_1.configure(text="")
-                        console_bottom_frame2_1_text = "Datum přenastaveno na: "+ str(cutoff_date[0])+ "."+str(cutoff_date[1])+"."+ str(cutoff_date[2])
+                        main_console.configure(text="")
+                        main_console_text = "Datum přenastaveno na: "+ str(cutoff_date[0])+ "."+str(cutoff_date[1])+"."+ str(cutoff_date[2])
                     else:
-                        console_bottom_frame2_1.configure(text="")
-                        console_bottom_frame2_1_text = "Den: " + str(input_day) + " je mimo rozsah"
+                        main_console.configure(text="")
+                        main_console_text = "Den: " + str(input_day) + " je mimo rozsah"
                 else:
-                    console_bottom_frame2_1.configure(text="")
-                    console_bottom_frame2_1_text = "U nastavení dne jste nezadali číslo"
-            setting_widgets()
+                    main_console.configure(text="")
+                    main_console_text = "U nastavení dne jste nezadali číslo"
+
             input_year = set_year.get()
             if input_year != "":
                 if input_year.isdigit():
                     if len(str(input_year)) == 2:
                         cutoff_date[2] = int(input_year) + 2000
-                        console_bottom_frame2_1.configure(text="")
-                        console_bottom_frame2_1_text = "Datum přenastaveno na: "+ str(cutoff_date[0])+ "."+str(cutoff_date[1])+"."+ str(cutoff_date[2])
+                        main_console.configure(text="")
+                        main_console_text = "Datum přenastaveno na: "+ str(cutoff_date[0])+ "."+str(cutoff_date[1])+"."+ str(cutoff_date[2])
                     elif len(str(input_year)) == 4:
                         cutoff_date[2] = int(input_year)
-                        console_bottom_frame2_1.configure(text="")
-                        console_bottom_frame2_1_text = "Datum přenastaveno na: "+ str(cutoff_date[0])+ "."+str(cutoff_date[1])+"."+ str(cutoff_date[2])
+                        main_console.configure(text="")
+                        main_console_text = "Datum přenastaveno na: "+ str(cutoff_date[0])+ "."+str(cutoff_date[1])+"."+ str(cutoff_date[2])
                     else:
-                        console_bottom_frame2_1.configure(text="")
-                        console_bottom_frame2_1_text = "Rok: " + str(input_year) + " je mimo rozsah"
+                        main_console.configure(text="")
+                        main_console_text = "Rok: " + str(input_year) + " je mimo rozsah"
                 else:
-                    console_bottom_frame2_1.configure(text="")
-                    console_bottom_frame2_1_text = "U nastavení roku jste nezadali číslo"
+                    main_console.configure(text="")
+                    main_console_text = "U nastavení roku jste nezadali číslo"
 
-            setting_widgets("",console_bottom_frame2_1_text,"")
+            write_text_file_data(cutoff_date,"default_cutoff_date")
+            setting_widgets(main_console_text,False)
 
         def set_files_to_keep():
-            console_bottom_frame_2_text = ""
+            main_console_text = ""
             input_files_to_keep = files_to_keep_set.get()
             if input_files_to_keep.isdigit():
                 if int(input_files_to_keep) >= 0:
                     files_to_keep = int(input_files_to_keep)
-                    #console_frame_right_2.configure(text="")
-                    console_bottom_frame_2_text = "Počet ponechaných starších souborů nastaven na: " + str(files_to_keep)
+                    write_text_file_data(files_to_keep,"default_files_to_keep")
+                    main_console.configure(text="")
+                    main_console_text = "Základní počet ponechaných starších souborů nastaven na: " + str(files_to_keep)
+                    console_files_to_keep.configure(text = "Aktuálně nastavené minimum: "+str(files_to_keep))
                 else:
-                    #console_frame_right_2.configure(text="")
-                    console_bottom_frame_2_text = "Mimo rozsah"
+                    main_console.configure(text="")
+                    main_console_text = "Mimo rozsah"
             else:
-                #console_frame_right_2.configure(text="")
-                console_bottom_frame_2_text = "Nazadali jste číslo"
+                main_console.configure(text="")
+                main_console_text = "Nazadali jste číslo"
 
             
-            setting_widgets("","",console_bottom_frame_2_text)
+            setting_widgets(main_console_text,False)
+
         def insert_current_date():
             today = Deleting.get_current_date()
             today_split = today[1].split(".")
@@ -211,20 +533,17 @@ def Advanced_option(list_of_menu_frames):
             main_console.configure(text="")
             main_console_text = "Bylo vloženo dnešní datum (Momentálně všechny soubory vyhodnoceny, jako starší!)"
 
-        
-        row_index = 0
-        
+            setting_widgets(main_console_text,cutoff_date)
 
-        label1 = customtkinter.CTkLabel(master = bottom_frame2,height=20,text = "Nastavte základní datum pro vyhodnocení souborů, jako starších:",justify = "left",font=("Arial",12))
-        set_day = customtkinter.CTkEntry(master = bottom_frame2,width=30,height=30, placeholder_text= cutoff_date[0])
-        sep1 = customtkinter.CTkLabel(master = bottom_frame2,height=20,width=10,text = ".",font=("Arial",20))
-        set_month = customtkinter.CTkEntry(master = bottom_frame2,width=30,height=30, placeholder_text= cutoff_date[1])
-        sep2 = customtkinter.CTkLabel(master = bottom_frame2,height=20,width=10,text = ".",font=("Arial",20))
-        set_year = customtkinter.CTkEntry(master = bottom_frame2,width=50,height=30, placeholder_text= cutoff_date[2])
-        button_save1 = customtkinter.CTkButton(master = bottom_frame2,width=50,height=30, text = "Uložit", command = lambda: set_default_cutoff_date(),font=("Arial",12,"bold"))
-        insert_button = customtkinter.CTkButton(master = bottom_frame2,width=130,height=30, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",12,"bold"))
-        console_bottom_frame2_1=customtkinter.CTkLabel(master = bottom_frame2,height=30,text = "",justify = "left",font=("Arial",12))
-        
+        #widgets na nastaveni zakladniho dne
+        label1 = customtkinter.CTkLabel(master = bottom_frame_with_date,height=20,text = "Nastavte základní datum pro vyhodnocení souborů, jako starších:",justify = "left",font=("Arial",12,"bold"))
+        set_day = customtkinter.CTkEntry(master = bottom_frame_with_date,width=30,height=30, placeholder_text= cutoff_date[0])
+        sep1 = customtkinter.CTkLabel(master = bottom_frame_with_date,height=20,width=10,text = ".",font=("Arial",20))
+        set_month = customtkinter.CTkEntry(master = bottom_frame_with_date,width=30,height=30, placeholder_text= cutoff_date[1])
+        sep2 = customtkinter.CTkLabel(master = bottom_frame_with_date,height=20,width=10,text = ".",font=("Arial",20))
+        set_year = customtkinter.CTkEntry(master = bottom_frame_with_date,width=50,height=30, placeholder_text= cutoff_date[2])
+        button_save1 = customtkinter.CTkButton(master = bottom_frame_with_date,width=50,height=30, text = "Uložit", command = lambda: set_default_cutoff_date(),font=("Arial",12,"bold"))
+        insert_button = customtkinter.CTkButton(master = bottom_frame_with_date,width=130,height=30, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",12,"bold"))
         label1.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
         set_day.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
         sep1.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=40)
@@ -233,55 +552,136 @@ def Advanced_option(list_of_menu_frames):
         set_year.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=90)
         button_save1.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=140)
         insert_button.grid(column =0,row=row_index+3,sticky = tk.W,pady =0,padx=10)
-        console_bottom_frame2_1.grid(column =0,row=row_index+4,sticky = tk.W,pady =0,padx=10)
         
+        def set_new_default_prefix(which_folder):
+            report = ""
+            if which_folder == "cam":
+                report = write_text_file_data(set_new_def_prefix_cam.get(),"new_default_prefix_cam")
+                console_cam_prefix.configure(text="")
+                console_cam_prefix.configure(text=report)
+            if which_folder == "func":
+                report = write_text_file_data(set_new_def_prefix_func.get(),"new_default_prefix_func")
+                console_func_prefix.configure(text="")
+                console_func_prefix.configure(text=report)
 
-        label2 = customtkinter.CTkLabel(master = bottom_frame2,height=20,text = "Nastavte základní počet ponechaných souborů, vyhodnocených jako starších:",justify = "left",font=("Arial",12))
-        files_to_keep_set = customtkinter.CTkEntry(master = bottom_frame2,width=50,height=30, placeholder_text= files_to_keep)
-        button_save2 = customtkinter.CTkButton(master = bottom_frame2,width=50,height=30, text = "Uložit", command = lambda: set_files_to_keep(),font=("Arial",12,"bold"))
-        console_bottom_frame_2=customtkinter.CTkLabel(master = bottom_frame2,height=30,text ="",justify = "left",font=("Arial",12))
-        label2.grid(column =0,row=row_index+5,sticky = tk.W,pady =0,padx=10)
-        files_to_keep_set.grid(column =0,row=row_index+6,sticky = tk.W,pady =0,padx=10)
-        button_save2.grid(column =0,row=row_index+6,sticky = tk.W,pady =0,padx=60)
-        console_bottom_frame_2.grid(column =0,row=row_index+7,sticky = tk.W,pady =0,padx=10)
+        #widgets na nastaveni zakladni slozky cam    
+        label_folder_cam = customtkinter.CTkLabel(master = bottom_frame_with_date,height=20,text = "Nastavte základní název složky pro třídění podle kamer:",justify = "left",font=("Arial",12,"bold"))
+        set_new_def_prefix_cam = customtkinter.CTkEntry(master = bottom_frame_with_date,width=200,height=30, placeholder_text= str(default_prefix_cam))
+        button_save_new_def_prefix = customtkinter.CTkButton(master = bottom_frame_with_date,width=50,height=30, text = "Uložit", command = lambda: set_new_default_prefix("cam"),font=("Arial",12,"bold"))
+        console_cam_prefix=customtkinter.CTkLabel(master = bottom_frame_with_date,height=30,text ="",justify = "left",font=("Arial",12))
+        label_folder_cam.grid(column =1,row=row_index+1,sticky = tk.W,pady =0,padx=300)
+        set_new_def_prefix_cam.grid(column =1,row=row_index+2,sticky = tk.W,pady =0,padx=300)
+        button_save_new_def_prefix.grid(column =1,row=row_index+2,sticky = tk.W,pady =0,padx=500)
+        console_cam_prefix.grid(column =1,row=row_index+3,sticky = tk.W,pady =0,padx=300)
+    
+        #widgets na nastaveni zakladniho poctu files_to_keep
+        files_to_keep_console_text ="Aktuálně nastavené minimum: "+str(files_to_keep)
+        label2 = customtkinter.CTkLabel(master = bottom_frame_with_files_to_keep,height=20,text = "Nastavte základní počet ponechaných souborů, vyhodnocených jako starších:",justify = "left",font=("Arial",12,"bold"))
+        files_to_keep_set = customtkinter.CTkEntry(master = bottom_frame_with_files_to_keep,width=50,height=30, placeholder_text= files_to_keep)
+        button_save2 = customtkinter.CTkButton(master = bottom_frame_with_files_to_keep,width=50,height=30, text = "Uložit", command = lambda: set_files_to_keep(),font=("Arial",12,"bold"))
+        console_files_to_keep=customtkinter.CTkLabel(master = bottom_frame_with_files_to_keep,height=30,text =files_to_keep_console_text,justify = "left",font=("Arial",12))
+        label2.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
+        files_to_keep_set.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
+        button_save2.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=60)
+        console_files_to_keep.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
 
-        def add_format():
-            output = read_text_file_data()
-            output[0]
-        def pop_format():
-            output = read_text_file_data()
-            output[0]
+        #widgets na nastaveni zakladni slozky func
+        label_folder_func = customtkinter.CTkLabel(master = bottom_frame_with_files_to_keep,height=20,text = "Nastavte základní název složky pro třídění podle funkce:",justify = "left",font=("Arial",12,"bold"))
+        set_new_def_prefix_func = customtkinter.CTkEntry(master = bottom_frame_with_files_to_keep,width=200,height=30, placeholder_text= str(default_prefix_func))
+        button_save_new_def_prefix_func = customtkinter.CTkButton(master = bottom_frame_with_files_to_keep,width=50,height=30, text = "Uložit", command = lambda: set_new_default_prefix("func"),font=("Arial",12,"bold"))
+        console_func_prefix=customtkinter.CTkLabel(master = bottom_frame_with_files_to_keep,height=30,text ="",justify = "left",font=("Arial",12))
+        label_folder_func.grid(column =1,row=row_index,sticky = tk.W,pady =0,padx=230)
+        set_new_def_prefix_func.grid(column =1,row=row_index+1,sticky = tk.W,pady =0,padx=230)
+        button_save_new_def_prefix_func.grid(column =1,row=row_index+1,sticky = tk.W,pady =0,padx=430)
+        console_func_prefix.grid(column =1,row=row_index+2,sticky = tk.W,pady =0,padx=230)
+    
+        def add_format(which_operation):
+            main_console_text = ""
+            if which_operation == 0:
+                new_format = str(formats_set.get())
+                if new_format !="":
+                    main_console.configure(text="")
+                    main_console_text = write_text_file_data(new_format,"add_supported_sorting_formats")
+            if which_operation == 1:
+                new_format = str(formats_set2.get())
+                if new_format !="":
+                    main_console.configure(text="")
+                    main_console_text = write_text_file_data(new_format,"add_supported_deleting_formats")
+            setting_widgets(main_console_text,False)
 
-        label3 = customtkinter.CTkLabel(master = bottom_frame2,height=20,text = "Nastavte podporované formáty pro možnosti: TŘÍDĚNÍ:",justify = "left",font=("Arial",12))
-        formats_set = customtkinter.CTkEntry(master = bottom_frame2,width=50,height=30, placeholder_text= files_to_keep)
-        button_save3 = customtkinter.CTkButton(master = bottom_frame2,width=50,height=30, text = "Uložit", command = lambda: add_format(),font=("Arial",12,"bold"))
-        button_pop = customtkinter.CTkButton(master = bottom_frame2,width=50,height=30, text = "Odebrat", command = lambda: pop_format(),font=("Arial",12,"bold"))
-        console_bottom_frame_3=customtkinter.CTkLabel(master = bottom_frame2,height=30,text =text_file_data[0],justify = "left",font=("Arial",12))
-        label3.grid(column =0,row=row_index+8,sticky = tk.W,pady =0,padx=10)
-        formats_set.grid(column =0,row=row_index+9,sticky = tk.W,pady =0,padx=10)
-        button_save3.grid(column =0,row=row_index+9,sticky = tk.W,pady =0,padx=60)
-        button_pop.grid(column =0,row=row_index+9,sticky = tk.W,pady =0,padx=110)
-        console_bottom_frame_3.grid(column =0,row=row_index+10,sticky = tk.W,pady =0,padx=10)
+        def pop_format(which_operation):
+            main_console_text = ""
+            if which_operation == 0:
+                format_to_delete = str(formats_set.get())
+                if format_to_delete !="":
+                    main_console.configure(text="")
+                    main_console_text = write_text_file_data(format_to_delete,"pop_supported_sorting_formats")
+            if which_operation == 1:
+                format_to_delete = str(formats_set2.get())
+                if format_to_delete !="":
+                    main_console.configure(text="")
+                    main_console_text = write_text_file_data(format_to_delete,"pop_supported_deleting_formats")
 
-        label3 = customtkinter.CTkLabel(master = bottom_frame2,height=20,text = "Nastavte podporované formáty pro možnosti: MAZÁNÍ:",justify = "left",font=("Arial",12))
-        formats_set = customtkinter.CTkEntry(master = bottom_frame2,width=50,height=30, placeholder_text= files_to_keep)
-        button_save3 = customtkinter.CTkButton(master = bottom_frame2,width=50,height=30, text = "Uložit", command = lambda: add_format(),font=("Arial",12,"bold"))
-        button_pop = customtkinter.CTkButton(master = bottom_frame2,width=50,height=30, text = "Odebrat", command = lambda: pop_format(),font=("Arial",12,"bold"))
-        console_bottom_frame_4=customtkinter.CTkLabel(master = bottom_frame2,height=30,text =text_file_data[0],justify = "left",font=("Arial",12))
-        label3.grid(column =0,row=row_index+11,sticky = tk.W,pady =0,padx=10)
-        formats_set.grid(column =0,row=row_index+12,sticky = tk.W,pady =0,padx=10)
-        button_save3.grid(column =0,row=row_index+12,sticky = tk.W,pady =0,padx=60)
-        button_pop.grid(column =0,row=row_index+12,sticky = tk.W,pady =0,padx=110)
-        console_bottom_frame_4.grid(column =0,row=row_index+13,sticky = tk.W,pady =0,padx=10)
+            setting_widgets(main_console_text,False)
 
-        main_console = customtkinter.CTkLabel(master = bottom_frame2,height=50,text =main_console_text,justify = "left",font=("Arial",16))
-        main_console.grid(column =0,row=row_index+14,sticky = tk.W,pady =0,padx=10)
+        supported_formats_sorting = "Aktuálně nastavené podporované formáty pro možnosti třídění: " + str(text_file_data[0])
+        label3 = customtkinter.CTkLabel(master = bottom_frame_sorting_formats,height=20,text = "Nastavte podporované formáty pro možnosti: TŘÍDĚNÍ:",justify = "left",font=("Arial",12,"bold"))
+        formats_set = customtkinter.CTkEntry(master = bottom_frame_sorting_formats,width=50,height=30)
+        button_save3 = customtkinter.CTkButton(master = bottom_frame_sorting_formats,width=50,height=30, text = "Uložit", command = lambda: add_format(0),font=("Arial",12,"bold"))
+        button_pop = customtkinter.CTkButton(master = bottom_frame_sorting_formats,width=70,height=30, text = "Odebrat", command = lambda: pop_format(0),font=("Arial",12,"bold"))
+        console_bottom_frame_3=customtkinter.CTkLabel(master = bottom_frame_sorting_formats,height=30,text =supported_formats_sorting,justify = "left",font=("Arial",12))
+        label3.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
+        formats_set.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
+        button_save3.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=60)
+        button_pop.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=110)
+        console_bottom_frame_3.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
 
-    output = read_text_file_data()
-    print(output)
-    setting_widgets("","")
+        def set_max_num_of_pallets():
+            input_1 = set_max_pallets.get()
+            if input_1.isdigit() == False:
+                console_pallets.configure(text = "")
+                console_pallets.configure(text = "Nezadali jste číslo")
+            elif int(input_1) <1:
+                console_pallets.configure(text = "")
+                console_pallets.configure(text = "Mimo rozsah")
+            else:
+                console_pallets.configure(text = "")
+                console_pallets.configure(text = f"Počet palet nastaven na: {input_1}")
+                write_text_file_data(input_1,"pallets_set")
+                
+        #widgets na nastaveni zakladniho poctu palet v obehu
+        label_pallets = customtkinter.CTkLabel(master = bottom_frame_sorting_formats,height=20,text = "Nastavte základní maximální počet paletek v oběhu:",justify = "left",font=("Arial",12,"bold"))
+        set_max_pallets = customtkinter.CTkEntry(master = bottom_frame_sorting_formats,width=100,height=30, placeholder_text= str(default_max_num_of_pallets))
+        button_save_max_num_of_pallets = customtkinter.CTkButton(master = bottom_frame_sorting_formats,width=50,height=30, text = "Uložit", command = lambda: set_max_num_of_pallets(),font=("Arial",12,"bold"))
+        console_pallets=customtkinter.CTkLabel(master = bottom_frame_sorting_formats,height=30,text ="",justify = "left",font=("Arial",12))
+        label_pallets.grid(column =1,row=row_index,sticky = tk.W,pady =0,padx=260)
+        set_max_pallets.grid(column =1,row=row_index+1,sticky = tk.W,pady =0,padx=260)
+        button_save_max_num_of_pallets.grid(column =1,row=row_index+1,sticky = tk.W,pady =0,padx=360)
+        console_pallets.grid(column =1,row=row_index+2,sticky = tk.W,pady =0,padx=260)
+
+        supported_formats_deleting = "Aktuálně nastavené podporované formáty pro možnosti mazání: " + str(text_file_data[1])
+        label4 = customtkinter.CTkLabel(master = bottom_frame_deleting_formats,height=20,text = "Nastavte podporované formáty pro možnosti: MAZÁNÍ:",justify = "left",font=("Arial",12,"bold"))
+        formats_set2 = customtkinter.CTkEntry(master = bottom_frame_deleting_formats,width=50,height=30)
+        button_save4 = customtkinter.CTkButton(master = bottom_frame_deleting_formats,width=50,height=30, text = "Uložit", command = lambda: add_format(1),font=("Arial",12,"bold"))
+        button_pop2 = customtkinter.CTkButton(master = bottom_frame_deleting_formats,width=70,height=30, text = "Odebrat", command = lambda: pop_format(1),font=("Arial",12,"bold"))
+        console_bottom_frame_4=customtkinter.CTkLabel(master = bottom_frame_deleting_formats,height=30,text =supported_formats_deleting,justify = "left",font=("Arial",12))
+        label4.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
+        formats_set2.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
+        button_save4.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=60)
+        button_pop2.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=110)
+        console_bottom_frame_4.grid(column =0,row=row_index+3,sticky = tk.W,pady =0,padx=10)
+
+        main_console_label = customtkinter.CTkLabel(master = main_console_frame,height=50,text ="KONZOLA:",justify = "left",font=("Arial",16,"bold"))
+        main_console_label.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
+        main_console = customtkinter.CTkLabel(master = main_console_frame,height=50,text =main_console_text,justify = "left",font=("Arial",16))
+        main_console.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
+
+    setting_widgets("",False)
 
 def Converting_option(list_of_menu_frames):
+    """
+    Funkce spouští možnosti konvertování typu souborů
+    """
     #cisteni menu widgets
     for frames in list_of_menu_frames: 
         frames.pack_forget()
@@ -297,43 +697,20 @@ def Converting_option(list_of_menu_frames):
             frames.destroy()
         menu()
 
-    #definice EXPLORERU
-    def browseDirectories():
-        programme_path = os.getcwd()
-        if os.path.exists(programme_path+"/"+"Default_path.txt"):
-            f = open("Default_path.txt", "r")
-            start_path = str(f.read())
-            if not os.path.exists(start_path):
-                start_path = ""
-                console.configure(text="")
-                console.configure(text="Konfigurační soubor obsahuje neplatnou cestu")
-
-        else:
-            console.configure(text="")
-            console.configure(text="Chybí konfigurační soubor s počáteční cestou...\n(Založte s názvem: Default_path.txt)")
-            start_path=""
-
-        if(start_path != ""):
-            foldername_path = filedialog.askdirectory(initialdir = start_path,
-                                                title = "Select a Directory",
-                                                )
-        else:
-            foldername_path = filedialog.askdirectory(initialdir = "/",
-                                                title = "Select a Directory",
-                                                )
-
-        check = Trideni.path_check(foldername_path)
-        if check == False:
-            console.configure(text="")
-            console.configure(text = "Zadaná cesta: "+foldername_path+" nebyla nalezena")
-        else:
-            if foldername_path != "":
-                entry1.delete("0","100")
-                entry1.insert("0", foldername_path)
-                console.configure(text="")
-                console.configure(text = "Byla vložena cesta: " + foldername_path)
+    
     def start():
         print("s")
+        path = path_set.get() 
+        if path != "":
+            check = Trideni.path_check(path)
+            if check == False:
+                console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena")
+            else:
+                path = check
+                console.configure(text = str(path)+" je OK")
+                #del_files(path)
+        else:
+            console.configure(text = "Nebyla vložena cesta k souborům")
 
     #definice ramcu
     frame_path_input = customtkinter.CTkFrame(master=root)
@@ -346,13 +723,24 @@ def Converting_option(list_of_menu_frames):
     #checkbox_frame.pack(pady=0,padx=5,fill="y",expand=False,side="left")
     #frame_right = customtkinter.CTkScrollableFrame(master=root)
     #frame_right.pack(pady=0,padx=5,fill="both",expand=True,side="right")
-    
+
+    def call_browseDirectories():
+        output = browseDirectories()
+        if output[0] != "":
+            console.configure(text="")
+            console.configure(text=output[0])
+        else:
+            if str(output[1]) != "/":
+                path_set.delete("0","200")
+                path_set.insert("0", output[1])
+                console.configure(text="")
+                console.configure(text=f"Byla vložena cesta: {output[1]}")
 
     menu_button = customtkinter.CTkButton(master = frame_path_input, width = 180, text = "MENU", command = lambda: call_menu(),font=("Arial",20,"bold"))
     menu_button.pack(pady =12,padx=10,anchor ="w",side="left")
-    entry1 = customtkinter.CTkEntry(master = frame_path_input,placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)")
-    entry1.pack(pady = 12,padx =0,anchor ="w",side="left",fill="both",expand=True)
-    tree = customtkinter.CTkButton(master = frame_path_input, width = 180,text = "EXPLORER", command = browseDirectories,font=("Arial",20,"bold"))
+    path_set = customtkinter.CTkEntry(master = frame_path_input,placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)")
+    path_set.pack(pady = 12,padx =0,anchor ="w",side="left",fill="both",expand=True)
+    tree = customtkinter.CTkButton(master = frame_path_input, width = 180,text = "EXPLORER", command = call_browseDirectories,font=("Arial",20,"bold"))
     tree.pack(pady = 12,padx =10,anchor ="w",side="left")
 
     button = customtkinter.CTkButton(master = bottom_frame2, text = "KONVERTOVAT", command = start,font=("Arial",20,"bold"))
@@ -369,14 +757,17 @@ def Deleting_option(list_of_menu_frames):
         frames.pack_forget()
         frames.grid_forget()
         frames.destroy()
-    
+
     global more_dirs
     more_dirs = False
     global files_to_keep
-    files_to_keep = 1000
+    #files_to_keep = 1000
+    text_file_data = read_text_file_data()
+    files_to_keep = text_file_data[3]
     global cutoff_date
-    cutoff_date = ["01","01","1999"]
-    
+    #cutoff_date = ["01","01","1999"]
+    cutoff_date = text_file_data[4]
+    supported_formats_deleting = text_file_data[0]
 
     #cisteni pred vstupem do menu
     def call_menu():
@@ -386,43 +777,7 @@ def Deleting_option(list_of_menu_frames):
             frames.grid_forget()
             frames.destroy()
         menu()
-    #definice EXPLORERU
-    def browseDirectories():
-        programme_path = os.getcwd()
-        if os.path.exists(programme_path+"/"+"Default_path.txt"):
-            f = open("Default_path.txt", "r")
-            start_path = str(f.read())
-            if not os.path.exists(start_path):
-                start_path = ""
-                console.configure(text="")
-                console.configure(text="Konfigurační soubor obsahuje neplatnou cestu")
 
-        else:
-            console.configure(text="")
-            console.configure(text="Chybí konfigurační soubor s počáteční cestou...\n(Založte s názvem: Default_path.txt)")
-            start_path=""
-
-        if(start_path != ""):
-            foldername_path = filedialog.askdirectory(initialdir = start_path,
-                                                title = "Select a Directory",
-                                                )
-        else:
-            foldername_path = filedialog.askdirectory(initialdir = "/",
-                                                title = "Select a Directory",
-                                                )
-
-        check = Trideni.path_check(foldername_path)
-        if check == False:
-            console.configure(text="")
-            console.configure(text = "Zadaná cesta: "+foldername_path+" nebyla nalezena")
-        else:
-            if foldername_path != "":
-                entry1.delete("0","100")
-                entry1.insert("0", foldername_path)
-                console.configure(text="")
-                console.configure(text = "Byla vložena cesta: " + foldername_path)
-
-    
     def start():
         if checkbox.get()+checkbox2.get()+checkbox3.get()+checkbox4.get()+checkbox5.get() == 0:
             console.configure(text = "Nevybrali jste žádný způsob třídění :-)")
@@ -431,7 +786,7 @@ def Deleting_option(list_of_menu_frames):
             info.configure(text = "")
 
         else:
-            path = entry1.get() 
+            path = path_set.get() 
             if path != "":
                 check = Trideni.path_check(path)
                 if check == False:
@@ -444,6 +799,7 @@ def Deleting_option(list_of_menu_frames):
                 console.configure(text = "Nebyla vložena cesta k souborům")
 
     def del_files(path):
+        testing_mode = True
         del_option = 0
         if checkbox.get() == 1:
             del_option = 1
@@ -459,11 +815,15 @@ def Deleting_option(list_of_menu_frames):
             more_dirs = True
         else:
             more_dirs = False
+        if checkbox_testing.get() == 1:
+            testing_mode = True
+        else:
+            testing_mode = False
 
         Deleting.output = []
         #Deleting.output_console2 = []
 
-        Deleting.whole_deleting_function(path,more_dirs,del_option,files_to_keep,cutoff_date)
+        Deleting.whole_deleting_function(path,more_dirs,del_option,files_to_keep,cutoff_date,supported_formats_deleting,testing_mode)
         output_text = ""
         #output_text2 = ""
         for i in range(0,len(Deleting.output)):
@@ -487,11 +847,23 @@ def Deleting_option(list_of_menu_frames):
     frame_right = customtkinter.CTkScrollableFrame(master=root)
     frame_right.pack(pady=0,padx=5,fill="both",expand=True,side="right")
 
+    def call_browseDirectories():
+        output = browseDirectories()
+        if output[0] != "":
+            console.configure(text="")
+            console.configure(text=output[0])
+        else:
+            if str(output[1]) != "/":
+                path_set.delete("0","200")
+                path_set.insert("0", output[1])
+                console.configure(text="")
+                console.configure(text=f"Byla vložena cesta: {output[1]}")
+
     menu_button = customtkinter.CTkButton(master = frame_path_input, width = 180, text = "MENU", command = lambda: call_menu(),font=("Arial",20,"bold"))
     menu_button.pack(pady =12,padx=10,anchor ="w",side="left")
-    entry1 = customtkinter.CTkEntry(master = frame_path_input,placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)")
-    entry1.pack(pady = 12,padx =0,anchor ="w",side="left",fill="both",expand=True)
-    tree = customtkinter.CTkButton(master = frame_path_input, width = 180,text = "EXPLORER", command = browseDirectories,font=("Arial",20,"bold"))
+    path_set = customtkinter.CTkEntry(master = frame_path_input,placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)")
+    path_set.pack(pady = 12,padx =0,anchor ="w",side="left",fill="both",expand=True)
+    tree = customtkinter.CTkButton(master = frame_path_input, width = 180,text = "EXPLORER", command = call_browseDirectories,font=("Arial",20,"bold"))
     tree.pack(pady = 12,padx =10,anchor ="w",side="left")
 
     def clear_frame(frame):
@@ -507,7 +879,7 @@ def Deleting_option(list_of_menu_frames):
         checkbox4.deselect()
         checkbox5.deselect()
         info.configure(text = "")
-        info.configure(text = f"- Budou smazány soubory starší než nastavené datum, přičemž bude ponechán nastavený počet souborů, vyhodnocených, jako starších\nPodporované formáty: {Deleting.supported_formats}",font = ("Arial",16,"bold"),justify="left")
+        info.configure(text = f"- Budou smazány soubory starší než nastavené datum, přičemž bude ponechán nastavený počet souborů, vyhodnocených, jako starších\nPodporované formáty: {supported_formats_deleting}",font = ("Arial",16,"bold"),justify="left")
         selected6() #update
 
         def set_cutoff_date():
@@ -635,7 +1007,7 @@ def Deleting_option(list_of_menu_frames):
         checkbox4.deselect()
         checkbox5.deselect()
         info.configure(text = "")
-        info.configure(text = f"- Budou smazány VŠECHNY soubory starší než nastavené datum, přičemž budou redukovány i soubory novější\n- Souborů, vyhodnocených, jako novější, bude ponechán nastavený počet\n(vhodné při situacích rychlého pořizování velkého množství fotografií, kde je potřebné ponechat nějaké soubory pro referenci)\nPodporované formáty: {Deleting.supported_formats}",font = ("Arial",16,"bold"),justify="left")
+        info.configure(text = f"- Budou smazány VŠECHNY soubory starší než nastavené datum, přičemž budou redukovány i soubory novější\n- Souborů, vyhodnocených, jako novější, bude ponechán nastavený počet\n(vhodné při situacích rychlého pořizování velkého množství fotografií, kde je potřebné ponechat nějaké soubory pro referenci)\nPodporované formáty: {supported_formats_deleting}",font = ("Arial",16,"bold"),justify="left")
         selected6() #update
 
         def set_cutoff_date():
@@ -852,25 +1224,34 @@ def Deleting_option(list_of_menu_frames):
         else:
             info2.configure(text = "")
 
+    def selected_testing():
+        testing_mode = True
+        if checkbox_testing.get() == 1:
+            testing_mode = True
+        else:
+            testing_mode = False
+
     frame_with_checkboxes = checkbox_frame
 
     checkbox = customtkinter.CTkCheckBox(master = frame_with_checkboxes, text = "Mazání souborů starších než: určité datum",command = lambda: selected("",""))
-    checkbox.pack(pady =12,padx=10,anchor ="w")
+    checkbox.pack(pady =10,padx=10,anchor ="w")
     checkbox2 = customtkinter.CTkCheckBox(master = frame_with_checkboxes, text = "Redukce novějších, mazání souborů starších než: určité datum",command = lambda: selected2("",""))
-    checkbox2.pack(pady =12,padx=10,anchor ="w")
+    checkbox2.pack(pady =10,padx=10,anchor ="w")
     checkbox3 = customtkinter.CTkCheckBox(master = frame_with_checkboxes, text = "Mazání adresářů s názvem ve formátu určitého datumu",command = lambda: selected3("",""))
-    checkbox3.pack(pady =12,padx=10,anchor ="w")
+    checkbox3.pack(pady =10,padx=10,anchor ="w")
     checkbox4 = customtkinter.CTkCheckBox(master = frame_with_checkboxes, text = "rezerva",command = selected4)
-    checkbox4.pack(pady =12,padx=10,anchor ="w")
+    checkbox4.pack(pady =10,padx=10,anchor ="w")
     checkbox5 = customtkinter.CTkCheckBox(master = frame_with_checkboxes, text = "rezerva",command = selected5)
-    checkbox5.pack(pady =12,padx=10,anchor ="w")
+    checkbox5.pack(pady =10,padx=10,anchor ="w")
 
     #images = customtkinter.CTkLabel(master = bottom_frame2,text = "")
     #images.pack()
-    checkbox6 = customtkinter.CTkCheckBox(master = bottom_frame1, text = "Procházet subsložky? (max:6)",command = selected6,font=("Arial",16,"bold"))
-    checkbox6.grid(column =0,row=0,sticky = tk.W,pady =12,padx=10)
-    info2 = customtkinter.CTkLabel(master = bottom_frame1,text = "",font=("Arial",16,"bold"))
-    info2.grid(column =0,row=0,sticky = tk.W,pady =12,padx=300)
+    checkbox6 = customtkinter.CTkCheckBox(master = bottom_frame1, text = "Procházet subsložky? (max:6)",command = selected6,font=("Arial",12,"bold"))
+    checkbox6.grid(column =0,row=0,sticky = tk.W,pady =5,padx=10)
+    info2 = customtkinter.CTkLabel(master = bottom_frame1,text = "",font=("Arial",12,"bold"))
+    info2.grid(column =0,row=0,sticky = tk.W,pady =5,padx=250)
+    checkbox_testing = customtkinter.CTkCheckBox(master = bottom_frame1, text = "Režim TESTOVÁNÍ (Soubory vyhodnocené ke smazání se pouze přesunou do složky s názvem: \"Ke_smazani\")",command = selected_testing,font=("Arial",12,"bold"))
+    checkbox_testing.grid(column =0,row=1,sticky = tk.W,pady =5,padx=10)
     info = customtkinter.CTkLabel(master = bottom_frame2,text = "",font=("Arial",16,"bold"))
     info.pack(pady = 12,padx =10,anchor="w")
     button = customtkinter.CTkButton(master = bottom_frame2, text = "SPUSTIT", command = start,font=("Arial",20,"bold"))
@@ -881,6 +1262,7 @@ def Deleting_option(list_of_menu_frames):
 
     #default:
     checkbox.select()
+    checkbox_testing.select()
     selected("","")
 
     root.mainloop()
@@ -891,48 +1273,14 @@ def Sorting_option(list_of_menu_frames):
         frames.grid_forget()
         frames.destroy()
 
-    prefix_func = "Func_"
-    prefix_Cam = "Cam_"
-    max_num_of_pallets = 55
     by_which_ID_num = ""
     global more_dirs
     more_dirs = False
-
-    def browseDirectories():
-        programme_path = os.getcwd()
-        if os.path.exists(programme_path+"/"+"Default_path.txt"):
-            f = open("Default_path.txt", "r")
-            start_path = str(f.read())
-            if not os.path.exists(start_path):
-                start_path = ""
-                console.configure(text="")
-                console.configure(text="Konfigurační soubor obsahuje neplatnou cestu")
-
-        else:
-            console.configure(text="")
-            console.configure(text="Chybí konfigurační soubor s počáteční cestou...\n(Založte s názvem: Default_path.txt)")
-            start_path=""
-
-        if(start_path != ""):
-            foldername_path = filedialog.askdirectory(initialdir = start_path,
-                                                title = "Select a Directory",
-                                                )
-        else:
-            foldername_path = filedialog.askdirectory(initialdir = "/",
-                                                title = "Select a Directory",
-                                                )
-
-        check = Trideni.path_check(foldername_path)
-        if check == False:
-            console.configure(text="")
-            console.configure(text = "Zadaná cesta: "+foldername_path+" nebyla nalezena")
-        else:
-            if foldername_path != "":
-                entry1.delete("0","100")
-                entry1.insert("0", foldername_path)
-                console.configure(text="")
-                console.configure(text = "Byla vložena cesta: " + foldername_path)
-                
+    text_file_data = read_text_file_data()
+    prefix_func = text_file_data[5]
+    prefix_Cam = text_file_data[6]
+    supported_formats_sorting = text_file_data[0]
+    max_num_of_pallets = text_file_data[8]
 
     def start():
         if checkbox.get()+checkbox2.get()+checkbox3.get()+checkbox4.get()+checkbox5.get() == 0:
@@ -942,7 +1290,7 @@ def Sorting_option(list_of_menu_frames):
             name_example.configure(text = "")
 
         else:
-            path = entry1.get() 
+            path = path_set.get() 
             if path != "":
                 check = Trideni.path_check(path)
                 if check == False:
@@ -974,7 +1322,7 @@ def Sorting_option(list_of_menu_frames):
         Trideni.output = []
         Trideni.output_console2 = []
 
-        Trideni.whole_sorting_function(path,selected_sort,more_dirs,max_num_of_pallets,by_which_ID_num,prefix_func,prefix_Cam)
+        Trideni.whole_sorting_function(path,selected_sort,more_dirs,max_num_of_pallets,by_which_ID_num,prefix_func,prefix_Cam,supported_formats_sorting)
         output_text = ""
         output_text2 = ""
         for i in range(0,len(Trideni.output)):
@@ -984,7 +1332,6 @@ def Sorting_option(list_of_menu_frames):
         for i in range(0,len(Trideni.output_console2)):
             output_text2 = output_text2 + Trideni.output_console2[i] + "\n"
         console2.configure(text = output_text2)
-
 
     def clear_frame(frame):
         for widget in frame.winfo_children():
@@ -1002,7 +1349,6 @@ def Sorting_option(list_of_menu_frames):
         labelx = customtkinter.CTkLabel(master = frame6,width=width_of_frame6,height=height_of_frame6+10,text = "",justify = "left",font=("Arial",12))
         labelx.grid(column =0,row=0,pady =0,padx=10)
         
-
     def selected2(): #tridit polde cisla funkce (ID)
         clear_frame(frame6)
         console.configure(text = " ")
@@ -1070,8 +1416,6 @@ def Sorting_option(list_of_menu_frames):
         labelx3 = customtkinter.CTkLabel(master = frame6,width=width_of_frame6,height=80,text = "",justify = "left",font=("Arial",12))
         labelx3.grid(column =0,row=6,pady =0,padx=10)
         
-        
-
     def selected3(): #tridit podle cisla kamery
         clear_frame(frame6)
         console.configure(text = " ")
@@ -1100,7 +1444,6 @@ def Sorting_option(list_of_menu_frames):
         labelx = customtkinter.CTkLabel(master = frame6,width=width_of_frame6,height=180,text = "",justify = "left",font=("Arial",12))
         labelx.grid(column =0,row=3,pady =0,padx=10)
         
-
     def selected4(): #tridit podle obojiho
         clear_frame(frame6)
         console.configure(text = " ")
@@ -1113,7 +1456,6 @@ def Sorting_option(list_of_menu_frames):
         labelx = customtkinter.CTkLabel(master = frame6,width=width_of_frame6,height=height_of_frame6+10,text = "",justify = "left",font=("Arial",12))
         labelx.grid(column =0,row=0,pady =0,padx=10)
         
-
     def selected5(): #hledani paru
         clear_frame(frame6)
         console.configure(text = " ")
@@ -1146,7 +1488,6 @@ def Sorting_option(list_of_menu_frames):
         labelx = customtkinter.CTkLabel(master = frame6,width=width_of_frame6,height=140,text = "",justify = "left",font=("Arial",12))
         labelx.grid(column =0,row=3,pady =0,padx=10)
         
-
     def selected6():
         if checkbox6.get() == 1:
             #dirs_more = customtkinter.CTkImage(Image.open("images/more_dirs.png"),size=(754, 151))
@@ -1162,7 +1503,6 @@ def Sorting_option(list_of_menu_frames):
             console2.configure(text = "nebo obsahuje soubory přímo (neroztříděné)",font=("Arial",16,"bold"))
             console2.configure(font=("Arial",12))
 
-
     def view_image(which_one):
         if checkbox.get()+checkbox2.get()+checkbox3.get()+checkbox4.get()+checkbox5.get() == 0:
             nothing = customtkinter.CTkImage(Image.open("images/nothing.png"),size=(1, 1))
@@ -1172,24 +1512,24 @@ def Sorting_option(list_of_menu_frames):
             if which_one == 1:
                 type_24 = customtkinter.CTkImage(Image.open("images/24_type.png"),size=(447, 170))
                 images.configure(image =type_24)
-                name_example.configure(text = "221013_092241_0000000842_21_&Cam1Img  => .Height <=  .bmp")
+                name_example.configure(text = f"221013_092241_0000000842_21_&Cam1Img  => .Height <=  .bmp\n(Podporované formáty:{supported_formats_sorting})")
             if which_one == 2:
                 func_24 = customtkinter.CTkImage(Image.open("images/24_func.png"),size=(725, 170))
                 images.configure(image =func_24)
-                name_example.configure(text = "221013_092241_0000000842_  => 21 <=  _&Cam1Img.Height.bmp")
+                name_example.configure(text = f"221013_092241_0000000842_  => 21 <=  _&Cam1Img.Height.bmp\n(Podporované formáty:{supported_formats_sorting})")
             if which_one == 3:
                 cam_24 = customtkinter.CTkImage(Image.open("images/24_cam.png"),size=(874, 170))
                 images.configure(image =cam_24)
-                name_example.configure(text = "221013_092241_0000000842_21_&  => Cam1 <=  Img.Height.bmp")
+                name_example.configure(text = f"221013_092241_0000000842_21_&  => Cam1 <=  Img.Height.bmp\n(Podporované formáty:{supported_formats_sorting})")
             if which_one == 4:
                 both_24 = customtkinter.CTkImage(Image.open("images/24_both.png"),size=(900, 170))
                 images.configure(image =both_24)
-                name_example.configure(text = "221013_092241_0000000842_  => 21 <=  _&  => Cam1 <=  Img.Height.bmp")
+                name_example.configure(text = f"221013_092241_0000000842_  => 21 <=  _&  => Cam1 <=  Img.Height.bmp\n(Podporované formáty:{supported_formats_sorting})")
             if which_one == 5:
                 PAIRS = customtkinter.CTkImage(Image.open("images/25basic.png"),size=(530, 170))
                 images.configure(image =PAIRS)
                 name_example.configure(
-                    text = "Nakopíruje nalezené dvojice souborů do složky s názvem PAIRS\n(např. obsluha vloží dvakrát stejnou paletu po sobě před kameru)\n2023_04_13-07_11_09_xxxx_=> 0020 <=_&Cam2Img.Height.bmp\n(funkce postupuje podle časové známky v názvu souboru, kdy byly soubory pořízeny)")
+                    text = f"Nakopíruje nalezené dvojice souborů do složky s názvem PAIRS\n(např. obsluha vloží dvakrát stejnou paletu po sobě před kameru)\n2023_04_13-07_11_09_xxxx_=> 0020 <=_&Cam2Img.Height.bmp\n(funkce postupuje podle časové známky v názvu souboru, kdy byly soubory pořízeny)\n(Podporované formáty:{supported_formats_sorting})")
     def call_menu():
         list_of_frames = [frame2,frame3,frame4,frame5,frame6]
         for frames in list_of_frames:
@@ -1212,11 +1552,23 @@ def Sorting_option(list_of_menu_frames):
     frame6 = customtkinter.CTkFrame(master=root,height=height_of_frame6,width = width_of_frame6)
     frame6.pack(pady=10,padx=0,fill="both",expand=False,side = "bottom")
 
+    def call_browseDirectories():
+        output = browseDirectories()
+        if output[0] != "":
+            console.configure(text="")
+            console.configure(text=output[0])
+        else:
+            if str(output[1]) != "/":
+                path_set.delete("0","200")
+                path_set.insert("0", output[1])
+                console.configure(text="")
+                console.configure(text=f"Byla vložena cesta: {output[1]}")
+
     menu_button = customtkinter.CTkButton(master = frame2, width = 180, text = "MENU", command = lambda: call_menu(),font=("Arial",20,"bold"))
     menu_button.pack(pady =12,padx=10,anchor ="w",side="left")
-    entry1 = customtkinter.CTkEntry(master = frame2,placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)")
-    entry1.pack(pady = 12,padx =0,anchor ="w",side="left",fill="both",expand=True)
-    tree = customtkinter.CTkButton(master = frame2, width = 180,text = "EXPLORER", command = browseDirectories,font=("Arial",20,"bold"))
+    path_set = customtkinter.CTkEntry(master = frame2,placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)")
+    path_set.pack(pady = 12,padx =0,anchor ="w",side="left",fill="both",expand=True)
+    tree = customtkinter.CTkButton(master = frame2, width = 180,text = "EXPLORER", command = call_browseDirectories,font=("Arial",20,"bold"))
     tree.pack(pady = 12,padx =10,anchor ="w",side="left")
 
     checkbox = customtkinter.CTkCheckBox(master = frame3, text = "Třídit podle typů souborů",command = selected)
@@ -1229,6 +1581,8 @@ def Sorting_option(list_of_menu_frames):
     checkbox4.pack(pady =12,padx=10,anchor ="w")
     checkbox5 = customtkinter.CTkCheckBox(master = frame3, text = "Najít dvojice (soubory se stejným ID, v řadě za sebou)",command = selected5)
     checkbox5.pack(pady =12,padx=10,anchor ="w")
+    #checkbox_new = customtkinter.CTkCheckBox(master = frame3, text = "Roztřídit do složek podle data",command = selected5)
+    #checkbox_new.pack(pady =12,padx=10,anchor ="w")
 
     checkbox6 = customtkinter.CTkCheckBox(master = frame4, text = "Projít subsložky?",command = selected6)
     checkbox6.pack(pady =12,padx=10,anchor="w")

@@ -4,19 +4,20 @@ from datetime import datetime
 import shutil
 import re
 
-supported_formats = []
-file1 = open('supported_formats.txt', 'r')
-Lines = file1.readlines()
-unwanted_chars = ["\n","\"","[","]"]
-for chars in unwanted_chars:
-    if chars in Lines[4]:
-        Lines[4] = Lines[4].replace(chars,"")
+#supported_formats = []
+#file1 = open('supported_formats.txt', 'r')
+#Lines = file1.readlines()
+#unwanted_chars = ["\n","\"","[","]"]
+#for chars in unwanted_chars:
+#    if chars in Lines[4]:
+#        Lines[4] = Lines[4].replace(chars,"")
     
-list1 = Lines[4].split(",")
-for items in list1:
-    supported_formats.append(str(items))
+#list1 = Lines[4].split(",")
+#for items in list1:
+#    supported_formats.append(str(items))
 #supported_formats = ["jpg","bmp","png","ifz"]
 # podporovane formaty u adresaru:
+to_delete_folder = "Ke_smazani"
 supported_date_formats = ["YYYYMMDD","DDMMYYYY","YYMMDD"]
 supported_separators = [".","/","_"]
 output = []
@@ -39,9 +40,37 @@ def get_current_date():
         #print(f"\n- Dnes je: {readable_today}")
         return [dt_string,readable_today]
 
-def whole_deleting_function(path_given,more_dirs,del_option,files_to_keep,cutoff_date_given):
+def whole_deleting_function(path_given,more_dirs,del_option,files_to_keep,cutoff_date_given,supported_formats,testing_mode):
+    """
+    Funkce pro mazání souborů
+
+    vrací záznam výstupních zpráv: output
+
+    vstupními parametry jsou: 
+    
+    1 path_given (cesta k souborům)\n
+    2 more_dirs (zda procházet subsložky)\n
+    3 del_option (vybraná možnost mazání)\n
+    4 files_to_keep (počet minimálního počtu souborů k ponechání)\n
+    5 cutoff_date_given (rozhodovací datum)\n
+    6 supported_formats (seznam podporovaných formátů)\n
+    7 testing_mode (režim testování)\n
+    """
     #files_to_keep = 30
     max_days_old = 365
+
+    def make_dir(name,path):
+        if not os.path.exists(path + name): #pokud uz neni vytvorena, vytvor...
+            os.mkdir(path + name + "/")
+
+    def collect_to_delete_folder(path):
+        """
+        Funkce sesbírá soubory ze složky, ve které jsou soubory určené ke smazání z testing módu
+        """
+        if os.path.exists(path + to_delete_folder):
+            for files in os.listdir(path + to_delete_folder):
+                if os.path.exists(path + to_delete_folder + "/" + files):
+                    shutil.move(path + to_delete_folder + "/" + files , path + files)
 
     def sync_folders(path):
         folders = []
@@ -52,14 +81,15 @@ def whole_deleting_function(path_given,more_dirs,del_option,files_to_keep,cutoff
         return folders
      
     def get_mod_date_of_file(path,file):
-        if os.path.isdir(path + file) == False:
-            mod_date_timestamp = os.path.getmtime(path + file)
-            mod_date = datetime.fromtimestamp(mod_date_timestamp)
-            #mod_date_str = mod_date.strftime("%Y%m%d%H%M%S")
-            mod_date_str = mod_date.strftime("%Y%m%d")
-            return mod_date_str
-        else:
-            return False
+        if os.path.exists(path + file):
+            if os.path.isdir(path + file) == False:
+                mod_date_timestamp = os.path.getmtime(path + file)
+                mod_date = datetime.fromtimestamp(mod_date_timestamp)
+                #mod_date_str = mod_date.strftime("%Y%m%d%H%M%S")
+                mod_date_str = mod_date.strftime("%Y%m%d")
+                return mod_date_str
+            else:
+                return False
 
     def calc_cutoffdays():
         current_date = get_current_date()
@@ -284,52 +314,85 @@ def whole_deleting_function(path_given,more_dirs,del_option,files_to_keep,cutoff
             directories_checked +=1
             if int(folders_without_separators[i]) < int(cutoff_days):
                 deleted_directores +=1
-                print(f"Mazání: {path_given + folders_right_format[i]}")
-                #shutil.rmtree(path_given + folders_right_format[i])
+                if testing_mode == True:
+                    print(f"Mazání: {path_given + folders_right_format[i]}")
+                if testing_mode == False:
+                    print(f"Mazání: {path_given + folders_right_format[i]}")
+                    #shutil.rmtree(path_given + folders_right_format[i])
         
         if deleted_directores == 0:
             output.append(f"- Zkontrolováno adresářů: {directories_checked}\n")
             output.append("Nebyly nalezeny žádné adresáře určené ke smazání\n")
         else:
             output.append(f"- Zkontrolováno adresářů: {directories_checked}\n")
-            output.append(f"Smazáno adresářů: {deleted_directores}\n")
+            if testing_mode == True:
+                output.append(f"Smazalo by se adresářů: {deleted_directores}\n")
+            else:
+                output.append(f"Smazáno adresářů: {deleted_directores}\n")
 
     def del_files(path,cutoff_days,option):
         older_files_checked = 0
         newer_files_checked = 0
         files_checked = 0
         deleted_count = 0
+        collect_to_delete_folder(path)
         
         if option == 0:
-            for files in os.listdir(path):
-                mod_date_of_file = get_mod_date_of_file(path,files)
-                if mod_date_of_file != False:
-                    files_split = files.split(".")
-                    if (files_split[len(files_split)-1]) in supported_formats:
-                        files_checked +=1
-                        if int(mod_date_of_file) < cutoff_days:
-                            older_files_checked +=1
-                            if older_files_checked > files_to_keep:
-                                print(f"mazu: {path + files}")
-                                #os.remove(path + files)
-                                deleted_count +=1
+            if os.path.exists(path):
+                for files in os.listdir(path):
+                    mod_date_of_file = get_mod_date_of_file(path,files)
+                    if mod_date_of_file != False:
+                        files_split = files.split(".")
+                        if (files_split[len(files_split)-1]) in supported_formats:
+                            files_checked +=1
+                            if int(mod_date_of_file) < cutoff_days:
+                                older_files_checked +=1
+                                if older_files_checked > files_to_keep:
+                                    deleted_count +=1
+                                    if testing_mode == True:
+                                        print(f"Mazání: {path + files}")
+                                        make_dir(to_delete_folder,path)
+                                        shutil.move(path + files , path + to_delete_folder + '/' + files)
+                                    if testing_mode == False:
+                                        print(f"Mazání: {path + files}")
+                                        #os.remove(path + files)
+                                
         if option == 1:
-            for files in os.listdir(path):
-                mod_date_of_file = get_mod_date_of_file(path,files)
-                if mod_date_of_file != False:
-                    files_split = files.split(".")
-                    if (files_split[len(files_split)-1]) in supported_formats:
-                        files_checked +=1
-                        if int(mod_date_of_file) < cutoff_days:
-                            print(f"mazu: {path + files}")
-                            #os.remove(path + files)
-                            deleted_count +=1
-                        else:
-                            newer_files_checked +=1
-                            if newer_files_checked > files_to_keep:
-                                print(f"mazu: {path + files}")
-                                #os.remove(path + files)
+            if os.path.exists(path):
+                for files in os.listdir(path):
+                    mod_date_of_file = get_mod_date_of_file(path,files)
+                    if mod_date_of_file != False:
+                        files_split = files.split(".")
+                        if (files_split[len(files_split)-1]) in supported_formats:
+                            files_checked +=1
+                            if int(mod_date_of_file) < cutoff_days:
                                 deleted_count +=1
+                                if testing_mode == True:
+                                    print(f"Mazání: {path + files}")
+                                    make_dir(to_delete_folder,path)
+                                    shutil.move(path + files , path + to_delete_folder + '/' + files)
+                                if testing_mode == False:
+                                    print(f"Mazání: {path + files}")
+                                    #os.remove(path + files)
+                            else:
+                                newer_files_checked +=1
+                                if newer_files_checked > files_to_keep:
+                                    deleted_count +=1
+                                    if testing_mode == True:
+                                        print(f"Mazání: {path + files}")
+                                        make_dir(to_delete_folder,path)
+                                        shutil.move(path + files , path + to_delete_folder + '/' + files)
+                                    if testing_mode == False:
+                                        print(f"Mazání: {path + files}")
+                                        #os.remove(path + files)
+        
+        #mazani potencionalne prazdne slozky
+        number_of_files = 0
+        if os.path.exists(path + to_delete_folder):
+            for files in os.listdir(path + to_delete_folder):
+                number_of_files +=1
+            if number_of_files == 0:
+                os.rmdir(path+to_delete_folder)
 
         if deleted_count == 0:
             output.append(f"- Zkontrolováno souborů: {files_checked}\n")
@@ -337,7 +400,11 @@ def whole_deleting_function(path_given,more_dirs,del_option,files_to_keep,cutoff
         else:
             print(f"Smazáno souborů: {deleted_count}")
             output.append(f"- Zkontrolováno souborů: {files_checked}\n")
-            output.append(f"Smazáno souborů: {deleted_count}\n\n")
+            if testing_mode == True:
+                output.append(f"Smazalo by se: {deleted_count} souborů\n\n")
+            else:
+                output.append(f"Smazáno souborů: {deleted_count}\n\n")
+                
 
     def main():
         result_cutoffdays = calc_cutoffdays_given()
