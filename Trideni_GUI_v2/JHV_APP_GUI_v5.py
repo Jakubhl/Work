@@ -2,8 +2,9 @@ import customtkinter
 import os
 import re
 from PIL import Image, ImageTk
-import trideni_JHV_v4_gui as Trideni
-import mazani_v1 as Deleting
+import Sorting_option_v4 as Trideni
+import Deleting_option_v1 as Deleting
+import Converting_option_v1 as Converting
 from tkinter import filedialog
 import tkinter as tk
 
@@ -307,7 +308,7 @@ def menu():
     frame_with_buttons.pack(pady=0,padx=5,fill="both",expand=True,side = "top")
     list_of_menu_frames = [frame_with_buttons]
 
-    labelx = customtkinter.CTkLabel(master = frame_with_buttons,width=400,height=120,text = "",justify = "left") #jen vyplni volny prostor
+    labelx = customtkinter.CTkLabel(master = frame_with_buttons,width=400,height=90,text = "",justify = "left") #jen vyplni volny prostor
     labelx.grid(column =0,row=0,pady =0,padx=0)
 
     #label_menu = customtkinter.CTkLabel(master = frame_with_buttons,width=400,height=100,text = "MENU",justify = "left",font=("Arial",30,"bold"))
@@ -557,22 +558,22 @@ def Advanced_option(list_of_menu_frames):
             report = ""
             if which_folder == "cam":
                 report = write_text_file_data(set_new_def_prefix_cam.get(),"new_default_prefix_cam")
-                console_cam_prefix.configure(text="")
-                console_cam_prefix.configure(text=report)
+                main_console.configure(text="")
+                main_console.configure(text=report)
             if which_folder == "func":
                 report = write_text_file_data(set_new_def_prefix_func.get(),"new_default_prefix_func")
-                console_func_prefix.configure(text="")
-                console_func_prefix.configure(text=report)
+                main_console.configure(text="")
+                main_console.configure(text=report)
 
         #widgets na nastaveni zakladni slozky cam    
         label_folder_cam = customtkinter.CTkLabel(master = bottom_frame_with_date,height=20,text = "Nastavte základní název složky pro třídění podle kamer:",justify = "left",font=("Arial",12,"bold"))
         set_new_def_prefix_cam = customtkinter.CTkEntry(master = bottom_frame_with_date,width=200,height=30, placeholder_text= str(default_prefix_cam))
         button_save_new_def_prefix = customtkinter.CTkButton(master = bottom_frame_with_date,width=50,height=30, text = "Uložit", command = lambda: set_new_default_prefix("cam"),font=("Arial",12,"bold"))
-        console_cam_prefix=customtkinter.CTkLabel(master = bottom_frame_with_date,height=30,text ="",justify = "left",font=("Arial",12))
+        #console_cam_prefix=customtkinter.CTkLabel(master = bottom_frame_with_date,height=30,text ="",justify = "left",font=("Arial",12))
         label_folder_cam.grid(column =1,row=row_index+1,sticky = tk.W,pady =0,padx=300)
         set_new_def_prefix_cam.grid(column =1,row=row_index+2,sticky = tk.W,pady =0,padx=300)
         button_save_new_def_prefix.grid(column =1,row=row_index+2,sticky = tk.W,pady =0,padx=500)
-        console_cam_prefix.grid(column =1,row=row_index+3,sticky = tk.W,pady =0,padx=300)
+        #console_cam_prefix.grid(column =1,row=row_index+3,sticky = tk.W,pady =0,padx=300)
     
         #widgets na nastaveni zakladniho poctu files_to_keep
         files_to_keep_console_text ="Aktuálně nastavené minimum: "+str(files_to_keep)
@@ -589,11 +590,11 @@ def Advanced_option(list_of_menu_frames):
         label_folder_func = customtkinter.CTkLabel(master = bottom_frame_with_files_to_keep,height=20,text = "Nastavte základní název složky pro třídění podle funkce:",justify = "left",font=("Arial",12,"bold"))
         set_new_def_prefix_func = customtkinter.CTkEntry(master = bottom_frame_with_files_to_keep,width=200,height=30, placeholder_text= str(default_prefix_func))
         button_save_new_def_prefix_func = customtkinter.CTkButton(master = bottom_frame_with_files_to_keep,width=50,height=30, text = "Uložit", command = lambda: set_new_default_prefix("func"),font=("Arial",12,"bold"))
-        console_func_prefix=customtkinter.CTkLabel(master = bottom_frame_with_files_to_keep,height=30,text ="",justify = "left",font=("Arial",12))
+        #console_func_prefix=customtkinter.CTkLabel(master = bottom_frame_with_files_to_keep,height=30,text ="",justify = "left",font=("Arial",12))
         label_folder_func.grid(column =1,row=row_index,sticky = tk.W,pady =0,padx=230)
         set_new_def_prefix_func.grid(column =1,row=row_index+1,sticky = tk.W,pady =0,padx=230)
         button_save_new_def_prefix_func.grid(column =1,row=row_index+1,sticky = tk.W,pady =0,padx=430)
-        console_func_prefix.grid(column =1,row=row_index+2,sticky = tk.W,pady =0,padx=230)
+        #console_func_prefix.grid(column =1,row=row_index+2,sticky = tk.W,pady =0,padx=230)
     
         def add_format(which_operation):
             main_console_text = ""
@@ -639,25 +640,25 @@ def Advanced_option(list_of_menu_frames):
         def set_max_num_of_pallets():
             input_1 = set_max_pallets.get()
             if input_1.isdigit() == False:
-                console_pallets.configure(text = "")
-                console_pallets.configure(text = "Nezadali jste číslo")
+                main_console.configure(text = "")
+                main_console.configure(text = "Nezadali jste číslo")
             elif int(input_1) <1:
-                console_pallets.configure(text = "")
-                console_pallets.configure(text = "Mimo rozsah")
+                main_console.configure(text = "")
+                main_console.configure(text = "Mimo rozsah")
             else:
-                console_pallets.configure(text = "")
-                console_pallets.configure(text = f"Počet palet nastaven na: {input_1}")
+                main_console.configure(text = "")
+                main_console.configure(text = f"Počet palet nastaven na: {input_1}")
                 write_text_file_data(input_1,"pallets_set")
                 
         #widgets na nastaveni zakladniho poctu palet v obehu
         label_pallets = customtkinter.CTkLabel(master = bottom_frame_sorting_formats,height=20,text = "Nastavte základní maximální počet paletek v oběhu:",justify = "left",font=("Arial",12,"bold"))
         set_max_pallets = customtkinter.CTkEntry(master = bottom_frame_sorting_formats,width=100,height=30, placeholder_text= str(default_max_num_of_pallets))
         button_save_max_num_of_pallets = customtkinter.CTkButton(master = bottom_frame_sorting_formats,width=50,height=30, text = "Uložit", command = lambda: set_max_num_of_pallets(),font=("Arial",12,"bold"))
-        console_pallets=customtkinter.CTkLabel(master = bottom_frame_sorting_formats,height=30,text ="",justify = "left",font=("Arial",12))
+        #console_pallets=customtkinter.CTkLabel(master = bottom_frame_sorting_formats,height=30,text ="",justify = "left",font=("Arial",12))
         label_pallets.grid(column =1,row=row_index,sticky = tk.W,pady =0,padx=260)
         set_max_pallets.grid(column =1,row=row_index+1,sticky = tk.W,pady =0,padx=260)
         button_save_max_num_of_pallets.grid(column =1,row=row_index+1,sticky = tk.W,pady =0,padx=360)
-        console_pallets.grid(column =1,row=row_index+2,sticky = tk.W,pady =0,padx=260)
+        #console_pallets.grid(column =1,row=row_index+2,sticky = tk.W,pady =0,padx=260)
 
         supported_formats_deleting = "Aktuálně nastavené podporované formáty pro možnosti mazání: " + str(text_file_data[1])
         label4 = customtkinter.CTkLabel(master = bottom_frame_deleting_formats,height=20,text = "Nastavte podporované formáty pro možnosti: MAZÁNÍ:",justify = "left",font=("Arial",12,"bold"))
@@ -697,20 +698,35 @@ def Converting_option(list_of_menu_frames):
             frames.destroy()
         menu()
 
-    
+    def convert_files(path):
+        selected_format = "bmp"
+        if checkbox_bmp.get() == 1:
+            selected_format = "bmp"
+        if checkbox_jpg.get() == 1:
+            selected_format = "jpg"
+
+        Converting.output = []
+        Converting.whole_converting_function(path,selected_format)
+        output_text = ""
+        for i in range(0,len(Converting.output)):
+            output_text = output_text + Converting.output[i]
+        console.configure(text = output_text)
+
     def start():
-        print("s")
-        path = path_set.get() 
-        if path != "":
-            check = Trideni.path_check(path)
-            if check == False:
-                console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena")
-            else:
-                path = check
-                console.configure(text = str(path)+" je OK")
-                #del_files(path)
+        if checkbox_bmp.get()+checkbox_jpg.get() == 0:
+            console.configure(text = "Nevybrali jste žádný formát, do kterého se má konvertovat :-)")
         else:
-            console.configure(text = "Nebyla vložena cesta k souborům")
+            path = path_set.get() 
+            if path != "":
+                check = Trideni.path_check(path)
+                if check == False:
+                    console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena")
+                else:
+                    path = check
+                    console.configure(text = str(path)+" je OK")
+                    convert_files(path)
+            else:
+                console.configure(text = "Nebyla vložena cesta k souborům")
 
     #definice ramcu
     frame_path_input = customtkinter.CTkFrame(master=root)
@@ -736,19 +752,31 @@ def Converting_option(list_of_menu_frames):
                 console.configure(text="")
                 console.configure(text=f"Byla vložena cesta: {output[1]}")
 
+    def selected_bmp():
+        checkbox_jpg.deselect()
+    def selected_jpg():
+        checkbox_bmp.deselect()
+
+    checkbox_bmp = customtkinter.CTkCheckBox(master = bottom_frame1, text = "Konvertovat do formátu .bmp",command=selected_bmp,font=("Arial",16,"bold"))
+    checkbox_bmp.pack(pady =20,padx=10,anchor ="w")
+    checkbox_jpg = customtkinter.CTkCheckBox(master = bottom_frame1, text = "Konvertovat do formátu .jpg",command=selected_jpg,font=("Arial",16,"bold"))
+    checkbox_jpg.pack(pady =20,padx=10,anchor ="w")
     menu_button = customtkinter.CTkButton(master = frame_path_input, width = 180, text = "MENU", command = lambda: call_menu(),font=("Arial",20,"bold"))
     menu_button.pack(pady =12,padx=10,anchor ="w",side="left")
-    path_set = customtkinter.CTkEntry(master = frame_path_input,placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)")
+    path_set = customtkinter.CTkEntry(master = frame_path_input,placeholder_text="Zadejte cestu k souborům určeným ke konvertování (kde se soubory přímo nacházejí)")
     path_set.pack(pady = 12,padx =0,anchor ="w",side="left",fill="both",expand=True)
     tree = customtkinter.CTkButton(master = frame_path_input, width = 180,text = "EXPLORER", command = call_browseDirectories,font=("Arial",20,"bold"))
     tree.pack(pady = 12,padx =10,anchor ="w",side="left")
 
+    label = customtkinter.CTkLabel(master = bottom_frame2,text = "Konvertované soubory budou umístěny do separátní složky\nPodporované formáty: .ifz\nObsahuje-li .ifz soubor více obrázků, budou uloženy v následující syntaxi:\nxxx_0.bmp, xxx_1.bmp ...",justify = "left",font=("Arial",16,"bold"))
+    label.pack(pady =10,padx=10)
     button = customtkinter.CTkButton(master = bottom_frame2, text = "KONVERTOVAT", command = start,font=("Arial",20,"bold"))
     button.pack(pady =20,padx=10)
     button._set_dimensions(300,60)
     console = customtkinter.CTkLabel(master = bottom_frame2,text = " ",justify = "left",font=("Arial",15))
     console.pack(pady =10,padx=10)
 
+    checkbox_bmp.select()
     root.mainloop()
 
 def Deleting_option(list_of_menu_frames):
@@ -861,7 +889,7 @@ def Deleting_option(list_of_menu_frames):
 
     menu_button = customtkinter.CTkButton(master = frame_path_input, width = 180, text = "MENU", command = lambda: call_menu(),font=("Arial",20,"bold"))
     menu_button.pack(pady =12,padx=10,anchor ="w",side="left")
-    path_set = customtkinter.CTkEntry(master = frame_path_input,placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)")
+    path_set = customtkinter.CTkEntry(master = frame_path_input,placeholder_text="Zadejte cestu k souborům z kamery (kde se přímo nacházejí soubory nebo datumové složky)")
     path_set.pack(pady = 12,padx =0,anchor ="w",side="left",fill="both",expand=True)
     tree = customtkinter.CTkButton(master = frame_path_input, width = 180,text = "EXPLORER", command = call_browseDirectories,font=("Arial",20,"bold"))
     tree.pack(pady = 12,padx =10,anchor ="w",side="left")
@@ -1224,12 +1252,6 @@ def Deleting_option(list_of_menu_frames):
         else:
             info2.configure(text = "")
 
-    def selected_testing():
-        testing_mode = True
-        if checkbox_testing.get() == 1:
-            testing_mode = True
-        else:
-            testing_mode = False
 
     frame_with_checkboxes = checkbox_frame
 
@@ -1250,7 +1272,7 @@ def Deleting_option(list_of_menu_frames):
     checkbox6.grid(column =0,row=0,sticky = tk.W,pady =5,padx=10)
     info2 = customtkinter.CTkLabel(master = bottom_frame1,text = "",font=("Arial",12,"bold"))
     info2.grid(column =0,row=0,sticky = tk.W,pady =5,padx=250)
-    checkbox_testing = customtkinter.CTkCheckBox(master = bottom_frame1, text = "Režim TESTOVÁNÍ (Soubory vyhodnocené ke smazání se pouze přesunou do složky s názvem: \"Ke_smazani\")",command = selected_testing,font=("Arial",12,"bold"))
+    checkbox_testing = customtkinter.CTkCheckBox(master = bottom_frame1, text = "Režim TESTOVÁNÍ (Soubory vyhodnocené ke smazání se pouze přesunou do složky s názvem: \"Ke_smazani\")",font=("Arial",12,"bold"))
     checkbox_testing.grid(column =0,row=1,sticky = tk.W,pady =5,padx=10)
     info = customtkinter.CTkLabel(master = bottom_frame2,text = "",font=("Arial",16,"bold"))
     info.pack(pady = 12,padx =10,anchor="w")

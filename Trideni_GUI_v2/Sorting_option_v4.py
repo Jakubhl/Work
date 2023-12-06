@@ -2,23 +2,7 @@ import os
 import shutil
 import re
 
-#globals:
 nok_folder = "Temp"
-#prefix_func = "Func_"
-#prefix_Cam = "Cam_"
-
-#supported_formats = []
-#file1 = open('supported_formats.txt', 'r')
-#Lines = file1.readlines()
-#unwanted_chars = ["\n","\"","[","]"]
-#for chars in unwanted_chars:
-#    if chars in Lines[2]:
-#        Lines[2] = Lines[2].replace(chars,"")
-    
-#list1 = Lines[2].split(",")
-#for items in list1:
-#    supported_formats.append(str(items))
-#supported_formats = ["bmp","png"]
 pair_folder = "PAIRS"
 forbidden_folders = [pair_folder]
 output = []
@@ -47,7 +31,6 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
     path = path_given
     sort_option = selected_sort-1
     more_dirs = more_dir
-    #num_of_dots = num_of_dots_in_file_name
     num_of_dots = 0 #default - urci se automaticky
     by_which_ID_num = by_which_ID_number
 
