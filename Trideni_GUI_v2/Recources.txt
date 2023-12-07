@@ -16,4 +16,4 @@ Cam_
 spoustet v maximalizovanem okne?
 ne
 Základní maximální počet palet v oběhu:
-65
+55
