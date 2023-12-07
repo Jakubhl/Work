@@ -14,7 +14,6 @@ root=customtkinter.CTk()
 root.geometry("1200x900")
 root.wm_iconbitmap('images/JHV.ico')
 root.title("Zpracování souborů z průmyslových kamer")
-#root.attributes('-fullscreen', True)
 logo_set = False
 
 def read_text_file_data():
@@ -105,7 +104,8 @@ def read_text_file_data():
 
 data_read_in_txt = read_text_file_data()
 if data_read_in_txt[7] == "ano":
-    root.attributes('-fullscreen', True)
+    #root.attributes('-fullscreen', True) #fullscreen bez windows tltacitek
+    root.after(0, lambda:root.state('zoomed'))
 
 def write_text_file_data(input_data,which_parameter):
     """
@@ -311,9 +311,6 @@ def menu():
     labelx = customtkinter.CTkLabel(master = frame_with_buttons,width=400,height=90,text = "",justify = "left") #jen vyplni volny prostor
     labelx.grid(column =0,row=0,pady =0,padx=0)
 
-    #label_menu = customtkinter.CTkLabel(master = frame_with_buttons,width=400,height=100,text = "MENU",justify = "left",font=("Arial",30,"bold"))
-    #label_menu.grid(column =1,row=1,pady =0,padx=0)
-
     sorting_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Možnosti třídění souborů", command = lambda: Sorting_option(list_of_menu_frames),font=("Arial",25,"bold"))
     sorting_button.grid(column =1,row=2,pady =20,padx=0)
     deleting_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Možnosti mazání souborů", command = lambda: Deleting_option(list_of_menu_frames),font=("Arial",25,"bold"))
@@ -405,20 +402,15 @@ def Advanced_option(list_of_menu_frames):
 
         def call_browseDirectories():
             output = browseDirectories()
-            if output[0] != "":
+            
+            if str(output[1]) != "/":
+                path_set.delete("0","200")
+                path_set.insert("0", output[1])
+                console_input = write_text_file_data(output[1],"default_path") # hlaska o nove vlozene ceste
+                default_path_insert_console.configure(text = "")
+                default_path_insert_console.configure(text = "Aktuálně nastavená základní cesta k souborům: " + str(output[1]))
                 main_console.configure(text="")
-                main_console.configure(text=output[0])
-            else:
-                if str(output[1]) != "/":
-                    path_set.delete("0","200")
-                    path_set.insert("0", output[1])
-
-                    console_input = write_text_file_data(output[1],"default_path")
-                    main_console.configure(text=console_input)
-                    default_path_insert_console.configure(text = "")
-                    default_path_insert_console.configure(text = "Aktuálně nastavená základní cesta k souborům: " + str(output[1]))
-                    main_console.configure(text="")
-                    main_console.configure(text=f"Byla vložena cesta: {output[1]}")
+                main_console.configure(text=console_input)
 
         def save_path():
             path_given = str(path_set.get())
@@ -735,22 +727,14 @@ def Converting_option(list_of_menu_frames):
     bottom_frame2.pack(pady=5,padx=5,fill="both",expand=True,side = "bottom")
     bottom_frame1 = customtkinter.CTkFrame(master=root,height = 80)
     bottom_frame1.pack(pady=0,padx=5,fill="x",expand=False,side = "bottom")
-    #checkbox_frame = customtkinter.CTkFrame(master=root,width=400)
-    #checkbox_frame.pack(pady=0,padx=5,fill="y",expand=False,side="left")
-    #frame_right = customtkinter.CTkScrollableFrame(master=root)
-    #frame_right.pack(pady=0,padx=5,fill="both",expand=True,side="right")
 
     def call_browseDirectories():
         output = browseDirectories()
-        if output[0] != "":
+        if str(output[1]) != "/":
+            path_set.delete("0","200")
+            path_set.insert("0", output[1])
             console.configure(text="")
-            console.configure(text=output[0])
-        else:
-            if str(output[1]) != "/":
-                path_set.delete("0","200")
-                path_set.insert("0", output[1])
-                console.configure(text="")
-                console.configure(text=f"Byla vložena cesta: {output[1]}")
+            console.configure(text=f"Byla vložena cesta: {output[1]}")
 
     def selected_bmp():
         checkbox_jpg.deselect()
@@ -761,16 +745,16 @@ def Converting_option(list_of_menu_frames):
     checkbox_bmp.pack(pady =20,padx=10,anchor ="w")
     checkbox_jpg = customtkinter.CTkCheckBox(master = bottom_frame1, text = "Konvertovat do formátu .jpg",command=selected_jpg,font=("Arial",16,"bold"))
     checkbox_jpg.pack(pady =20,padx=10,anchor ="w")
-    menu_button = customtkinter.CTkButton(master = frame_path_input, width = 180, text = "MENU", command = lambda: call_menu(),font=("Arial",20,"bold"))
+    menu_button  = customtkinter.CTkButton(master = frame_path_input, width = 180, text = "MENU", command = lambda: call_menu(),font=("Arial",20,"bold"))
     menu_button.pack(pady =12,padx=10,anchor ="w",side="left")
-    path_set = customtkinter.CTkEntry(master = frame_path_input,placeholder_text="Zadejte cestu k souborům určeným ke konvertování (kde se soubory přímo nacházejí)")
+    path_set     = customtkinter.CTkEntry(master = frame_path_input,placeholder_text="Zadejte cestu k souborům určeným ke konvertování (kde se soubory přímo nacházejí)")
     path_set.pack(pady = 12,padx =0,anchor ="w",side="left",fill="both",expand=True)
-    tree = customtkinter.CTkButton(master = frame_path_input, width = 180,text = "EXPLORER", command = call_browseDirectories,font=("Arial",20,"bold"))
+    tree         = customtkinter.CTkButton(master = frame_path_input, width = 180,text = "EXPLORER", command = call_browseDirectories,font=("Arial",20,"bold"))
     tree.pack(pady = 12,padx =10,anchor ="w",side="left")
 
-    label = customtkinter.CTkLabel(master = bottom_frame2,text = "Konvertované soubory budou umístěny do separátní složky\nPodporované formáty: .ifz\nObsahuje-li .ifz soubor více obrázků, budou uloženy v následující syntaxi:\nxxx_0.bmp, xxx_1.bmp ...",justify = "left",font=("Arial",16,"bold"))
+    label   = customtkinter.CTkLabel(master = bottom_frame2,text = "Konvertované soubory budou umístěny do separátní složky\nPodporované formáty: .ifz\nObsahuje-li .ifz soubor více obrázků, budou uloženy v následující syntaxi:\nxxx_0.bmp, xxx_1.bmp ...\nPro správnou funkci programu nesmí cesta obsahovat složky s mezerou v názvu",justify = "left",font=("Arial",16,"bold"))
     label.pack(pady =10,padx=10)
-    button = customtkinter.CTkButton(master = bottom_frame2, text = "KONVERTOVAT", command = start,font=("Arial",20,"bold"))
+    button  = customtkinter.CTkButton(master = bottom_frame2, text = "KONVERTOVAT", command = start,font=("Arial",20,"bold"))
     button.pack(pady =20,padx=10)
     button._set_dimensions(300,60)
     console = customtkinter.CTkLabel(master = bottom_frame2,text = " ",justify = "left",font=("Arial",15))
@@ -807,10 +791,8 @@ def Deleting_option(list_of_menu_frames):
         menu()
 
     def start():
-        if checkbox.get()+checkbox2.get()+checkbox3.get()+checkbox4.get()+checkbox5.get() == 0:
-            console.configure(text = "Nevybrali jste žádný způsob třídění :-)")
-            #nothing = customtkinter.CTkImage(Image.open("images/nothing.png"),size=(1, 1))
-            #images.configure(image = nothing)
+        if checkbox.get()+checkbox2.get()+checkbox3.get() == 0:
+            console.configure(text = "Nevybrali jste žádný způsob mazání :-)")
             info.configure(text = "")
 
         else:
@@ -835,10 +817,6 @@ def Deleting_option(list_of_menu_frames):
             del_option = 2
         if checkbox3.get() == 1:
             del_option = 3
-        if checkbox4.get() == 1:
-            del_option = 4
-        if checkbox5.get() == 1:
-            del_option = 5
         if checkbox6.get() == 1:
             more_dirs = True
         else:
@@ -849,19 +827,12 @@ def Deleting_option(list_of_menu_frames):
             testing_mode = False
 
         Deleting.output = []
-        #Deleting.output_console2 = []
 
         Deleting.whole_deleting_function(path,more_dirs,del_option,files_to_keep,cutoff_date,supported_formats_deleting,testing_mode)
         output_text = ""
-        #output_text2 = ""
         for i in range(0,len(Deleting.output)):
             output_text = output_text + Deleting.output[i]# + "\n"
         console.configure(text = output_text)
-
-        #if len(Deleting.output_console2) != 0:
-            #for i in range(0,len(Deleting.output_console2)):
-                #output_text2 = output_text2 + Deleting.output_console2[i]# + "\n"
-            #console2.configure(text = output_text2)
 
     #definice ramcu
     frame_path_input = customtkinter.CTkFrame(master=root)
@@ -877,15 +848,11 @@ def Deleting_option(list_of_menu_frames):
 
     def call_browseDirectories():
         output = browseDirectories()
-        if output[0] != "":
+        if str(output[1]) != "/":
+            path_set.delete("0","200")
+            path_set.insert("0", output[1])
             console.configure(text="")
-            console.configure(text=output[0])
-        else:
-            if str(output[1]) != "/":
-                path_set.delete("0","200")
-                path_set.insert("0", output[1])
-                console.configure(text="")
-                console.configure(text=f"Byla vložena cesta: {output[1]}")
+            console.configure(text=f"Byla vložena cesta: {output[1]}")
 
     menu_button = customtkinter.CTkButton(master = frame_path_input, width = 180, text = "MENU", command = lambda: call_menu(),font=("Arial",20,"bold"))
     menu_button.pack(pady =12,padx=10,anchor ="w",side="left")
@@ -904,8 +871,6 @@ def Deleting_option(list_of_menu_frames):
         #view_image(1)
         checkbox2.deselect()
         checkbox3.deselect()
-        checkbox4.deselect()
-        checkbox5.deselect()
         info.configure(text = "")
         info.configure(text = f"- Budou smazány soubory starší než nastavené datum, přičemž bude ponechán nastavený počet souborů, vyhodnocených, jako starších\nPodporované formáty: {supported_formats_deleting}",font = ("Arial",16,"bold"),justify="left")
         selected6() #update
@@ -1032,8 +997,6 @@ def Deleting_option(list_of_menu_frames):
         console.configure(text = " ")
         checkbox.deselect()
         checkbox3.deselect()
-        checkbox4.deselect()
-        checkbox5.deselect()
         info.configure(text = "")
         info.configure(text = f"- Budou smazány VŠECHNY soubory starší než nastavené datum, přičemž budou redukovány i soubory novější\n- Souborů, vyhodnocených, jako novější, bude ponechán nastavený počet\n(vhodné při situacích rychlého pořizování velkého množství fotografií, kde je potřebné ponechat nějaké soubory pro referenci)\nPodporované formáty: {supported_formats_deleting}",font = ("Arial",16,"bold"),justify="left")
         selected6() #update
@@ -1143,8 +1106,6 @@ def Deleting_option(list_of_menu_frames):
         console.configure(text = " ")
         checkbox2.deselect()
         checkbox.deselect()
-        checkbox4.deselect()
-        checkbox5.deselect()
         info.configure(text = "")
         info.configure(text = f"- Budou smazány VŠECHNY adresáře (včetně všech subadresářů), které obsahují v názvu podporovaný formát datumu a jsou vyhodnoceny,\njako starší než nastavené datum\nPodporované datumové formáty: {Deleting.supported_date_formats}\nPodporované separátory datumu: {Deleting.supported_separators}",font = ("Arial",16,"bold"),justify="left")
         selected6() #update
@@ -1227,22 +1188,6 @@ def Deleting_option(list_of_menu_frames):
         console_frame_right_1.grid(column =0,row=row_index+3,sticky = tk.W,pady =0,padx=10)
         images2.configure(image = directories)
 
-    def selected4():
-        console.configure(text = " ")
-        checkbox2.deselect()
-        checkbox3.deselect()
-        checkbox.deselect()
-        checkbox5.deselect()
-        info.configure(text = "")
-
-    def selected5():
-        console.configure(text = " ")
-        checkbox2.deselect()
-        checkbox3.deselect()
-        checkbox4.deselect()
-        checkbox.deselect()
-        info.configure(text = "")
-
     def selected6():
         if checkbox6.get() == 1:
             if checkbox3.get() == 1:
@@ -1252,7 +1197,6 @@ def Deleting_option(list_of_menu_frames):
         else:
             info2.configure(text = "")
 
-
     frame_with_checkboxes = checkbox_frame
 
     checkbox = customtkinter.CTkCheckBox(master = frame_with_checkboxes, text = "Mazání souborů starších než: určité datum",command = lambda: selected("",""))
@@ -1261,13 +1205,7 @@ def Deleting_option(list_of_menu_frames):
     checkbox2.pack(pady =10,padx=10,anchor ="w")
     checkbox3 = customtkinter.CTkCheckBox(master = frame_with_checkboxes, text = "Mazání adresářů s názvem ve formátu určitého datumu",command = lambda: selected3("",""))
     checkbox3.pack(pady =10,padx=10,anchor ="w")
-    checkbox4 = customtkinter.CTkCheckBox(master = frame_with_checkboxes, text = "rezerva",command = selected4)
-    checkbox4.pack(pady =10,padx=10,anchor ="w")
-    checkbox5 = customtkinter.CTkCheckBox(master = frame_with_checkboxes, text = "rezerva",command = selected5)
-    checkbox5.pack(pady =10,padx=10,anchor ="w")
 
-    #images = customtkinter.CTkLabel(master = bottom_frame2,text = "")
-    #images.pack()
     checkbox6 = customtkinter.CTkCheckBox(master = bottom_frame1, text = "Procházet subsložky? (max:6)",command = selected6,font=("Arial",12,"bold"))
     checkbox6.grid(column =0,row=0,sticky = tk.W,pady =5,padx=10)
     info2 = customtkinter.CTkLabel(master = bottom_frame1,text = "",font=("Arial",12,"bold"))
@@ -1294,9 +1232,14 @@ def Sorting_option(list_of_menu_frames):
         frames.pack_forget()
         frames.grid_forget()
         frames.destroy()
-
-    by_which_ID_num = ""
+    global by_which_ID_num
     global more_dirs
+    global prefix_Cam
+    global prefix_func
+    global max_num_of_pallets
+    global aut_detect_num_of_pallets
+    aut_detect_num_of_pallets = True
+    by_which_ID_num = ""   
     more_dirs = False
     text_file_data = read_text_file_data()
     prefix_func = text_file_data[5]
@@ -1340,11 +1283,10 @@ def Sorting_option(list_of_menu_frames):
             more_dirs = True
         else:
             more_dirs = False
-
         Trideni.output = []
         Trideni.output_console2 = []
 
-        Trideni.whole_sorting_function(path,selected_sort,more_dirs,max_num_of_pallets,by_which_ID_num,prefix_func,prefix_Cam,supported_formats_sorting)
+        Trideni.whole_sorting_function(path,selected_sort,more_dirs,max_num_of_pallets,by_which_ID_num,prefix_func,prefix_Cam,supported_formats_sorting,aut_detect_num_of_pallets)
         output_text = ""
         output_text2 = ""
         for i in range(0,len(Trideni.output)):
@@ -1353,7 +1295,8 @@ def Sorting_option(list_of_menu_frames):
 
         for i in range(0,len(Trideni.output_console2)):
             output_text2 = output_text2 + Trideni.output_console2[i] + "\n"
-        console2.configure(text = output_text2)
+        if output_text2 != "":
+            console2.configure(text = output_text2)
 
     def clear_frame(frame):
         for widget in frame.winfo_children():
@@ -1416,26 +1359,27 @@ def Sorting_option(list_of_menu_frames):
                     console_frame6_1.configure(text = "Mimo rozsah")
                     by_which_ID_num = ""
             else:
+                console_frame6_1.configure(text = "Nezadali jste číslo")
                 by_which_ID_num = ""
 
-        label1 = customtkinter.CTkLabel(master = frame6,width=width_of_frame6,height=60,
+        label1           = customtkinter.CTkLabel(master = frame6,width=width_of_frame6,height=60,
                                         text = "Podle kterého čísla v ID se řídit:\n(např. poslední č. v ID = pozice dílu...)\nvolte první = 1 atd. (prázdné = celé ID)",
                                         justify = "left",font=("Arial",12))
         label1.grid(column =0,row=0,pady =0,padx=10)
-        num_set = customtkinter.CTkEntry(master = frame6,height=30,width=150, placeholder_text= by_which_ID_num)
+        num_set          = customtkinter.CTkEntry(master = frame6,height=30,width=150, placeholder_text= by_which_ID_num)
         num_set.grid(column =0,row=1,sticky = tk.W,pady =0,padx=10)
-        button_save1 = customtkinter.CTkButton(master = frame6,height=30,width=50, text = "Uložit", command = lambda: set_which_num_of_ID(),font=("Arial",12,"bold"))
+        button_save1     = customtkinter.CTkButton(master = frame6,height=30,width=50, text = "Uložit", command = lambda: set_which_num_of_ID(),font=("Arial",12,"bold"))
         button_save1.grid(column =0,row=1,sticky = tk.E,pady =0,padx=10)
-        console_frame6_1=customtkinter.CTkLabel(master = frame6,height=30,text = " ",justify = "left",font=("Arial",12))
+        console_frame6_1 = customtkinter.CTkLabel(master = frame6,height=30,text = " ",justify = "left",font=("Arial",12))
         console_frame6_1.grid(column =0,row=2,pady =0,padx=10)
         
-        labelx2 = customtkinter.CTkLabel(master = frame6,width=width_of_frame6,height=30,text = "",justify = "left",font=("Arial",12))
+        labelx2     = customtkinter.CTkLabel(master = frame6,width=width_of_frame6,height=30,text = "",justify = "left",font=("Arial",12))
         labelx2.grid(column =0,row=3,pady =0,padx=10)
         
         button_back = customtkinter.CTkButton(master = frame6,width=100,height=30, text = "Zpět", command = selected2,font=("Arial",12,"bold"))
         button_back.grid(column =0,row=5,pady =0,padx=10)
 
-        labelx3 = customtkinter.CTkLabel(master = frame6,width=width_of_frame6,height=80,text = "",justify = "left",font=("Arial",12))
+        labelx3     = customtkinter.CTkLabel(master = frame6,width=width_of_frame6,height=80,text = "",justify = "left",font=("Arial",12))
         labelx3.grid(column =0,row=6,pady =0,padx=10)
         
     def selected3(): #tridit podle cisla kamery
@@ -1454,13 +1398,13 @@ def Sorting_option(list_of_menu_frames):
             prefix_Cam = input_1
 
 
-        label1 = customtkinter.CTkLabel(master = frame6,height=20,width=width_of_frame6,text = "Nastavte prefix adresářů:",justify = "left",font=("Arial",12))
+        label1              = customtkinter.CTkLabel(master = frame6,height=20,width=width_of_frame6,text = "Nastavte prefix adresářů:",justify = "left",font=("Arial",12))
         label1.grid(column =0,row=0,pady =0,padx=10)
-        prefix_set = customtkinter.CTkEntry(master = frame6,height=30,width=150, placeholder_text= prefix_Cam)
+        prefix_set          = customtkinter.CTkEntry(master = frame6,height=30,width=150, placeholder_text= prefix_Cam)
         prefix_set.grid(column =0,row=1,sticky = tk.W,pady =0,padx=10)
-        button_save1 = customtkinter.CTkButton(master = frame6,height=30,width=50, text = "Uložit", command = lambda: set_prefix(),font=("Arial",12,"bold"))
+        button_save1        = customtkinter.CTkButton(master = frame6,height=30,width=50, text = "Uložit", command = lambda: set_prefix(),font=("Arial",12,"bold"))
         button_save1.grid(column =0,row=1,sticky = tk.E,pady =0,padx=10)
-        console_frame6_1=customtkinter.CTkLabel(master = frame6,height=30,text = " ",justify = "left",font=("Arial",12))
+        console_frame6_1    = customtkinter.CTkLabel(master = frame6,height=30,text = " ",justify = "left",font=("Arial",12))
         console_frame6_1.grid(column =0,row=2,pady =0,padx=10)
 
         labelx = customtkinter.CTkLabel(master = frame6,width=width_of_frame6,height=180,text = "",justify = "left",font=("Arial",12))
@@ -1497,30 +1441,38 @@ def Sorting_option(list_of_menu_frames):
             else:
                 console_frame6_1.configure(text = f"Počet palet nastaven na: {input_1}")
                 max_num_of_pallets = input_1
+                
+        def set_aut_detect():
+            global aut_detect_num_of_pallets
+            if checkbox_aut_detect.get() == 1:
+                aut_detect_num_of_pallets = True
+            else:
+                aut_detect_num_of_pallets = False
 
-        label1 = customtkinter.CTkLabel(master = frame6,width=width_of_frame6,height=60,text = "Nastavte počet palet v oběhu:\nPro aut. detekci ponechte\ndef. hodnotu (55)",justify = "left",font=("Arial",12))
+        label1              = customtkinter.CTkLabel(master = frame6,width=width_of_frame6,height=20,text = "Nastavte počet palet v oběhu:",justify = "left",font=("Arial",12))
+        pallets_set         = customtkinter.CTkEntry(master = frame6,width=150,height=30, placeholder_text= max_num_of_pallets)
+        button_save1        = customtkinter.CTkButton(master = frame6,width=50,height=30, text = "Uložit", command = lambda: set_pair_variable1(),font=("Arial",12,"bold"))
+        label_aut_detect    = customtkinter.CTkLabel(master = frame6,width=width_of_frame6,height=60,text = "Možnost aut. detekce:\n(případ, že v cestě nechybí paleta\ns nejvyšším ID)",justify = "left",font=("Arial",12))
+        checkbox_aut_detect = customtkinter.CTkCheckBox(master = frame6,height=30, text = "Automatická detekce",command=set_aut_detect)
+        console_frame6_1    = customtkinter.CTkLabel(master = frame6,height=30,text = " ",justify = "left",font=("Arial",12))
+        labelx              = customtkinter.CTkLabel(master = frame6,width=width_of_frame6,height=90,text = "",justify = "left",font=("Arial",12))
         label1.grid(column =0,row=0,pady =0,padx=10)
-        pallets_set = customtkinter.CTkEntry(master = frame6,width=150,height=30, placeholder_text= max_num_of_pallets)
         pallets_set.grid(column =0,row=1,sticky = tk.W,pady =0,padx=10)
-        button_save1 = customtkinter.CTkButton(master = frame6,width=50,height=30, text = "Uložit", command = lambda: set_pair_variable1(),font=("Arial",12,"bold"))
         button_save1.grid(column =0,row=1,sticky = tk.E,pady =0,padx=10)
-        console_frame6_1=customtkinter.CTkLabel(master = frame6,height=30,text = " ",justify = "left",font=("Arial",12))
         console_frame6_1.grid(column =0,row=2,pady =0,padx=10)
+        label_aut_detect.grid(column =0,row=3,pady =0,padx=10)
+        checkbox_aut_detect.grid(column =0,row=4,pady =0,padx=10)
+        labelx.grid(column =0,row=5,pady =0,padx=10)
+        checkbox_aut_detect.select()
 
-        labelx = customtkinter.CTkLabel(master = frame6,width=width_of_frame6,height=140,text = "",justify = "left",font=("Arial",12))
-        labelx.grid(column =0,row=3,pady =0,padx=10)
-        
     def selected6():
         if checkbox6.get() == 1:
-            #dirs_more = customtkinter.CTkImage(Image.open("images/more_dirs.png"),size=(754, 151))
             dirs_more = customtkinter.CTkImage(Image.open("images/more_dirs.png"),size=(553, 111))
-            #dirs_more = customtkinter.CTkImage(Image.open("images/more_dirs.png"),size=(377, 76))
             images2.configure(image =dirs_more)   
             console2.configure(text = "nebo poslední složka obsahuje soubory přímo (neroztříděné)",font=("Arial",16,"bold"))
             console2.configure(font=("Arial",12))
         else:
             dirs_one = customtkinter.CTkImage(Image.open("images/dirs_ba.png"),size=(432, 133))
-            #dirs_one = customtkinter.CTkImage(Image.open("images/dirs_ba.png"),size=(288, 89))
             images2.configure(image =dirs_one)
             console2.configure(text = "nebo obsahuje soubory přímo (neroztříděné)",font=("Arial",16,"bold"))
             console2.configure(font=("Arial",12))
@@ -1576,52 +1528,48 @@ def Sorting_option(list_of_menu_frames):
 
     def call_browseDirectories():
         output = browseDirectories()
-        if output[0] != "":
+        if str(output[1]) != "/":
+            path_set.delete("0","200")
+            path_set.insert("0", output[1])
             console.configure(text="")
-            console.configure(text=output[0])
-        else:
-            if str(output[1]) != "/":
-                path_set.delete("0","200")
-                path_set.insert("0", output[1])
-                console.configure(text="")
-                console.configure(text=f"Byla vložena cesta: {output[1]}")
+            console.configure(text=f"Byla vložena cesta: {output[1]}")
 
     menu_button = customtkinter.CTkButton(master = frame2, width = 180, text = "MENU", command = lambda: call_menu(),font=("Arial",20,"bold"))
     menu_button.pack(pady =12,padx=10,anchor ="w",side="left")
-    path_set = customtkinter.CTkEntry(master = frame2,placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)")
+    path_set    = customtkinter.CTkEntry(master = frame2,placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)")
     path_set.pack(pady = 12,padx =0,anchor ="w",side="left",fill="both",expand=True)
-    tree = customtkinter.CTkButton(master = frame2, width = 180,text = "EXPLORER", command = call_browseDirectories,font=("Arial",20,"bold"))
+    tree        = customtkinter.CTkButton(master = frame2, width = 180,text = "EXPLORER", command = call_browseDirectories,font=("Arial",20,"bold"))
     tree.pack(pady = 12,padx =10,anchor ="w",side="left")
 
-    checkbox = customtkinter.CTkCheckBox(master = frame3, text = "Třídit podle typů souborů",command = selected)
+    checkbox    = customtkinter.CTkCheckBox(master = frame3, text = "Třídit podle typů souborů",command = selected)
     checkbox.pack(pady =12,padx=10,anchor ="w")
-    checkbox2 = customtkinter.CTkCheckBox(master = frame3, text = "Třídit podle čísla funkce (ID)",command = selected2)
+    checkbox2   = customtkinter.CTkCheckBox(master = frame3, text = "Třídit podle čísla funkce (ID)",command = selected2)
     checkbox2.pack(pady =12,padx=10,anchor ="w")
-    checkbox3 = customtkinter.CTkCheckBox(master = frame3, text = "Třídit podle čísla kamery",command = selected3)
+    checkbox3   = customtkinter.CTkCheckBox(master = frame3, text = "Třídit podle čísla kamery",command = selected3)
     checkbox3.pack(pady =12,padx=10,anchor ="w")
-    checkbox4 = customtkinter.CTkCheckBox(master = frame3, text = "Třídit podle čísla funkce i kamery",command = selected4)
+    checkbox4   = customtkinter.CTkCheckBox(master = frame3, text = "Třídit podle čísla funkce i kamery",command = selected4)
     checkbox4.pack(pady =12,padx=10,anchor ="w")
-    checkbox5 = customtkinter.CTkCheckBox(master = frame3, text = "Najít dvojice (soubory se stejným ID, v řadě za sebou)",command = selected5)
+    checkbox5   = customtkinter.CTkCheckBox(master = frame3, text = "Najít dvojice (soubory se stejným ID, v řadě za sebou)",command = selected5)
     checkbox5.pack(pady =12,padx=10,anchor ="w")
     #checkbox_new = customtkinter.CTkCheckBox(master = frame3, text = "Roztřídit do složek podle data",command = selected5)
     #checkbox_new.pack(pady =12,padx=10,anchor ="w")
 
-    checkbox6 = customtkinter.CTkCheckBox(master = frame4, text = "Projít subsložky?",command = selected6)
+    checkbox6   = customtkinter.CTkCheckBox(master = frame4, text = "Projít subsložky?",command = selected6)
     checkbox6.pack(pady =12,padx=10,anchor="w")
-    images2 = customtkinter.CTkLabel(master = frame4,text = "")
+    images2     = customtkinter.CTkLabel(master = frame4,text = "")
     images2.pack()
-    console2 = customtkinter.CTkLabel(master = frame4,text = " ",font=("Arial",12))
+    console2    = customtkinter.CTkLabel(master = frame4,text = " ",font=("Arial",12))
     console2.pack(pady =5,padx=10)
 
 
-    images = customtkinter.CTkLabel(master = frame5,text = "")
+    images          = customtkinter.CTkLabel(master = frame5,text = "")
     images.pack()
-    name_example = customtkinter.CTkLabel(master = frame5,text = "",font=("Arial",16,"bold"))
+    name_example    = customtkinter.CTkLabel(master = frame5,text = "",font=("Arial",16,"bold"))
     name_example.pack(pady = 12,padx =10)
-    button = customtkinter.CTkButton(master = frame5, text = "SPUSTIT", command = start,font=("Arial",20,"bold"))
+    button          = customtkinter.CTkButton(master = frame5, text = "SPUSTIT", command = start,font=("Arial",20,"bold"))
     button.pack(pady =12,padx=10)
     button._set_dimensions(300,60)
-    console = customtkinter.CTkLabel(master = frame5,text = " ",justify = "left",font=("Arial",15))
+    console         = customtkinter.CTkLabel(master = frame5,text = " ",justify = "left",font=("Arial",15))
     console.pack(pady =10,padx=10)
 
 

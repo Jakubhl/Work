@@ -319,8 +319,7 @@ def whole_deleting_function(path_given,more_dirs,del_option,files_to_keep,cutoff
                 if testing_mode == True:
                     print(f"Mazání: {path_given + folders_right_format[i]}")
                 if testing_mode == False:
-                    print(f"Mazání: {path_given + folders_right_format[i]}")
-                    #shutil.rmtree(path_given + folders_right_format[i])
+                    shutil.rmtree(path_given + folders_right_format[i])
         
         if deleted_directores == 0:
             output.append(f"- Zkontrolováno adresářů: {directories_checked}\n")
@@ -355,8 +354,7 @@ def whole_deleting_function(path_given,more_dirs,del_option,files_to_keep,cutoff
                                     make_dir(to_delete_folder,path)
                                     shutil.move(path + files , path + to_delete_folder + '/' + files)
                                 if testing_mode == False:
-                                    print(f"Mazání: {path + files}")
-                                    #os.remove(path + files)
+                                    os.remove(path + files)
                                 
         if option == 1:
             for files in os.listdir(path):
@@ -372,8 +370,7 @@ def whole_deleting_function(path_given,more_dirs,del_option,files_to_keep,cutoff
                                 make_dir(to_delete_folder,path)
                                 shutil.move(path + files , path + to_delete_folder + '/' + files)
                             if testing_mode == False:
-                                print(f"Mazání: {path + files}")
-                                #os.remove(path + files)
+                                os.remove(path + files)
                         else:
                             newer_files_checked +=1
                             if newer_files_checked > files_to_keep:
@@ -383,8 +380,7 @@ def whole_deleting_function(path_given,more_dirs,del_option,files_to_keep,cutoff
                                     make_dir(to_delete_folder,path)
                                     shutil.move(path + files , path + to_delete_folder + '/' + files)
                                 if testing_mode == False:
-                                    print(f"Mazání: {path + files}")
-                                    #os.remove(path + files)
+                                    os.remove(path + files)
         
         #mazani potencionalne prazdne slozky
         number_of_files = 0
@@ -426,7 +422,7 @@ def whole_deleting_function(path_given,more_dirs,del_option,files_to_keep,cutoff
                     deleted = del_files(paths,cutoff_days,0)
                     total_deleted_count = total_deleted_count+deleted
                 
-                output.append(f"- Mazání dokončeno, celkem smazáno souborů: {total_deleted_count}\n")
+                output.append(f"\n- Mazání dokončeno, celkem smazáno souborů: {total_deleted_count}\n")
             if del_option == 2: #///////////////////////////////////////////////////////// OPTION 2 /////////////////////////////////////////////////////////////////////////////
                 total_deleted_count = 0
                 all_paths = subfolders_check()
@@ -438,10 +434,10 @@ def whole_deleting_function(path_given,more_dirs,del_option,files_to_keep,cutoff
                     deleted = del_files(paths,cutoff_days,1)
                     total_deleted_count = total_deleted_count+deleted
 
-                output.append(f"- Mazání dokončeno, celkem smazáno souborů: {total_deleted_count}\n")
+                output.append(f"\n- Mazání dokončeno, celkem smazáno souborů: {total_deleted_count}\n")
             if del_option == 3: #///////////////////////////////////////////////////////// OPTION 3 /////////////////////////////////////////////////////////////////////////////
                 print("Pro tuto možnost mazání není možné procházet subadresáře")
-                output.append("Pro tuto možnost mazání není možné procházet subadresáře\n")       
+                output.append("\nPro tuto možnost mazání není možné procházet subadresáře\n")       
 
         if more_dirs == False: #////////////////////////////////////////////////////////// ONE_PATH //////////////////////////////////////////////////////////////////////////
             if del_option == 1: #////////////////////////////////////////////////////////// OPTION 1 ////////////////////////////////////////////////////////////////////////////
@@ -451,7 +447,7 @@ def whole_deleting_function(path_given,more_dirs,del_option,files_to_keep,cutoff
                 print(f"- Ve složce bude zachováno: {files_to_keep} souborů\n")
                 output.append(f"- Ve složce bude zachováno: {files_to_keep} souborů\n")
                 del_files(path_given,cutoff_days,0)
-                output.append("- Mazání dokončeno\n")
+                output.append("\n- Mazání dokončeno\n")
 
             if del_option == 2: #///////////////////////////////////////////////////////// OPTION 2 /////////////////////////////////////////////////////////////////////////////
                 # tato moznost provadi mazani vsech starsich a redukuje novejsi (vhodne u generovani velkeho poctu obrazku za kratky cas)
@@ -460,7 +456,7 @@ def whole_deleting_function(path_given,more_dirs,del_option,files_to_keep,cutoff
                 print(f"- Ve složce bude zachováno: {files_to_keep} souborů, novějších než {result_cutoffdays[1]}\n")
                 output.append(f"- Ve složce bude zachováno: {files_to_keep} souborů, novějších než {result_cutoffdays[1]}\n")
                 del_files(path_given,cutoff_days,1)
-                output.append("- Mazání dokončeno\n")
+                output.append("\n- Mazání dokončeno\n")
                 
             if del_option == 3: #///////////////////////////////////////////////////////// OPTION 2 /////////////////////////////////////////////////////////////////////////////
                 # tato moznost provadi mazani slozek s datumem v jejich nazvu
@@ -476,7 +472,7 @@ def whole_deleting_function(path_given,more_dirs,del_option,files_to_keep,cutoff
                     found_format = result[1]
                     folders_right_format = result[2]
                     del_directories(found_separator,found_format,folders_right_format)
-                output.append("- Mazání dokončeno\n")
+                output.append("\n- Mazání dokončeno\n")
 
     
     main()

@@ -24,9 +24,10 @@ def path_check(path_raw):
 
     else:
         return path
-def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_given,by_which_ID_number,prefix_func,prefix_Cam,supported_formats):
+def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_given,by_which_ID_number,prefix_func,prefix_Cam,supported_formats,aut_detect_num_of_pallets):
     global max_num_of_pallets
     max_num_of_pallets = max_num_of_pallets_given
+    global ID_num_of_digits
     ID_num_of_digits = 4 #default
     path = path_given
     sort_option = selected_sort-1
@@ -131,7 +132,9 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
                     arr_pos = len(files_split) -2 #-2, protože pole se pocita od nuly a nezajima nas znak _ před &
                     func_number = files_split[arr_pos] 
                     ID_num_of_digits = len(func_number) #automaticke urceni poctu cifer v ID
-
+                    id_num_of_digits_message = f"- Počet cifer v ID automaticky detekován: {ID_num_of_digits}"
+                    if not id_num_of_digits_message in output:
+                        output.append(id_num_of_digits_message)
                     if by_which_ID_num == "":
                         return func_number
                     else:
@@ -257,11 +260,12 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
                     
                 else:
                     nok_count += 1
-                    if os.path.exists(self.path + self.file_list[i]):
-                        shutil.move(self.path + self.file_list[i] , self.path + nok_folder + "/" + self.file_list[i]) #přesun do Temp složky
-                    if sort_option == "pairs":
-                        self.file_list.pop(i) #ostraneni souboru z pole, aby se s nim dale nepracovalo
-                    count = 0
+                    if len(self.file_list)>i: # protoze kdyz se odstani z pole inkrement zustane vetsi
+                        if os.path.exists(self.path + self.file_list[i]):
+                            shutil.move(self.path + self.file_list[i] , self.path + nok_folder + "/" + self.file_list[i]) #přesun do Temp složky
+                        if sort_option == "pairs":
+                            self.file_list.pop(i) #ostraneni souboru z pole, aby se s nim dale nepracovalo
+                        count = 0
             
             #if error_length == 1:
                 #print("-Upozornění: délka názvu před \"&\" některých souborů v dané cestě se liší (možná nefunkční manuální definice zakrytých znaků)\n")
@@ -298,8 +302,8 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
                     numbers = Sorting.Get_func_number(files) #tady se automaticky nastavi ID_num_of_digits
                     keep_searching = True
                     while(keep_searching == True): #while cyklus kvuli moznym chybejicim paletkam
-                        if round_number > 100000: #zacykleni programu 100000 kol hledani se zda byt dostacujici, vypocetni doba: 5s
-                            output.append(f"Došlo k zacyklení programu, nejspíše neodpovídá nastavení maximálního počtu palet {max_number_of_pallets} (max ID) v oběhu\nNebo soubory postrádají příponu")
+                        if round_number > 50000: #zacykleni programu 50000 kol hledani se zda byt dostacujici, vypocetni doba: 5s
+                            output.append(f"- Došlo k ZACYKLENÍ programu, nejspíše neodpovídá (v případech manuálního nastavení) nastavení maximálního počtu palet {max_number_of_pallets} (max ID) v oběhu\n- Nebo chybí extrémní množství palet (čísla id nejsou po sobě jdoucí v čase z názvu souboru)")
                             stop = True
                             keep_searching = False
                             
@@ -322,6 +326,7 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
                             compare_num = ((ID_num_of_digits-7)*"0")+str(increment)
                         if increment >= 10000000: #max ID_num_of_digits = 8
                             compare_num = ((ID_num_of_digits-8)*"0")+str(increment)
+
                         if compare_num == numbers:
                             count +=1
 
@@ -361,6 +366,8 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
 
             if len(list_of_pairs_clear) !=0:
                 output.append(f"- Nalezený seznam dvojic v řadě za sebou podle ID: {list_of_pairs_clear}\n- Každá v počtu souborů: {list_of_pair_count}")
+            else:
+                output.append("- V zadané cestě nebyly nalezeny žádné dvojice")
 
             if len(lost_pallets) ==0:
                 output.append("- Žádné chybějící palety nebyly nenalezeny")
@@ -534,7 +541,8 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
                             s.Collect_files() 
                             s.Get_suffix() #pro ziskani pole se vsema podporovanyma souborama
                             s.Sorting_files("pairs",None) #pro presun lichych souboru do nok slozky
-                            if int(max_num_of_pallets) == 55: #defaultni hodnota, ktera nebyla zmenena - muzeme si dovolit automatickou detekci
+                            #if int(max_num_of_pallets) == 55: #defaultni hodnota, ktera nebyla zmenena - muzeme si dovolit automatickou detekci
+                            if aut_detect_num_of_pallets == True:
                                 ID_list = s.Get_func_list()
                                 max_num_of_pallets = int(max(ID_list))
                                 output.append(f"Maximální počet palet automaticky nastaven na: {max_num_of_pallets}")   
@@ -590,7 +598,8 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
                 s.Collect_files() 
                 s.Get_suffix() #pro ziskani pole se vsema podporovanyma souborama
                 s.Sorting_files("pairs",None) #pro presun lichych souboru do nok slozky
-                if int(max_num_of_pallets) == 55: #defaultni hodnota, ktera nebyla zmenena - muzeme si dovolit automatickou detekci
+                #if int(max_num_of_pallets) == 55: #defaultni hodnota, ktera nebyla zmenena - muzeme si dovolit automatickou detekci
+                if aut_detect_num_of_pallets == True:
                     ID_list = s.Get_func_list()
                     max_num_of_pallets = int(max(ID_list))
                     output.append(f"Maximální počet palet automaticky nastaven na: {max_num_of_pallets}")   
@@ -604,9 +613,9 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
         else:
             sort_options = ["typu souborů","funkce","čísla kamery","funkce i čísla kamery","hledání dvojic"]
             if sort_option == 4:
-                final_text = "Operace: " + sort_options[sort_option] + " byla provedena"
+                final_text = "\nOperace: " + sort_options[sort_option] + " byla dokončena"
             else:
-                final_text = "Třídění podle: " + sort_options[sort_option] + " bylo provedeno"                
+                final_text = "\nTřídění podle: " + sort_options[sort_option] + " bylo dokončeno"                
             output.append(final_text)       
             
     main()

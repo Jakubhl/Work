@@ -1,5 +1,0 @@
-Pro správnou funkci programu prosím dodržujte nastavenou syntaxi:
-Podporované typy souborů u možností třídění:
-exe
-Podporované typy souborů u možností mazání:
-jpg,bmp,png,ifz

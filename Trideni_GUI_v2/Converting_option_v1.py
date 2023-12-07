@@ -51,7 +51,6 @@ def whole_converting_function(path_given,output_img_format):
         return files_to_convert
     
     def form_console_command(files_to_convert,which_format):
-        print(application_path)
         command = ""
         converted_files = 0
         if len(files_to_convert) != 0:
