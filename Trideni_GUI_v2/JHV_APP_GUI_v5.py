@@ -14,7 +14,7 @@ root=customtkinter.CTk()
 root.geometry("1200x900")
 root.wm_iconbitmap('images/JHV.ico')
 root.title("Zpracování souborů z průmyslových kamer")
-logo_set = False
+#logo_set = False
 
 def read_text_file_data():
     """
@@ -106,6 +106,9 @@ data_read_in_txt = read_text_file_data()
 if data_read_in_txt[7] == "ano":
     #root.attributes('-fullscreen', True) #fullscreen bez windows tltacitek
     root.after(0, lambda:root.state('zoomed'))
+
+whole_app_height = root._current_height
+whole_app_width = root._current_width
 
 def write_text_file_data(input_data,which_parameter):
     """
@@ -276,15 +279,43 @@ def browseDirectories():
         start_path=""
 
     if(start_path != ""):
-        foldername_path = filedialog.askdirectory(initialdir = start_path,
-                                            title = "Select a Directory",
-                                            )
-    else:
-        foldername_path = filedialog.askdirectory(initialdir = "/",
-                                            title = "Select a Directory",
-                                            )
+        foldername_path = filedialog.askopenfile(initialdir = start_path,title = "Klikněte na soubor v požadované cestě")
+        path_to_directory= ""
+        if foldername_path.name != None:
+            path_to_file = str(foldername_path.name)
+            path_to_file_split = path_to_file.split("/")
+            i=0
+            for parts in path_to_file_split:
+                i+=1
+                if i<len(path_to_file_split):
+                    if i == 1:
+                        path_to_directory = path_to_directory + parts
+                    else:
+                        path_to_directory = path_to_directory +"/"+ parts
+    else:           
+        foldername_path = filedialog.askopenfile(initialdir = "/",title = "Klikněte na soubor v požadované cestě")
+        path_to_directory= ""
+        if foldername_path.name != None:
+            path_to_file = str(foldername_path.name)
+            path_to_file_split = path_to_file.split("/")
+            i=0
+            for parts in path_to_file_split:
+                i+=1
+                if i<len(path_to_file_split):
+                    if i == 1:
+                        path_to_directory = path_to_directory + parts
+                    else:
+                        path_to_directory = path_to_directory +"/"+ parts
+        #foldername_path = filedialog.askdirectory(initialdir = start_path,
+                                            #title = "Select a Directory",
+                                            #)
+    #else:
+        #foldername_path = filedialog.askdirectory(initialdir = "/",
+                                            #title = "Select a Directory",
+                                            #)
 
-    check = Trideni.path_check(foldername_path)
+    #check = Trideni.path_check(foldername_path)
+    check = Trideni.path_check(path_to_directory)
     corrected_path = check
     
     return [output,corrected_path]
@@ -293,33 +324,299 @@ def menu():
     """
     Funkce spouští základní menu při spuštění aplikace
     """
-    global logo_set
+    #global logo_set
 
-    if logo_set == False:
-        frame_with_logo = customtkinter.CTkFrame(master=root)
-        frame_with_logo.pack(pady=10,padx=5,fill="both",expand=False,side = "top")
-        #logo = customtkinter.CTkImage(Image.open("images/logo2.bmp"),size=(571, 70))
-        logo = customtkinter.CTkImage(Image.open("images/logo.png"),size=(961, 125))
-        image_logo = customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
-        image_logo.pack()
-        logo_set = True
+    #if logo_set == False:
+    frame_with_logo = customtkinter.CTkFrame(master=root)
+    frame_with_logo.pack(pady=10,padx=5,fill="both",expand=False,side = "top")
+    #logo = customtkinter.CTkImage(Image.open("images/logo2.bmp"),size=(571, 70))
+    logo = customtkinter.CTkImage(Image.open("images/logo.png"),size=(961, 125))
+    image_logo = customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
+    image_logo.pack()
+        #logo_set = True
+
 
     frame_with_buttons = customtkinter.CTkFrame(master=root)
     frame_with_buttons.pack(pady=0,padx=5,fill="both",expand=True,side = "top")
-    list_of_menu_frames = [frame_with_buttons]
+    list_of_menu_frames = [frame_with_buttons,frame_with_logo]
 
-    labelx = customtkinter.CTkLabel(master = frame_with_buttons,width=400,height=90,text = "",justify = "left") #jen vyplni volny prostor
+    
+    labelx = customtkinter.CTkLabel(master = frame_with_buttons,width=400,height=40,text = "",justify = "left") #jen vyplni volny prostor
     labelx.grid(column =0,row=0,pady =0,padx=0)
 
     sorting_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Možnosti třídění souborů", command = lambda: Sorting_option(list_of_menu_frames),font=("Arial",25,"bold"))
-    sorting_button.grid(column =1,row=2,pady =20,padx=0)
+    sorting_button.grid(column =1,row=2,pady =10,padx=0)
     deleting_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Možnosti mazání souborů", command = lambda: Deleting_option(list_of_menu_frames),font=("Arial",25,"bold"))
     deleting_button.grid(column =1,row=3,pady =0,padx=0)
     convert_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Možnosti konvertování souborů", command = lambda: Converting_option(list_of_menu_frames),font=("Arial",25,"bold"))
-    convert_button.grid(column =1,row=4,pady =20,padx=0)
+    convert_button.grid(column =1,row=4,pady =10,padx=0)
+    viewer_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Procházet obrázky", command = lambda: View_option(list_of_menu_frames),font=("Arial",25,"bold"))
+    viewer_button.grid(column =1,row=5,pady =0,padx=0)
     advanced_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Pokročilé možnosti", command = lambda: Advanced_option(list_of_menu_frames),font=("Arial",25,"bold"))
-    advanced_button.grid(column =1,row=5,pady =0,padx=0)
+    advanced_button.grid(column =1,row=6,pady =10,padx=0)
 
+    View_option(list_of_menu_frames)
+
+    root.mainloop()
+
+def View_option(list_of_menu_frames):
+    """
+    Funkce umožňuje procházet obrázky a přitom je například přesouvat do jiné složky
+    - umožňuje například vložit jakou rychlostí se mají obrázky automaticky přehrávat
+    - při stisku mezerníku se přehrávání zastaví dialog box nebo tlačítko na přesun
+    """
+    global currently_viewed_image
+    global all_images
+    global increment_of_image
+
+    increment_of_image = 0
+    all_images = []
+    currently_viewed_image = ""
+    image_extensions = ['.jpg', '.jpeg', '.jpe', '.jif', '.jfif', '.jfi',
+                    '.png', '.gif', '.bmp', '.tiff', '.tif', '.ico', '.webp',
+                    '.raw', '.cr2', '.nef', '.arw', '.dng']
+
+    #cisteni menu widgets
+    for frames in list_of_menu_frames: 
+        frames.pack_forget()
+        frames.grid_forget()
+        frames.destroy()
+    #cisteni pred vstupem do menu
+    def call_menu():
+        """
+        Funkce čistí všechny zaplněné rámečky a funguje, jako tlačítko zpět do menu
+        """
+        list_of_frames = [main_frame,frame_with_path]
+        for frames in list_of_frames:
+            frames.pack_forget()
+            frames.grid_forget()
+            frames.destroy()
+        menu()
+
+    def clear_frame(frame):
+        for widget in frame.winfo_children():
+            widget.destroy()
+    
+    def get_images(path):
+        list_of_files_to_view = []
+        for files in os.listdir(path):
+            files_split = files.split(".")
+            if ("."+files_split[len(files_split)-1]) in image_extensions:
+                list_of_files_to_view.append(path + files)
+
+        return list_of_files_to_view
+
+    def start(path):
+        global currently_viewed_image
+        global all_images
+        global increment_of_image
+        path_found = True
+
+        if path == "" or path == "/": #pripad, ze bylo pouzito tlacitko spusteni manualne vlozene cesty a nebo je chyba v config souboru
+            path_found = False
+            path = path_set.get() 
+            if path != "":
+                check = Trideni.path_check(path)
+                if check == False:
+                    console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena")
+                else:
+                    path = check
+                    console.configure(text = str(path)+" je OK")
+                    path_found = True
+            else:
+                console.configure(text="")
+                console.configure(text = "Nebyla vložena cesta k souborům")
+
+        #automaticky okamzite otevre prvni z obrazku v dane ceste
+        if path_found == True:
+            if os.path.exists(path):
+                all_images = get_images(path)
+                if len(all_images) != 0: 
+                    view_image(0) #zobrazit hned prvni obrazek po vlozene ceste
+                    currently_viewed_image = all_images[0]
+                    increment_of_image = 0
+                    current_image_num.configure(text = str(increment_of_image+1) + "/" + str(len(all_images)))
+                else:
+                    console.configure(text = "- V zadané cestě nebyly nalezeny obrázky")
+            else:
+                console.configure(text = "- Vložená cesta je neplatná")
+    def call_browseDirectories():
+        output = browseDirectories()
+        if str(output[1]) != "/":
+            path_set.delete("0","200")
+            path_set.insert("0", output[1])
+            console.configure(text="")
+            console.configure(text=f"Byla vložena cesta: {output[1]}")
+            start(output[1]) 
+
+    def get_image_dimensions(image):
+        with Image.open(image) as img:
+            width, height = img.size
+            print(f"image Dimensions: {width} x {height}")
+            return [width, height]
+        
+    def get_frame_dimensions(frame):
+        """width = frame.winfo_width()
+        height = frame.winfo_height()
+        if height> 200:
+            height -=200
+        else: # na zacatku je frame 1x1"""
+        whole_app_height = root._current_height
+        whole_app_width = root._current_width
+        width = whole_app_width
+        height = whole_app_height - 130
+
+        print(f"Frame Dimensions: {width} x {height}")
+        return [width, height]
+              
+    def calc_current_format(frame, image):
+        frame_dimensions = get_frame_dimensions(frame)
+        image_dimensions = get_image_dimensions(image)
+        zoom = 1
+
+        """format_given = checkbox_format16_9.get()
+
+        if format_given == 1:
+            target_ratio = 16/9
+        else:
+            target_ratio = 4/3"""
+
+        
+        frame_width = frame_dimensions[0]
+        frame_height = frame_dimensions[1]
+        image_width = image_dimensions[0]
+        image_height = image_dimensions[1]
+        image_ratio = image_width/image_height
+
+        #new_height = int(frame_height / image_ratio)
+        new_height = frame_height
+        new_width = int(new_height * image_ratio)
+
+        new_height = new_height*zoom
+        new_width= new_width*zoom
+
+        print(f"New Dimensions: {new_width} x {new_height}")
+        return [new_width, new_height]
+
+
+    def view_image(increment_of_image):
+        #image_to_show = path + "/" + all_images[increment_of_image]
+        image_to_show = all_images[increment_of_image]
+        dimensions = calc_current_format(main_frame,image_to_show)
+        
+        displayed_image = customtkinter.CTkImage(Image.open(image_to_show),size = (dimensions[0],dimensions[1]))
+        images.configure(image =displayed_image)
+
+    def play_images():
+        images_list = get_images("C:/Users/kubah/Desktop/JHV/test_images/Keyence/_503_Witte/datumovka/A/")
+        for files in images_list:
+            view_image()
+
+
+    def next_image():
+        global increment_of_image
+        number_of_found_images = len(all_images)
+        if number_of_found_images != 0:
+            if increment_of_image < number_of_found_images -1:
+                increment_of_image += 1
+            else:
+                increment_of_image = 0
+            view_image(increment_of_image)
+            current_image_num.configure(text = str(increment_of_image+1) + "/" + str(len(all_images)))
+            
+    def previous_image():
+        global increment_of_image
+        number_of_found_images = len(all_images)
+        if number_of_found_images != 0:
+            if increment_of_image > 0:
+                increment_of_image -= 1
+            else:
+                increment_of_image = number_of_found_images -1
+            view_image(increment_of_image)
+            current_image_num.configure(text = str(increment_of_image+1) + "/" + str(len(all_images)))
+    
+    def selected_4_3():
+        checkbox_format16_9.deselect()
+        view_image(increment_of_image)
+    def selected_16_9():
+        checkbox_format4_3.deselect()
+        view_image(increment_of_image)
+
+
+    frame_with_path = customtkinter.CTkFrame(master=root,height = 200)
+    frame_with_path.pack(pady=5,padx=5,fill="x",expand=False,side = "top")
+
+    main_frame = customtkinter.CTkScrollableFrame(master=root)
+    main_frame.pack(pady=0,padx=5,fill="both",expand=True,side = "bottom")
+
+
+    #h_scrollbar = customtkinter.CTkScrollbar(master=root, orientation="horizontal",command=images.xview)
+    #h_scrollbar.pack(expand=True,side = "bottom")
+    #main_frame.configure(yscrollcommand=h_scrollbar.set)
+
+    #right_frame = customtkinter.CTkFrame(master=root,width= 300,height=800)
+    #right_frame.pack(pady=0,padx=5,fill="both",expand=False,side = "left")
+    
+
+    menu_button  = customtkinter.CTkButton(master = frame_with_path, width = 180,height=30, text = "MENU", command = lambda: call_menu(),font=("Arial",20,"bold"))
+    path_set     = customtkinter.CTkEntry(master = frame_with_path,width = 650,height=30,placeholder_text="Zadejte cestu k souborům (kde se soubory přímo nacházejí)")
+    manual_path  = customtkinter.CTkButton(master = frame_with_path, width = 120,height=30,text = "Otevřít", command = lambda: start(path_set.get()),font=("Arial",20,"bold"))
+    tree         = customtkinter.CTkButton(master = frame_with_path, width = 120,height=30,text = "EXPLORER", command = call_browseDirectories,font=("Arial",20,"bold"))
+    console      = customtkinter.CTkLabel(master = frame_with_path,text = "",justify = "left",font=("Arial",15))
+    format_label = customtkinter.CTkLabel(master = frame_with_path,text = "Formát:",justify = "left",font=("Arial",15))
+    checkbox_format4_3 = customtkinter.CTkCheckBox(master= frame_with_path,text = "4:3",command = selected_4_3)
+    checkbox_format16_9 = customtkinter.CTkCheckBox(master= frame_with_path,text = "16:9",command= selected_16_9)
+    button_back = customtkinter.CTkButton(master = frame_with_path, width = 90,height=30,text = "   <   ", command = previous_image,font=("Arial",20,"bold"))
+    current_image_num = customtkinter.CTkLabel(master = frame_with_path,text = "0",justify = "left",font=("Arial",20,"bold"))
+    button_next = customtkinter.CTkButton(master = frame_with_path, width = 90,height=30,text = "   >   ", command = next_image,font=("Arial",20,"bold"))
+    button_play = customtkinter.CTkButton(master = frame_with_path, width = 180,height=30,text = "SPUSTIT", command = call_browseDirectories,font=("Arial",20,"bold"))
+    
+ 
+    menu_button.grid(column = 0,row=0,pady = 5,padx =0,sticky = tk.W)
+    path_set.grid(column = 0,row=0,pady = 5,padx =190,sticky = tk.W)
+    manual_path.grid(column = 0,row=0,pady = 5,padx =850,sticky = tk.W)
+    tree.grid(column = 0,row=0,pady = 5,padx =975,sticky = tk.W)
+    console.grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
+    format_label.grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
+    checkbox_format4_3.grid(column = 0,row=2,pady = 5,padx =70,sticky = tk.W)
+    checkbox_format16_9.grid(column = 0,row=2,pady = 5,padx =130,sticky = tk.W)
+    button_back.grid(column = 0,row=2,pady = 5,padx =190,sticky = tk.W)
+    current_image_num.grid(column = 0,row=2,pady = 5,padx =300,sticky = tk.W)
+    button_next.grid(column = 0,row=2,pady = 5,padx =390,sticky = tk.W)
+    button_play.grid(column = 0,row=2,pady = 5,padx =490,sticky = tk.W)
+    
+
+    def move_x(*args):
+        fraction = float(args[1])
+        image_width = 2000
+        new_x = int((main_frame.winfo_width() - image_width) * fraction)
+        print(new_x)
+        images.place(x=new_x)
+        
+
+    #h_scrollbar = customtkinter.CTkScrollbar(master=main_frame, orientation="horizontal",command=move_x)
+    #h_scrollbar.pack(side = "bottom",expand=True)
+
+
+    images = customtkinter.CTkLabel(master = main_frame,text = "")
+    images.pack(pady=5,padx=5)
+    #images.place(x=0,y=-770,anchor="nw")
+
+
+    checkbox_format4_3.select()
+    #hned na zacatku to vleze do defaultni slozky
+    text_file_data = read_text_file_data()
+    path = text_file_data[2]
+    if path != "/":
+        path_set.delete("0","200")
+        path_set.insert("0", path)
+        console.configure(text="")
+        console.configure(text="Byla vložena cesta z konfiguračního souboru Recources.txt")
+        start(path)
+    else:
+        console.configure(text="")
+        console.configure(text = "Konfigurační soubor Recources.txt obsahuje neplatnou cestu, vložte manuálně")
+    
     root.mainloop()
 
 def Advanced_option(list_of_menu_frames):
@@ -1226,12 +1523,12 @@ def Deleting_option(list_of_menu_frames):
     selected("","")
 
     root.mainloop()
-
 def Sorting_option(list_of_menu_frames):
-    for frames in list_of_menu_frames:
+    for frames in list_of_menu_frames: 
         frames.pack_forget()
         frames.grid_forget()
         frames.destroy()
+
     global by_which_ID_num
     global more_dirs
     global prefix_Cam

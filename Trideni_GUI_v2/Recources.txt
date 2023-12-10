@@ -4,7 +4,7 @@ bmp,png
 Podporované typy souborů u možností mazání:
 jpg,bmp,png,ifz
 Základní cesta k souborům:
-C:/Users/kubah/Desktop/JHV/test_images/Keyence/_503_Witte/
+C:/Users/kubah/Desktop/JHV/test_images/Keyence/_515_ZF/004_34164321F/CAM2/
 Základní množství ponechaných souborů:
 1000
 Základní cutoff date:
