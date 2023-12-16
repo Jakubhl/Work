@@ -1,19 +1,22 @@
 import customtkinter
 import os
-import re
+import time
 from PIL import Image, ImageTk
 import Sorting_option_v4 as Trideni
 import Deleting_option_v1 as Deleting
 import Converting_option_v1 as Converting
 from tkinter import filedialog
 import tkinter as tk
+import threading
+import shutil
 
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 root=customtkinter.CTk()
 root.geometry("1200x900")
 root.wm_iconbitmap('images/JHV.ico')
-root.title("Zpracování souborů z průmyslových kamer")
+#root.title("Zpracování souborů z průmyslových kamer")
+root.title("TRIMAZKON v_2.0")
 #logo_set = False
 
 def read_text_file_data():
@@ -368,7 +371,16 @@ def View_option(list_of_menu_frames):
     global currently_viewed_image
     global all_images
     global increment_of_image
+    global state
+    global previous_scrollbar_x
+    global previous_scrollbar_y
+    global rotation_angle
 
+    rotation_angle = 90.0
+    copy_dir = "Vybrané_obrázky"
+    previous_scrollbar_x=0
+    previous_scrollbar_y=0
+    state = "stop"
     increment_of_image = 0
     all_images = []
     currently_viewed_image = ""
@@ -449,69 +461,68 @@ def View_option(list_of_menu_frames):
             console.configure(text=f"Byla vložena cesta: {output[1]}")
             start(output[1]) 
 
-    def get_image_dimensions(image):
+    """def get_image_dimensions(image):
         with Image.open(image) as img:
             width, height = img.size
-            print(f"image Dimensions: {width} x {height}")
-            return [width, height]
+            #print(f"image Dimensions: {width} x {height}")
+            return [width, height]"""
         
-    def get_frame_dimensions(frame):
-        """width = frame.winfo_width()
-        height = frame.winfo_height()
-        if height> 200:
-            height -=200
-        else: # na zacatku je frame 1x1"""
+    def get_frame_dimensions():
         whole_app_height = root._current_height
         whole_app_width = root._current_width
         width = whole_app_width
-        height = whole_app_height - 130
-
-        print(f"Frame Dimensions: {width} x {height}")
+        height = whole_app_height - 129.6
+        #print(f"Frame Dimensions: {width} x {height}")
         return [width, height]
               
-    def calc_current_format(frame, image):
-        frame_dimensions = get_frame_dimensions(frame)
-        image_dimensions = get_image_dimensions(image)
-        zoom = 1
+    def calc_current_format(width,height):
+        global previous_scrollbar_x
+        global previous_scrollbar_y
+        frame_dimensions = get_frame_dimensions()
+        image_dimensions = width,height
+        zoom = zoom_slider.get() / 100
 
-        """format_given = checkbox_format16_9.get()
+        frame_width, frame_height = frame_dimensions
+        image_width, image_height = image_dimensions
+        image_ratio = image_width / image_height
 
-        if format_given == 1:
-            target_ratio = 16/9
-        else:
-            target_ratio = 4/3"""
-
-        
-        frame_width = frame_dimensions[0]
-        frame_height = frame_dimensions[1]
-        image_width = image_dimensions[0]
-        image_height = image_dimensions[1]
-        image_ratio = image_width/image_height
-
-        #new_height = int(frame_height / image_ratio)
         new_height = frame_height
         new_width = int(new_height * image_ratio)
 
-        new_height = new_height*zoom
-        new_width= new_width*zoom
+        if new_width > frame_width:  # adjust if the width of the image is greater than the frame
+            new_width = frame_width
+            new_height = int(new_width / image_ratio)
 
-        print(f"New Dimensions: {new_width} x {new_height}")
+        new_height = new_height * zoom
+        new_width = new_width * zoom
+
+        # Calculate scrollbar lengths
+        scrollbar_length_x = min(1.0, frame_width / new_width)
+        scrollbar_length_y = min(1.0, frame_height / new_height)
+
+        # Update scrollbar lengths
+        if scrollbar_length_x != previous_scrollbar_x or scrollbar_length_y != previous_scrollbar_y:
+            horizontal_scrollbar.set(0.0, scrollbar_length_x)
+            vertical_scrollbar.set(0.0, scrollbar_length_y)
+            previous_scrollbar_y = scrollbar_length_y
+            previous_scrollbar_x = scrollbar_length_x
+
+        # print(f"New Dimensions: {new_width} x {new_height}")
         return [new_width, new_height]
 
 
     def view_image(increment_of_image):
-        #image_to_show = path + "/" + all_images[increment_of_image]
         image_to_show = all_images[increment_of_image]
-        dimensions = calc_current_format(main_frame,image_to_show)
+        with Image.open(image_to_show) as current_image:
+            current_image = current_image.rotate(rotation_angle)
+            width,height = current_image.size
         
-        displayed_image = customtkinter.CTkImage(Image.open(image_to_show),size = (dimensions[0],dimensions[1]))
-        images.configure(image =displayed_image)
-
-    def play_images():
-        images_list = get_images("C:/Users/kubah/Desktop/JHV/test_images/Keyence/_503_Witte/datumovka/A/")
-        for files in images_list:
-            view_image()
-
+        dimensions = calc_current_format(width,height)
+        displayed_image = customtkinter.CTkImage(current_image,size = (dimensions[0],dimensions[1]))
+        #displayed_image = customtkinter.CTkImage(Image.open(image_to_show),size = (960,770))
+        images.configure(image = displayed_image)
+        images.image = displayed_image
+        root.update_idletasks()
 
     def next_image():
         global increment_of_image
@@ -523,6 +534,8 @@ def View_option(list_of_menu_frames):
                 increment_of_image = 0
             view_image(increment_of_image)
             current_image_num.configure(text = str(increment_of_image+1) + "/" + str(len(all_images)))
+            #console.configure(text = str(all_images[increment_of_image]).replace(path,""))
+            console.configure(text = str(all_images[increment_of_image]))
             
     def previous_image():
         global increment_of_image
@@ -534,76 +547,267 @@ def View_option(list_of_menu_frames):
                 increment_of_image = number_of_found_images -1
             view_image(increment_of_image)
             current_image_num.configure(text = str(increment_of_image+1) + "/" + str(len(all_images)))
+            console.configure(text = str(all_images[increment_of_image]))
     
-    def selected_4_3():
-        checkbox_format16_9.deselect()
-        view_image(increment_of_image)
-    def selected_16_9():
-        checkbox_format4_3.deselect()
-        view_image(increment_of_image)
+
+    class interrupt_viewing:
+        def images_loop(self):
+            #self.button.config(state=tk.DISABLED)  # Disable the button during the loop
+            self.stop_flag = False  # Reset the stop flag
+            thread = threading.Thread(target=self.long_running_task)
+            thread.start()
+
+        def long_running_task(self):
+            global increment_of_image
+            number_of_found_images = len(all_images)
+            for i in range(0,number_of_found_images):
+                if self.stop_flag:
+                    break
+                next_image()
+                speed=speed_slider.get()/100
+                calculated_time = 2-speed*2 # 1% dela necele 2 sekundy, 100%, nula sekund, maximalni vykon
+                time.sleep(calculated_time)
+            else:
+                return 
+
+        def stop_loop(self):
+            self.stop_flag = True
 
 
     frame_with_path = customtkinter.CTkFrame(master=root,height = 200)
     frame_with_path.pack(pady=5,padx=5,fill="x",expand=False,side = "top")
-
-    main_frame = customtkinter.CTkScrollableFrame(master=root)
-    main_frame.pack(pady=0,padx=5,fill="both",expand=True,side = "bottom")
-
-
-    #h_scrollbar = customtkinter.CTkScrollbar(master=root, orientation="horizontal",command=images.xview)
-    #h_scrollbar.pack(expand=True,side = "bottom")
-    #main_frame.configure(yscrollcommand=h_scrollbar.set)
-
-    #right_frame = customtkinter.CTkFrame(master=root,width= 300,height=800)
-    #right_frame.pack(pady=0,padx=5,fill="both",expand=False,side = "left")
+    background_frame = customtkinter.CTkFrame(master=root)
+    background_frame.pack(pady=0,padx=5,ipadx=10,ipady=10,fill="both",expand=True,side = "bottom")
+    main_frame = customtkinter.CTkCanvas(master=background_frame,background="black",borderwidth = 0)
     
+
+    def on_vertical_scroll(*args):
+        new_y_coordinate = args[1]
+        main_frame.yview_moveto(new_y_coordinate)
+        images.place_configure(rely=-new_y_coordinate*(zoom_slider.get()/100))
+
+    def on_horizontal_scroll(*args):
+        new_x_coordinate = args[1]
+        main_frame.xview_moveto(new_x_coordinate)
+        images.place_configure(relx=-new_x_coordinate*(zoom_slider.get()/100))
+
+    vertical_scrollbar = customtkinter.CTkScrollbar(background_frame, orientation="vertical", command=on_vertical_scroll)
+    vertical_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    main_frame.configure(yscrollcommand=vertical_scrollbar.set)
+    
+    horizontal_scrollbar = customtkinter.CTkScrollbar(background_frame, orientation="horizontal", command=on_horizontal_scroll)
+    horizontal_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+    main_frame.configure(xscrollcommand=horizontal_scrollbar.set)
+
+    main_frame.pack(pady=0,padx=5,ipadx=10,ipady=10,fill="both",expand=True,side = "bottom",anchor= "center")
+    main_frame.configure(scrollregion=background_frame.bbox("all"))
+    #main_frame = customtkinter.CTkScrollableFrame(master=root)
+    #main_frame.pack(pady=0,padx=5,fill="both",expand=True,side = "bottom")
+    
+    interrupt = interrupt_viewing()
+
+    def stop():
+        global state
+        state = "stop"
+        interrupt.stop_loop()
+
+    def call_image_loop():
+        global state
+        state = ""
+        interrupt.images_loop()
+
+    def update_speed_slider(*args):
+        new_value = int(*args)
+        percent1.configure(text = "")
+        percent1.configure(text=str(new_value) + " %")
+
+    def update_zoom_slider(*args):
+        global increment_of_image
+        new_value = int(*args)
+        percent2.configure(text = "")
+        percent2.configure(text=str(new_value) + " %")
+        # update image po zoomu
+        if len(all_images) != 0:
+            view_image(increment_of_image)
+
+    def copy_image():
+        image_path = all_images[increment_of_image]
+        image = str(image_path).replace(path,"")
+        if not os.path.exists(path + "/" + copy_dir):
+            os.mkdir(path+ "/" + copy_dir)
+        if not os.path.exists(path + "/" + copy_dir+ "/" + image):
+            shutil.copy(path+ "/" + image,path + "/" + copy_dir+ "/" + image)
+            console.configure(text = f"Obrázek zkopírován do zvláštní složky: {copy_dir}.  ({image})")
+        else:
+            console.configure(text = f"Obrázek je již zkopírovaný uvnitř složky: {copy_dir}.  ({image})")
+
+    def rotate_image():
+        global rotation_angle
+        angles = [90.0,180.0,270.0,0.0]
+        if rotation_angle < 270:
+            rotation_angle += 90.0
+        else:
+            rotation_angle = 0.0
+        view_image(increment_of_image)
+
+    def Reset_all():
+        pass
 
     menu_button  = customtkinter.CTkButton(master = frame_with_path, width = 180,height=30, text = "MENU", command = lambda: call_menu(),font=("Arial",20,"bold"))
     path_set     = customtkinter.CTkEntry(master = frame_with_path,width = 650,height=30,placeholder_text="Zadejte cestu k souborům (kde se soubory přímo nacházejí)")
     manual_path  = customtkinter.CTkButton(master = frame_with_path, width = 120,height=30,text = "Otevřít", command = lambda: start(path_set.get()),font=("Arial",20,"bold"))
     tree         = customtkinter.CTkButton(master = frame_with_path, width = 120,height=30,text = "EXPLORER", command = call_browseDirectories,font=("Arial",20,"bold"))
-    console      = customtkinter.CTkLabel(master = frame_with_path,text = "",justify = "left",font=("Arial",15))
-    format_label = customtkinter.CTkLabel(master = frame_with_path,text = "Formát:",justify = "left",font=("Arial",15))
-    checkbox_format4_3 = customtkinter.CTkCheckBox(master= frame_with_path,text = "4:3",command = selected_4_3)
-    checkbox_format16_9 = customtkinter.CTkCheckBox(master= frame_with_path,text = "16:9",command= selected_16_9)
+    console      = customtkinter.CTkLabel(master = frame_with_path,text = "",height=30,justify = "left",font=("Arial",15))
+    rotate_button = customtkinter.CTkButton(master = frame_with_path, width = 120,height=30,text = "Otočit", command =  lambda: rotate_image(),font=("Arial",20,"bold"))
+    reset_button = customtkinter.CTkButton(master = frame_with_path, width = 120,height=30,text = "Reset", command = Reset_all,font=("Arial",20,"bold"))
     button_back = customtkinter.CTkButton(master = frame_with_path, width = 90,height=30,text = "   <   ", command = previous_image,font=("Arial",20,"bold"))
     current_image_num = customtkinter.CTkLabel(master = frame_with_path,text = "0",justify = "left",font=("Arial",20,"bold"))
     button_next = customtkinter.CTkButton(master = frame_with_path, width = 90,height=30,text = "   >   ", command = next_image,font=("Arial",20,"bold"))
-    button_play = customtkinter.CTkButton(master = frame_with_path, width = 180,height=30,text = "SPUSTIT", command = call_browseDirectories,font=("Arial",20,"bold"))
-    
- 
+    button_play = customtkinter.CTkButton(master = frame_with_path, width = 100,height=30,text = "SPUSTIT", command = call_image_loop,font=("Arial",20,"bold"))
+    button_stop = customtkinter.CTkButton(master = frame_with_path, width = 100,height=30,text = "STOP", command = stop,font=("Arial",20,"bold"))
+    button_save = customtkinter.CTkButton(master = frame_with_path, width = 100,height=30,text = "ULOŽIT", command = copy_image,font=("Arial",20,"bold"))
+    speed_label = customtkinter.CTkLabel(master = frame_with_path,text = "Rychlost:",justify = "left",font=("Arial",15))
+    speed_slider = customtkinter.CTkSlider(master = frame_with_path,width=150,from_=1,to=100,command= update_speed_slider)
+    percent1    = customtkinter.CTkLabel(master = frame_with_path,text = "%",justify = "left",font=("Arial",15))
+    zoom_label = customtkinter.CTkLabel(master = frame_with_path,text = "ZOOM:",justify = "left",font=("Arial",15))
+    zoom_slider = customtkinter.CTkSlider(master = frame_with_path,width=150,from_=100,to=300,command= update_zoom_slider)
+    percent2    = customtkinter.CTkLabel(master = frame_with_path,text = "%",justify = "left",font=("Arial",15))
+
     menu_button.grid(column = 0,row=0,pady = 5,padx =0,sticky = tk.W)
     path_set.grid(column = 0,row=0,pady = 5,padx =190,sticky = tk.W)
     manual_path.grid(column = 0,row=0,pady = 5,padx =850,sticky = tk.W)
     tree.grid(column = 0,row=0,pady = 5,padx =975,sticky = tk.W)
     console.grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
-    format_label.grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
-    checkbox_format4_3.grid(column = 0,row=2,pady = 5,padx =70,sticky = tk.W)
-    checkbox_format16_9.grid(column = 0,row=2,pady = 5,padx =130,sticky = tk.W)
-    button_back.grid(column = 0,row=2,pady = 5,padx =190,sticky = tk.W)
-    current_image_num.grid(column = 0,row=2,pady = 5,padx =300,sticky = tk.W)
-    button_next.grid(column = 0,row=2,pady = 5,padx =390,sticky = tk.W)
-    button_play.grid(column = 0,row=2,pady = 5,padx =490,sticky = tk.W)
+    rotate_button.grid(column = 0,row=1,pady = 5,padx =850,sticky = tk.W)
+    reset_button.grid(column = 0,row=1,pady = 5,padx =975,sticky = tk.W)
+    button_back.grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
+    current_image_num.grid(column = 0,row=2,pady = 5,padx =110,sticky = tk.W)
+    button_next.grid(column = 0,row=2,pady = 5,padx =200,sticky = tk.W)
+    button_play.grid(column = 0,row=2,pady = 5,padx =295,sticky = tk.W)
+    button_stop.grid(column = 0,row=2,pady = 5,padx =400,sticky = tk.W)
+    button_save.grid(column = 0,row=2,pady = 5,padx =505,sticky = tk.W)
+    speed_label.grid(column = 0,row=2,pady = 5,padx =610,sticky = tk.W)
+    speed_slider.grid(column = 0,row=2,pady = 5,padx =680,sticky = tk.W)
+    percent1.grid(column = 0,row=2,pady = 5,padx =830,sticky = tk.W)
+    zoom_label.grid(column = 0,row=2,pady = 5,padx =910,sticky = tk.W)
+    zoom_slider.grid(column = 0,row=2,pady = 5,padx =970,sticky = tk.W)
+    percent2.grid(column = 0,row=2,pady = 5,padx =1120,sticky = tk.W)
     
-
-    def move_x(*args):
-        fraction = float(args[1])
-        image_width = 2000
-        new_x = int((main_frame.winfo_width() - image_width) * fraction)
-        print(new_x)
-        images.place(x=new_x)
-        
-
-    #h_scrollbar = customtkinter.CTkScrollbar(master=main_frame, orientation="horizontal",command=move_x)
-    #h_scrollbar.pack(side = "bottom",expand=True)
-
-
     images = customtkinter.CTkLabel(master = main_frame,text = "")
-    images.pack(pady=5,padx=5)
-    #images.place(x=0,y=-770,anchor="nw")
+    #images.pack(pady=5,padx=5)
+    images.place(x=0,y=0)
 
+    zoom_slider.set(100)
+    update_zoom_slider(100)
+    speed_slider.set(100)
+    update_speed_slider(100)
+    """def button_hover(e):
+        button_stop.configure(text="mezerník",font=("Arial",15))
+    def button_hover_leave(e):
+        button_stop.configure(text="STOP",font=("Arial",20,"bold"))
+    button_stop.bind("<Enter>",button_hover)
+    button_stop.bind("<Leave>",button_hover_leave)"""
 
-    checkbox_format4_3.select()
+    # KEYBOARD BINDING
+    def pressed_space(e):
+        global state
+        if state != "stop":
+            state = "stop"
+            interrupt.stop_loop()
+            
+        else:
+            state = ""
+            interrupt.images_loop()
+    root.bind("<space>",pressed_space)
+    def pressed_left(e):
+        previous_image()
+    root.bind("<Left>",pressed_left)
+    def pressed_right(e):
+        next_image()
+    root.bind("<Right>",pressed_right)
+    def pressed_save(e):
+        copy_image()
+    root.bind("<s>",pressed_save)
+    def mouse_wheel(e):
+        direction = -e.delta
+        if direction < 0:
+            direction = "in"
+            new_value = zoom_slider.get()+5
+            if zoom_slider._to >= new_value:
+                zoom_slider.set(int(new_value))
+                percent2.configure(text=str(new_value) + " %")
+            else:
+                zoom_slider.set(zoom_slider._to) # pro pripad, ze by zbyvalo mene nez 5 do maxima 
+        else:
+            direction = "out"
+            new_value = zoom_slider.get()-5
+            if zoom_slider._from_ <= new_value:
+                zoom_slider.set(int(new_value))
+                percent2.configure(text=str(new_value) + " %")
+            else:
+                zoom_slider.set(zoom_slider._from_) # pro pripad, ze by zbyvalo vice nez 5 do minima  
+
+        if len(all_images) != 0: # update zobrazeni
+            view_image(increment_of_image)
+        
+    root.bind("<MouseWheel>",mouse_wheel)
+
+    def mouse_clicked(e):
+        global released
+        released = False
+        x,y = e.x,e.y
+        def get_direction(e):
+            option = ""
+            if abs(max(e.x,x)-min(e.x,x)) > abs(max(e.y,y)-min(e.y,y)):
+                option = "horizontal"
+            else:
+                option = "vertical"
+            if option == "horizontal":
+                if e.x > x:
+                    #right
+                    current_horizontal_value = horizontal_scrollbar.get()
+                    if (current_horizontal_value[0] - 0.01) > 0.00:
+                        args_tuple_h = (0,current_horizontal_value[0]-0.01)
+                        on_horizontal_scroll(*args_tuple_h)
+                        horizontal_scrollbar.set(current_horizontal_value[0]-0.01,current_horizontal_value[1]-0.01)      
+                else:
+                    #left
+                    current_horizontal_value = horizontal_scrollbar.get()
+                    if (current_horizontal_value[1] + 0.01) < 1.00:
+                        args_tuple_h = (0,current_horizontal_value[0]+0.01)
+                        on_horizontal_scroll(*args_tuple_h)
+                        horizontal_scrollbar.set(current_horizontal_value[0]+0.01,current_horizontal_value[1]+0.01)
+
+            if option == "vertical":
+                if e.y > y:
+                    #down
+                    current_vertical_value = vertical_scrollbar.get()
+                    if (current_vertical_value[0] - 0.01) > 0.00:
+                        args_tuple_v = (0,current_vertical_value[0]-0.01)
+                        on_vertical_scroll(*args_tuple_v)
+                        vertical_scrollbar.set(current_vertical_value[0]-0.01,current_vertical_value[1]-0.01)
+                else:
+                    #up
+                    current_vertical_value = vertical_scrollbar.get()
+                    if (current_vertical_value[1] + 0.01) < 1.00:
+                        args_tuple_v = (0,current_vertical_value[0]+0.01)
+                        on_vertical_scroll(*args_tuple_v)
+                        vertical_scrollbar.set(current_vertical_value[0]+0.01,current_vertical_value[1]+0.01)
+            return
+
+        images.bind("<Motion>", get_direction)
+        if released == True:
+            return
+
+        def end_func(e):
+            global released
+            images.unbind("<Motion>")
+            images.unbind("<ButtonRelease-1>")
+            released = True
+
+        images.bind("<ButtonRelease-1>",end_func)
+    images.bind("<Button-1>",mouse_clicked)
+
     #hned na zacatku to vleze do defaultni slozky
     text_file_data = read_text_file_data()
     path = text_file_data[2]
@@ -612,6 +816,7 @@ def View_option(list_of_menu_frames):
         path_set.insert("0", path)
         console.configure(text="")
         console.configure(text="Byla vložena cesta z konfiguračního souboru Recources.txt")
+        root.update_idletasks()
         start(path)
     else:
         console.configure(text="")
