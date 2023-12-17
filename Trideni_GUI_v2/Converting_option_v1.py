@@ -73,7 +73,7 @@ def whole_converting_function(path_given,output_img_format):
                 command = command + " /o:" + path_given + folder_with_jpg + " /f:jpg"
             
             output.append(f"Bylo konvertováno: {converted_files} souborů do formátu: {which_format}\n")
-            output.append(f"Konvertování bylo dokončeno\n")
+            output.append("\nKonvertování bylo dokončeno\n")
             return command
         else:
             output.append("Vložená cesta neobsahuje žádné soubory typu .ifz\n")
@@ -81,7 +81,7 @@ def whole_converting_function(path_given,output_img_format):
 
         
     def main():
-        output.append(f"\nProbíhá konvertování souborů v cestě: {path_given}\n\n")
+        #output.append(f"\nProbíhá konvertování souborů v cestě: {path_given}\n\n")
         found_files = get_files_to_convert()
         if output_img_format == "jpg":
             cmd_command = form_console_command(found_files,"jpg")
