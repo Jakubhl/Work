@@ -8,7 +8,7 @@ C:/Users/kubah/Desktop/JHV/test_images/Keyence/_503_Witte/datumovka/A/
 Základní množství ponechaných souborů:
 1000
 Základní cutoff date:
-6.12.2022
+29.11.2022
 Prefix funkce:
 Func_
 Prefix kamery:
@@ -18,7 +18,7 @@ ano
 Základní maximální počet palet v oběhu:
 55
 Název složky pro nepáry (nezastoupenými všemi nalezenými formáty):
-temporino
+Temp
 Název složky pro nalezené dvojice:
 Pairss
 Název složky se soubory, které jsou určené ke smazání:
@@ -27,3 +27,5 @@ Název složky pro soubory převedené do .bmp formátu:
 Konvertovane_BMP47
 Název složky pro soubory převedené do .jpg formátu:
 Konvertovane_JPG74
+Název složky pro vybrané obrázky v prohlížeči obrázků:
+Vybrane_obrazkyy

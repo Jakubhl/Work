@@ -103,7 +103,7 @@ def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
 
         # cteme nekolik nazvu slozek:
         static_dirs_names = []
-        for i in range(20,30,2):
+        for i in range(20,32,2):
             Lines[i] = Lines[i].replace("\n","")
             Lines[i] = Lines[i].replace("\"","")
             Lines[i] = Lines[i].replace("/","")
@@ -242,7 +242,7 @@ def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do 
             input_data_splitted = str(input_data).split(" | ")
             input_data = input_data_splitted[0]
             increment = int(input_data_splitted[1])
-            lines_with_names = [20,22,24,26,28]
+            lines_with_names = [20,22,24,26,28,30]
             increment = lines_with_names[increment]
             
             lines[increment] = lines[increment].replace("\n","")
@@ -353,7 +353,7 @@ def menu(): # Funkce spouští základní menu při spuštění aplikace (MAIN)
 
     frame_with_logo = customtkinter.CTkFrame(master=root)
     #logo = customtkinter.CTkImage(Image.open("images/logo2.bmp"),size=(571, 70))
-    logo = customtkinter.CTkImage(Image.open("images/logo.png"),size=(961, 125))
+    logo = customtkinter.CTkImage(Image.open("images/logo.png"),size=(1200, 100))
     image_logo = customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
     frame_with_buttons = customtkinter.CTkFrame(master=root)
     frame_with_logo.pack(pady=0,padx=5,fill="both",expand=False,side = "top")
@@ -419,7 +419,10 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.previous_scrollbar_x = 0
         self.previous_scrollbar_y = 0
         self.rotation_angle = 0.0
-        self.copy_dir = "Vybrané_obrázky"
+        text_file_data = read_text_file_data()
+        list_of_dir_names = text_file_data[9]
+        self.copy_dir = list_of_dir_names[5]
+        #self.copy_dir = "Vybrané_obrázky"
         self.image_browser_path = ""
         self.unbind_list = []
         self.image_extensions = ['.jpg', '.jpeg', '.jpe', '.jif', '.jfif', '.jfi',
@@ -469,14 +472,12 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             if path != "":
                 check = Trideni.path_check(path)
                 if check == False:
-                    self.console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena")
+                    self.console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena",text_color="red")
                 else:
                     path = check
-                    self.console.configure(text = str(path)+" je OK")
                     path_found = True
             else:
-                self.console.configure(text="")
-                self.console.configure(text = "Nebyla vložena cesta k souborům")
+                self.console.configure(text = "Nebyla vložena cesta k souborům",text_color="red")
 
         #automaticky okamzite otevre prvni z obrazku v dane ceste
         if path_found == True:
@@ -487,11 +488,11 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     self.view_image(0) #zobrazit hned prvni obrazek po vlozene ceste
                     self.increment_of_image = 0
                     self.current_image_num.configure(text = str(self.increment_of_image+1) + "/" + str(len(self.all_images)))
-                    self.console.configure(text = f"Vložena cesta: {path}")
+                    self.console.configure(text = f"Vložena cesta: {path}",text_color="green")
                 else:
-                    self.console.configure(text = "- V zadané cestě nebyly nalezeny obrázky")
+                    self.console.configure(text = "- V zadané cestě nebyly nalezeny obrázky",text_color="red")
             else:
-                self.console.configure(text = "- Vložená cesta je neplatná")
+                self.console.configure(text = "- Vložená cesta je neplatná",text_color="red")
     
     def call_browseDirectories(self): # Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
@@ -501,8 +502,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])
-            self.console.configure(text="")
-            self.console.configure(text=f"Byla vložena cesta: {output[1]}")
+            self.console.configure(text=f"Byla vložena cesta: {output[1]}",text_color="white")
             self.start(output[1]) 
 
     def get_frame_dimensions(self): # Vrací aktuální rozměry rámečku
@@ -617,7 +617,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.increment_of_image = 0
             self.view_image(self.increment_of_image)
             self.current_image_num.configure(text = str(self.increment_of_image+1) + "/" + str(len(self.all_images)))
-            self.console.configure(text = str(self.all_images[self.increment_of_image]))
+            self.console.configure(text = str(self.all_images[self.increment_of_image]),text_color="white")
     
     def previous_image(self): # Předchozí obrázek v pořadí (šipka vlevo)
         """
@@ -631,7 +631,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.increment_of_image = number_of_found_images -1
             self.view_image(self.increment_of_image)
             self.current_image_num.configure(text = str(self.increment_of_image+1) + "/" + str(len(self.all_images)))
-            self.console.configure(text = str(self.all_images[self.increment_of_image]))
+            self.console.configure(text = str(self.all_images[self.increment_of_image]),text_color="white")
 
     class interrupt_viewing: # Pro možnosti vykonávání subprocessu na pozadí
         """
@@ -696,9 +696,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             os.mkdir(path+ "/" + self.copy_dir)
         if not os.path.exists(path + "/" + self.copy_dir+ "/" + image):
             shutil.copy(path+ "/" + image,path + "/" + self.copy_dir+ "/" + image)
-            self.console.configure(text = f"Obrázek zkopírován do zvláštní složky: {self.copy_dir}.  ({image})")
+            self.console.configure(text = f"Obrázek zkopírován do zvláštní složky: {self.copy_dir}.  ({image})",text_color="white")
         else:
-            self.console.configure(text = f"Obrázek je již zkopírovaný uvnitř složky: {self.copy_dir}.  ({image})")
+            self.console.configure(text = f"Obrázek je již zkopírovaný uvnitř složky: {self.copy_dir}.  ({image})",text_color="red")
 
     def rotate_image(self):
         angles = [90.0,180.0,270.0,0.0]
@@ -756,10 +756,10 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.main_frame.configure(scrollregion=self.background_frame.bbox("all"))
 
         menu_button  = customtkinter.CTkButton(master = self.frame_with_path, width = 150,height=30, text = "MENU", command = lambda: self.call_menu(),font=("Arial",16,"bold"))
-        self.path_set     = customtkinter.CTkEntry(master = self.frame_with_path,width = 680,height=30,placeholder_text="Zadejte cestu k souborům (kde se soubory přímo nacházejí)")
+        self.path_set = customtkinter.CTkEntry(master = self.frame_with_path,width = 680,height=30,placeholder_text="Zadejte cestu k souborům (kde se soubory přímo nacházejí)")
         manual_path  = customtkinter.CTkButton(master = self.frame_with_path, width = 120,height=30,text = "Otevřít", command = lambda: self.start(self.path_set.get()),font=("Arial",16,"bold"))
         tree         = customtkinter.CTkButton(master = self.frame_with_path, width = 120,height=30,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",16,"bold"))
-        self.console      = customtkinter.CTkLabel(master = self.frame_with_path,text = "",height=15,justify = "left",font=("Arial",12))
+        self.console = customtkinter.CTkLabel(master = self.frame_with_path,text = "",height=15,justify = "left",font=("Arial",12),text_color="white")
         button_back  = customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = "<", command = self.previous_image,font=("Arial",16,"bold"))
         self.current_image_num = customtkinter.CTkLabel(master = self.frame_with_path,text = "0",justify = "left",font=("Arial",16,"bold"))
         button_next  = customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = ">", command = self.next_image,font=("Arial",16,"bold"))
@@ -769,10 +769,10 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         rotate_button = customtkinter.CTkButton(master = self.frame_with_path, width = 100,height=30,text = "OTOČIT", command =  lambda: self.rotate_image(),font=("Arial",16,"bold"))
         speed_label  = customtkinter.CTkLabel(master = self.frame_with_path,text = "Rychlost:",justify = "left",font=("Arial",12))
         self.speed_slider = customtkinter.CTkSlider(master = self.frame_with_path,width=120,from_=1,to=100,command= self.update_speed_slider)
-        self.percent1     = customtkinter.CTkLabel(master = self.frame_with_path,text = "%",justify = "left",font=("Arial",12))
+        self.percent1 = customtkinter.CTkLabel(master = self.frame_with_path,text = "%",justify = "left",font=("Arial",12))
         zoom_label   = customtkinter.CTkLabel(master = self.frame_with_path,text = "ZOOM:",justify = "left",font=("Arial",12))
-        self.zoom_slider  = customtkinter.CTkSlider(master = self.frame_with_path,width=120,from_=100,to=500,command= self.update_zoom_slider)
-        self.percent2     = customtkinter.CTkLabel(master = self.frame_with_path,text = "%",justify = "left",font=("Arial",12))
+        self.zoom_slider = customtkinter.CTkSlider(master = self.frame_with_path,width=120,from_=100,to=500,command= self.update_zoom_slider)
+        self.percent2 = customtkinter.CTkLabel(master = self.frame_with_path,text = "%",justify = "left",font=("Arial",12))
         reset_button = customtkinter.CTkButton(master = self.frame_with_path, width = 100,height=30,text = "RESET", command = self.Reset_all,font=("Arial",16,"bold"))
 
         menu_button.grid(column = 0,row=0,pady = 5,padx =0,sticky = tk.W)
@@ -975,14 +975,12 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         if path != "/" and path != False:
             self.path_set.delete("0","200")
             self.path_set.insert("0", path)
-            self.console.configure(text="")
-            self.console.configure(text="Byla vložena cesta z konfiguračního souboru Recources.txt")
+            self.console.configure(text="Byla vložena cesta z konfiguračního souboru Recources.txt",text_color="white")
             self.root.update_idletasks()
             self.image_browser_path = path
             self.start(path)
         else:
-            self.console.configure(text="")
-            self.console.configure(text = "Konfigurační soubor Recources.txt obsahuje neplatnou cestu, vložte manuálně")
+            self.console.configure(text = "Konfigurační soubor Recources.txt obsahuje neplatnou cestu, vložte manuálně",text_color="orange")
 
 class Advanced_option: # Umožňuje nastavit základní parametry, které ukládá do textového souboru
     """
@@ -996,14 +994,18 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         self.drop_down_static_dir_names_list = []
         self.default_displayed_prefix_dir = "cam"
         self.default_displayed_static_dir = 0
-        self.default_dir_names = [" (default: Temp)"," (default: PAIRS)"," (default: Ke_smazani)"," (default: Konvertovane_BMP)"," (default: Konvertovane_JPG)"]
+        self.default_dir_names = [" (default: Temp)"," (default: PAIRS)"," (default: Ke_smazani)",
+                                  " (default: Konvertovane_BMP)"," (default: Konvertovane_JPG)",
+                                  " (default: Vybrane_obrazky)"]
         self.creating_advanced_option_widgets()
     
     def call_menu(self): # Tlačítko menu (konec, návrat do menu)
         """
         Funkce čistí všechny zaplněné rámečky a funguje, jako tlačítko zpět do menu
         """
-        self.list_of_frames = [self.top_frame,self.bottom_frame_default_path,self.bottom_frame_with_date,self.bottom_frame_with_files_to_keep,self.bottom_frame_sorting_formats,self.bottom_frame_deleting_formats,self.main_console_frame,self.list_of_menu_frames[1]]
+        self.list_of_frames = [self.top_frame,self.bottom_frame_default_path,self.bottom_frame_with_date,self.bottom_frame_with_files_to_keep,
+                               self.bottom_frame_sorting_formats,self.bottom_frame_deleting_formats,self.main_console_frame,
+                               self.list_of_menu_frames[1]]
         for frames in self.list_of_frames:
             frames.pack_forget()
             frames.grid_forget()
@@ -1028,7 +1030,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         else:
             write_text_file_data("ne","maximalized")
 
-    def setting_widgets(self,main_console_text,exception): # samotné možnosti úprav parametrů uložených v textové souboru
+    def setting_widgets(self,exception): # samotné možnosti úprav parametrů uložených v textové souboru
         """
         samotné možnosti úprav parametrů uložených v textové souboru
         """
@@ -1036,7 +1038,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         self.clear_frame(self.bottom_frame_with_files_to_keep)
         self.clear_frame(self.bottom_frame_sorting_formats)
         self.clear_frame(self.bottom_frame_deleting_formats)
-        self.clear_frame(self.main_console_frame)
+        #self.clear_frame(self.main_console_frame)
         self.clear_frame(self.bottom_frame_default_path)
 
         text_file_data = read_text_file_data()
@@ -1065,34 +1067,29 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 self.path_set.delete("0","200")
                 self.path_set.insert("0", output[1])
                 console_input = write_text_file_data(output[1],"default_path") # hlaska o nove vlozene ceste
-                default_path_insert_console.configure(text = "")
-                default_path_insert_console.configure(text = "Aktuálně nastavená základní cesta k souborům: " + str(output[1]))
-                main_console.configure(text="")
-                main_console.configure(text=console_input)
+                default_path_insert_console.configure(text = "Aktuálně nastavená základní cesta k souborům: " + str(output[1]),text_color="white")
+                self.main_console.configure(text=console_input,text_color="green")
             else:
-                default_path_insert_console.configure(text = "")
-                default_path_insert_console.configure(text = str(output[0]))
+                default_path_insert_console.configure(text = str(output[0]),text_color="red")
 
         def save_path():
             path_given = str(self.path_set.get())
             path_check = Trideni.path_check(path_given)
-            main_console.configure(text="")
             if path_check != False and path_check != "/":
                 console_input = write_text_file_data(path_check,"default_path")
-                main_console.configure(text=console_input)
-                default_path_insert_console.configure(text = "")
-                default_path_insert_console.configure(text = "Aktuálně nastavená základní cesta k souborům: " + str(path_check))
+                self.main_console.configure(text=console_input,text_color="green")
+                default_path_insert_console.configure(text = "Aktuálně nastavená základní cesta k souborům: " + str(path_check),text_color="white")
             elif path_check != "/":
-                main_console.configure(text=f"Zadaná cesta: {path_given} nebyla nalezena, nebude tedy uložena")
+                self.main_console.configure(text=f"Zadaná cesta: {path_given} nebyla nalezena, nebude tedy uložena",text_color="red")
             elif path_check == "/":
-                main_console.configure(text="Nebyla vložena žádná cesta k souborům")
+                self.main_console.configure(text="Nebyla vložena žádná cesta k souborům",text_color="red")
                 
         row_index = 0
         label5 = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "Nastavte základní cestu k souborům při spuštění:",justify = "left",font=("Arial",12,"bold"))
         self.path_set = customtkinter.CTkEntry(master = self.bottom_frame_default_path,width=700,height=30,placeholder_text="")
         button_save5 = customtkinter.CTkButton(master = self.bottom_frame_default_path,width=50,height=30, text = "Uložit", command = lambda: save_path(),font=("Arial",12,"bold"))
         button_explorer = customtkinter.CTkButton(master = self.bottom_frame_default_path,width=100,height=30, text = "EXPLORER", command = lambda: call_browseDirectories(),font=("Arial",12,"bold"))
-        default_path_insert_console=customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=30,text ="",justify = "left",font=("Arial",12))
+        default_path_insert_console=customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=30,text ="",justify = "left",font=("Arial",12),text_color="white")
         label5.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
         self.path_set.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
         button_save5.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=710)
@@ -1102,30 +1099,26 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         def save_path_enter_btn(e):
             save_path()
         self.path_set.bind("<Return>",save_path_enter_btn)
-        if text_file_data[2] != False:
-            default_path_insert_console.configure(text="Aktuálně nastavená základní cesta k souborům: " + str(text_file_data[2]))
+        if text_file_data[2] != False and text_file_data[2] != "/":
+            default_path_insert_console.configure(text="Aktuálně nastavená základní cesta k souborům: " + str(text_file_data[2]),text_color="white")
             self.path_set.configure(placeholder_text=str(text_file_data[2]))
             self.path_set.delete("0","200")
             self.path_set.insert("0", str(text_file_data[2]))
         else:
-            default_path_insert_console.configure(text="Aktuálně nastavená základní cesta k souborům v Recources.txt je neplatná")
+            default_path_insert_console.configure(text="Aktuálně nastavená základní cesta k souborům v Recources.txt je neplatná",text_color="red")
             self.path_set.configure(placeholder_text="Není nastavena žádná základní cesta")
 
         def set_default_cutoff_date():
-            main_console_text = ""
             input_month = set_month.get()
             if input_month != "":
                 if input_month.isdigit():
                     if int(input_month) < 13 and int(input_month) > 0:
                         cutoff_date[1] = int(input_month)
-                        main_console.configure(text="")
-                        main_console_text = "Datum přenastaveno na: "+ str(cutoff_date[0])+ "."+str(cutoff_date[1])+"."+ str(cutoff_date[2])
+                        self.main_console.configure(text="Datum přenastaveno na: "+ str(cutoff_date[0])+ "."+str(cutoff_date[1])+"."+ str(cutoff_date[2]),text_color="green")
                     else:
-                        main_console.configure(text="")
-                        main_console_text = "Měsíc: " + str(input_month) + " je mimo rozsah"
+                        self.main_console.configure(text="Měsíc: " + str(input_month) + " je mimo rozsah",text_color="red")
                 else:
-                    main_console.configure(text="")
-                    main_console_text = "U nastavení měsíce jste nezadali číslo"
+                    self.main_console.configure(text="U nastavení měsíce jste nezadali číslo",text_color="red")
 
             input_day = set_day.get()
             max_days_in_month = Deleting.calc_days_in_month(int(cutoff_date[1]))
@@ -1134,55 +1127,43 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 if input_day.isdigit():
                     if int(input_day) <= int(max_days_in_month) and int(input_day) > 0:
                         cutoff_date[0] = int(input_day)
-                        main_console.configure(text="")
-                        main_console_text = "Datum přenastaveno na: "+ str(cutoff_date[0])+ "."+str(cutoff_date[1])+"."+ str(cutoff_date[2])
+                        self.main_console.configure(text="Datum přenastaveno na: "+ str(cutoff_date[0])+ "."+str(cutoff_date[1])+"."+ str(cutoff_date[2]),text_color="green")
                     else:
-                        main_console.configure(text="")
-                        main_console_text = "Den: " + str(input_day) + " je mimo rozsah"
+                        self.main_console.configure(text="Den: " + str(input_day) + " je mimo rozsah",text_color="red")
                 else:
-                    main_console.configure(text="")
-                    main_console_text = "U nastavení dne jste nezadali číslo"
+                    self.main_console.configure(text="U nastavení dne jste nezadali číslo",text_color="red")
 
             input_year = set_year.get()
             if input_year != "":
                 if input_year.isdigit():
                     if len(str(input_year)) == 2:
                         cutoff_date[2] = int(input_year) + 2000
-                        main_console.configure(text="")
-                        main_console_text = "Datum přenastaveno na: "+ str(cutoff_date[0])+ "."+str(cutoff_date[1])+"."+ str(cutoff_date[2])
+                        self.main_console.configure(text="Datum přenastaveno na: "+ str(cutoff_date[0])+ "."+str(cutoff_date[1])+"."+ str(cutoff_date[2]),text_color="green")
                     elif len(str(input_year)) == 4:
                         cutoff_date[2] = int(input_year)
-                        main_console.configure(text="")
-                        main_console_text = "Datum přenastaveno na: "+ str(cutoff_date[0])+ "."+str(cutoff_date[1])+"."+ str(cutoff_date[2])
+                        self.main_console.configure(text="Datum přenastaveno na: "+ str(cutoff_date[0])+ "."+str(cutoff_date[1])+"."+ str(cutoff_date[2]),text_color="green")
                     else:
-                        main_console.configure(text="")
-                        main_console_text = "Rok: " + str(input_year) + " je mimo rozsah"
+                        self.main_console.configure(text="Rok: " + str(input_year) + " je mimo rozsah",text_color="red")
                 else:
-                    main_console.configure(text="")
-                    main_console_text = "U nastavení roku jste nezadali číslo"
+                    self.main_console.configure(text="U nastavení roku jste nezadali číslo",text_color="red")
 
             write_text_file_data(cutoff_date,"default_cutoff_date")
-            self.setting_widgets(main_console_text,False)
+            self.setting_widgets(False)
 
         def set_files_to_keep():
-            main_console_text = ""
             input_files_to_keep = files_to_keep_set.get()
             if input_files_to_keep.isdigit():
                 if int(input_files_to_keep) >= 0:
                     files_to_keep = int(input_files_to_keep)
                     write_text_file_data(files_to_keep,"default_files_to_keep")
-                    main_console.configure(text="")
-                    main_console_text = "Základní počet ponechaných starších souborů nastaven na: " + str(files_to_keep)
-                    console_files_to_keep.configure(text = "Aktuálně nastavené minimum: "+str(files_to_keep))
+                    self.main_console.configure(text="Základní počet ponechaných starších souborů nastaven na: " + str(files_to_keep),text_color="green")
+                    console_files_to_keep.configure(text = "Aktuálně nastavené minimum: "+str(files_to_keep),text_color="white")
                 else:
-                    main_console.configure(text="")
-                    main_console_text = "Mimo rozsah"
+                    self.main_console.configure(text="Mimo rozsah",text_color="red")
             else:
-                main_console.configure(text="")
-                main_console_text = "Nazadali jste číslo"
+                self.main_console.configure(text="Nazadali jste číslo",text_color="red")
 
-            
-            self.setting_widgets(main_console_text,False)
+            self.setting_widgets(False)
 
         def insert_current_date():
             today = Deleting.get_current_date()
@@ -1192,10 +1173,8 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 i+=1
                 cutoff_date[i-1]=items
 
-            main_console.configure(text="")
-            main_console_text = "Bylo vloženo dnešní datum (Momentálně všechny soubory vyhodnoceny, jako starší!)"
-
-            self.setting_widgets(main_console_text,cutoff_date)
+            self.main_console.configure(text="Bylo vloženo dnešní datum (Momentálně všechny soubory vyhodnoceny, jako starší!)",text_color="orange")
+            self.setting_widgets(cutoff_date)
 
         #widgets na nastaveni zakladniho dne
         label1 = customtkinter.CTkLabel(master = self.bottom_frame_with_date,height=20,text = "Nastavte základní datum pro vyhodnocení souborů, jako starších:",justify = "left",font=("Arial",12,"bold"))
@@ -1223,7 +1202,6 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         
         def set_new_default_prefix(which_folder):
             report = ""
-            main_console_text = ""
             inserted_prefix = str(set_new_def_prefix.get()).replace(" ","")
             if len(inserted_prefix) != 0:
                 if inserted_prefix != str(default_prefix_cam) and inserted_prefix != str(default_prefix_func):
@@ -1233,16 +1211,12 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                     if which_folder == "func":
                         report = write_text_file_data(inserted_prefix,"new_default_prefix_func")
                         self.default_displayed_prefix_dir = "func"
-                    main_console.configure(text="")
-                    main_console.configure(text=report)
-                    main_console_text = report
-                    self.setting_widgets(main_console_text,False) # refresh
+                    self.main_console.configure(text=report,text_color="green")
+                    self.setting_widgets(False) # refresh
                 else:
-                    main_console.configure(text = "Zadané jméno je již zabrané")
-                    main_console_text = "Zadané jméno je již zabrané"
+                    self.main_console.configure(text = "Zadané jméno je již zabrané",text_color="red")
             else:
-                main_console.configure(text = "Nutný alespoň jeden znak")
-                main_console_text = "Nutný alespoň jeden znak"
+                self.main_console.configure(text = "Nutný alespoň jeden znak",text_color="red")
                 
         def change_prefix_dir(*args):
             if str(*args) == str(self.drop_down_prefix_dir_names_list[1]):
@@ -1300,7 +1274,8 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                       "Základní název složky pro nalezené dvojice změněn na: ",
                       "Základní název složky se soubory, které jsou určené ke smazání změněn na: ",
                       "Základní název složky pro soubory převedené do .bmp formátu změněn na: ",
-                      "Základní název složky pro soubory převedené do .jpg formátu změněn na: "]
+                      "Základní název složky pro soubory převedené do .jpg formátu změněn na: ",
+                      "Základní název složky pro zkopírované (uložené) vybrané obrázky z prohlížeče změněn na: "]
             colisions = 0
             
             if len(inserted_new_name) != 0:
@@ -1317,16 +1292,12 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                             write_text_file_data(inserted_new_name+" | "+str(i),"new_default_static_dir_name")
                             self.default_displayed_static_dir = i
                             neme_list_without_suffix = inserted_new_name.replace(str(self.default_dir_names[i]),"")
-                            main_console.configure(text="")
-                            main_console.configure(text=report[i]+neme_list_without_suffix)
-                            main_console_text = report[i]+neme_list_without_suffix
-                            self.setting_widgets(main_console_text,False) # refresh
+                            self.main_console.configure(text=report[i]+neme_list_without_suffix,text_color="green")
+                            self.setting_widgets(False) # refresh
                 else:
-                    main_console.configure(text = "Zadané jméno je již zabrané")
-                    main_console_text = "Zadané jméno je již zabrané"
+                    self.main_console.configure(text = "Zadané jméno je již zabrané",text_color="red")
             else:
-                main_console.configure(text = "Nutný alespoň jeden znak")
-                main_console_text = "Nutný alespoň jeden znak"
+                self.main_console.configure(text = "Nutný alespoň jeden znak",text_color="red")
                 
         def change_static_dir(*args):
             for i in range(0,len(self.drop_down_static_dir_names_list)):
@@ -1352,36 +1323,35 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             set_new_default_dir_name()
         set_new_def_folder_name.bind("<Return>",static_dir_enter_btn)
         # nastaveni defaultniho vyberu z drop-down menu
-        drop_down_static_dir_names.set(self.drop_down_static_dir_names_list[self.default_displayed_static_dir])
+        drop_down_static_dir_names.set(self.drop_down_static_dir_names_list[drop_down_increment])
         
         def add_format(which_operation):
-            main_console_text = ""
             if which_operation == 0:
                 new_format = str(formats_set.get())
                 if new_format !="":
-                    main_console.configure(text="")
                     main_console_text = write_text_file_data(new_format,"add_supported_sorting_formats")
+                    self.main_console.configure(text=main_console_text,text_color="white")
+                    
             if which_operation == 1:
                 new_format = str(formats_set2.get())
                 if new_format !="":
-                    main_console.configure(text="")
                     main_console_text = write_text_file_data(new_format,"add_supported_deleting_formats")
-            self.setting_widgets(main_console_text,False)
+                    self.main_console.configure(text=main_console_text,text_color="white")
+            self.setting_widgets(False)
 
         def pop_format(which_operation):
-            main_console_text = ""
             if which_operation == 0:
                 format_to_delete = str(formats_set.get())
                 if format_to_delete !="":
-                    main_console.configure(text="")
                     main_console_text = write_text_file_data(format_to_delete,"pop_supported_sorting_formats")
+                    self.main_console.configure(text=main_console_text,text_color="white")
             if which_operation == 1:
                 format_to_delete = str(formats_set2.get())
                 if format_to_delete !="":
-                    main_console.configure(text="")
                     main_console_text = write_text_file_data(format_to_delete,"pop_supported_deleting_formats")
+                    self.main_console.configure(text=main_console_text,text_color="white")
 
-            self.setting_widgets(main_console_text,False)
+            self.setting_widgets(False)
 
         supported_formats_sorting = "Aktuálně nastavené podporované formáty pro možnosti třídění: " + str(text_file_data[0])
         label3 = customtkinter.CTkLabel(master = self.bottom_frame_sorting_formats,height=20,text = "Nastavte podporované formáty pro možnosti: TŘÍDĚNÍ:",justify = "left",font=("Arial",12,"bold"))
@@ -1398,14 +1368,11 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         def set_max_num_of_pallets():
             input_1 = set_max_pallets.get()
             if input_1.isdigit() == False:
-                main_console.configure(text = "")
-                main_console.configure(text = "Nezadali jste číslo")
+                self.main_console.configure(text = "Nezadali jste číslo",text_color="red")
             elif int(input_1) <1:
-                main_console.configure(text = "")
-                main_console.configure(text = "Mimo rozsah")
+                self.main_console.configure(text = "Mimo rozsah",text_color="red")
             else:
-                main_console.configure(text = "")
-                main_console.configure(text = f"Počet palet nastaven na: {input_1}")
+                self.main_console.configure(text = f"Počet palet nastaven na: {input_1}",text_color="green")
                 write_text_file_data(input_1,"pallets_set")
                 
         #widgets na nastaveni zakladniho poctu palet v obehu
@@ -1431,11 +1398,6 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         button_save4.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=60)
         button_pop2.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=110)
         console_bottom_frame_4.grid(column =0,row=row_index+3,sticky = tk.W,pady =0,padx=10)
-
-        main_console_label = customtkinter.CTkLabel(master = self.main_console_frame,height=50,text ="KONZOLA:",justify = "left",font=("Arial",16,"bold"))
-        main_console_label.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
-        main_console = customtkinter.CTkLabel(master = self.main_console_frame,height=50,text =main_console_text,justify = "left",font=("Arial",16))
-        main_console.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
 
     def creating_advanced_option_widgets(self): # Vytváří veškeré widgets (advance option MAIN)
         #cisteni menu widgets
@@ -1466,12 +1428,17 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         label0.grid(column =0,row=0,sticky = tk.W,pady =0,padx=210)
         self.checkbox_maximalized.grid(column =0,row=2,sticky = tk.W,pady =10,padx=10)
 
+        main_console_label = customtkinter.CTkLabel(master = self.main_console_frame,height=50,text ="KONZOLA:",justify = "left",font=("Arial",16,"bold"))
+        main_console_label.grid(column =0,row=0,sticky = tk.W,pady =0,padx=10)
+        self.main_console = customtkinter.CTkLabel(master = self.main_console_frame,height=50,text ="",justify = "left",font=("Arial",16))
+        self.main_console.grid(column =0,row=1,sticky = tk.W,pady =0,padx=10)
+
         if read_text_file_data()[7] == "ano":
             self.checkbox_maximalized.select()
         else:
             self.checkbox_maximalized.deselect()
 
-        self.setting_widgets("",False)
+        self.setting_widgets(False)
 
         def maximalize_window(e):
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
@@ -1533,29 +1500,30 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         for i in range(0,len(Converting.output)):
             output_text = output_text + Converting.output[i]
         if output_text != "":
-           self.console.configure(text = output_text)
+            if "Konvertování bylo dokončeno" in output_text:
+                self.console.configure(text = output_text,text_color = "green")
+            else:
+                self.console.configure(text = output_text,text_color = "red")
 
     def start(self):# Ověřování cesty, init, spuštění
         """
         Ověřování cesty, init, spuštění
         """
         if self.checkbox_bmp.get()+self.checkbox_jpg.get() == 0:
-            self.console.configure(text = "Nevybrali jste žádný formát, do kterého se má konvertovat :-)")
+            self.console.configure(text = "Nevybrali jste žádný formát, do kterého se má konvertovat :-)",text_color="red")
         else:
             path = self.path_set.get() 
             if path != "":
                 check = Trideni.path_check(path)
                 if check == False:
-                    self.console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena")
+                    self.console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena",text_color="red")
                 else:
                     path = check
-                    self.console.configure(text ="")
-                    self.console.update_idletasks()
-                    self.console.configure(text = f"Probíhá konvertování souborů v cestě: {path}")
+                    self.console.configure(text = f"Probíhá konvertování souborů v cestě: {path}",text_color="white")
                     self.console.update_idletasks()
                     self.convert_files(path)
             else:
-                self.console.configure(text = "Nebyla vložena cesta k souborům")
+                self.console.configure(text = "Nebyla vložena cesta k souborům",text_color="red")
 
     def call_browseDirectories(self): # Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
@@ -1565,11 +1533,9 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])
-            self.console.configure(text="")
-            self.console.configure(text=f"Byla vložena cesta: {output[1]}")
+            self.console.configure(text=f"Byla vložena cesta: {output[1]}",text_color="green")
         else:
-            self.console.configure(text = "")
-            self.console.configure(text = str(output[0]))
+            self.console.configure(text = str(output[0]),text_color="red")
 
     def selected_bmp(self):
         self.checkbox_jpg.deselect()
@@ -1616,14 +1582,12 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
 
         read_file_data = read_text_file_data()
         recources_path = read_file_data[2]
-        if recources_path != False:
+        if recources_path != False and recources_path != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", str(recources_path))
-            self.console.configure(text="")
-            self.console.configure(text="Byla vložena cesta z konfiguračního souboru Recources.txt")
+            self.console.configure(text="Byla vložena cesta z konfiguračního souboru Recources.txt",text_color="white")
         else:
-            self.console.configure(text="")
-            self.console.configure(text="Konfigurační soubor Recources.txt obsahuje neplatnou cestu k souborům")
+            self.console.configure(text="Konfigurační soubor Recources.txt obsahuje neplatnou cestu k souborům",text_color="orange")
 
         def maximalize_window(e):
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
@@ -1678,7 +1642,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         Ověřování cesty, init, spuštění
         """
         if self.checkbox.get()+self.checkbox2.get()+self.checkbox3.get() == 0:
-            self.console.configure(text = "Nevybrali jste žádný způsob mazání :-)")
+            self.console.configure(text = "Nevybrali jste žádný způsob mazání :-)",text_color="red")
             self.info.configure(text = "")
 
         else:
@@ -1686,7 +1650,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             if path != "":
                 check = Trideni.path_check(path)
                 if check == False:
-                    self.console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena")
+                    self.console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena",text_color="red")
                 else:
                     path = check
                     if self.checkbox_testing.get() != 1:
@@ -1701,13 +1665,13 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                         confirm = True
 
                     if confirm == True:
-                        self.console.configure(text = "Provádím navolené možnosti mazání v cestě: " + str(path))
+                        self.console.configure(text = "Provádím navolené možnosti mazání v cestě: " + str(path),text_color="white")
                         self.console.update_idletasks()
                         self.del_files(path)
                     else:
-                        self.console.configure(text = "Zrušeno uživatelem")
+                        self.console.configure(text = "Zrušeno uživatelem",text_color="red")
             else:
-                self.console.configure(text = "Nebyla vložena cesta k souborům")
+                self.console.configure(text = "Nebyla vložena cesta k souborům",text_color="red")
 
     def del_files(self,path): # zde se volá externí script: Deleting
         testing_mode = True
@@ -1734,8 +1698,10 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         output_text = ""
         for i in range(0,len(Deleting.output)):
             output_text = output_text + Deleting.output[i]# + "\n"
-        self.console.configure(text = output_text)
-
+        if "Mazání dokončeno" in output_text:
+            self.console.configure(text = output_text,text_color = "green")
+        else:
+            self.console.configure(text = output_text,text_color = "red")
     def call_browseDirectories(self): # Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
         Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
@@ -1744,11 +1710,9 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])
-            self.console.configure(text="")
-            self.console.configure(text=f"Byla vložena cesta: {output[1]}")
+            self.console.configure(text=f"Byla vložena cesta: {output[1]}",text_color="green")
         else:
-            self.console.configure(text = "")
-            self.console.configure(text = str(output[0]))
+            self.console.configure(text = str(output[0]),text_color="red")
 
     def clear_frame(self,frame):
         for widget in frame.winfo_children():
@@ -2212,14 +2176,12 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
 
         read_file_data = read_text_file_data()
         recources_path = read_file_data[2]
-        if recources_path != False:
+        if recources_path != False and recources_path != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", str(recources_path))
-            self.console.configure(text="")
-            self.console.configure(text="Byla vložena cesta z konfiguračního souboru Recources.txt")
+            self.console.configure(text="Byla vložena cesta z konfiguračního souboru Recources.txt",text_color="white")
         else:
-            self.console.configure(text="")
-            self.console.configure(text="Konfigurační soubor Recources.txt obsahuje neplatnou cestu k souborům")
+            self.console.configure(text="Konfigurační soubor Recources.txt obsahuje neplatnou cestu k souborům",text_color="orange")
 
         def maximalize_window(e):
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
@@ -2271,7 +2233,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         Ověřování cesty, init, spuštění
         """
         if self.checkbox.get()+self.checkbox2.get()+self.checkbox3.get()+self.checkbox4.get()+self.checkbox5.get() == 0:
-            self.console.configure(text = "Nevybrali jste žádný způsob třídění :-)")
+            self.console.configure(text = "Nevybrali jste žádný způsob třídění :-)",text_color="red")
             nothing = customtkinter.CTkImage(Image.open("images/nothing.png"),size=(1, 1))
             self.images.configure(image = nothing)
             self.name_example.configure(text = "")
@@ -2281,14 +2243,14 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             if path != "":
                 check = Trideni.path_check(path)
                 if check == False:
-                    self.console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena")
+                    self.console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena",text_color="red")
                 else:
                     path = check
-                    self.console.configure(text ="Provádím nastavenou možnost třídění v cestě: "+str(path))
+                    self.console.configure(text ="Provádím nastavenou možnost třídění v cestě: "+str(path),text_color="white")
                     self.console.update_idletasks()
                     self.sort_files(path)
             else:
-                self.console.configure(text = "Nebyla vložena cesta k souborům")
+                self.console.configure(text = "Nebyla vložena cesta k souborům",text_color="red")
 
     def sort_files(self,path): # Volání externího scriptu
         selected_sort = 0
@@ -2316,12 +2278,19 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         output_text2 = ""
         for i in range(0,len(Trideni.output)):
             output_text = output_text + Trideni.output[i] + "\n"
-        self.console.configure(text = output_text)
+        if "bylo dokončeno" in output_text or "byla dokončena" in output_text:
+            self.console.configure(text = output_text,text_color="green")
+        else:
+            self.console.configure(text = output_text,text_color="red")
 
         for i in range(0,len(Trideni.output_console2)):
             output_text2 = output_text2 + Trideni.output_console2[i] + "\n"
         if output_text2 != "":
-            self.console2.configure(text = output_text2)
+            if "Chyba" in output_text2:
+                self.console2.configure(text = output_text2,text_color="red")
+            else:
+                self.console2.configure(text = output_text2,text_color="green")
+        self.console2.update_idletasks()
 
     def clear_frame(self,frame): # mazání widgets v daném framu
         for widget in frame.winfo_children():
@@ -2332,8 +2301,8 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         Nastavení widgets pro třídění podle typu souboru (základní)
         """
         self.clear_frame(self.frame6)
-        self.console.configure(text = " ")
         self.view_image(1)
+        self.console.configure(text = "")
         self.checkbox2.deselect()
         self.checkbox3.deselect()
         self.checkbox4.deselect()
@@ -2347,8 +2316,8 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         Nastavení widgets pro třídění podle čísla funkce
         """
         self.clear_frame(self.frame6)
-        self.console.configure(text = " ")
         self.view_image(2)
+        self.console.configure(text = "")
         self.checkbox.deselect()
         self.checkbox3.deselect()
         self.checkbox4.deselect()
@@ -2358,14 +2327,14 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             input_1 = str(prefix_set.get()).replace(" ","")
             if len(input_1) != 0:
                 if input_1 != self.prefix_Cam:
-                    console_frame6_1.configure(text = f"Prefix nastaven na: {input_1}")
+                    console_frame6_1.configure(text = f"Prefix nastaven na: {input_1}",text_color="green")
                     self.prefix_func = input_1
                     prefix_set.delete("0","100")
                     prefix_set.insert("0", input_1)
                 else:
-                    console_frame6_1.configure(text = "Jméno zabrané pro třídění podle kamer")
+                    console_frame6_1.configure(text = "Jméno zabrané pro třídění podle kamer",text_color="red")
             else:
-                console_frame6_1.configure(text = "Nutný alespoň jeden znak")
+                console_frame6_1.configure(text = "Nutný alespoň jeden znak",text_color="red")
 
         label1          = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=20,text = "Nastavte prefix adresářů:",justify = "left",font=("Arial",12))
         prefix_set      = customtkinter.CTkEntry(master = self.frame6,width=150,height=30, placeholder_text= self.prefix_func)
@@ -2398,12 +2367,12 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             if input3.isdigit():
                 if int(input3) > 0:
                     self.by_which_ID_num = int(input3)
-                    console_frame6_1.configure(text = f"Řídit podle {self.by_which_ID_num}. čísla v ID")
+                    console_frame6_1.configure(text = f"Řídit podle {self.by_which_ID_num}. čísla v ID",text_color="white")
                 else:
-                    console_frame6_1.configure(text = "Mimo rozsah")
+                    console_frame6_1.configure(text = "Mimo rozsah",text_color="red")
                     self.by_which_ID_num = ""
             else:
-                console_frame6_1.configure(text = "Nezadali jste číslo")
+                console_frame6_1.configure(text = "Nezadali jste číslo",text_color="red")
                 self.by_which_ID_num = ""
 
         label1           = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=60,
@@ -2431,7 +2400,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         Nastavení widgets pro třídění podle čísla kamery
         """
         self.clear_frame(self.frame6)
-        self.console.configure(text = " ")
+        self.console.configure(text = "")
         self.view_image(3)   
         self.checkbox.deselect()
         self.checkbox2.deselect()
@@ -2442,14 +2411,14 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             input_1 = str(prefix_set.get()).replace(" ","")
             if len(input_1) != 0:
                 if input_1 != self.prefix_func:
-                    console_frame6_1.configure(text = f"Prefix nastaven na: {input_1}")
+                    console_frame6_1.configure(text = f"Prefix nastaven na: {input_1}",text_color="green")
                     self.prefix_Cam = input_1
                     prefix_set.delete("0","100")
                     prefix_set.insert("0", input_1)
                 else:
-                    console_frame6_1.configure(text = "Jméno zabrané pro třídění podle funkce")
+                    console_frame6_1.configure(text = "Jméno zabrané pro třídění podle funkce",text_color="red")
             else:
-                console_frame6_1.configure(text = "Nutný alespoň jeden znak")
+                console_frame6_1.configure(text = "Nutný alespoň jeden znak",text_color="red")
 
         label1       = customtkinter.CTkLabel(master = self.frame6,height=20,width=self.width_of_frame6,text = "Nastavte prefix adresářů:",justify = "left",font=("Arial",12))
         prefix_set   = customtkinter.CTkEntry(master = self.frame6,height=30,width=150, placeholder_text= self.prefix_Cam)
@@ -2471,7 +2440,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         Nastavení widgets pro třídění podle funkce i čísla kamery
         """
         self.clear_frame(self.frame6)
-        self.console.configure(text = " ")
+        self.console.configure(text = "")
         self.view_image(4)
         self.checkbox.deselect()
         self.checkbox2.deselect()
@@ -2488,7 +2457,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         - nalezené dvojice nakopíruje do složky
         """
         self.clear_frame(self.frame6)
-        self.console.configure(text = " ")
+        self.console.configure(text = "")
         self.view_image(5)
         self.checkbox.deselect()
         self.checkbox2.deselect()
@@ -2498,11 +2467,11 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         def set_max_pallet_num():
             input_1 = pallets_set.get()
             if input_1.isdigit() == False:
-                console_frame6_1.configure(text = "Nezadali jste číslo")
+                console_frame6_1.configure(text = "Nezadali jste číslo",text_color="red")
             elif int(input_1) <1:
-                console_frame6_1.configure(text = "Mimo rozsah")
+                console_frame6_1.configure(text = "Mimo rozsah",text_color="red")
             else:
-                console_frame6_1.configure(text = f"Počet palet nastaven na: {input_1}")
+                console_frame6_1.configure(text = f"Počet palet nastaven na: {input_1}",text_color="white")
                 self.max_num_of_pallets = input_1
                 
         def set_aut_detect():
@@ -2535,13 +2504,11 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         if self.checkbox6.get() == 1:
             dirs_more = customtkinter.CTkImage(Image.open("images/more_dirs.png"),size=(553, 111))
             self.images2.configure(image =dirs_more)   
-            self.console2.configure(text = "nebo poslední složka obsahuje soubory přímo (neroztříděné)",font=("Arial",16,"bold"))
-            self.console2.configure(font=("Arial",12))
+            self.console2.configure(text = "nebo poslední složka obsahuje soubory přímo (neroztříděné)",font=("Arial",12,"bold"),text_color="white")
         else:
             dirs_one = customtkinter.CTkImage(Image.open("images/dirs_ba.png"),size=(432, 133))
             self.images2.configure(image =dirs_one)
-            self.console2.configure(text = "nebo obsahuje soubory přímo (neroztříděné)",font=("Arial",16,"bold"))
-            self.console2.configure(font=("Arial",12))
+            self.console2.configure(text = "nebo obsahuje soubory přímo (neroztříděné)",font=("Arial",12,"bold"),text_color="white")
 
     def view_image(self,which_one): # zobrazení ilustračního obrázku
         """
@@ -2598,11 +2565,9 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])
-            self.console.configure(text="")
-            self.console.configure(text=f"Byla vložena cesta: {output[1]}")
+            self.console.configure(text=f"Byla vložena cesta: {output[1]}",text_color="green")
         else:
-            self.console.configure(text = "")
-            self.console.configure(text = str(output[0]))
+            self.console.configure(text = str(output[0]),text_color="red")
 
     def create_sorting_option_widgets(self):  # Vytváří veškeré widgets (sorting option MAIN)
         # cisteni menu widgets:
@@ -2667,14 +2632,12 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         #predvyplneni cesty pokud je platna v configu
         read_file_data = read_text_file_data()
         recources_path = read_file_data[2]
-        if recources_path != False:
+        if recources_path != False and recources_path != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", str(recources_path))
-            self.console.configure(text="")
-            self.console.configure(text="Byla vložena cesta z konfiguračního souboru Recources.txt")
+            self.console.configure(text="Byla vložena cesta z konfiguračního souboru Recources.txt",text_color="white")
         else:
-            self.console.configure(text="")
-            self.console.configure(text="Konfigurační soubor Recources.txt obsahuje neplatnou cestu k souborům")
+            self.console.configure(text="Konfigurační soubor Recources.txt obsahuje neplatnou cestu k souborům",text_color="orange")
 
         def maximalize_window(e):
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
