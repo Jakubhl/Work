@@ -32,11 +32,13 @@ application_path = application_path + "IfzToBitmap.exe"
 
 
 
-def whole_converting_function(path_given,output_img_format):
+def whole_converting_function(path_given,output_img_format,folder_with_bmp_name,folder_with_jpg_name):
     """
     Funkce pro konvertování souborů
 
     """
+    folder_with_bmp = folder_with_bmp_name
+    folder_with_jpg = folder_with_jpg_name
     def make_dir(name,path):
         if not os.path.exists(path + name): #pokud uz neni vytvorena, vytvor...
             os.mkdir(path + name + "/")

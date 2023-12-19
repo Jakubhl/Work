@@ -2,9 +2,9 @@ import os
 import shutil
 import re
 
-nok_folder = "Temp"
-pair_folder = "PAIRS"
-forbidden_folders = [pair_folder]
+#nok_folder = "Temp"
+#pair_folder = "PAIRS"
+#forbidden_folders = [pair_folder]
 output = []
 output_console2 = []
 
@@ -24,7 +24,12 @@ def path_check(path_raw):
 
     else:
         return path
-def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_given,by_which_ID_number,prefix_func,prefix_Cam,supported_formats,aut_detect_num_of_pallets):
+def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_given,by_which_ID_number,
+                           prefix_func,prefix_Cam,supported_formats,aut_detect_num_of_pallets,nok_folder_name,
+                           pairs_folder_name):
+    nok_folder = nok_folder_name
+    pair_folder = pairs_folder_name
+    forbidden_folders = [pair_folder]
     global max_num_of_pallets
     max_num_of_pallets = max_num_of_pallets_given
     global ID_num_of_digits

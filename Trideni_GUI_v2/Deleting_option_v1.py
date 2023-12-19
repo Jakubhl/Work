@@ -4,26 +4,11 @@ from datetime import datetime
 import shutil
 import re
 
-#supported_formats = []
-#file1 = open('supported_formats.txt', 'r')
-#Lines = file1.readlines()
-#unwanted_chars = ["\n","\"","[","]"]
-#for chars in unwanted_chars:
-#    if chars in Lines[4]:
-#        Lines[4] = Lines[4].replace(chars,"")
-    
-#list1 = Lines[4].split(",")
-#for items in list1:
-#    supported_formats.append(str(items))
-#supported_formats = ["jpg","bmp","png","ifz"]
-# podporovane formaty u adresaru:
 to_delete_folder = "Ke_smazani"
 supported_date_formats = ["YYYYMMDD","DDMMYYYY","YYMMDD"]
 supported_separators = [".","/","_"]
 output = []
 output_console2 = []
-
-
 
 def calc_days_in_month(current_month):
     months_30days = [4,6,9,11]
@@ -42,7 +27,8 @@ def get_current_date():
         #print(f"\n- Dnes je: {readable_today}")
         return [dt_string,readable_today]
 
-def whole_deleting_function(path_given,more_dirs,del_option,files_to_keep,cutoff_date_given,supported_formats,testing_mode):
+def whole_deleting_function(path_given,more_dirs,del_option,files_to_keep,cutoff_date_given,supported_formats,
+                            testing_mode,to_delete_folder_name):
     """
     Funkce pro mazání souborů
 
@@ -60,6 +46,7 @@ def whole_deleting_function(path_given,more_dirs,del_option,files_to_keep,cutoff
     """
     #files_to_keep = 30
     max_days_old = 365
+    to_delete_folder = to_delete_folder_name
 
     def make_dir(name,path):
         if not os.path.exists(path + name): #pokud uz neni vytvorena, vytvor...
