@@ -2,7 +2,7 @@ import customtkinter
 import os
 import time
 from PIL import Image, ImageTk
-import Sorting_option_v4 as Trideni
+import Sorting_option_v5 as Trideni
 import Deleting_option_v1 as Deleting
 import Converting_option_v1 as Converting
 from tkinter import filedialog
@@ -18,6 +18,42 @@ root.wm_iconbitmap('images/JHV.ico')
 #root.title("Zpracování souborů z průmyslových kamer")
 root.title("TRIMAZKON v_3.0")
 #logo_set = False
+
+def split_text_to_rows(long_string:str,max_chars_on_row:int):
+    letter_number = 0
+    separated_strings = []
+    row_str = ""
+    for letters in long_string:
+        row_str+=letters
+        if letter_number >= max_chars_on_row:
+            separated_strings.append(row_str)
+            row_str = ""
+            letter_number = -1
+        letter_number+=1
+    # a pridat zbytek:
+    separated_strings.append(row_str)
+    long_string = ""
+    for items in separated_strings:
+        long_string += (items + "\n")
+    
+    return long_string
+
+def path_check(path_raw):
+    path=path_raw
+    backslash = "\ "
+    if backslash[0] in path:
+        newPath = path.replace(os.sep, '/')
+        path = newPath
+
+    if path.endswith('/') == False:
+        newPath = path + "/"
+        path = newPath
+
+    if not os.path.exists(path):
+        return False
+
+    else:
+        return path
 
 def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
     """
@@ -60,7 +96,7 @@ def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
         inserted_path = Lines[6].replace("\n","")
         inserted_path = str(inserted_path)
 
-        path_repaired = Trideni.path_check(inserted_path)
+        path_repaired = path_check(inserted_path)
 
         Lines[8] = Lines[8].replace("\n","")
         files_to_keep = int(Lines[8])
@@ -277,9 +313,13 @@ def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do 
         return "Chybí konfigurační soubor Recources.txt"
 
 #definice EXPLORERU
-def browseDirectories(): # Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
+def browseDirectories(visible_files): # Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
     """
     Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
+
+    Vstupní data:
+
+    0: visible_files = "all" / "only_dirs"
 
     Výstupní data:
 
@@ -299,40 +339,53 @@ def browseDirectories(): # Funkce spouští průzkumníka systému windows pro d
         output="Chybí konfigurační soubor Recources.txt s počáteční cestou...\n"
         start_path=""
 
-    if(start_path != ""):
-        foldername_path = filedialog.askopenfile(initialdir = start_path,title = "Klikněte na soubor v požadované cestě")
-        path_to_directory= ""
-        if foldername_path != None:
-            path_to_file = str(foldername_path.name)
-            path_to_file_split = path_to_file.split("/")
-            i=0
-            for parts in path_to_file_split:
-                i+=1
-                if i<len(path_to_file_split):
-                    if i == 1:
-                        path_to_directory = path_to_directory + parts
-                    else:
-                        path_to_directory = path_to_directory +"/"+ parts
-        else:
-            output = "Přes explorer nebyla vložena žádná cesta"
-    else:           
-        foldername_path = filedialog.askopenfile(initialdir = "/",title = "Klikněte na soubor v požadované cestě")
-        path_to_directory= ""
-        if foldername_path != None:
-            path_to_file = str(foldername_path.name)
-            path_to_file_split = path_to_file.split("/")
-            i=0
-            for parts in path_to_file_split:
-                i+=1
-                if i<len(path_to_file_split):
-                    if i == 1:
-                        path_to_directory = path_to_directory + parts
-                    else:
-                        path_to_directory = path_to_directory +"/"+ parts
-        else:
-            output = "Přes explorer nebyla vložena žádná cesta"
+    # pripad vyberu files, aby byly viditelne
+    if visible_files == "all":
+        if(start_path != ""):
+            foldername_path = filedialog.askopenfile(initialdir = start_path,title = "Klikněte na soubor v požadované cestě")
+            path_to_directory= ""
+            if foldername_path != None:
+                path_to_file = str(foldername_path.name)
+                path_to_file_split = path_to_file.split("/")
+                i=0
+                for parts in path_to_file_split:
+                    i+=1
+                    if i<len(path_to_file_split):
+                        if i == 1:
+                            path_to_directory = path_to_directory + parts
+                        else:
+                            path_to_directory = path_to_directory +"/"+ parts
+            else:
+                output = "Přes explorer nebyla vložena žádná cesta"
+        else:           
+            foldername_path = filedialog.askopenfile(initialdir = "/",title = "Klikněte na soubor v požadované cestě")
+            path_to_directory= ""
+            if foldername_path != None:
+                path_to_file = str(foldername_path.name)
+                path_to_file_split = path_to_file.split("/")
+                i=0
+                for parts in path_to_file_split:
+                    i+=1
+                    if i<len(path_to_file_split):
+                        if i == 1:
+                            path_to_directory = path_to_directory + parts
+                        else:
+                            path_to_directory = path_to_directory +"/"+ parts
+            else:
+                output = "Přes explorer nebyla vložena žádná cesta"
 
-    check = Trideni.path_check(path_to_directory)
+    # pripad vyberu slozek
+    if visible_files == "only_dirs":
+        if(start_path != ""):
+            path_to_directory = filedialog.askdirectory(initialdir = start_path, title = "Vyberte adresář")
+            if path_to_directory == None:
+                output = "Přes explorer nebyla vložena žádná cesta"
+        else:
+            path_to_directory = filedialog.askdirectory(initialdir = "/", title = "Vyberte adresář")
+            if path_to_directory == None:
+                output = "Přes explorer nebyla vložena žádná cesta"
+
+    check = path_check(path_to_directory)
     corrected_path = check
     
     return [output,corrected_path]
@@ -384,11 +437,11 @@ def menu(): # Funkce spouští základní menu při spuštění aplikace (MAIN)
     viewer_button   = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Procházet obrázky", command = lambda: call_view_option(list_of_menu_frames),font=("Arial",25,"bold"))
     advanced_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Pokročilé možnosti", command = lambda: call_advanced_option(list_of_menu_frames),font=("Arial",25,"bold"))
 
-    sorting_button.pack(pady =10,padx=0,side="top")
-    deleting_button.pack(pady =0,padx=0,side="top")
-    convert_button.pack(pady =10,padx=0,side="top")
-    viewer_button.pack(pady =0,padx=0,side="top")
-    advanced_button.pack(pady =10,padx=0,side="top")
+    sorting_button.pack(pady =(50,10),padx=0,side="top",anchor="n")
+    deleting_button.pack(pady =0,padx=0,side="top",anchor="n")
+    convert_button.pack(pady =10,padx=0,side="top",anchor="n")
+    viewer_button.pack(pady =0,padx=0,side="top",anchor="n")
+    advanced_button.pack(pady =10,padx=0,side="top",anchor="n")
 
     def maximalize_window(e):
         # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
@@ -470,7 +523,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             path_found = False
             path = self.path_set.get() 
             if path != "":
-                check = Trideni.path_check(path)
+                check = path_check(path)
                 if check == False:
                     self.console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena",text_color="red")
                 else:
@@ -498,7 +551,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         """
         Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
-        output = browseDirectories()
+        output = browseDirectories("all")
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])
@@ -696,7 +749,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             os.mkdir(path+ "/" + self.copy_dir)
         if not os.path.exists(path + "/" + self.copy_dir+ "/" + image):
             shutil.copy(path+ "/" + image,path + "/" + self.copy_dir+ "/" + image)
-            self.console.configure(text = f"Obrázek zkopírován do zvláštní složky: {self.copy_dir}.  ({image})",text_color="white")
+            self.console.configure(text = f"Obrázek zkopírován do zvláštní složky: \"{self.copy_dir}\".  ({image})",text_color="white")
         else:
             self.console.configure(text = f"Obrázek je již zkopírovaný uvnitř složky: {self.copy_dir}.  ({image})",text_color="red")
 
@@ -1062,7 +1115,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             """
             Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
             """
-            output = browseDirectories()
+            output = browseDirectories("all")
             if str(output[1]) != "/":
                 self.path_set.delete("0","200")
                 self.path_set.insert("0", output[1])
@@ -1074,7 +1127,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
 
         def save_path():
             path_given = str(self.path_set.get())
-            path_check = Trideni.path_check(path_given)
+            path_check = path_check(path_given)
             if path_check != False and path_check != "/":
                 console_input = write_text_file_data(path_check,"default_path")
                 self.main_console.configure(text=console_input,text_color="green")
@@ -1114,6 +1167,9 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 if input_month.isdigit():
                     if int(input_month) < 13 and int(input_month) > 0:
                         cutoff_date[1] = int(input_month)
+                        max_days_in_month = Deleting.calc_days_in_month(int(cutoff_date[1]))
+                        if int(cutoff_date[0]) > max_days_in_month:
+                            cutoff_date[0] = str(max_days_in_month)
                         self.main_console.configure(text="Datum přenastaveno na: "+ str(cutoff_date[0])+ "."+str(cutoff_date[1])+"."+ str(cutoff_date[2]),text_color="green")
                     else:
                         self.main_console.configure(text="Měsíc: " + str(input_month) + " je mimo rozsah",text_color="red")
@@ -1498,6 +1554,8 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         Converting.whole_converting_function(path,selected_format,self.bmp_folder_name,self.jpg_folder_name)
         output_text = ""
         for i in range(0,len(Converting.output)):
+            if len(Converting.output[i]) > 170: # kdyz by se vypis nevesel na obrazovku
+                Converting.output[i] = split_text_to_rows(Converting.output[i],170)
             output_text = output_text + Converting.output[i]
         if output_text != "":
             if "Konvertování bylo dokončeno" in output_text:
@@ -1514,13 +1572,14 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         else:
             path = self.path_set.get() 
             if path != "":
-                check = Trideni.path_check(path)
+                check = path_check(path)
                 if check == False:
                     self.console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena",text_color="red")
                 else:
                     path = check
                     self.console.configure(text = f"Probíhá konvertování souborů v cestě: {path}",text_color="white")
                     self.console.update_idletasks()
+                    self.root.update_idletasks()
                     self.convert_files(path)
             else:
                 self.console.configure(text = "Nebyla vložena cesta k souborům",text_color="red")
@@ -1529,7 +1588,7 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         """
         Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
-        output = browseDirectories()
+        output = browseDirectories("all")
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])
@@ -1539,9 +1598,11 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
 
     def selected_bmp(self):
         self.checkbox_jpg.deselect()
+        self.label.configure(text=f"Konvertované soubory budou vytvořeny uvnitř separátní složky: \"{self.bmp_folder_name}\"\nPodporované formáty: .ifz\nObsahuje-li .ifz soubor více obrázků, budou uloženy v následující syntaxi:\nxxx_0.bmp, xxx_1.bmp ...\nPro správnou funkci programu nesmí cesta obsahovat složky s mezerou v názvu")
     
     def selected_jpg(self):
         self.checkbox_bmp.deselect()
+        self.label.configure(text=f"Konvertované soubory budou vytvořeny uvnitř separátní složky: \"{self.jpg_folder_name}\"\nPodporované formáty: .ifz\nObsahuje-li .ifz soubor více obrázků, budou uloženy v následující syntaxi:\nxxx_0.bmp, xxx_1.bmp ...\nPro správnou funkci programu nesmí cesta obsahovat složky s mezerou v názvu")
 
     def create_convert_option_widgets(self):  # Vytváří veškeré widgets (convert option MAIN)
         #cisteni menu widgets
@@ -1570,10 +1631,10 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         self.path_set.pack(pady = 12,padx =0,anchor ="w",side="left",fill="both",expand=True)
         tree.pack(pady = 12,padx =10,anchor ="w",side="left")
 
-        label   = customtkinter.CTkLabel(master = self.bottom_frame2,text = "Konvertované soubory budou umístěny do separátní složky\nPodporované formáty: .ifz\nObsahuje-li .ifz soubor více obrázků, budou uloženy v následující syntaxi:\nxxx_0.bmp, xxx_1.bmp ...\nPro správnou funkci programu nesmí cesta obsahovat složky s mezerou v názvu",justify = "left",font=("Arial",16,"bold"))
+        self.label   = customtkinter.CTkLabel(master = self.bottom_frame2,text = f"Konvertované soubory budou vytvořeny uvnitř separátní složky: \"{self.bmp_folder_name}\"\nPodporované formáty: .ifz\nObsahuje-li .ifz soubor více obrázků, budou uloženy v následující syntaxi:\nxxx_0.bmp, xxx_1.bmp ...\nPro správnou funkci programu nesmí cesta obsahovat složky s mezerou v názvu",justify = "left",font=("Arial",16,"bold"))
         button  = customtkinter.CTkButton(master = self.bottom_frame2, text = "KONVERTOVAT", command = self.start,font=("Arial",20,"bold"))
         self.console = customtkinter.CTkLabel(master = self.bottom_frame2,text = "",justify = "left",font=("Arial",15))
-        label.pack(pady =10,padx=10)
+        self.label.pack(pady =10,padx=10)
         button.pack(pady =20,padx=10)
         button._set_dimensions(300,60)
         self.console.pack(pady =10,padx=10)
@@ -1620,6 +1681,9 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         self.cutoff_date = text_file_data[4]
         list_of_folder_names = text_file_data[9]
         self.to_delete_folder_name = list_of_folder_names[2]
+        self.console_frame_right_1_text = "","white"
+        self.console_frame_right_2_text = "","white"
+
         self.create_deleting_option_widgets()
  
     def call_menu(self): # Tlačítko menu (konec, návrat do menu)
@@ -1648,7 +1712,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         else:
             path = self.path_set.get() 
             if path != "":
-                check = Trideni.path_check(path)
+                check = path_check(path)
                 if check == False:
                     self.console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena",text_color="red")
                 else:
@@ -1667,6 +1731,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                     if confirm == True:
                         self.console.configure(text = "Provádím navolené možnosti mazání v cestě: " + str(path),text_color="white")
                         self.console.update_idletasks()
+                        self.root.update_idletasks()
                         self.del_files(path)
                     else:
                         self.console.configure(text = "Zrušeno uživatelem",text_color="red")
@@ -1697,16 +1762,22 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                                          testing_mode,self.to_delete_folder_name)
         output_text = ""
         for i in range(0,len(Deleting.output)):
+            if len(Deleting.output[i]) > 170: # kdyz by se vypis nevesel na obrazovku
+                Deleting.output[i] = split_text_to_rows(Deleting.output[i],170)
             output_text = output_text + Deleting.output[i]# + "\n"
         if "Mazání dokončeno" in output_text:
             self.console.configure(text = output_text,text_color = "green")
         else:
             self.console.configure(text = output_text,text_color = "red")
+    
     def call_browseDirectories(self): # Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
         Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
-        output = browseDirectories()
+        if self.checkbox6.get() == 1: # pokud je zvoleno more_dirs v exploreru pouze slozky...
+            output = browseDirectories("only_dirs")
+        else:
+            output = browseDirectories("all")
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])
@@ -1718,38 +1789,40 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         for widget in frame.winfo_children():
             widget.destroy()
 
-    def selected(self,console_frame_right_1_text,console_frame_right_2_text): # První možnost mazání, od nejstarších
+    def selected(self,clear:bool): # První možnost mazání, od nejstarších
         """
         Nastavení widgets pro první možnost mazání
+
+        -vstup: console text a barva textu
 
         -Budou smazány soubory starší než nastavené datum, přičemž bude ponechán nastavený počet souborů, vyhodnocených, jako starších\n
         -Podporované formáty jsou uživatelem nastavené a uložené v textovém souboru
         """
         self.clear_frame(self.frame_right)
-        self.console.configure(text = " ")
-        #view_image(1)
+        self.console.configure(text = "")
         self.checkbox2.deselect()
         self.checkbox3.deselect()
-        self.info.configure(text = "")
         self.info.configure(text = f"- Budou smazány soubory starší než nastavené datum, přičemž bude ponechán nastavený počet souborů, vyhodnocených, jako starších\nPodporované formáty: {self.supported_formats_deleting}",font = ("Arial",16,"bold"),justify="left")
         self.selected6() #update
 
+        if clear == True:
+            self.console_frame_right_1_text = "","white"
+            self.console_frame_right_2_text = "","white"
+
         def set_cutoff_date():
-            console_frame_right_1_text = ""
-            console_frame_right_2_text = ""  
             input_month = set_month.get()
             if input_month != "":
                 if input_month.isdigit():
                     if int(input_month) < 13 and int(input_month) > 0:
                         self.cutoff_date[1] = int(input_month)
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2])
+                        max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
+                        if int(self.cutoff_date[0]) > max_days_in_month:
+                            self.cutoff_date[0] = str(max_days_in_month)
+                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
                     else:
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Měsíc: " + str(input_month) + " je mimo rozsah"
+                        self.console_frame_right_1_text = "Měsíc: " + str(input_month) + " je mimo rozsah","red"
                 else:
-                    console_frame_right_1.configure(text="")
-                    console_frame_right_1_text = "U nastavení měsíce jste nezadali číslo"
+                    self.console_frame_right_1_text = "U nastavení měsíce jste nezadali číslo","red"
 
             input_day = set_day.get()
             max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
@@ -1758,51 +1831,40 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 if input_day.isdigit():
                     if int(input_day) <= int(max_days_in_month) and int(input_day) > 0:
                         self.cutoff_date[0] = int(input_day)
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2])
+                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
                     else:
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Den: " + str(input_day) + " je mimo rozsah"
+                        self.console_frame_right_1_text = "Den: " + str(input_day) + " je mimo rozsah","red"
                 else:
-                    console_frame_right_1.configure(text="")
-                    console_frame_right_1_text = "U nastavení dne jste nezadali číslo"
+                    self.console_frame_right_1_text = "U nastavení dne jste nezadali číslo","red"
 
             input_year = set_year.get()
             if input_year != "":
                 if input_year.isdigit():
                     if len(str(input_year)) == 2:
                         self.cutoff_date[2] = int(input_year) + 2000
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2])
+                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
                     elif len(str(input_year)) == 4:
                         self.cutoff_date[2] = int(input_year)
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2])
+                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
                     else:
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Rok: " + str(input_year) + " je mimo rozsah"
+                        self.console_frame_right_1_text = "Rok: " + str(input_year) + " je mimo rozsah","red"
                 else:
-                    console_frame_right_1.configure(text="")
-                    console_frame_right_1_text = "U nastavení roku jste nezadali číslo"
+                    self.console_frame_right_1_text = "U nastavení roku jste nezadali číslo","red"
 
-            self.selected(console_frame_right_1_text,console_frame_right_2_text)
+            self.selected(False)
 
         def set_files_to_keep():
             input_files_to_keep = files_to_keep_set.get()
             if input_files_to_keep.isdigit():
                 if int(input_files_to_keep) >= 0:
                     self.files_to_keep = int(input_files_to_keep)
-                    console_frame_right_2.configure(text="")
-                    console_frame_right_2_text = "Počet ponechaných starších souborů nastaven na: " + str(self.files_to_keep)
+                    self.console_frame_right_2_text = "Počet ponechaných starších souborů nastaven na: " + str(self.files_to_keep),"green"
                 else:
-                    console_frame_right_2.configure(text="")
-                    console_frame_right_2_text = "Mimo rozsah"
+                    self.console_frame_right_2_text = "Mimo rozsah","red"
             else:
-                console_frame_right_2.configure(text="")
-                console_frame_right_2_text = "Nazadali jste číslo"
+                self.console_frame_right_2_text = "Nazadali jste číslo","red"
 
-            
-            self.selected(console_frame_right_1_text,console_frame_right_2_text)
+            self.selected(False)
 
         def insert_current_date():
             today = Deleting.get_current_date()
@@ -1812,10 +1874,11 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 i+=1
                 self.cutoff_date[i-1]=items
 
-            console_frame_right_1.configure(text="")
-            console_frame_right_1_text = "Bylo vloženo dnešní datum (Momentálně všechny soubory vyhodnoceny, jako starší!)"
+            self.console_frame_right_1_text = "Bylo vloženo dnešní datum (Momentálně všechny soubory vyhodnoceny, jako starší!)","orange"
 
-            self.selected(console_frame_right_1_text,console_frame_right_2_text)
+            self.selected(False)
+
+        console_1_text, console_1_color = self.console_frame_right_1_text
 
         today = Deleting.get_current_date()
         row_index = 0
@@ -1828,7 +1891,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         set_year    = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30, placeholder_text= self.cutoff_date[2])
         button_save1 = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Uložit", command = lambda: set_cutoff_date(),font=("Arial",12,"bold"))
         insert_button = customtkinter.CTkButton(master = self.frame_right,width=130,height=30, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",12,"bold"))
-        console_frame_right_1 = customtkinter.CTkLabel(master = self.frame_right,height=30,text = console_frame_right_1_text,justify = "left",font=("Arial",12))
+        console_frame_right_1 = customtkinter.CTkLabel(master = self.frame_right,height=30,text = console_1_text,justify = "left",font=("Arial",12),text_color=console_1_color)
         label0.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
         label1.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
         set_day.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
@@ -1844,11 +1907,12 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         set_day.bind("<Return>",new_date_enter_btn)
         set_month.bind("<Return>",new_date_enter_btn)
         set_year.bind("<Return>",new_date_enter_btn)
-
+        
+        console_2_text, console_2_color = self.console_frame_right_2_text
         label2          = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte počet ponechaných souborů, vyhodnocených jako starších:",justify = "left",font=("Arial",12))
         files_to_keep_set = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30, placeholder_text= self.files_to_keep)
         button_save2    = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Uložit", command = lambda: set_files_to_keep(),font=("Arial",12,"bold"))
-        console_frame_right_2 = customtkinter.CTkLabel(master = self.frame_right,height=30,text =console_frame_right_2_text,justify = "left",font=("Arial",12))
+        console_frame_right_2 = customtkinter.CTkLabel(master = self.frame_right,height=30,text =console_2_text,justify = "left",font=("Arial",12),text_color=console_2_color)
         label2.grid(column =0,row=5,sticky = tk.W,pady =0,padx=10)
         files_to_keep_set.grid(column =0,row=6,sticky = tk.W,pady =0,padx=10)
         button_save2.grid(column =0,row=6,sticky = tk.W,pady =0,padx=60)
@@ -1857,7 +1921,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             set_files_to_keep()
         files_to_keep_set.bind("<Return>",new_FTK_enter_btn)
           
-    def selected2(self,console_frame_right_1_text,console_frame_right_2_text): # Druhá možnost mazání, mazání všech starých, redukce nových
+    def selected2(self,clear:bool): # Druhá možnost mazání, mazání všech starých, redukce nových
         """
         Nastavení widgets pro druhou možnost mazání
 
@@ -1867,12 +1931,15 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         -Podporované formáty jsou uživatelem nastavené a uložené v textovém souboru
         """
         self.clear_frame(self.frame_right)
-        self.console.configure(text = " ")
+        self.console.configure(text = "")
         self.checkbox.deselect()
         self.checkbox3.deselect()
-        self.info.configure(text = "")
         self.info.configure(text = f"- Budou smazány VŠECHNY soubory starší než nastavené datum, přičemž budou redukovány i soubory novější\n- Souborů, vyhodnocených, jako novější, bude ponechán nastavený počet\n(vhodné při situacích rychlého pořizování velkého množství fotografií, kde je potřebné ponechat nějaké soubory pro referenci)\nPodporované formáty: {self.supported_formats_deleting}",font = ("Arial",16,"bold"),justify="left")
         self.selected6() #update
+
+        if clear == True:
+            self.console_frame_right_1_text = "","white"
+            self.console_frame_right_2_text = "","white"
 
         def set_cutoff_date():
             input_month = set_month.get()
@@ -1880,14 +1947,14 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 if input_month.isdigit():
                     if int(input_month) < 13 and int(input_month) > 0:
                         self.cutoff_date[1] = int(input_month)
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2])
+                        max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
+                        if int(self.cutoff_date[0]) > max_days_in_month:
+                            self.cutoff_date[0] = str(max_days_in_month)
+                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
                     else:
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Měsíc: " + str(input_month) + " je mimo rozsah"
+                        self.console_frame_right_1_text = "Měsíc: " + str(input_month) + " je mimo rozsah","red"
                 else:
-                    console_frame_right_1.configure(text="")
-                    console_frame_right_1_text = "Nezadali jste číslo"
+                    self.console_frame_right_1_text = "Nezadali jste číslo","red"
 
             input_day = set_day.get()
             max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
@@ -1896,51 +1963,41 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 if input_day.isdigit():
                     if int(input_day) <= int(max_days_in_month) and int(input_day) > 0:
                         self.cutoff_date[0] = int(input_day)
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2])
+                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
                     else:
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Den: " + str(input_day) + " je mimo rozsah"
+                        self.console_frame_right_1_text = "Den: " + str(input_day) + " je mimo rozsah","red"
                 else:
-                    console_frame_right_1.configure(text="")
-                    console_frame_right_1_text = "Nezadali jste číslo"
+                    self.console_frame_right_1_text = "Nezadali jste číslo","red"
 
             input_year = set_year.get()
             if input_year != "":
                 if input_year.isdigit():
                     if len(str(input_year)) == 2:
                         self.cutoff_date[2] = int(input_year) + 2000
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2])
+                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
                     elif len(str(input_year)) == 4:
                         self.cutoff_date[2] = int(input_year)
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2])
+                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
                     else:
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Rok: " + str(input_year) + " je mimo rozsah"
+                        self.console_frame_right_1_text = "Rok: " + str(input_year) + " je mimo rozsah","red"
                 else:
-                    console_frame_right_1.configure(text="")
-                    console_frame_right_1_text = "Nezadali jste číslo"
+                    self.console_frame_right_1_text = "Nezadali jste číslo","red"
 
                         
-            self.selected2(console_frame_right_1_text,console_frame_right_2_text)
+            self.selected2(False)
 
         def set_files_to_keep():
             input_files_to_keep = files_to_keep_set.get()
             if input_files_to_keep.isdigit():
                 if int(input_files_to_keep) >= 0:
                     self.files_to_keep = int(input_files_to_keep)
-                    console_frame_right_2.configure(text="")
-                    console_frame_right_2_text = "Počet ponechaných starších souborů nastaven na: " + str(self.files_to_keep)
+                    self.console_frame_right_2_text = "Počet ponechaných starších souborů nastaven na: " + str(self.files_to_keep),"green"
                 else:
-                    console_frame_right_2.configure(text="")
-                    console_frame_right_2_text = "Mimo rozsah"
+                    self.console_frame_right_2_text = "Mimo rozsah","red"
             else:
-                console_frame_right_2.configure(text="")
-                console_frame_right_2_text = "Nazadali jste číslo"
+                self.console_frame_right_2_text = "Nazadali jste číslo","red"
 
-            self.selected2(console_frame_right_1_text,console_frame_right_2_text)
+            self.selected2(False)
 
         def insert_current_date():
             today = Deleting.get_current_date()
@@ -1950,11 +2007,12 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 i+=1
                 self.cutoff_date[i-1]=items
 
-            console_frame_right_1.configure(text="")
-            console_frame_right_1_text = "Bylo vloženo dnešní datum (Momentálně všechny soubory vyhodnoceny, jako starší!)"
+            self.console_frame_right_1_text = "Bylo vloženo dnešní datum (Momentálně všechny soubory vyhodnoceny, jako starší!)","orange"
 
-            self.selected2(console_frame_right_1_text,console_frame_right_2_text)
+            self.selected2(False)
 
+        
+        console_frame_right_1_text, console_frame_right_1_color = self.console_frame_right_1_text
         today = Deleting.get_current_date()
         row_index = 0
         label0      = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Dnešní datum: "+today[1],justify = "left",font=("Arial",16,"bold"))
@@ -1966,7 +2024,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         set_year    = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30, placeholder_text= self.cutoff_date[2])
         button_save1 = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Uložit", command = lambda: set_cutoff_date(),font=("Arial",12,"bold"))
         insert_button = customtkinter.CTkButton(master = self.frame_right,width=130,height=30, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",12,"bold"))
-        console_frame_right_1=customtkinter.CTkLabel(master = self.frame_right,height=30,text = console_frame_right_1_text,justify = "left",font=("Arial",12))
+        console_frame_right_1=customtkinter.CTkLabel(master = self.frame_right,height=30,text = console_frame_right_1_text,justify = "left",font=("Arial",12),text_color=console_frame_right_1_color)
         label0.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
         label1.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
         set_day.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
@@ -1982,11 +2040,12 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         set_day.bind("<Return>",new_date_enter_btn)
         set_month.bind("<Return>",new_date_enter_btn)
         set_year.bind("<Return>",new_date_enter_btn)
-
+        
+        console_frame_right_2_text, console_frame_right_2_color = self.console_frame_right_2_text
         label2          = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte počet ponechaných novějších souborů:",justify = "left",font=("Arial",12))
         files_to_keep_set = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30, placeholder_text= self.files_to_keep)
         button_save2    = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Uložit", command = lambda: set_files_to_keep(),font=("Arial",12,"bold"))
-        console_frame_right_2=customtkinter.CTkLabel(master = self.frame_right,height=30,text =console_frame_right_2_text,justify = "left",font=("Arial",12))
+        console_frame_right_2=customtkinter.CTkLabel(master = self.frame_right,height=30,text =console_frame_right_2_text,justify = "left",font=("Arial",12),text_color=console_frame_right_2_color)
         label2.grid(column =0,row=5,sticky = tk.W,pady =0,padx=10)
         files_to_keep_set.grid(column =0,row=6,sticky = tk.W,pady =0,padx=10)
         button_save2.grid(column =0,row=6,sticky = tk.W,pady =0,padx=60)
@@ -1995,7 +2054,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             set_files_to_keep()
         files_to_keep_set.bind("<Return>",new_FTK_enter_btn)
         
-    def selected3(self,console_frame_right_1_text,console_frame_right_2_text): # Třetí možnost mazání, mazání datumových adresářů
+    def selected3(self,clear:bool): # Třetí možnost mazání, mazání datumových adresářů
         """
         Nastavení widgets pro třetí možnost mazání
 
@@ -2004,12 +2063,15 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
 
         """
         self.clear_frame(self.frame_right)
-        self.console.configure(text = " ")
+        self.console.configure(text = "")
         self.checkbox2.deselect()
         self.checkbox.deselect()
-        self.info.configure(text = "")
         self.info.configure(text = f"- Budou smazány VŠECHNY adresáře (včetně všech subadresářů), které obsahují v názvu podporovaný formát datumu a jsou vyhodnoceny,\njako starší než nastavené datum\nPodporované datumové formáty: {Deleting.supported_date_formats}\nPodporované separátory datumu: {Deleting.supported_separators}",font = ("Arial",16,"bold"),justify="left")
         self.selected6() #update
+
+        if clear == True:
+            self.console_frame_right_1_text = "","white"
+            self.console_frame_right_2_text = "","white"
 
         def set_cutoff_date():
             input_month = set_month.get()
@@ -2017,14 +2079,14 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 if input_month.isdigit():
                     if int(input_month) < 13 and int(input_month) > 0:
                         self.cutoff_date[1] = int(input_month)
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2])
+                        max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
+                        if int(self.cutoff_date[0]) > max_days_in_month:
+                            self.cutoff_date[0] = str(max_days_in_month)
+                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
                     else:
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Měsíc: " + str(input_month) + " je mimo rozsah"
+                        self.console_frame_right_1_text = "Měsíc: " + str(input_month) + " je mimo rozsah","red"
                 else:
-                    console_frame_right_1.configure(text="")
-                    console_frame_right_1_text = "Nezadali jste číslo"
+                    self.console_frame_right_1_text = "Nezadali jste číslo","red"
 
             input_day = set_day.get()
             max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
@@ -2033,35 +2095,28 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 if input_day.isdigit():
                     if int(input_day) <= int(max_days_in_month) and int(input_day) > 0:
                         self.cutoff_date[0] = int(input_day)
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2])
+                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
                     else:
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Den: " + str(input_day) + " je mimo rozsah"
+                        self.console_frame_right_1_text = "Den: " + str(input_day) + " je mimo rozsah","red"
                 else:
-                    console_frame_right_1.configure(text="")
-                    console_frame_right_1_text = "Nezadali jste číslo"
+                    self.console_frame_right_1_text = "Nezadali jste číslo","red"
 
             input_year = set_year.get()
             if input_year != "":
                 if input_year.isdigit():
                     if len(str(input_year)) == 2:
                         self.cutoff_date[2] = int(input_year) + 2000
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2])
+                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
                     elif len(str(input_year)) == 4:
                         self.cutoff_date[2] = int(input_year)
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2])
+                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
                     else:
-                        console_frame_right_1.configure(text="")
-                        console_frame_right_1_text = "Rok: " + str(input_year) + " je mimo rozsah"
+                        self.console_frame_right_1_text = "Rok: " + str(input_year) + " je mimo rozsah","red"
                 else:
-                    console_frame_right_1.configure(text="")
-                    console_frame_right_1_text = "Nezadali jste číslo"
+                    self.console_frame_right_1_text = "Nezadali jste číslo","red"
 
                         
-            self.selected3(console_frame_right_1_text,console_frame_right_2_text)
+            self.selected3(False)
 
         def insert_current_date():
             today = Deleting.get_current_date()
@@ -2071,11 +2126,11 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 i+=1
                 self.cutoff_date[i-1]=items
 
-            console_frame_right_1.configure(text="")
-            console_frame_right_1_text = "Bylo vloženo dnešní datum (Momentálně všechny adresáře vyhodnoceny, jako starší!)"
+            self.console_frame_right_1_text = "Bylo vloženo dnešní datum (Momentálně všechny adresáře vyhodnoceny, jako starší!)","orange"
 
-            self.selected3(console_frame_right_1_text,console_frame_right_2_text) #refresh
+            self.selected3(False) #refresh
 
+        console_frame_right_1_text, console_frame_right_1_color = self.console_frame_right_1_text
         today = Deleting.get_current_date()
         row_index = 0
         label0          = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Dnešní datum: "+today[1],justify = "left",font=("Arial",16,"bold"))
@@ -2088,7 +2143,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         set_year        = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30, placeholder_text= self.cutoff_date[2])
         button_save1    = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Uložit", command = lambda: set_cutoff_date(),font=("Arial",12,"bold"))
         insert_button = customtkinter.CTkButton(master = self.frame_right,width=130,height=30, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",12,"bold"))
-        console_frame_right_1 = customtkinter.CTkLabel(master = self.frame_right,height=30,text = console_frame_right_1_text,justify = "left",font=("Arial",12))
+        console_frame_right_1 = customtkinter.CTkLabel(master = self.frame_right,height=30,text = console_frame_right_1_text,justify = "left",font=("Arial",12),text_color=console_frame_right_1_color)
         directories     = customtkinter.CTkImage(Image.open("images/directories.png"),size=(240, 190))
         label0.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
         images2.grid(column =0,row=row_index,sticky = tk.W,pady =10,padx=500,rowspan=5)
@@ -2116,7 +2171,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             if self.checkbox3.get() == 1:
                 self.info2.configure(text = "- Pro tuto možnost třídění není tato funkce podporována",font=("Arial",16,"bold"),text_color="white")
             else:
-                self.info2.configure(text = "- VAROVÁNÍ: Máte spuštěné možnosti mazání souborů i ve všech subsložkách vložené cesty (max:6 subsložek)",font=("Arial",16,"bold"),text_color="yellow")
+                self.info2.configure(text = "- VAROVÁNÍ: Máte spuštěné možnosti mazání obrázkových souborů i ve všech subsložkách vložené cesty (max:6 subsložek)",font=("Arial",16,"bold"),text_color="yellow")
         else:
             self.info2.configure(text = "")
 
@@ -2147,16 +2202,16 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         tree.pack(pady = 12,padx =10,anchor ="w",side="left")
 
         self.frame_with_checkboxes = checkbox_frame
-        self.checkbox  = customtkinter.CTkCheckBox(master = self.frame_with_checkboxes, text = "Mazání souborů starších než: určité datum",command = lambda: self.selected("",""))
-        self.checkbox2 = customtkinter.CTkCheckBox(master = self.frame_with_checkboxes, text = "Redukce novějších, mazání souborů starších než: určité datum",command = lambda: self.selected2("",""))
-        self.checkbox3 = customtkinter.CTkCheckBox(master = self.frame_with_checkboxes, text = "Mazání adresářů s názvem ve formátu určitého datumu",command = lambda: self.selected3("",""))
+        self.checkbox  = customtkinter.CTkCheckBox(master = self.frame_with_checkboxes, text = "Mazání souborů starších než: určité datum",command = lambda: self.selected(True))
+        self.checkbox2 = customtkinter.CTkCheckBox(master = self.frame_with_checkboxes, text = "Redukce novějších, mazání souborů starších než: určité datum",command = lambda: self.selected2(True))
+        self.checkbox3 = customtkinter.CTkCheckBox(master = self.frame_with_checkboxes, text = "Mazání adresářů s názvem ve formátu určitého datumu",command = lambda: self.selected3(True))
         self.checkbox.pack(pady =10,padx=10,anchor ="w")
         self.checkbox2.pack(pady =10,padx=10,anchor ="w")
         self.checkbox3.pack(pady =10,padx=10,anchor ="w")
 
         self.checkbox6       = customtkinter.CTkCheckBox(master = self.bottom_frame1, text = "Procházet subsložky? (max:6)",command = self.selected6,font=("Arial",12,"bold"))
         self.info2           = customtkinter.CTkLabel(master = self.bottom_frame1,text = "",font=("Arial",12,"bold"))
-        self.checkbox_testing = customtkinter.CTkCheckBox(master = self.bottom_frame1, text = "Režim TESTOVÁNÍ (Soubory vyhodnocené ke smazání se pouze přesunou do složky s názvem: \"Ke_smazani\")",font=("Arial",12,"bold"))
+        self.checkbox_testing = customtkinter.CTkCheckBox(master = self.bottom_frame1, text = f"Režim TESTOVÁNÍ (Soubory vyhodnocené ke smazání se pouze přesunou do složky s názvem: \"{self.to_delete_folder_name}\")",font=("Arial",12,"bold"))
         self.checkbox6.grid(column =0,row=0,sticky = tk.W,pady =5,padx=10)
         self.info2.grid(column =0,row=0,sticky = tk.W,pady =5,padx=250)
         self.checkbox_testing.grid(column =0,row=1,sticky = tk.W,pady =5,padx=10)
@@ -2172,7 +2227,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         #default:
         self.checkbox.select()
         self.checkbox_testing.select()
-        self.selected("","")
+        self.selected(False)
 
         read_file_data = read_text_file_data()
         recources_path = read_file_data[2]
@@ -2241,13 +2296,14 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         else:
             path = self.path_set.get() 
             if path != "":
-                check = Trideni.path_check(path)
+                check = path_check(path)
                 if check == False:
                     self.console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena",text_color="red")
                 else:
                     path = check
                     self.console.configure(text ="Provádím nastavenou možnost třídění v cestě: "+str(path),text_color="white")
                     self.console.update_idletasks()
+                    self.root.update_idletasks()
                     self.sort_files(path)
             else:
                 self.console.configure(text = "Nebyla vložena cesta k souborům",text_color="red")
@@ -2277,6 +2333,8 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         output_text = ""
         output_text2 = ""
         for i in range(0,len(Trideni.output)):
+            if len(Trideni.output[i]) > 170: # kdyz by se vypis nevesel na obrazovku
+                Trideni.output[i] = split_text_to_rows(Trideni.output[i],170)
             output_text = output_text + Trideni.output[i] + "\n"
         if "bylo dokončeno" in output_text or "byla dokončena" in output_text:
             self.console.configure(text = output_text,text_color="green")
@@ -2504,11 +2562,11 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         if self.checkbox6.get() == 1:
             dirs_more = customtkinter.CTkImage(Image.open("images/more_dirs.png"),size=(553, 111))
             self.images2.configure(image =dirs_more)   
-            self.console2.configure(text = "nebo poslední složka obsahuje soubory přímo (neroztříděné)",font=("Arial",12,"bold"),text_color="white")
+            self.console2.configure(text = "Zadaná cesta/ 1.složka/ 2.složka/ složky se soubory\nnebo: Zadaná cesta/ 1.složka/ 2.složka/ soubory volně, neroztříděné",font=("Arial",14,"bold"),text_color="white")
         else:
             dirs_one = customtkinter.CTkImage(Image.open("images/dirs_ba.png"),size=(432, 133))
             self.images2.configure(image =dirs_one)
-            self.console2.configure(text = "nebo obsahuje soubory přímo (neroztříděné)",font=("Arial",12,"bold"),text_color="white")
+            self.console2.configure(text = "Zadaná cesta/ složky se soubory\nnebo: Zadaná cesta/ soubory volně, neroztříděné",font=("Arial",14,"bold"),text_color="white")
 
     def view_image(self,which_one): # zobrazení ilustračního obrázku
         """
@@ -2561,7 +2619,10 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         """
         Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
-        output = browseDirectories()
+        if self.checkbox6.get() == 1: # pokud je zvoleno more_dirs v exploreru pouze slozky...
+            output = browseDirectories("only_dirs")
+        else:
+            output = browseDirectories("all")
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])

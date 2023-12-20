@@ -489,7 +489,10 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
         if more_dirs == True:
             result = subfolders_check(path)
             if result == False:
-                output_console2.append("- Chyba: aplikace programovana na pruchod 3 slozek, tzn.: path + \"2023_04_13/A/Height\"")
+                output_console2.append("- Chyba: aplikace programovana na pruchod 3 slozek, tzn.: path + \"2023_04_13/A/Height\"\nnebo: path + \"2023_04_13/A/soubory volně mimo složku\"")
+                output.append("Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &)\nNebo je vložená cestak souborům ob více, jak jednu složku")
+                output.append("Třídění ukončeno")
+                return
             else:
                 output_console2.append("- Prochazím tyto cesty: ")
                 for items in result:
@@ -565,7 +568,9 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
                 formats_found = s.Get_suffix()
                 for formats in formats_found:
                     folds.make_dir(formats)
-                s.Sorting_files("by_format",None)
+                error=s.Sorting_files("by_format",None)
+                if error == True:
+                    return
                 folders = folds.sync_folders()
                 folds.remove_empty(folders)
 
@@ -575,7 +580,9 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
                 functions_found = s.Get_func_list()
                 for functions in functions_found:
                     folds.make_dir(prefix_func + functions)
-                s.Sorting_files("by_func_number",functions_found)
+                error=s.Sorting_files("by_func_number",functions_found)
+                if error == True:
+                    return
                 folders = folds.sync_folders()
                 folds.remove_empty(folders)
 
@@ -585,7 +592,9 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
                 cam_numbers_found = s.Get_cam_num_list()
                 for cam_num in cam_numbers_found:
                     folds.make_dir(prefix_Cam + cam_num)
-                s.Sorting_files("by_cam_number",cam_numbers_found)
+                error=s.Sorting_files("by_cam_number",cam_numbers_found)
+                if error == True:
+                    return
                 folders = folds.sync_folders()
                 folds.remove_empty(folders)
 
@@ -595,14 +604,18 @@ def whole_sorting_function(path_given,selected_sort,more_dir,max_num_of_pallets_
                 both_found = s.Get_both_list()
                 for both in both_found:
                     folds.make_dir(both)
-                s.Sorting_files("by_both",both_found)
+                error=s.Sorting_files("by_both",both_found)
+                if error == True:
+                    return
                 folders = folds.sync_folders()
                 folds.remove_empty(folders)
 
             elif int(sort_option) == 4:  #hledani dvojic, collect ze slozek a vytvoreni slozky se vsema dvojicema - potom si mohou dotridit jinym programem
                 s.Collect_files() 
                 s.Get_suffix() #pro ziskani pole se vsema podporovanyma souborama
-                s.Sorting_files("pairs",None) #pro presun lichych souboru do nok slozky
+                error=s.Sorting_files("pairs",None) #pro presun lichych souboru do nok slozky
+                if error == True:
+                    return
                 #if int(max_num_of_pallets) == 55: #defaultni hodnota, ktera nebyla zmenena - muzeme si dovolit automatickou detekci
                 if aut_detect_num_of_pallets == True:
                     ID_list = s.Get_func_list()
