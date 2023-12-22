@@ -71,6 +71,7 @@ def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
     7 maximalized\n
     8 max_pallets\n
     9 static_dirs_names\n
+    10 sorting_safe_mode\n
     """
 
     if os.path.exists('Recources.txt'):
@@ -145,9 +146,15 @@ def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
             Lines[i] = Lines[i].replace("/","")
             static_dirs_names.append(Lines[i])
             
+        #bezpecny mod?
+        Lines[32] = Lines[32].replace("\n","")
+        if str(Lines[32]) != "":
+            safe_mode = Lines[32]
+        else:
+            safe_mode = "ano"
 
         return [supported_formats_sorting,supported_formats_deleting,path_repaired,files_to_keep,cutoff_date,
-                prefix_function,prefix_camera,maximalized,max_pallets,static_dirs_names]
+                prefix_function,prefix_camera,maximalized,max_pallets,static_dirs_names,safe_mode]
     else:
         print("Chybí konfigurační soubor Recources.txt")
         return [False]*10
@@ -171,6 +178,8 @@ def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do 
     9 new_default_prefix_cam\n
     10 maximalized\n
     11 pallets_set\n
+    12 new_default_static_dir_name\n
+    13 sorting_safe_mode\n
     """
     unwanted_chars = ["\"","\n"," ","."]
     if os.path.exists('Recources.txt'):
@@ -286,7 +295,10 @@ def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do 
             lines[increment] = lines[increment].replace("\\","")
             lines[increment] = lines[increment].replace("/","")
             lines[increment] = str(input_data).replace(" ","")+"\n"
-            
+        
+        elif which_parameter == "sorting_safe_mode":
+            lines[32] = str(input_data) + "\n"
+
         #navraceni poli zpet do stringu radku:
         lines[2] = ""
         lines[4] = ""
@@ -312,7 +324,6 @@ def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do 
         print("Chybí konfigurační soubor Recources.txt")
         return "Chybí konfigurační soubor Recources.txt"
 
-#definice EXPLORERU
 def browseDirectories(visible_files): # Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
     """
     Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
@@ -1028,12 +1039,12 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         if path != "/" and path != False:
             self.path_set.delete("0","200")
             self.path_set.insert("0", path)
-            self.console.configure(text="Byla vložena cesta z konfiguračního souboru Recources.txt",text_color="white")
+            self.console.configure(text="Byla vložena cesta z konfiguračního souboru",text_color="white")
             self.root.update_idletasks()
             self.image_browser_path = path
             self.start(path)
         else:
-            self.console.configure(text = "Konfigurační soubor Recources.txt obsahuje neplatnou cestu, vložte manuálně",text_color="orange")
+            self.console.configure(text = "Konfigurační soubor obsahuje neplatnou cestu k souborům\n(můžete vložit v pokročilém nastavení)",text_color="orange")
 
 class Advanced_option: # Umožňuje nastavit základní parametry, které ukládá do textového souboru
     """
@@ -1082,6 +1093,13 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             write_text_file_data("ano","maximalized")
         else:
             write_text_file_data("ne","maximalized")
+    
+    def set_safe_mode(self): # Nastavení základního spouštění (v okně/ maximalizované)
+        option = self.checkbox_safe_mode.get()
+        if option == 1:
+            write_text_file_data("ano","sorting_safe_mode")
+        else:
+            write_text_file_data("ne","sorting_safe_mode")
 
     def setting_widgets(self,exception): # samotné možnosti úprav parametrů uložených v textové souboru
         """
@@ -1127,14 +1145,14 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
 
         def save_path():
             path_given = str(self.path_set.get())
-            path_check = path_check(path_given)
-            if path_check != False and path_check != "/":
-                console_input = write_text_file_data(path_check,"default_path")
+            path_checked = path_check(path_given)
+            if path_checked != False and path_checked != "/":
+                console_input = write_text_file_data(path_checked,"default_path")
                 self.main_console.configure(text=console_input,text_color="green")
-                default_path_insert_console.configure(text = "Aktuálně nastavená základní cesta k souborům: " + str(path_check),text_color="white")
-            elif path_check != "/":
+                default_path_insert_console.configure(text = "Aktuálně nastavená základní cesta k souborům: " + str(path_checked),text_color="white")
+            elif path_checked != "/":
                 self.main_console.configure(text=f"Zadaná cesta: {path_given} nebyla nalezena, nebude tedy uložena",text_color="red")
-            elif path_check == "/":
+            elif path_checked == "/":
                 self.main_console.configure(text="Nebyla vložena žádná cesta k souborům",text_color="red")
                 
         row_index = 0
@@ -1158,7 +1176,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             self.path_set.delete("0","200")
             self.path_set.insert("0", str(text_file_data[2]))
         else:
-            default_path_insert_console.configure(text="Aktuálně nastavená základní cesta k souborům v Recources.txt je neplatná",text_color="red")
+            default_path_insert_console.configure(text="Aktuálně nastavená základní cesta k souborům v konfiguračním souboru je neplatná",text_color="red")
             self.path_set.configure(placeholder_text="Není nastavena žádná základní cesta")
 
         def set_default_cutoff_date():
@@ -1480,19 +1498,26 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         label0          = customtkinter.CTkLabel(master = self.top_frame,height=20,text = "Nastavte požadované parametry (nastavení bude uloženo i po vypnutí aplikace): ",justify = "left",font=("Arial",20,"bold"))
         menu_button     = customtkinter.CTkButton(master = self.top_frame, width = 180, text = "MENU", command = lambda: self.call_menu(),font=("Arial",20,"bold"))
         self.checkbox_maximalized = customtkinter.CTkCheckBox(master = self.top_frame, text = "Spouštět v maximalizovaném okně",command = lambda: self.maximalized())
+        #self.checkbox_safe_mode = customtkinter.CTkCheckBox(master = self.top_frame, text = "Bezpečný mód při procházení subsložek (Možnosti třídění)",command = lambda: self.set_safe_mode())
         menu_button.grid(column =0,row=0,sticky = tk.W,pady =0,padx=10)
         label0.grid(column =0,row=0,sticky = tk.W,pady =0,padx=210)
         self.checkbox_maximalized.grid(column =0,row=2,sticky = tk.W,pady =10,padx=10)
+        #self.checkbox_safe_mode.grid(column =0,row=2,sticky = tk.W,pady =10,padx=300)
 
         main_console_label = customtkinter.CTkLabel(master = self.main_console_frame,height=50,text ="KONZOLA:",justify = "left",font=("Arial",16,"bold"))
         main_console_label.grid(column =0,row=0,sticky = tk.W,pady =0,padx=10)
         self.main_console = customtkinter.CTkLabel(master = self.main_console_frame,height=50,text ="",justify = "left",font=("Arial",16))
         self.main_console.grid(column =0,row=1,sticky = tk.W,pady =0,padx=10)
 
-        if read_text_file_data()[7] == "ano":
+        text_file_data = read_text_file_data()
+        if text_file_data[7] == "ano":
             self.checkbox_maximalized.select()
         else:
             self.checkbox_maximalized.deselect()
+        """if text_file_data[10] == "ano":
+            self.checkbox_safe_mode.select()
+        else:
+            self.checkbox_safe_mode.deselect()"""
 
         self.setting_widgets(False)
 
@@ -1646,9 +1671,9 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         if recources_path != False and recources_path != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", str(recources_path))
-            self.console.configure(text="Byla vložena cesta z konfiguračního souboru Recources.txt",text_color="white")
+            self.console.configure(text="Byla vložena cesta z konfiguračního souboru",text_color="white")
         else:
-            self.console.configure(text="Konfigurační soubor Recources.txt obsahuje neplatnou cestu k souborům",text_color="orange")
+            self.console.configure(text="Konfigurační soubor obsahuje neplatnou cestu k souborům\n(můžete vložit v pokročilém nastavení)",text_color="orange")
 
         def maximalize_window(e):
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
@@ -1765,10 +1790,10 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             if len(Deleting.output[i]) > 170: # kdyz by se vypis nevesel na obrazovku
                 Deleting.output[i] = split_text_to_rows(Deleting.output[i],170)
             output_text = output_text + Deleting.output[i]# + "\n"
-        if "Mazání dokončeno" in output_text:
-            self.console.configure(text = output_text,text_color = "green")
-        else:
+        if "Chyba" in output_text:
             self.console.configure(text = output_text,text_color = "red")
+        else:
+            self.console.configure(text = output_text,text_color = "green")
     
     def call_browseDirectories(self): # Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
@@ -2234,9 +2259,9 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         if recources_path != False and recources_path != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", str(recources_path))
-            self.console.configure(text="Byla vložena cesta z konfiguračního souboru Recources.txt",text_color="white")
+            self.console.configure(text="Byla vložena cesta z konfiguračního souboru",text_color="white")
         else:
-            self.console.configure(text="Konfigurační soubor Recources.txt obsahuje neplatnou cestu k souborům",text_color="orange")
+            self.console.configure(text="Konfigurační soubor obsahuje neplatnou cestu k souborům\n(můžete vložit v pokročilém nastavení)",text_color="orange")
 
         def maximalize_window(e):
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
@@ -2278,6 +2303,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.prefix_func = text_file_data[5]
         self.prefix_Cam = text_file_data[6]
         self.max_num_of_pallets = text_file_data[8]
+        self.safe_mode = text_file_data[10]
         list_of_folder_names = text_file_data[9]
         self.nok_folder_name = list_of_folder_names[0]
         self.pairs_folder_name = list_of_folder_names[1]
@@ -2324,31 +2350,70 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             self.more_dirs = True
         else:
             self.more_dirs = False
-        Trideni.output = []
-        Trideni.output_console2 = []
+        if self.checkbox_safe_mode.get() == 1:
+            self.safe_mode = "ne"
+        else:
+            self.safe_mode = "ano"
 
-        Trideni.whole_sorting_function(path,selected_sort,self.more_dirs,self.max_num_of_pallets,self.by_which_ID_num,
-                                       self.prefix_func,self.prefix_Cam,self.supported_formats_sorting,self.aut_detect_num_of_pallets,
-                                       self.nok_folder_name,self.pairs_folder_name)
+        def call_trideni_main(whole_instance):
+            whole_instance.main()
+
+        running_program = Trideni.whole_sorting_function(
+            path,
+            selected_sort,
+            self.more_dirs,
+            self.max_num_of_pallets,
+            self.by_which_ID_num,
+            self.prefix_func,
+            self.prefix_Cam,
+            self.supported_formats_sorting,
+            self.aut_detect_num_of_pallets,
+            self.nok_folder_name,
+            self.pairs_folder_name,
+            self.safe_mode
+        )
+
+        run_background = threading.Thread(target=call_trideni_main, args=(running_program,))
+        run_background.start()
+
+        output_list_increment = 0
+        completed = False
         output_text = ""
         output_text2 = ""
-        for i in range(0,len(Trideni.output)):
-            if len(Trideni.output[i]) > 170: # kdyz by se vypis nevesel na obrazovku
-                Trideni.output[i] = split_text_to_rows(Trideni.output[i],170)
-            output_text = output_text + Trideni.output[i] + "\n"
-        if "bylo dokončeno" in output_text or "byla dokončena" in output_text:
-            self.console.configure(text = output_text,text_color="green")
-        else:
-            self.console.configure(text = output_text,text_color="red")
+        previous_console2_text = []
 
-        for i in range(0,len(Trideni.output_console2)):
-            output_text2 = output_text2 + Trideni.output_console2[i] + "\n"
-        if output_text2 != "":
-            if "Chyba" in output_text2:
-                self.console2.configure(text = output_text2,text_color="red")
-            else:
-                self.console2.configure(text = output_text2,text_color="green")
-        self.console2.update_idletasks()
+        while not running_program.finish and completed == False:
+            time.sleep(0.05)
+            if len(running_program.output_list) > output_list_increment:
+                for i in range(0,len(running_program.output_list[output_list_increment])):
+                    if len(running_program.output_list[output_list_increment][i]) > 170: # kdyz by se vypis nevesel na obrazovku
+                        running_program.output_list[output_list_increment][i] = split_text_to_rows(running_program.output_list[output_list_increment][i],170)
+                    output_text = output_text + running_program.output_list[output_list_increment][i]
+                if "bylo dokončeno" in output_text or "byla dokončena" in output_text:
+                    self.console.configure(text = output_text,text_color="green")
+                else:
+                    self.console.configure(text = output_text,text_color="red")
+                self.console.update_idletasks()
+                self.root.update_idletasks()
+                output_list_increment+=1
+                print(output_list_increment)
+
+            if running_program.output_console2 != previous_console2_text and len(running_program.output_console2) != 0:
+                for i in range(0,len(running_program.output_console2)):
+                    output_text2 = output_text2 + running_program.output_console2[i] + "\n"
+                if output_text2 != "":
+                    if "Chyba" in output_text2:
+                        self.console2.configure(text = output_text2,text_color="red")
+                    else:
+                        self.console2.configure(text = output_text2,text_color="green")
+                self.console2.update_idletasks()
+                previous_console2_text = running_program.output_console2
+                output_text2 = ""
+
+            if running_program.finish and len(running_program.output_list) == output_list_increment and running_program.output_console2 == previous_console2_text:
+                completed = True
+        
+        run_background.join()
 
     def clear_frame(self,frame): # mazání widgets v daném framu
         for widget in frame.winfo_children():
@@ -2561,12 +2626,18 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
     def selected6(self): # checkbox na přepínání: procházet/ neprocházet subsložky
         if self.checkbox6.get() == 1:
             dirs_more = customtkinter.CTkImage(Image.open("images/more_dirs.png"),size=(553, 111))
-            self.images2.configure(image =dirs_more)   
-            self.console2.configure(text = "Zadaná cesta/ 1.složka/ 2.složka/ složky se soubory\nnebo: Zadaná cesta/ 1.složka/ 2.složka/ soubory volně, neroztříděné",font=("Arial",14,"bold"),text_color="white")
+            self.images2.configure(image =dirs_more)
+            if self.checkbox_safe_mode.get()==1:
+                self.console2.configure(text = "Zadaná cesta/ 1.složka/ 2.složka/ složky se soubory",font=("Arial",14,"bold"),text_color="white")
+            else:
+                self.console2.configure(text = "Zadaná cesta/ 1.složka/ 2.složka/ soubory volně, neroztříděné",font=("Arial",14,"bold"),text_color="white")
         else:
             dirs_one = customtkinter.CTkImage(Image.open("images/dirs_ba.png"),size=(432, 133))
             self.images2.configure(image =dirs_one)
-            self.console2.configure(text = "Zadaná cesta/ složky se soubory\nnebo: Zadaná cesta/ soubory volně, neroztříděné",font=("Arial",14,"bold"),text_color="white")
+            if self.checkbox_safe_mode.get()==1:
+                self.console2.configure(text = "Zadaná cesta/ složky se soubory",font=("Arial",14,"bold"),text_color="white")
+            else:
+                self.console2.configure(text = "Zadaná cesta/ soubory volně, neroztříděné",font=("Arial",14,"bold"),text_color="white")
 
     def view_image(self,which_one): # zobrazení ilustračního obrázku
         """
@@ -2669,11 +2740,14 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.checkbox5.pack(pady =12,padx=10,anchor ="w")
 
         self.checkbox6   = customtkinter.CTkCheckBox(master = self.frame4, text = "Projít subsložky?",command = self.selected6)
+        self.checkbox_safe_mode = customtkinter.CTkCheckBox(master = self.frame4, text = "Rozbalit poslední složky?",command = self.selected6)
         self.images2     = customtkinter.CTkLabel(master = self.frame4,text = "")
         self.console2    = customtkinter.CTkLabel(master = self.frame4,text = " ",font=("Arial",12))
-        self.checkbox6.pack(pady =12,padx=10,anchor="w")
-        self.images2.pack()
-        self.console2.pack(pady =5,padx=10)
+        self.console2.pack(pady =5,padx=10,side=tk.BOTTOM)
+        self.images2.pack(side=tk.BOTTOM)
+        self.checkbox6.pack(pady =10,padx=10,anchor="w",side=tk.LEFT)
+        self.checkbox_safe_mode.pack(pady =10,padx=10,anchor="w",side=tk.LEFT)
+        self.checkbox_safe_mode.select()
 
         self.images       = customtkinter.CTkLabel(master = self.frame5,text = "")
         self.name_example = customtkinter.CTkLabel(master = self.frame5,text = "",font=("Arial",16,"bold"))
@@ -2696,9 +2770,9 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         if recources_path != False and recources_path != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", str(recources_path))
-            self.console.configure(text="Byla vložena cesta z konfiguračního souboru Recources.txt",text_color="white")
+            self.console.configure(text="Byla vložena cesta z konfiguračního souboru",text_color="white")
         else:
-            self.console.configure(text="Konfigurační soubor Recources.txt obsahuje neplatnou cestu k souborům",text_color="orange")
+            self.console.configure(text="Konfigurační soubor obsahuje neplatnou cestu k souborům\n(můžete vložit v pokročilém nastavení)",text_color="orange")
 
         def maximalize_window(e):
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole

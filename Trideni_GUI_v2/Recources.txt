@@ -4,7 +4,7 @@ bmp,png
 Podporované typy souborů u možností mazání:
 jpg,bmp,png,ifz
 Základní cesta k souborům:
-C:/Users/kubah/Desktop/JHV/test_images/Keyence/_503_Witte/datumovka/A/
+C:/Users/kubah/Desktop/JHV/test_images/Keyence/_503_Witte/
 Základní množství ponechaných souborů:
 1000
 Základní cutoff date:
@@ -28,4 +28,6 @@ Konvertovane_BMP47
 Název složky pro soubory převedené do .jpg formátu:
 Konvertovane_JPG74
 Název složky pro vybrané obrázky v prohlížeči obrázků:
-Vybrane_obrazkyy
+Vybrane_obrazky
+Bezpečný mód při procházení subsložek:
+ano
