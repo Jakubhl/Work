@@ -401,6 +401,27 @@ def browseDirectories(visible_files): # Funkce spouští průzkumníka systému 
     
     return [output,corrected_path]
 
+def add_colored_line(text_widget, text, color,font=None):
+    """
+    Vloží řádek do console
+    """
+    text_widget.configure(state=tk.NORMAL)
+    if font == None:
+        font = ("Arial",15)
+    text_widget.tag_configure(color, foreground=color,font=font)
+    text_widget.insert(tk.END,"    > "+ text+"\n", color)
+    text_widget.configure(state=tk.DISABLED)
+
+def clear_console(text_widget,from_where=None):
+    """
+    Vymaže celou consoli
+    """
+    if from_where == None:
+        from_where = 1.0
+    text_widget.configure(state=tk.NORMAL)
+    text_widget.delete(from_where, tk.END)
+    text_widget.configure(state=tk.DISABLED)
+
 def menu(): # Funkce spouští základní menu při spuštění aplikace (MAIN)
     """
     Funkce spouští základní menu při spuštění aplikace (MAIN)
@@ -1584,30 +1605,38 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
             output_text = output_text + Converting.output[i]
         if output_text != "":
             if "Konvertování bylo dokončeno" in output_text:
-                self.console.configure(text = output_text,text_color = "green")
+                #self.console.configure(text = output_text,text_color = "green")
+                add_colored_line(self.console,str(output_text),"green")
             else:
-                self.console.configure(text = output_text,text_color = "red")
+                #self.console.configure(text = output_text,text_color = "red")
+                add_colored_line(self.console,str(output_text),"red")
 
     def start(self):# Ověřování cesty, init, spuštění
         """
         Ověřování cesty, init, spuštění
         """
+        clear_console(self.console)
+        self.console.update_idletasks()
         if self.checkbox_bmp.get()+self.checkbox_jpg.get() == 0:
-            self.console.configure(text = "Nevybrali jste žádný formát, do kterého se má konvertovat :-)",text_color="red")
+            #self.console.configure(text = "Nevybrali jste žádný formát, do kterého se má konvertovat :-)",text_color="red")
+            add_colored_line(self.console,"Nevybrali jste žádný formát, do kterého se má konvertovat :-)","red")
         else:
             path = self.path_set.get() 
             if path != "":
                 check = path_check(path)
                 if check == False:
-                    self.console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena",text_color="red")
+                    #self.console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena",text_color="red")
+                    add_colored_line(self.console,"Zadaná cesta: "+str(path)+" nebyla nalezena","red")
                 else:
                     path = check
-                    self.console.configure(text = f"Probíhá konvertování souborů v cestě: {path}",text_color="white")
+                    #self.console.configure(text = f"Probíhá konvertování souborů v cestě: {path}",text_color="white")
+                    add_colored_line(self.console,f"Probíhá konvertování souborů v cestě: {path}","white")
                     self.console.update_idletasks()
                     self.root.update_idletasks()
                     self.convert_files(path)
             else:
-                self.console.configure(text = "Nebyla vložena cesta k souborům",text_color="red")
+                #self.console.configure(text = "Nebyla vložena cesta k souborům",text_color="red")
+                add_colored_line(self.console,"Nebyla vložena cesta k souborům","red")
 
     def call_browseDirectories(self): # Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
@@ -1617,9 +1646,11 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])
-            self.console.configure(text=f"Byla vložena cesta: {output[1]}",text_color="green")
+            #self.console.configure(text=f"Byla vložena cesta: {output[1]}",text_color="green")
+            add_colored_line(self.console,f"Byla vložena cesta: {output[1]}","green")
         else:
-            self.console.configure(text = str(output[0]),text_color="red")
+            #self.console.configure(text = str(output[0]),text_color="red")
+            add_colored_line(self.console,str(output[0]),"red")
 
     def selected_bmp(self):
         self.checkbox_jpg.deselect()
@@ -1658,7 +1689,8 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
 
         self.label   = customtkinter.CTkLabel(master = self.bottom_frame2,text = f"Konvertované soubory budou vytvořeny uvnitř separátní složky: \"{self.bmp_folder_name}\"\nPodporované formáty: .ifz\nObsahuje-li .ifz soubor více obrázků, budou uloženy v následující syntaxi:\nxxx_0.bmp, xxx_1.bmp ...\nPro správnou funkci programu nesmí cesta obsahovat složky s mezerou v názvu",justify = "left",font=("Arial",16,"bold"))
         button  = customtkinter.CTkButton(master = self.bottom_frame2, text = "KONVERTOVAT", command = self.start,font=("Arial",20,"bold"))
-        self.console = customtkinter.CTkLabel(master = self.bottom_frame2,text = "",justify = "left",font=("Arial",15))
+        #self.console = customtkinter.CTkLabel(master = self.bottom_frame2,text = "",justify = "left",font=("Arial",15))
+        self.console = tk.Text(self.bottom_frame2, wrap="word", height=20, width=1200,background="black",font=("Arial",15),state=tk.DISABLED)
         self.label.pack(pady =10,padx=10)
         button.pack(pady =20,padx=10)
         button._set_dimensions(300,60)
@@ -1671,10 +1703,11 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         if recources_path != False and recources_path != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", str(recources_path))
-            self.console.configure(text="Byla vložena cesta z konfiguračního souboru",text_color="white")
+            #self.console.configure(text="Byla vložena cesta z konfiguračního souboru",text_color="white")
+            add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white")
         else:
-            self.console.configure(text="Konfigurační soubor obsahuje neplatnou cestu k souborům\n(můžete vložit v pokročilém nastavení)",text_color="orange")
-
+            #self.console.configure(text="Konfigurační soubor obsahuje neplatnou cestu k souborům (můžete vložit v pokročilém nastavení)",text_color="orange")
+            add_colored_line(self.console,"Konfigurační soubor obsahuje neplatnou cestu k souborům (můžete vložit v pokročilém nastavení)","orange")
         def maximalize_window(e):
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
             currently_focused = str(self.root.focus_get())
@@ -2313,8 +2346,10 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         """
         Ověřování cesty, init, spuštění
         """
+        clear_console(self.console)
         if self.checkbox.get()+self.checkbox2.get()+self.checkbox3.get()+self.checkbox4.get()+self.checkbox5.get() == 0:
-            self.console.configure(text = "Nevybrali jste žádný způsob třídění :-)",text_color="red")
+            #self.console.configure(text = "Nevybrali jste žádný způsob třídění :-)",text_color="red")
+            add_colored_line(self.console,"Nevybrali jste žádný způsob třídění :-)","red")
             nothing = customtkinter.CTkImage(Image.open("images/nothing.png"),size=(1, 1))
             self.images.configure(image = nothing)
             self.name_example.configure(text = "")
@@ -2324,15 +2359,18 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             if path != "":
                 check = path_check(path)
                 if check == False:
-                    self.console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena",text_color="red")
+                    #self.console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena",text_color="red")
+                    add_colored_line(self.console,"Zadaná cesta: "+str(path)+" nebyla nalezena","red")
                 else:
                     path = check
-                    self.console.configure(text ="Provádím nastavenou možnost třídění v cestě: "+str(path),text_color="white")
+                    #self.console.configure(text ="Provádím nastavenou možnost třídění v cestě: "+str(path),text_color="white")
+                    add_colored_line(self.console,"Provádím nastavenou možnost třídění v cestě: "+str(path)+"\n","white")
                     self.console.update_idletasks()
                     self.root.update_idletasks()
                     self.sort_files(path)
             else:
-                self.console.configure(text = "Nebyla vložena cesta k souborům",text_color="red")
+                #self.console.configure(text = "Nebyla vložena cesta k souborům",text_color="red")
+                add_colored_line(self.console,"Nebyla vložena cesta k souborům","red")
 
     def sort_files(self,path): # Volání externího scriptu
         selected_sort = 0
@@ -2386,14 +2424,23 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             time.sleep(0.05)
             if len(running_program.output_list) > output_list_increment:
                 for i in range(0,len(running_program.output_list[output_list_increment])):
-                    if len(running_program.output_list[output_list_increment][i]) > 170: # kdyz by se vypis nevesel na obrazovku
-                        running_program.output_list[output_list_increment][i] = split_text_to_rows(running_program.output_list[output_list_increment][i],170)
-                    output_text = output_text + running_program.output_list[output_list_increment][i]
-                if "bylo dokončeno" in output_text or "byla dokončena" in output_text:
-                    self.console.configure(text = output_text,text_color="green")
-                else:
-                    self.console.configure(text = output_text,text_color="red")
-                self.console.update_idletasks()
+                    #if len(running_program.output_list[output_list_increment][i]) > 170: # kdyz by se vypis nevesel na obrazovku
+                        #running_program.output_list[output_list_increment][i] = split_text_to_rows(running_program.output_list[output_list_increment][i],170)
+                    #output_text = output_text + running_program.output_list[output_list_increment][i]
+                    new_row = str(running_program.output_list[output_list_increment][i])
+                    if "bylo dokončeno" in new_row or "byla dokončena" in new_row:
+                        #self.console.configure(text = output_text,text_color="green")
+                        add_colored_line(self.console,str(new_row),"green",("Arial",15,"bold"))
+                    elif "Chyba" in new_row:
+                        #self.console.configure(text = output_text,text_color="red")
+                        add_colored_line(self.console,str(new_row),"red",("Arial",15,"bold"))
+                    elif "Nepáry" in new_row:
+                        add_colored_line(self.console,str(new_row),"orange",("Arial",15,"bold"))
+                    elif "OK soubory" in new_row:
+                        add_colored_line(self.console,str(new_row),"green",("Arial",15,"bold"))
+                    else:
+                        add_colored_line(self.console,str(new_row),"white")
+                    self.console.update_idletasks()
                 self.root.update_idletasks()
                 output_list_increment+=1
                 print(output_list_increment)
@@ -2425,7 +2472,8 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         """
         self.clear_frame(self.frame6)
         self.view_image(1)
-        self.console.configure(text = "")
+        #self.console.configure(text = "")
+        clear_console(self.console)
         self.checkbox2.deselect()
         self.checkbox3.deselect()
         self.checkbox4.deselect()
@@ -2440,7 +2488,8 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         """
         self.clear_frame(self.frame6)
         self.view_image(2)
-        self.console.configure(text = "")
+        #self.console.configure(text = "")
+        clear_console(self.console)
         self.checkbox.deselect()
         self.checkbox3.deselect()
         self.checkbox4.deselect()
@@ -2523,7 +2572,8 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         Nastavení widgets pro třídění podle čísla kamery
         """
         self.clear_frame(self.frame6)
-        self.console.configure(text = "")
+        #self.console.configure(text = "")
+        clear_console(self.console)
         self.view_image(3)   
         self.checkbox.deselect()
         self.checkbox2.deselect()
@@ -2563,7 +2613,8 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         Nastavení widgets pro třídění podle funkce i čísla kamery
         """
         self.clear_frame(self.frame6)
-        self.console.configure(text = "")
+        #self.console.configure(text = "")
+        clear_console(self.console)
         self.view_image(4)
         self.checkbox.deselect()
         self.checkbox2.deselect()
@@ -2580,7 +2631,8 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         - nalezené dvojice nakopíruje do složky
         """
         self.clear_frame(self.frame6)
-        self.console.configure(text = "")
+        #self.console.configure(text = "")
+        clear_console(self.console)
         self.view_image(5)
         self.checkbox.deselect()
         self.checkbox2.deselect()
@@ -2697,9 +2749,11 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])
-            self.console.configure(text=f"Byla vložena cesta: {output[1]}",text_color="green")
+            #self.console.configure(text=f"Byla vložena cesta: {output[1]}",text_color="green")
+            add_colored_line(self.console,f"Byla vložena cesta: {output[1]}","green")
         else:
-            self.console.configure(text = str(output[0]),text_color="red")
+            #self.console.configure(text = str(output[0]),text_color="red")
+            add_colored_line(self.console,str(output[0]),"red")
 
     def create_sorting_option_widgets(self):  # Vytváří veškeré widgets (sorting option MAIN)
         # cisteni menu widgets:
@@ -2752,7 +2806,8 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.images       = customtkinter.CTkLabel(master = self.frame5,text = "")
         self.name_example = customtkinter.CTkLabel(master = self.frame5,text = "",font=("Arial",16,"bold"))
         button            = customtkinter.CTkButton(master = self.frame5, text = "SPUSTIT", command = self.start,font=("Arial",20,"bold"))
-        self.console      = customtkinter.CTkLabel(master = self.frame5,text = " ",justify = "left",font=("Arial",15))
+        #self.console      = customtkinter.CTkLabel(master = self.frame5,text = " ",justify = "left",font=("Arial",15))
+        self.console = tk.Text(self.frame5, wrap="word", height=20, width=1200,background="black",font=("Arial",15),state=tk.DISABLED)
         self.images.pack()
         self.name_example.pack(pady = 12,padx =10)
         button.pack(pady =12,padx=10)
@@ -2770,9 +2825,11 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         if recources_path != False and recources_path != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", str(recources_path))
-            self.console.configure(text="Byla vložena cesta z konfiguračního souboru",text_color="white")
+            #self.console.configure(text="Byla vložena cesta z konfiguračního souboru",text_color="white")
+            add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white")
         else:
-            self.console.configure(text="Konfigurační soubor obsahuje neplatnou cestu k souborům\n(můžete vložit v pokročilém nastavení)",text_color="orange")
+            #self.console.configure(text="Konfigurační soubor obsahuje neplatnou cestu k souborům (můžete vložit v pokročilém nastavení)",text_color="orange")
+            add_colored_line(self.console,"Konfigurační soubor obsahuje neplatnou cestu k souborům (můžete vložit v pokročilém nastavení)","orange")
 
         def maximalize_window(e):
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole

@@ -165,8 +165,8 @@ class whole_sorting_function:
                                 if os.path.exists(self.path + folders[i] + "/" + files):
                                     shutil.move(self.path + folders[i] + "/" + files , self.path + '/' + files)
         else:
-            self.output.append("Nastavení \"nerozbalovat poslední složky\" zabránilo rozbalení obsahu těchto adresářů:\n")
-            self.output.append(f"{folders}\n")
+            self.output.append("Nastavení \"nerozbalovat poslední složky\" zabránilo rozbalení obsahu těchto adresářů:")
+            self.output.append(f"{folders}")
 
     def Get_cam_number(self,file_for_analyze):
         if "&" in file_for_analyze:
@@ -180,9 +180,9 @@ class whole_sorting_function:
             return cam_number
         else:
             #oprava spamu:
-            error_message = "-Chyba: V cestě jsou soubory, které neobsahují rozhodovací symbol \"&\"\n"
+            error_message = "-Chyba: V cestě jsou soubory, které neobsahují rozhodovací symbol \"&\""
             if self.printed_ref4 == False:
-                self.output.append(error_message+ "\n")
+                self.output.append(error_message+ "")
                 self.printed_ref4 =True
             return False
 
@@ -206,7 +206,7 @@ class whole_sorting_function:
                 self.ID_num_of_digits = len(func_number) #automaticke urceni poctu cifer v ID
                 id_num_of_digits_message = f"- Počet cifer v ID automaticky detekován: {self.ID_num_of_digits}"
                 if self.printed_ref0 == False:
-                    self.output.append(id_num_of_digits_message+ "\n")
+                    self.output.append(id_num_of_digits_message+ "")
                     self.printed_ref0 = True
                 if self.by_which_ID_num == "":
                     return func_number
@@ -214,22 +214,22 @@ class whole_sorting_function:
                     if int(self.by_which_ID_num) <= self.ID_num_of_digits:
                         return func_number[self.by_which_ID_num-1]
                     else:
-                        error_message = "-Chyba: Zvolili jste třídit podle cifry, která neodpovídá délce ID souborů\n"
+                        error_message = "-Chyba: Zvolili jste třídit podle cifry, která neodpovídá délce ID souborů"
                         if self.printed_ref1 == False:
-                            self.output.append(error_message+ "\n")
+                            self.output.append(error_message+ "")
                             self.printed_ref1 = True
                         return False
             else:
                 #oprava spamu:
-                error_message1 = "-Chyba: V cestě jsou soubory, které neobsahují rozhodovací symbol \"_\", potřebný pro určení čísla funkce\n"
+                error_message1 = "-Chyba: V cestě jsou soubory, které neobsahují rozhodovací symbol \"_\", potřebný pro určení čísla funkce: " + str(file_for_analyze) + ""
                 if self.printed_ref2 == False:
-                    self.output.append(error_message1+ "\n")
+                    self.output.append(error_message1+ "")
                     self.printed_ref2 = True
                 return False
         else:
-            error_message2 = "-Chyba: V cestě jsou soubory, které neobsahují rozhodovací symbol \"&\"\n"
+            error_message2 = "-Chyba: V cestě jsou soubory, které neobsahují rozhodovací symbol \"&\": " + str(file_for_analyze) + ""
             if self.printed_ref3 == False:
-                self.output.append(error_message2+ "\n")
+                self.output.append(error_message2+ "")
                 self.printed_ref3 = True
             return False
         
@@ -279,17 +279,17 @@ class whole_sorting_function:
                             if not files_type[self.num_of_dots] in self.files_type_arr:
                                 self.files_type_arr.append(files_type[self.num_of_dots])
         #if len(self.file_list) == 0:
-            #self.output.append("Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &)\nNebo je vložená cestak souborům ob více, jak jednu složku\n")
+            #self.output.append("Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &) Nebo je vložená cestak souborům ob více, jak jednu složku")
 
         if self.files_type_arr != []: #pokud byl nalezen
-            self.output.append(f"-Nalezené typy souborů: {self.files_type_arr}\n")
+            self.output.append(f"-Nalezené typy souborů: {self.files_type_arr}")
 
         return self.files_type_arr
             
     def Sorting_files(self,folder_list):
         # get id length:
         if len(self.file_list) == 0:
-            self.output.append("Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &)\nNebo je vložená cestak souborům ob více, jak jednu složku\n")
+            self.output.append("Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &) Nebo je vložená cestak souborům ob více, jak jednu složku")
             return False
         id_length = self.Get_func_number(self.file_list[0]) # prvni soubor bran jako referencni
         if id_length == False:
@@ -356,11 +356,11 @@ class whole_sorting_function:
                 count = 0
         
         #if error_length == 1:
-            #print("-Upozornění: délka názvu před \"&\" některých souborů v dané cestě se liší (možná nefunkční manuální definice zakrytých znaků)\n")
+            #print("-Upozornění: délka názvu před \"&\" některých souborů v dané cestě se liší (možná nefunkční manuální definice zakrytých znaků)")
             
         
-        self.output.append("\n- Nepáry, celkem: {}\n".format(nok_count))
-        self.output.append("- OK soubory zastoupené všemi formáty, celkem: {}\n".format(ok_count))
+        self.output.append("- Nepáry, celkem: {}".format(nok_count))
+        self.output.append("- OK soubory zastoupené všemi formáty, celkem: {}".format(ok_count))
 
     def make_tuple(self,array1,array2):
         tuple_array = []
@@ -393,8 +393,8 @@ class whole_sorting_function:
                 keep_searching = True
                 while(keep_searching == True): #while cyklus kvuli moznym chybejicim paletkam
                     if round_number > 50000: #zacykleni programu 50000 kol hledani se zda byt dostacujici, vypocetni doba: 5s
-                        self.output.append(f"\n- Došlo k ZACYKLENÍ programu, nejspíše neodpovídá (v případech manuálního nastavení) nastavení maximálního počtu palet {max_number_of_pallets} (max ID) v oběhu\n")
-                        self.output.append("- Nebo chybí extrémní množství palet (čísla id nejsou po sobě jdoucí v čase z názvu souboru)\n")
+                        self.output.append(f"- Došlo k ZACYKLENÍ programu, nejspíše neodpovídá (v případech manuálního nastavení) nastavení maximálního počtu palet {max_number_of_pallets} (max ID) v oběhu")
+                        self.output.append("- Nebo chybí extrémní množství palet (čísla id nejsou po sobě jdoucí v čase z názvu souboru)")
                         stop = True
                         keep_searching = False
                         
@@ -458,16 +458,16 @@ class whole_sorting_function:
                                         
 
         if len(list_of_pairs_clear) !=0:
-            #self.output.append(f"- Nalezený seznam dvojic v řadě za sebou podle ID: {list_of_pairs_clear}\n- Každá v počtu souborů: {list_of_pair_count}")
+            #self.output.append(f"- Nalezený seznam dvojic v řadě za sebou podle ID: {list_of_pairs_clear}- Každá v počtu souborů: {list_of_pair_count}")
             output_msg = self.make_tuple(list_of_pairs_clear,list_of_pair_count)
-            self.output.append("- Nalezený seznam dvojic v řadě za sebou (ID, počet souborů):\n")
+            self.output.append("- Nalezený seznam dvojic v řadě za sebou (ID, počet souborů):")
             self.output.append(f"{output_msg}")
 
         else:
-            self.output.append("- V zadané cestě nebyly nalezeny žádné dvojice\n")
+            self.output.append("- V zadané cestě nebyly nalezeny žádné dvojice")
 
         if len(lost_pallets) ==0:
-            self.output.append("- Žádné chybějící palety nebyly nenalezeny\n")
+            self.output.append("- Žádné chybějící palety nebyly nenalezeny")
 
         if len(list_of_pairs) != 0: #jestli nejake vubec jsou...
             #vytvoreni slozky s páry:
@@ -507,7 +507,7 @@ class whole_sorting_function:
             for functions in functions_found:
                 self.make_dir(self.prefix_func + functions)
         else:
-            self.output.append("-Chyba: Selhalo hledání ID u souborů\n")
+            self.output.append("-Chyba: Selhalo hledání ID u souborů")
             folders = self.sync_folders(self.path)
             self.remove_empty(folders)
             return False
@@ -529,9 +529,9 @@ class whole_sorting_function:
             ID_list = self.Get_func_list()
             if ID_list != False:
                 self.max_num_of_pallets = int(max(ID_list))
-                self.output.append(f"Maximální počet palet automaticky nastaven na: {self.max_num_of_pallets}\n")
+                self.output.append(f"Maximální počet palet automaticky nastaven na: {self.max_num_of_pallets}")
             else:
-                self.output.append("-Chyba: Selhala automatická detekce maximálního počtu palet\n")
+                self.output.append("-Chyba: Selhala automatická detekce maximálního počtu palet")
                 return False
         self.sort_by_ID()
         folders = self.sync_folders(self.path)
@@ -542,7 +542,7 @@ class whole_sorting_function:
             result = self.subfolders_check()
             if result == False:
                 self.output_console2.append("- Chyba: aplikace programovana na pruchod 3 slozek,\ntzn.: vložená cesta + \"2023_04_13/A/Height\"\nnebo: path + \"2023_04_13/A/soubory volně mimo složku\"")
-                self.output.append("Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &)\nNebo je vložená cestak souborům ob více, jak jednu složku\n")
+                self.output.append("Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &). Nebo je vložená cestak souborům ob více, jak jednu složku")
                 self.output.append("Třídění ukončeno")
                 self.finish = True
                 return True
@@ -568,7 +568,7 @@ class whole_sorting_function:
                         self.printed_ref3 = False
                         self.printed_ref4 = False
 
-                        self.output.append("\nTřídění v: " + paths + "\n")
+                        self.output.append("Třídění v: " + paths + "")
                         self.make_dir(self.nok_folder)
                         folders = self.sync_folders(self.path)
                         
@@ -619,13 +619,13 @@ class whole_sorting_function:
                                 self.error = True
                               
                         if self.error == True:
-                            self.output.append("\nTřídění ukončeno\n")
+                            self.output.append("Třídění ukončeno\n")
                         else:
                             sort_options = ["typu souborů","funkce","čísla kamery","funkce i čísla kamery","hledání dvojic"]
                             if self.sort_option == 4:
-                                final_text = "\nOperace: " + sort_options[self.sort_option] + " byla dokončena\n\n"
+                                final_text = "Operace: " + sort_options[self.sort_option] + " byla dokončena\n"
                             else:
-                                final_text = "\nTřídění podle: " + sort_options[self.sort_option] + " bylo dokončeno\n\n"                
+                                final_text = "Třídění podle: " + sort_options[self.sort_option] + " bylo dokončeno\n"                
                             self.output.append(final_text)
                         
                         self.output_list.append(self.output)
@@ -681,13 +681,13 @@ class whole_sorting_function:
 
             if self.error == True:
                 if self.more_dirs == False:
-                    self.output.append("\nTřídění ukončeno\n")
+                    self.output.append("Třídění ukončeno\n")
             else:
                 sort_options = ["typu souborů","funkce","čísla kamery","funkce i čísla kamery","hledání dvojic"]
                 if self.sort_option == 4:
-                    final_text = "\nOperace: " + sort_options[self.sort_option] + " byla dokončena\n\n"
+                    final_text = "Operace: " + sort_options[self.sort_option] + " byla dokončena\n"
                 else:
-                    final_text = "\nTřídění podle: " + sort_options[self.sort_option] + " bylo dokončeno\n\n"                
+                    final_text = "Třídění podle: " + sort_options[self.sort_option] + " bylo dokončeno\n"                
                 self.output.append(final_text)
             self.output_list.append(self.output)
 
