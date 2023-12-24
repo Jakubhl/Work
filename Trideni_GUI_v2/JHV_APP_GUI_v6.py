@@ -1600,16 +1600,13 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         Converting.whole_converting_function(path,selected_format,self.bmp_folder_name,self.jpg_folder_name)
         output_text = ""
         for i in range(0,len(Converting.output)):
-            if len(Converting.output[i]) > 170: # kdyz by se vypis nevesel na obrazovku
-                Converting.output[i] = split_text_to_rows(Converting.output[i],170)
-            output_text = output_text + Converting.output[i]
-        if output_text != "":
+            output_text =  Converting.output[i]
             if "Konvertování bylo dokončeno" in output_text:
-                #self.console.configure(text = output_text,text_color = "green")
-                add_colored_line(self.console,str(output_text),"green")
+                add_colored_line(self.console,str(output_text),"green",("Arial",15,"bold"))
+            elif "cesta neobsahuje" in output_text:
+                add_colored_line(self.console,str(output_text),"red",("Arial",15,"bold"))
             else:
-                #self.console.configure(text = output_text,text_color = "red")
-                add_colored_line(self.console,str(output_text),"red")
+                add_colored_line(self.console,str(output_text),"white")
 
     def start(self):# Ověřování cesty, init, spuštění
         """
@@ -1764,7 +1761,8 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         Ověřování cesty, init, spuštění
         """
         if self.checkbox.get()+self.checkbox2.get()+self.checkbox3.get() == 0:
-            self.console.configure(text = "Nevybrali jste žádný způsob mazání :-)",text_color="red")
+            #self.console.configure(text = "Nevybrali jste žádný způsob mazání :-)",text_color="red")
+            add_colored_line(self.console,"Nevybrali jste žádný způsob mazání :-)","red")
             self.info.configure(text = "")
 
         else:
@@ -1772,7 +1770,8 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             if path != "":
                 check = path_check(path)
                 if check == False:
-                    self.console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena",text_color="red")
+                    #self.console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena",text_color="red")
+                    add_colored_line(self.console,"Zadaná cesta: "+str(path)+" nebyla nalezena","red")
                 else:
                     path = check
                     if self.checkbox_testing.get() != 1:
@@ -1787,14 +1786,17 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                         confirm = True
 
                     if confirm == True:
-                        self.console.configure(text = "Provádím navolené možnosti mazání v cestě: " + str(path),text_color="white")
+                        #self.console.configure(text = "Provádím navolené možnosti mazání v cestě: " + str(path),text_color="white")
+                        add_colored_line(self.console,"Provádím navolené možnosti mazání v cestě: " + str(path) + "\n","white")
                         self.console.update_idletasks()
                         self.root.update_idletasks()
                         self.del_files(path)
                     else:
-                        self.console.configure(text = "Zrušeno uživatelem",text_color="red")
+                        #self.console.configure(text = "Zrušeno uživatelem",text_color="red")
+                        add_colored_line(self.console,"Zrušeno uživatelem","red")
             else:
-                self.console.configure(text = "Nebyla vložena cesta k souborům",text_color="red")
+                #self.console.configure(text = "Nebyla vložena cesta k souborům",text_color="red")
+                add_colored_line(self.console,"Nebyla vložena cesta k souborům","red")
 
     def del_files(self,path): # zde se volá externí script: Deleting
         testing_mode = True
@@ -1814,20 +1816,50 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         else:
             testing_mode = False
 
-        Deleting.output = []
+        #Deleting.output = []
 
-        Deleting.whole_deleting_function(path,self.more_dirs,del_option,self.files_to_keep,self.cutoff_date,self.supported_formats_deleting,
-                                         testing_mode,self.to_delete_folder_name)
-        output_text = ""
-        for i in range(0,len(Deleting.output)):
-            if len(Deleting.output[i]) > 170: # kdyz by se vypis nevesel na obrazovku
-                Deleting.output[i] = split_text_to_rows(Deleting.output[i],170)
-            output_text = output_text + Deleting.output[i]# + "\n"
-        if "Chyba" in output_text:
-            self.console.configure(text = output_text,text_color = "red")
-        else:
-            self.console.configure(text = output_text,text_color = "green")
-    
+        def call_deleting_main(whole_instance):
+            whole_instance.main()
+
+        running_deleting = Deleting.whole_deleting_function(
+            path,
+            self.more_dirs,
+            del_option,
+            self.files_to_keep,
+            self.cutoff_date,
+            self.supported_formats_deleting,
+            testing_mode,
+            self.to_delete_folder_name
+            )
+
+        run_del_background = threading.Thread(target=call_deleting_main, args=(running_deleting,))
+        run_del_background.start()
+
+        completed = False
+        previous_len = 0
+
+        while not running_deleting.finish or completed == False:
+            time.sleep(0.05)
+            if int(len(running_deleting.output)) > previous_len:
+                #for i in range(0,len(running_deleting.output)):
+                new_row = str(running_deleting.output[previous_len])
+                if "Mazání dokončeno" in new_row or "Zkontrolováno" in new_row:
+                    add_colored_line(self.console,str(new_row),"green",("Arial",15,"bold"))
+                elif "Chyba" in new_row or "Nebyly nalezeny" in new_row:
+                    add_colored_line(self.console,str(new_row),"red",("Arial",15,"bold"))
+                elif "Smazalo by se" in new_row or "Smazáno souborů" in new_row:
+                    add_colored_line(self.console,str(new_row),"orange",("Arial",15,"bold"))
+                else:
+                    add_colored_line(self.console,str(new_row),"white")
+                self.console.update_idletasks()
+                self.root.update_idletasks()
+                previous_len +=1
+
+            if running_deleting.finish and (int(len(running_deleting.output)) == previous_len):
+                completed = True
+        
+        run_del_background.join()
+
     def call_browseDirectories(self): # Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
         Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
@@ -1839,9 +1871,11 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])
-            self.console.configure(text=f"Byla vložena cesta: {output[1]}",text_color="green")
+            #self.console.configure(text=f"Byla vložena cesta: {output[1]}",text_color="green")
+            add_colored_line(self.console,f"Byla vložena cesta: {output[1]}","green")
         else:
-            self.console.configure(text = str(output[0]),text_color="red")
+            #self.console.configure(text = str(output[0]),text_color="red")
+            add_colored_line(self.console,str(output[0]),"red")
 
     def clear_frame(self,frame):
         for widget in frame.winfo_children():
@@ -1857,10 +1891,11 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         -Podporované formáty jsou uživatelem nastavené a uložené v textovém souboru
         """
         self.clear_frame(self.frame_right)
-        self.console.configure(text = "")
+        #self.console.configure(text = "")
+        clear_console(self.console)
         self.checkbox2.deselect()
         self.checkbox3.deselect()
-        self.info.configure(text = f"- Budou smazány soubory starší než nastavené datum, přičemž bude ponechán nastavený počet souborů, vyhodnocených, jako starších\nPodporované formáty: {self.supported_formats_deleting}",font = ("Arial",16,"bold"),justify="left")
+        self.info.configure(text = f"- Budou smazány soubory starší než nastavené datum, přičemž bude ponechán nastavený počet souborů, vyhodnocených, jako starších\nPodporované formáty: {self.supported_formats_deleting}\n\n",font = ("Arial",16,"bold"),justify="left")
         self.selected6() #update
 
         if clear == True:
@@ -1989,7 +2024,8 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         -Podporované formáty jsou uživatelem nastavené a uložené v textovém souboru
         """
         self.clear_frame(self.frame_right)
-        self.console.configure(text = "")
+        #self.console.configure(text = "")
+        clear_console(self.console)
         self.checkbox.deselect()
         self.checkbox3.deselect()
         self.info.configure(text = f"- Budou smazány VŠECHNY soubory starší než nastavené datum, přičemž budou redukovány i soubory novější\n- Souborů, vyhodnocených, jako novější, bude ponechán nastavený počet\n(vhodné při situacích rychlého pořizování velkého množství fotografií, kde je potřebné ponechat nějaké soubory pro referenci)\nPodporované formáty: {self.supported_formats_deleting}",font = ("Arial",16,"bold"),justify="left")
@@ -2121,7 +2157,8 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
 
         """
         self.clear_frame(self.frame_right)
-        self.console.configure(text = "")
+        #self.console.configure(text = "")
+        clear_console(self.console)
         self.checkbox2.deselect()
         self.checkbox.deselect()
         self.info.configure(text = f"- Budou smazány VŠECHNY adresáře (včetně všech subadresářů), které obsahují v názvu podporovaný formát datumu a jsou vyhodnoceny,\njako starší než nastavené datum\nPodporované datumové formáty: {Deleting.supported_date_formats}\nPodporované separátory datumu: {Deleting.supported_separators}",font = ("Arial",16,"bold"),justify="left")
@@ -2276,7 +2313,8 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
 
         self.info    = customtkinter.CTkLabel(master = self.bottom_frame2,text = "",font=("Arial",16,"bold"))
         button  = customtkinter.CTkButton(master = self.bottom_frame2, text = "SPUSTIT", command = self.start,font=("Arial",20,"bold"))
-        self.console = customtkinter.CTkLabel(master = self.bottom_frame2,text = " ",justify = "left",font=("Arial",15))
+        #self.console = customtkinter.CTkLabel(master = self.bottom_frame2,text = " ",justify = "left",font=("Arial",15))
+        self.console = tk.Text(self.bottom_frame2, wrap="word", height=20, width=1200,background="black",font=("Arial",15),state=tk.DISABLED)
         self.info.pack(pady = 12,padx =10,anchor="w")
         button.pack(pady =20,padx=10)
         button._set_dimensions(300,60)
@@ -2292,10 +2330,11 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         if recources_path != False and recources_path != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", str(recources_path))
-            self.console.configure(text="Byla vložena cesta z konfiguračního souboru",text_color="white")
+            #self.console.configure(text="Byla vložena cesta z konfiguračního souboru",text_color="white")
+            add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white")
         else:
-            self.console.configure(text="Konfigurační soubor obsahuje neplatnou cestu k souborům\n(můžete vložit v pokročilém nastavení)",text_color="orange")
-
+            #self.console.configure(text="Konfigurační soubor obsahuje neplatnou cestu k souborům\n(můžete vložit v pokročilém nastavení)",text_color="orange")
+            add_colored_line(self.console,"Konfigurační soubor obsahuje neplatnou cestu k souborům (můžete vložit v pokročilém nastavení)","orange")
         def maximalize_window(e):
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
             currently_focused = str(self.root.focus_get())
@@ -2420,7 +2459,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         output_text2 = ""
         previous_console2_text = []
 
-        while not running_program.finish and completed == False:
+        while not running_program.finish or completed == False:
             time.sleep(0.05)
             if len(running_program.output_list) > output_list_increment:
                 for i in range(0,len(running_program.output_list[output_list_increment])):
@@ -2431,7 +2470,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
                     if "bylo dokončeno" in new_row or "byla dokončena" in new_row:
                         #self.console.configure(text = output_text,text_color="green")
                         add_colored_line(self.console,str(new_row),"green",("Arial",15,"bold"))
-                    elif "Chyba" in new_row:
+                    elif "Chyba" in new_row or "Třídění ukončeno" in new_row:
                         #self.console.configure(text = output_text,text_color="red")
                         add_colored_line(self.console,str(new_row),"red",("Arial",15,"bold"))
                     elif "Nepáry" in new_row:
@@ -2443,7 +2482,6 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
                     self.console.update_idletasks()
                 self.root.update_idletasks()
                 output_list_increment+=1
-                print(output_list_increment)
 
             if running_program.output_console2 != previous_console2_text and len(running_program.output_console2) != 0:
                 for i in range(0,len(running_program.output_console2)):

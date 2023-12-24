@@ -74,11 +74,11 @@ def whole_converting_function(path_given,output_img_format,folder_with_bmp_name,
                 make_dir(folder_with_jpg,path_given)
                 command = command + " /o:" + path_given + folder_with_jpg + " /f:jpg"
             
-            output.append(f"Bylo konvertováno: {converted_files} souborů do formátu: {which_format}\n")
-            output.append("\nKonvertování bylo dokončeno\n")
+            output.append(f"Bylo konvertováno: {converted_files} souborů do formátu: {which_format}")
+            output.append("Konvertování bylo dokončeno\n")
             return command
         else:
-            output.append("Vložená cesta neobsahuje žádné soubory typu .ifz\n")
+            output.append("Vložená cesta neobsahuje žádné soubory typu .ifz")
             return False
 
         

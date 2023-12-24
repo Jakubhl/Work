@@ -7,7 +7,6 @@ import time
 #pair_folder = "PAIRS"
 #forbidden_folders = [pair_folder]
 
-
 class whole_sorting_function:
     def __init__(self,path_given,selected_sort,more_dir,max_num_of_pallets_given,by_which_ID_number,
                 prefix_func,prefix_Cam,supported_formats,aut_detect_num_of_pallets,nok_folder_name,
