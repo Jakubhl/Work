@@ -523,6 +523,10 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         """
         Funkce čistí všechny zaplněné rámečky a funguje, jako tlačítko zpět do menu
         """
+        #kdyby probihala sekvence obrazku:
+        if self.state == "running":
+            self.stop()
+
         list_of_frames = [self.main_frame,self.frame_with_path,self.background_frame]
         for frames in list_of_frames:
             frames.pack_forget()
@@ -531,6 +535,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
 
         for keys in self.unbind_list:
             self.root.unbind(keys)
+        
         #self.path_set.unbind("<Return>")
         menu()
     
@@ -572,7 +577,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     self.image_browser_path = path
                     self.view_image(0) #zobrazit hned prvni obrazek po vlozene ceste
                     self.increment_of_image = 0
-                    self.current_image_num.configure(text = str(self.increment_of_image+1) + "/" + str(len(self.all_images)))
+                    self.current_image_num.configure(text ="/" + str(len(self.all_images)))
+                    self.changable_image_num.delete("0","100")
+                    self.changable_image_num.insert("0", str(self.increment_of_image+1))
                     self.console.configure(text = f"Vložena cesta: {path}",text_color="green")
                 else:
                     self.console.configure(text = "- V zadané cestě nebyly nalezeny obrázky",text_color="red")
@@ -686,9 +693,10 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             
             dimensions = self.calc_current_format(width,height)
             displayed_image = customtkinter.CTkImage(current_image,size = (dimensions[0],dimensions[1]))
-            self.images.configure(image = displayed_image)
-            self.images.image = displayed_image
-            self.root.update_idletasks()
+            if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
+                self.images.configure(image = displayed_image)
+                self.images.image = displayed_image
+                self.images.update_idletasks()
 
     def next_image(self): # Další obrázek v pořadí (šipka vpravo)
         """
@@ -700,9 +708,13 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.increment_of_image += 1
             else:
                 self.increment_of_image = 0
+            
             self.view_image(self.increment_of_image)
-            self.current_image_num.configure(text = str(self.increment_of_image+1) + "/" + str(len(self.all_images)))
-            self.console.configure(text = str(self.all_images[self.increment_of_image]),text_color="white")
+            if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
+                self.current_image_num.configure(text ="/" + str(len(self.all_images)))
+                self.changable_image_num.delete("0","100")
+                self.changable_image_num.insert("0", str(self.increment_of_image+1))
+                self.console.configure(text = str(self.all_images[self.increment_of_image]),text_color="white")
     
     def previous_image(self): # Předchozí obrázek v pořadí (šipka vlevo)
         """
@@ -715,7 +727,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             else:
                 self.increment_of_image = number_of_found_images -1
             self.view_image(self.increment_of_image)
-            self.current_image_num.configure(text = str(self.increment_of_image+1) + "/" + str(len(self.all_images)))
+            self.current_image_num.configure(text = "/" + str(len(self.all_images)))
+            self.changable_image_num.delete("0","100")
+            self.changable_image_num.insert("0", str(self.increment_of_image+1))
             self.console.configure(text = str(self.all_images[self.increment_of_image]),text_color="white")
 
     class interrupt_viewing: # Pro možnosti vykonávání subprocessu na pozadí
@@ -729,8 +743,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
 
         def images_loop(self):
             self.stop_flag = False  # Reset the stop flag
-            thread = threading.Thread(target=self.long_running_task)
-            thread.start()
+            self.thread = threading.Thread(target=self.long_running_task)
+            self.thread.start()
 
         def long_running_task(self):
             number_of_found_images = len(self.parent.all_images)
@@ -752,7 +766,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.interrupt.stop_loop()
 
     def call_image_loop(self): # Volání třídy pro vykonávání subprocessu
-        self.state = ""
+        self.state = "running"
         self.interrupt.images_loop()
 
     def update_speed_slider(self,*args):
@@ -846,7 +860,10 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         tree         = customtkinter.CTkButton(master = self.frame_with_path, width = 120,height=30,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",16,"bold"))
         self.console = customtkinter.CTkLabel(master = self.frame_with_path,text = "",height=15,justify = "left",font=("Arial",12),text_color="white")
         button_back  = customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = "<", command = self.previous_image,font=("Arial",16,"bold"))
-        self.current_image_num = customtkinter.CTkLabel(master = self.frame_with_path,text = "0",justify = "left",font=("Arial",16,"bold"))
+        self.changable_image_num = customtkinter.CTkEntry(master = self.frame_with_path,width=45,justify = "left",font=("Arial",16,"bold"))
+        self.changable_image_num.delete("0","100")
+        self.changable_image_num.insert("0",0)
+        self.current_image_num = customtkinter.CTkLabel(master = self.frame_with_path,text = "/0",justify = "left",font=("Arial",16,"bold"))
         button_next  = customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = ">", command = self.next_image,font=("Arial",16,"bold"))
         button_play  = customtkinter.CTkButton(master = self.frame_with_path, width = 100,height=30,text = "SPUSTIT", command = self.call_image_loop,font=("Arial",16,"bold"))
         button_stop  = customtkinter.CTkButton(master = self.frame_with_path, width = 100,height=30,text = "STOP", command = self.stop,font=("Arial",16,"bold"))
@@ -866,7 +883,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         tree.grid(column = 0,row=0,pady = 5,padx =975,sticky = tk.W)
         self.console.grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
         button_back.grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
-        self.current_image_num.grid(column = 0,row=2,pady = 5,padx =40,sticky = tk.W)
+        self.changable_image_num.grid(column = 0,row=2,pady = 5,padx =40,sticky = tk.W)
+        self.current_image_num.grid(column = 0,row=2,pady = 5,padx =85,sticky = tk.W)
         button_next.grid(column = 0,row=2,pady = 5,padx =130,sticky = tk.W)
         button_play.grid(column = 0,row=2,pady = 5,padx =160,sticky = tk.W)
         button_stop.grid(column = 0,row=2,pady = 5,padx =265,sticky = tk.W)
@@ -882,6 +900,17 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         
         self.images = customtkinter.CTkLabel(master = self.main_frame,text = "")
         self.images.place(x=5,y=5)
+
+        def jump_to_image(e):
+            if self.changable_image_num.get().isdigit():
+                inserted_value = int(self.changable_image_num.get())
+                if inserted_value >= 1 and inserted_value <= int(len(self.all_images)):
+                    self.increment_of_image = inserted_value
+                    self.view_image(self.increment_of_image-1)
+            self.changable_image_num.delete("0","100")
+            self.changable_image_num.insert("0",self.increment_of_image)
+            self.root.focus_set() # unfocus    
+        self.changable_image_num.bind("<Return>",jump_to_image)
 
         # nastaveni defaultnich hodnot slideru
         self.zoom_slider.set(100)
@@ -919,7 +948,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.state = "stop"
                 self.interrupt.stop_loop()
             else:
-                self.state = ""
+                self.state = "running"
                 self.interrupt.images_loop()
         self.root.bind("<space>",pressed_space)
         self.unbind_list.append("<space>")
@@ -1154,7 +1183,10 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             """
             Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
             """
-            output = browseDirectories("all")
+            if select_by_dir.get() == 1:
+                output = browseDirectories("only_dirs")
+            else:
+                output = browseDirectories("all")
             if str(output[1]) != "/":
                 self.path_set.delete("0","200")
                 self.path_set.insert("0", output[1])
@@ -1175,18 +1207,33 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 self.main_console.configure(text=f"Zadaná cesta: {path_given} nebyla nalezena, nebude tedy uložena",text_color="red")
             elif path_checked == "/":
                 self.main_console.configure(text="Nebyla vložena žádná cesta k souborům",text_color="red")
-                
+        
+        def select_path_by_file():
+            select_by_file.select()
+            select_by_dir.deselect()
+
+        def select_path_by_dir():
+            select_by_dir.select()
+            select_by_file.deselect()
+
         row_index = 0
-        label5 = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "Nastavte základní cestu k souborům při spuštění:",justify = "left",font=("Arial",12,"bold"))
-        self.path_set = customtkinter.CTkEntry(master = self.bottom_frame_default_path,width=700,height=30,placeholder_text="")
-        button_save5 = customtkinter.CTkButton(master = self.bottom_frame_default_path,width=50,height=30, text = "Uložit", command = lambda: save_path(),font=("Arial",12,"bold"))
-        button_explorer = customtkinter.CTkButton(master = self.bottom_frame_default_path,width=100,height=30, text = "EXPLORER", command = lambda: call_browseDirectories(),font=("Arial",12,"bold"))
+        label5 =            customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "Nastavte základní cestu k souborům při spuštění:",justify = "left",font=("Arial",12,"bold"))
+        explorer_settings_label = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "Nastavení EXPLORERU: ",justify = "left",font=("Arial",12,"bold"))
+        select_by_dir =     customtkinter.CTkCheckBox(master = self.bottom_frame_default_path, text = "Vybrat cestu zvolením složky",command = lambda: select_path_by_dir())
+        select_by_file =    customtkinter.CTkCheckBox(master = self.bottom_frame_default_path, text = "Vybrat cestu zvolením souboru (jsou viditelné při vyhledávání)",command = lambda: select_path_by_file())
+        self.path_set =     customtkinter.CTkEntry(master = self.bottom_frame_default_path,width=700,height=30,placeholder_text="")
+        button_save5 =      customtkinter.CTkButton(master = self.bottom_frame_default_path,width=50,height=30, text = "Uložit", command = lambda: save_path(),font=("Arial",12,"bold"))
+        button_explorer =   customtkinter.CTkButton(master = self.bottom_frame_default_path,width=100,height=30, text = "EXPLORER", command = lambda: call_browseDirectories(),font=("Arial",12,"bold"))
         default_path_insert_console=customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=30,text ="",justify = "left",font=("Arial",12),text_color="white")
         label5.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
-        self.path_set.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
-        button_save5.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=710)
-        button_explorer.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=760)
-        default_path_insert_console.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
+        explorer_settings_label.grid(column =0,row=row_index+1,sticky = tk.W,pady =10,padx=10)
+        select_by_dir .grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=160)
+        select_by_file.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=375)
+        self.path_set .grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
+        button_save5  .grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=710)
+        button_explorer.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=760)
+        default_path_insert_console.grid(column =0,row=row_index+3,sticky = tk.W,pady =0,padx=10)
+        select_by_dir.select()
 
         def save_path_enter_btn(e):
             save_path()
@@ -2379,6 +2426,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         list_of_folder_names = text_file_data[9]
         self.nok_folder_name = list_of_folder_names[0]
         self.pairs_folder_name = list_of_folder_names[1]
+        self.sort_inside_pair_folder = True
         self.create_sorting_option_widgets()
     
     def start(self):# Ověřování cesty, init, spuštění
@@ -2447,7 +2495,8 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             self.aut_detect_num_of_pallets,
             self.nok_folder_name,
             self.pairs_folder_name,
-            self.safe_mode
+            self.safe_mode,
+            self.sort_inside_pair_folder
         )
 
         run_background = threading.Thread(target=call_trideni_main, args=(running_program,))
@@ -2470,7 +2519,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
                     if "bylo dokončeno" in new_row or "byla dokončena" in new_row:
                         #self.console.configure(text = output_text,text_color="green")
                         add_colored_line(self.console,str(new_row),"green",("Arial",15,"bold"))
-                    elif "Chyba" in new_row or "Třídění ukončeno" in new_row:
+                    elif "Chyba" in new_row or "Třídění ukončeno" in new_row or "Celkový počet duplikátů" in new_row:
                         #self.console.configure(text = output_text,text_color="red")
                         add_colored_line(self.console,str(new_row),"red",("Arial",15,"bold"))
                     elif "Nepáry" in new_row:
@@ -2693,21 +2742,31 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             else:
                 self.aut_detect_num_of_pallets = False
 
+        def set_sorting_pair_folder():
+            if sort_pair_folder.get() == 1:
+                self.sort_inside_pair_folder = True
+            else:
+                self.sort_inside_pair_folder = False
+
         label1              = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=20,text = "Nastavte počet palet v oběhu:",justify = "left",font=("Arial",12))
         pallets_set         = customtkinter.CTkEntry(master = self.frame6,width=150,height=30, placeholder_text= self.max_num_of_pallets)
         button_save1        = customtkinter.CTkButton(master = self.frame6,width=50,height=30, text = "Uložit", command = lambda: set_max_pallet_num(),font=("Arial",12,"bold"))
         label_aut_detect    = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=60,text = "Možnost aut. detekce:\n(případ, že v cestě nechybí paleta\ns nejvyšším ID)",justify = "left",font=("Arial",12))
-        checkbox_aut_detect = customtkinter.CTkCheckBox(master = self.frame6,height=30, text = "Automatická detekce",command=set_aut_detect)
+        checkbox_aut_detect = customtkinter.CTkCheckBox(master = self.frame6,width=self.width_of_frame6,height=30, text = "Automatická detekce",command=set_aut_detect)
+        sort_pair_folder    = customtkinter.CTkCheckBox(master = self.frame6,width=self.width_of_frame6,height=90, text = "Třídit uvnitř složky s páry\npodle typu souboru",command = lambda: set_sorting_pair_folder())
         console_frame6_1    = customtkinter.CTkLabel(master = self.frame6,height=30,text = " ",justify = "left",font=("Arial",12))
-        labelx              = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=90,text = "",justify = "left",font=("Arial",12))
+        #labelx              = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=90,text = "",justify = "left",font=("Arial",12))
         label1.grid(column =0,row=0,pady =0,padx=10)
         pallets_set.grid(column =0,row=1,sticky = tk.W,pady =0,padx=10)
         button_save1.grid(column =0,row=1,sticky = tk.E,pady =0,padx=10)
         console_frame6_1.grid(column =0,row=2,pady =0,padx=10)
         label_aut_detect.grid(column =0,row=3,pady =0,padx=10)
         checkbox_aut_detect.grid(column =0,row=4,pady =0,padx=10)
-        labelx.grid(column =0,row=5,pady =0,padx=10)
+        sort_pair_folder.grid(column =0,row=5,pady =0,padx=10)
+        #labelx.grid(column =0,row=5,pady =0,padx=10)
         checkbox_aut_detect.select()
+        sort_pair_folder.select()
+        self.sort_inside_pair_folder = True
 
         def max_pallets_num_enter_btn(e):
             set_max_pallet_num()
@@ -2739,15 +2798,15 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             self.name_example.configure(text = "")
         else:
             if which_one == 1:
-                type_24 = customtkinter.CTkImage(Image.open("images/24_type.png"),size=(447, 170))
+                type_24 = customtkinter.CTkImage(Image.open("images/24_type.png"),size=(224, 85))
                 self.images.configure(image =type_24)
                 self.name_example.configure(text = f"221013_092241_0000000842_21_&Cam1Img  => .Height <=  .bmp\n(Podporované formáty:{self.supported_formats_sorting})")
             if which_one == 2:
-                func_24 = customtkinter.CTkImage(Image.open("images/24_func.png"),size=(725, 170))
+                func_24 = customtkinter.CTkImage(Image.open("images/24_func.png"),size=(363, 85))
                 self.images.configure(image =func_24)
                 self.name_example.configure(text = f"221013_092241_0000000842_  => 21 <=  _&Cam1Img.Height.bmp\n(Podporované formáty:{self.supported_formats_sorting})")
             if which_one == 3:
-                cam_24 = customtkinter.CTkImage(Image.open("images/24_cam.png"),size=(874, 170))
+                cam_24 = customtkinter.CTkImage(Image.open("images/24_cam.png"),size=(437, 85))
                 self.images.configure(image =cam_24)
                 self.name_example.configure(text = f"221013_092241_0000000842_21_&  => Cam1 <=  Img.Height.bmp\n(Podporované formáty:{self.supported_formats_sorting})")
             if which_one == 4:
@@ -2755,7 +2814,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
                 self.images.configure(image =both_24)
                 self.name_example.configure(text = f"221013_092241_0000000842_  => 21 <=  _&  => Cam1 <=  Img.Height.bmp\n(Podporované formáty:{self.supported_formats_sorting})")
             if which_one == 5:
-                PAIRS = customtkinter.CTkImage(Image.open("images/25basic.png"),size=(530, 170))
+                PAIRS = customtkinter.CTkImage(Image.open("images/25basic.png"),size=(265, 85))
                 self.images.configure(image =PAIRS)
                 self.name_example.configure(
                     text = f"Nakopíruje nalezené dvojice souborů do složky s názvem PAIRS\n(např. obsluha vloží dvakrát stejnou paletu po sobě před kameru)\n2023_04_13-07_11_09_xxxx_=> 0020 <=_&Cam2Img.Height.bmp\n(funkce postupuje podle časové známky v názvu souboru, kdy byly soubory pořízeny)\n(Podporované formáty:{self.supported_formats_sorting})")

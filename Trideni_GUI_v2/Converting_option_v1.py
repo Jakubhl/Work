@@ -1,6 +1,7 @@
 import os
 import subprocess
 
+#rychlost 5 souboru z sekundu
 supported_formats = [".ifz"]
 output = []
 folder_with_bmp = "konvertovane_BMP"

@@ -4,7 +4,7 @@ bmp,png
 Podporované typy souborů u možností mazání:
 jpg,bmp,png,ifz
 Základní cesta k souborům:
-C:/Users/kubah/Desktop/JHV/test_images/Keyence/_503_Witte/
+C:/Users/kubah/Desktop/JHV/test_images/Keyence/_515_ZF/004_34164321F/CAM2/
 Základní množství ponechaných souborů:
 1000
 Základní cutoff date:
@@ -24,7 +24,7 @@ Pairs
 Název složky se soubory, které jsou určené ke smazání:
 Ke_smazani47
 Název složky pro soubory převedené do .bmp formátu:
-Konvertovane_BMP47
+Konvertovane_BMP
 Název složky pro soubory převedené do .jpg formátu:
 Konvertovane_JPG74
 Název složky pro vybrané obrázky v prohlížeči obrázků:

@@ -10,7 +10,7 @@ import time
 class whole_sorting_function:
     def __init__(self,path_given,selected_sort,more_dir,max_num_of_pallets_given,by_which_ID_number,
                 prefix_func,prefix_Cam,supported_formats,aut_detect_num_of_pallets,nok_folder_name,
-                pairs_folder_name,safe_mode):
+                pairs_folder_name,safe_mode,sort_pair_folder:bool):
         
         self.nok_folder = nok_folder_name
         self.pair_folder = pairs_folder_name
@@ -50,6 +50,7 @@ class whole_sorting_function:
         self.output = []
         self.output_list = []
         self.output_console2 = []
+        self.sort_pair_folder = sort_pair_folder
         #self.main()
 
     def make_dir(self,name):
@@ -164,7 +165,7 @@ class whole_sorting_function:
                                 if os.path.exists(self.path + folders[i] + "/" + files):
                                     shutil.move(self.path + folders[i] + "/" + files , self.path + '/' + files)
         else:
-            self.output.append("Nastavení \"nerozbalovat poslední složky\" zabránilo rozbalení obsahu těchto adresářů:")
+            self.output.append("- Nastavení \"nerozbalovat poslední složky\" zabránilo rozbalení obsahu těchto adresářů:")
             self.output.append(f"{folders}")
 
     def Get_cam_number(self,file_for_analyze):
@@ -255,7 +256,7 @@ class whole_sorting_function:
         
         return both_list    
 
-    def Get_suffix(self):
+    def Get_suffix(self,silent=None):
         files_type = ""
         num_of_dots_set = False
         #zjišťování počtu typů souborů
@@ -280,15 +281,21 @@ class whole_sorting_function:
         #if len(self.file_list) == 0:
             #self.output.append("Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &) Nebo je vložená cestak souborům ob více, jak jednu složku")
 
-        if self.files_type_arr != []: #pokud byl nalezen
-            self.output.append(f"-Nalezené typy souborů: {self.files_type_arr}")
+        if silent == None:
+            if self.files_type_arr != []: #pokud byl nalezen
+                self.output.append(f"- Nalezené typy souborů: {self.files_type_arr}")
 
         return self.files_type_arr
             
-    def Sorting_files(self,folder_list):
+    def Sorting_files(self,folder_list,silent = None):
+        """
+        vstupni data:\n
+        folder list = pole s nazvy slozek\n
+        silent = nevypisovat hlaseni do konzole
+        """
         # get id length:
         if len(self.file_list) == 0:
-            self.output.append("Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &) Nebo je vložená cestak souborům ob více, jak jednu složku")
+            self.output.append("- Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &) Nebo je vložená cestak souborům ob více, jak jednu složku")
             return False
         id_length = self.Get_func_number(self.file_list[0]) # prvni soubor bran jako referencni
         if id_length == False:
@@ -357,9 +364,9 @@ class whole_sorting_function:
         #if error_length == 1:
             #print("-Upozornění: délka názvu před \"&\" některých souborů v dané cestě se liší (možná nefunkční manuální definice zakrytých znaků)")
             
-        
-        self.output.append("- Nepáry, celkem: {}".format(nok_count))
-        self.output.append("- OK soubory zastoupené všemi formáty, celkem: {}".format(ok_count))
+        if silent == None:
+            self.output.append("- Nepáry, celkem: {}".format(nok_count))
+            self.output.append("- OK soubory zastoupené všemi formáty, celkem: {}".format(ok_count))
 
     def make_tuple(self,array1,array2):
         tuple_array = []
@@ -461,6 +468,7 @@ class whole_sorting_function:
             output_msg = self.make_tuple(list_of_pairs_clear,list_of_pair_count)
             self.output.append("- Nalezený seznam dvojic v řadě za sebou (ID, počet souborů):")
             self.output.append(f"{output_msg}")
+            self.output.append(f"- Celkový počet duplikátů: {len(list_of_pair_count)}")
 
         else:
             self.output.append("- V zadané cestě nebyly nalezeny žádné dvojice")
@@ -506,7 +514,7 @@ class whole_sorting_function:
             for functions in functions_found:
                 self.make_dir(self.prefix_func + functions)
         else:
-            self.output.append("-Chyba: Selhalo hledání ID u souborů")
+            self.output.append("- Chyba: Selhalo hledání ID u souborů")
             folders = self.sync_folders(self.path)
             self.remove_empty(folders)
             return False
@@ -528,20 +536,46 @@ class whole_sorting_function:
             ID_list = self.Get_func_list()
             if ID_list != False:
                 self.max_num_of_pallets = int(max(ID_list))
-                self.output.append(f"Maximální počet palet automaticky nastaven na: {self.max_num_of_pallets}")
+                self.output.append(f"- Maximální počet palet automaticky nastaven na: {self.max_num_of_pallets}")
             else:
-                self.output.append("-Chyba: Selhala automatická detekce maximálního počtu palet")
+                self.output.append("- Chyba: Selhala automatická detekce maximálního počtu palet")
                 return False
         self.sort_by_ID()
         folders = self.sync_folders(self.path)
         self.remove_empty(folders)
+
+    def sort_inside_pair_folder(self):
+        if self.path.endswith('/') == False:
+            newPath = self.path + "/"
+            self.path = newPath  
+        self.path = self.path + self.pair_folder + "/"
+
+        if self.sort_pair_folder == True:
+            # roztrideni uvnitr pair folderu
+            formats_found = self.Get_suffix(silent=True)
+            for formats in formats_found: # uz je deifnovano...
+                self.make_dir(formats)
+            for files in os.listdir(self.path):
+                if os.path.isdir(self.path + files) == False:
+                    for formats in self.files_type_arr:
+                        if files.split(".")[(self.num_of_dots-1)] == formats:
+                            if os.path.exists(self.path + files):
+                                shutil.move(self.path + files , self.path + formats + "/" + files)
+
+            folders = self.sync_folders(self.path)
+            self.remove_empty(folders)
+        else:
+            #vycisteni slozek z predeslych moznosti trideni uvnitr pair slozky
+            folders_to_remove = self.sync_folders(self.path)
+            for folds in folders_to_remove:
+                shutil.rmtree(self.path + folds)
 
     def main(self):
         if self.more_dirs == True:
             result = self.subfolders_check()
             if result == False:
                 self.output_console2.append("- Chyba: aplikace programovana na pruchod 3 slozek,\ntzn.: vložená cesta + \"2023_04_13/A/Height\"\nnebo: path + \"2023_04_13/A/soubory volně mimo složku\"")
-                self.output.append("Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &). Nebo je vložená cestak souborům ob více, jak jednu složku")
+                self.output.append("- Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &). Nebo je vložená cestak souborům ob více, jak jednu složku")
                 self.output.append("Třídění ukončeno")
                 self.finish = True
                 return True
@@ -616,6 +650,8 @@ class whole_sorting_function:
                             pair_search_result = self.call_pair_search()
                             if pair_search_result == False:
                                 self.error = True
+                            else:
+                                self.sort_inside_pair_folder()
                               
                         if self.error == True:
                             self.output.append("Třídění ukončeno\n")
@@ -676,7 +712,8 @@ class whole_sorting_function:
                 pair_search_result = self.call_pair_search()
                 if pair_search_result == False:
                     self.error = True
-                
+                else:
+                    self.sort_inside_pair_folder()
 
             if self.error == True:
                 if self.more_dirs == False:
