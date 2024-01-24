@@ -10,7 +10,7 @@ import time
 class whole_sorting_function:
     def __init__(self,path_given,selected_sort,more_dir,max_num_of_pallets_given,by_which_ID_number,
                 prefix_func,prefix_Cam,supported_formats,aut_detect_num_of_pallets,nok_folder_name,
-                pairs_folder_name,safe_mode,sort_pair_folder:bool):
+                pairs_folder_name,safe_mode,sort_pair_folder:bool,only_one_subfolder:bool):
         
         self.nok_folder = nok_folder_name
         self.pair_folder = pairs_folder_name
@@ -36,6 +36,7 @@ class whole_sorting_function:
         self.both_arr = []
         self.files_type_arr = []
         self.file_list = []
+        self.only_one_subfolder = only_one_subfolder
         self.printed_ref0 = False
         self.printed_ref1 = False
         self.printed_ref2 = False
@@ -84,19 +85,23 @@ class whole_sorting_function:
         if removed_count != 0:
             print("-Přebytečné složky odstraněny\n")
 
-    def present_suported_formats(self,path):
+    def present_supported_formats(self,path):
+        """
+        Overeni, zda dana cesta obsahuje podporovane soubory
+        """
         count = 0
         num_of_dots_set = False
         for files in os.listdir(path):
-            if num_of_dots_set == False: #automaticke urceni poctu tecek v souboru
-                for formats in self.supported_formats:
-                    if ("." + formats) in files:
-                        self.num_of_dots = (len(files.split(".")) -1)
-                        num_of_dots_set = True
-            if num_of_dots_set == True:
-                if len(files.split(".")) == self.num_of_dots+1: #tri bloky rozdelene teckou x.x.bmp/png
-                    if files.split(".")[self.num_of_dots] in self.supported_formats:
-                        count+=1
+            if os.path.isdir(files) == False:
+                if num_of_dots_set == False: #automaticke urceni poctu tecek v souboru
+                    for formats in self.supported_formats:
+                        if ("." + formats) in files:
+                            self.num_of_dots = (len(files.split(".")) -1)
+                            num_of_dots_set = True
+                if num_of_dots_set == True:
+                    if len(files.split(".")) == self.num_of_dots+1: #tri bloky rozdelene teckou x.x.bmp/png
+                        if files.split(".")[self.num_of_dots] in self.supported_formats:
+                            count+=1
         if count ==0:
             return False
         else:
@@ -106,24 +111,53 @@ class whole_sorting_function:
         #STAGE1///////////////////////////////////////////////////
         folders = self.sync_folders(self.path)
         path_list_not_found  = []
+        paths_to_folders_with_files = []
         for folds in folders:
-            if self.present_suported_formats(self.path + folds + "/") == False:
+            if self.present_supported_formats(self.path + folds + "/") == False:
                 path_list_not_found.append(self.path + folds + "/")
+            
+            elif self.only_one_subfolder == True and self.safe_mode == True:
+                if os.path.isdir(self.path + folds + "/"):
+                    if not self.path + folds + "/" in paths_to_folders_with_files:
+                        paths_to_folders_with_files.append(self.path + folds + "/")
+
+        if self.only_one_subfolder == True and self.safe_mode == True:      
+            if len(paths_to_folders_with_files) !=0:
+                return paths_to_folders_with_files
+            else:
+                return False       
         #print("st1",path_list_not_found)
         #STAGE2///////////////////////////////////////////////////
         path_list_not_found_st2  = []
-        paths_to_folders_with_files = []
         if len(path_list_not_found) != 0:
             for paths in path_list_not_found:
                 folders = self.sync_folders(paths)
                 for folds in folders:
-                    if self.present_suported_formats(paths + folds + "/") == False:
+                    if self.present_supported_formats(paths + folds + "/") == False:
                         path_list_not_found_st2.append(paths + folds + "/")
-                    else:
+                    
+                    elif self.only_one_subfolder == True and self.safe_mode == False:
+                        if os.path.isdir(paths):
+                            if not paths in paths_to_folders_with_files:
+                                paths_to_folders_with_files.append(paths)
+                        
+                    elif self.only_one_subfolder == False and self.safe_mode == True:
                         if os.path.isdir(paths + folds + "/"):
                             if not paths + folds + "/" in paths_to_folders_with_files:
-                                paths_to_folders_with_files.append(paths + folds + "/") 
+                                paths_to_folders_with_files.append(paths + folds + "/")
 
+            if self.only_one_subfolder == True and self.safe_mode == False:
+                if len(paths_to_folders_with_files) !=0:
+                    return paths_to_folders_with_files
+                else:
+                    return False
+                
+            elif self.only_one_subfolder == False and self.safe_mode == True:
+                if len(paths_to_folders_with_files) !=0:
+                    return paths_to_folders_with_files
+                else:
+                    return False
+            # False False stav pokracuje dale...
         #print("st2",path_list_not_found_st2)
         #print("with files ",paths_to_folders_with_files)
                     
@@ -133,7 +167,7 @@ class whole_sorting_function:
             for paths in path_list_not_found_st2:
                 folders = self.sync_folders(paths)                                                               
                 for folds in folders:
-                    if self.present_suported_formats(paths + folds + "/") == False:
+                    if self.present_supported_formats(paths + folds + "/") == False:
                         path_list_not_found_st3.append(paths + folds + "/")
                     else:
                         # cesty bez folders, protoze uz muzou byt height/normal/temp...
@@ -295,7 +329,7 @@ class whole_sorting_function:
         """
         # get id length:
         if len(self.file_list) == 0:
-            self.output.append("- Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &) Nebo je vložená cestak souborům ob více, jak jednu složku")
+            self.output.append("- Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &) Nebo je špatně nastavená cesta k souborům")
             return False
         id_length = self.Get_func_number(self.file_list[0]) # prvni soubor bran jako referencni
         if id_length == False:
@@ -574,11 +608,13 @@ class whole_sorting_function:
         if self.more_dirs == True:
             result = self.subfolders_check()
             if result == False:
-                self.output_console2.append("- Chyba: aplikace programovana na pruchod 3 slozek,\ntzn.: vložená cesta + \"2023_04_13/A/Height\"\nnebo: path + \"2023_04_13/A/soubory volně mimo složku\"")
-                self.output.append("- Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &). Nebo je vložená cestak souborům ob více, jak jednu složku")
+                #self.output_console2.append("- Chyba: aplikace programovana na pruchod 3 slozek,\ntzn.: vložená cesta + \"2023_04_13/A/Height\"\nnebo: path + \"2023_04_13/A/soubory volně mimo složku\"")
+                self.output_console2.append("- Chyba: aplikace programována na průchod 1 nebo 2 subsložek")
+                self.output.append("- Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &). Nebo je špatně nastavená cesta k souborům")
                 self.output.append("Třídění ukončeno")
-                self.finish = True
-                return True
+                self.output_list.append(self.output)
+                #self.finish = True
+                #return True
             else:
                 self.output_console2.append("- Prochazím tyto cesty:\n")
                 for items in result:
@@ -728,7 +764,6 @@ class whole_sorting_function:
             self.output_list.append(self.output)
 
         time.sleep(0.1)
-        
         self.finish = True
         return True
         

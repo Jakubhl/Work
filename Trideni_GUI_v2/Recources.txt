@@ -1,10 +1,10 @@
-!!!Pro správnou funkci programu prosím dodržujte nastavenou syntaxi. Spíše požijte aplikaci - menu, pokrocile možnosti.!!!
+!!!Pro správnou funkci programu prosím dodržujte nastavenou syntaxi. Spíše použijte aplikaci - menu, pokrocile možnosti.!!!
 Podporované typy souborů u možností třídění:
 bmp,png
 Podporované typy souborů u možností mazání:
 jpg,bmp,png,ifz
 Základní cesta k souborům:
-C:/Users/kubah/Desktop/JHV/test_images/Keyence/_515_ZF/004_34164321F/CAM2/
+C:/Users/kubah/Desktop/JHV/test_images/Keyence/_503_Witte/datumovka/A/Height/
 Základní množství ponechaných souborů:
 1000
 Základní cutoff date:
@@ -22,11 +22,11 @@ Temp
 Název složky pro nalezené dvojice:
 Pairs
 Název složky se soubory, které jsou určené ke smazání:
-Ke_smazani47
+Ke_smazani
 Název složky pro soubory převedené do .bmp formátu:
 Konvertovane_BMP
 Název složky pro soubory převedené do .jpg formátu:
-Konvertovane_JPG74
+Konvertovane_JPG
 Název složky pro vybrané obrázky v prohlížeči obrázků:
 Vybrane_obrazky
 Bezpečný mód při procházení subsložek:

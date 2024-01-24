@@ -31,7 +31,7 @@ def path_check(path_raw):
 application_path = path_check(application_path)
 application_path = application_path + "IfzToBitmap.exe"
 
-
+#only_view_image:bool,ifz_image_name:str
 
 def whole_converting_function(path_given,output_img_format,folder_with_bmp_name,folder_with_jpg_name):
     """
@@ -75,14 +75,25 @@ def whole_converting_function(path_given,output_img_format,folder_with_bmp_name,
                 make_dir(folder_with_jpg,path_given)
                 command = command + " /o:" + path_given + folder_with_jpg + " /f:jpg"
             
-            output.append(f"Bylo konvertováno: {converted_files} souborů do formátu: {which_format}")
-            output.append("Konvertování bylo dokončeno\n")
+            output.append(f"- Bylo konvertováno: {converted_files} souborů do formátu: {which_format}")
+            output.append("- Konvertování bylo dokončeno\n")
             return command
         else:
-            output.append("Vložená cesta neobsahuje žádné soubory typu .ifz")
+            output.append("- Vložená cesta neobsahuje žádné soubory typu .ifz")
             return False
 
-        
+    def convert_to_ram_memory():
+        command = ""
+        #command = str(application_path) + " byrtobmp " + path_given+ifz_image_name + " "
+
+        if output_img_format == "bmp":
+            make_dir(folder_with_bmp,path_given)
+            command = command + " /o:" + path_given + folder_with_bmp
+
+        if output_img_format == "jpg":
+            make_dir(folder_with_jpg,path_given)
+            command = command + " /o:" + path_given + folder_with_jpg + " /f:jpg"
+
     def main():
         #output.append(f"\nProbíhá konvertování souborů v cestě: {path_given}\n\n")
         found_files = get_files_to_convert()

@@ -324,7 +324,7 @@ def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do 
         print("Chybí konfigurační soubor Recources.txt")
         return "Chybí konfigurační soubor Recources.txt"
 
-def browseDirectories(visible_files): # Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
+def browseDirectories(visible_files,start_path=None): # Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
     """
     Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
 
@@ -336,11 +336,22 @@ def browseDirectories(visible_files): # Funkce spouští průzkumníka systému 
 
     0: výstupní chybová hlášení
     1: opravená cesta
+    2: nazev vybraneho souboru (option: all)
     """
     corrected_path = ""
     output= ""
+    name_of_selected_file = ""
     text_file_data = read_text_file_data()
-    start_path = str(text_file_data[2]) #defaultni cesta
+    if start_path == None:
+        start_path = str(text_file_data[2]) #defaultni cesta
+    else: # byla zadana docasna cesta pro explorer
+        checked_path = path_check(start_path)
+        if checked_path == False:
+            output = "Změněná dočasná základní cesta pro explorer již neexistuje"
+            start_path = str(text_file_data[2]) #defaultni cesta
+        else:
+            start_path = checked_path
+
     if start_path != False:
         if not os.path.exists(start_path):
             start_path = ""
@@ -366,6 +377,8 @@ def browseDirectories(visible_files): # Funkce spouští průzkumníka systému 
                             path_to_directory = path_to_directory + parts
                         else:
                             path_to_directory = path_to_directory +"/"+ parts
+                    else:
+                        name_of_selected_file = parts
             else:
                 output = "Přes explorer nebyla vložena žádná cesta"
         else:           
@@ -382,6 +395,8 @@ def browseDirectories(visible_files): # Funkce spouští průzkumníka systému 
                             path_to_directory = path_to_directory + parts
                         else:
                             path_to_directory = path_to_directory +"/"+ parts
+                    else:
+                        name_of_selected_file = parts
             else:
                 output = "Přes explorer nebyla vložena žádná cesta"
 
@@ -399,7 +414,7 @@ def browseDirectories(visible_files): # Funkce spouští průzkumníka systému 
     check = path_check(path_to_directory)
     corrected_path = check
     
-    return [output,corrected_path]
+    return [output,corrected_path,name_of_selected_file]
 
 def add_colored_line(text_widget, text, color,font=None):
     """
@@ -516,6 +531,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         
         self.previous_image_dimensions = 0,0
         self.previous_zoom = 1
+        self.selected_image = ""
+        self.path_for_exlorer = None
         self.create_widgets()
         self.interrupt = self.interrupt_viewing(self)
         
@@ -569,18 +586,46 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             else:
                 self.console.configure(text = "Nebyla vložena cesta k souborům",text_color="red")
 
+        if os.path.isdir(path) == False: # pokud se nejedna o slozku - je mozne, ze je vlozeny nazev souboru pro zobrazeni, jako prvni
+            if os.path.exists(path):
+                if path.endswith("/"):
+                    path = path[0:len(path)-1]
+                path_splitted = path.split("/")
+                self.selected_image = path_splitted[len(path_splitted)-1]
+                new_path = ""
+                i = 0
+                for frags in path_splitted:
+                    i += 1
+                    if i < len(path_splitted):
+                        new_path = new_path + frags + "/"
+                path = new_path
+            else:
+                path_found = False
+                self.console.configure(text = "Zadaná cesta: "+str(path)+" neobsahuje žádné obrázky",text_color="red")
         #automaticky okamzite otevre prvni z obrazku v dane ceste
         if path_found == True:
             if os.path.exists(path):
+                self.path_for_exlorer = path
                 self.all_images = self.get_images(path)
                 if len(self.all_images) != 0:
                     self.image_browser_path = path
-                    self.view_image(0) #zobrazit hned prvni obrazek po vlozene ceste
-                    self.increment_of_image = 0
-                    self.current_image_num.configure(text ="/" + str(len(self.all_images)))
-                    self.changable_image_num.delete("0","100")
-                    self.changable_image_num.insert("0", str(self.increment_of_image+1))
                     self.console.configure(text = f"Vložena cesta: {path}",text_color="green")
+
+                    if self.selected_image == "": 
+                        self.view_image(0) #zobrazit hned prvni obrazek po vlozene ceste
+                        self.increment_of_image = 0
+                        self.current_image_num.configure(text ="/" + str(len(self.all_images)))
+                        self.changable_image_num.delete("0","100")
+                        self.changable_image_num.insert("0", str(self.increment_of_image+1))
+                        
+                    else:
+                        image_location = self.all_images.index(path+self.selected_image)
+                        self.view_image(image_location) #zobrazit obrazek vybrany v exploreru
+                        self.increment_of_image = image_location
+                        self.current_image_num.configure(text ="/" + str(len(self.all_images)))
+                        self.changable_image_num.delete("0","100")
+                        self.changable_image_num.insert("0", str(self.increment_of_image+1))
+
                 else:
                     self.console.configure(text = "- V zadané cestě nebyly nalezeny obrázky",text_color="red")
             else:
@@ -590,12 +635,16 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         """
         Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
-        output = browseDirectories("all")
+        if self.path_for_exlorer != None:
+            output = browseDirectories("all",self.path_for_exlorer)
+        else:
+            output = browseDirectories("all")
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])
             self.console.configure(text=f"Byla vložena cesta: {output[1]}",text_color="white")
-            self.start(output[1]) 
+            self.selected_image = output[2]
+            self.start(output[1])
 
     def get_frame_dimensions(self): # Vrací aktuální rozměry rámečku
         """
@@ -647,15 +696,19 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         current_h_scrollbar = self.horizontal_scrollbar.get()
         current_v_scrollbar = self.vertical_scrollbar.get()
 
+        
         # uprava scrollbaru pri zoomovani
         if zoom > self.previous_zoom: # zda priblizujeme nebo oddalujeme
-            new_slider_start = current_h_scrollbar[0]-((scrollbar_length_x+current_h_scrollbar[0])-current_h_scrollbar[1])
-            self.horizontal_scrollbar.set(new_slider_start,current_h_scrollbar[1]) # nastaveni scrollbaru podle zoomu
-            self.images.place_configure(relx=-(new_slider_start*(self.zoom_slider.get()/100)))
+            new_slider_start = current_h_scrollbar[1]+((scrollbar_length_x-current_h_scrollbar[1]))
+            self.horizontal_scrollbar.set(current_h_scrollbar[0],new_slider_start) # nastaveni scrollbaru podle zoomu  
+            print(current_h_scrollbar[0])
+            #self.images.place_configure(relx=-(current_h_scrollbar[0]*(self.zoom_slider.get()/100)))
+            self.images.place_configure(relx=-(current_h_scrollbar[0]*(self.zoom_slider.get()/100)))
             
-            new_slider_start = current_v_scrollbar[0]-((scrollbar_length_y+current_v_scrollbar[0])-current_v_scrollbar[1])
-            self.vertical_scrollbar.set(new_slider_start,current_v_scrollbar[1]) # nastaveni scrollbaru podle zoomu
-            self.images.place_configure(rely=-(new_slider_start*(self.zoom_slider.get()/100)))
+            new_slider_start = current_v_scrollbar[1]+((scrollbar_length_y-current_v_scrollbar[1]))
+            self.vertical_scrollbar.set(current_v_scrollbar[0],new_slider_start) # nastaveni scrollbaru podle zoomu
+            #self.images.place_configure(rely=-(current_v_scrollbar[0]*(self.zoom_slider.get()/100)))
+            self.images.place_configure(relx=-(current_h_scrollbar[0]*(self.zoom_slider.get()/100)))
 
         elif zoom < self.previous_zoom:
             if (scrollbar_length_x+current_h_scrollbar[0]) <= 1.0:
@@ -663,6 +716,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             else:
                 new_slider_start = current_h_scrollbar[0]-((scrollbar_length_x+current_h_scrollbar[0])-1)
                 self.horizontal_scrollbar.set(new_slider_start,1.0) # nastaveni scrollbaru podle zoomu
+                #self.horizontal_scrollbar.set(0.0,new_slider_start) # nastaveni scrollbaru podle zoomu
+                
                 self.images.place_configure(relx=-(new_slider_start*(self.zoom_slider.get()/100))) # posun obrazku podle scrollbaru
 
             if (scrollbar_length_y+current_v_scrollbar[0]) <= 1.0:
@@ -672,6 +727,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 # kdyz uz scrollbar dosahuje az dolu, musime uz hybat s obrazkem a zvetsovat scrollbar smerem nahoru podle toho, o kolik byl posunut
                 new_slider_start = current_v_scrollbar[0]-((scrollbar_length_y+current_v_scrollbar[0])-1)
                 self.vertical_scrollbar.set(new_slider_start,1.0) # nastaveni scrollbaru podle zoomu
+                #self.vertical_scrollbar.set(0.0,new_slider_start) # nastaveni scrollbaru podle zoomu
+                
                 self.images.place_configure(rely=-(new_slider_start*(self.zoom_slider.get()/100))) # posun obrazku podle scrollbaru
 
         self.previous_zoom = zoom
@@ -987,7 +1044,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.root.bind("<r>",pressed_rotate)
         self.unbind_list.append("<r>")
 
-        def mouse_wheel(e):
+        #Funkce kolecka mysi: priblizovat nebo posouvat vpred/ vzad
+        def mouse_wheel1(e): # priblizovat
             direction = -e.delta
             if direction < 0:
                 #direction = "in"
@@ -1006,9 +1064,71 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 else:
                     self.zoom_slider.set(self.zoom_slider._from_) # pro pripad, ze by zbyvalo vice nez 5 do minima  
 
+            mouse_x, mouse_y = self.main_frame.winfo_pointerxy()
+            mouse_y-=180
+            x = self.images.winfo_width()
+            y = self.images.winfo_height()
+            x =  x - x*(self.zoom_slider.get()/100)
+            y =  y - y*(self.zoom_slider.get()/100)
+            print(x,y)
+            def get_direction():
+                option = ""
+                if abs(max(x/2,mouse_x)-min(x/2,mouse_x)) > abs(max(y/2,mouse_y)-min(y/2,mouse_y)):
+                    option = "horizontal"
+                else:
+                    option = "vertical"
+                #if option == "horizontal":
+                if mouse_x > 200+x/2:
+                    #right
+                    print("right")
+                    current_horizontal_value = self.horizontal_scrollbar.get()
+                    if (current_horizontal_value[0] - 0.1) > 0.00:
+                        args_tuple_h = (0,current_horizontal_value[0]-0.1)
+                        self.on_horizontal_scroll(*args_tuple_h)
+                        self.horizontal_scrollbar.set(current_horizontal_value[0]-0.1,current_horizontal_value[1]-0.1)      
+                elif mouse_x < 200+x/2:
+                    #left
+                    print("left")
+                    current_horizontal_value = self.horizontal_scrollbar.get()
+                    if (current_horizontal_value[1] + 0.1) < 1.00:
+                        args_tuple_h = (0,current_horizontal_value[0]+0.1)
+                        self.on_horizontal_scroll(*args_tuple_h)
+                        self.horizontal_scrollbar.set(current_horizontal_value[0]+0.1,current_horizontal_value[1]+0.1)
+
+                #if option == "vertical":
+                if mouse_y > 200+y/2:
+                    #down
+                    print("down")
+                    current_vertical_value = self.vertical_scrollbar.get()
+                    if (current_vertical_value[0] - 0.1) > 0.00:
+                        args_tuple_v = (0,current_vertical_value[0]-0.1)
+                        self.on_vertical_scroll(*args_tuple_v)
+                        self.vertical_scrollbar.set(current_vertical_value[0]-0.1,current_vertical_value[1]-0.1)
+                elif mouse_y < 200+y/2:
+                    #up
+                    print("up")
+                    current_vertical_value = self.vertical_scrollbar.get()
+                    if (current_vertical_value[1] + 0.1) < 1.00:
+                        args_tuple_v = (0,current_vertical_value[0]+0.1)
+                        self.on_vertical_scroll(*args_tuple_v)
+                        self.vertical_scrollbar.set(current_vertical_value[0]+0.1,current_vertical_value[1]+0.1)
+                return
+
+            get_direction()
             if len(self.all_images) != 0: # update zobrazeni
                 self.view_image(self.increment_of_image)      
-        self.root.bind("<MouseWheel>",mouse_wheel)
+        
+        def mouse_wheel2(e): # posouvat obrazky
+            direction = -e.delta
+            if direction < 0:
+                #direction = "forward"
+                self.next_image()
+            else:
+                self.previous_image()
+
+        self.images.bind("<MouseWheel>",mouse_wheel1)
+        self.main_frame.bind("<MouseWheel>",mouse_wheel2)
+        self.frame_with_path.bind("<MouseWheel>",mouse_wheel2)
         self.unbind_list.append("<MouseWheel>")
         
         self.released = False
@@ -1834,7 +1954,10 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
 
                     if confirm == True:
                         #self.console.configure(text = "Provádím navolené možnosti mazání v cestě: " + str(path),text_color="white")
-                        add_colored_line(self.console,"Provádím navolené možnosti mazání v cestě: " + str(path) + "\n","white")
+                        add_colored_line(self.console,"- Provádím navolené možnosti mazání v cestě: " + str(path) + "\n","orange")
+
+                        add_colored_line(self.console,"- Sloníku neboj, PRACUJU! :-) !" + "\n","#E75480",("Arial",30,"bold"))
+
                         self.console.update_idletasks()
                         self.root.update_idletasks()
                         self.del_files(path)
@@ -2451,7 +2574,10 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
                 else:
                     path = check
                     #self.console.configure(text ="Provádím nastavenou možnost třídění v cestě: "+str(path),text_color="white")
-                    add_colored_line(self.console,"Provádím nastavenou možnost třídění v cestě: "+str(path)+"\n","white")
+                    add_colored_line(self.console,"- Provádím nastavenou možnost třídění v cestě: "+str(path)+"\n","orange")
+
+                    add_colored_line(self.console,"- Sloníku neboj, PRACUJU! :-) !" + "\n","#E75480",("Arial",30,"bold"))
+
                     self.console.update_idletasks()
                     self.root.update_idletasks()
                     self.sort_files(path)
@@ -2461,6 +2587,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
 
     def sort_files(self,path): # Volání externího scriptu
         selected_sort = 0
+        only_one_subfolder = False
         if self.checkbox.get() == 1:
             selected_sort = 1
         if self.checkbox2.get() == 1:
@@ -2475,6 +2602,10 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             self.more_dirs = True
         else:
             self.more_dirs = False
+            if self.one_subfolder.get() == 1:
+                self.more_dirs = True
+                only_one_subfolder = True
+
         if self.checkbox_safe_mode.get() == 1:
             self.safe_mode = "ne"
         else:
@@ -2496,7 +2627,8 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             self.nok_folder_name,
             self.pairs_folder_name,
             self.safe_mode,
-            self.sort_inside_pair_folder
+            self.sort_inside_pair_folder,
+            only_one_subfolder
         )
 
         run_background = threading.Thread(target=call_trideni_main, args=(running_program,))
@@ -2512,15 +2644,10 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             time.sleep(0.05)
             if len(running_program.output_list) > output_list_increment:
                 for i in range(0,len(running_program.output_list[output_list_increment])):
-                    #if len(running_program.output_list[output_list_increment][i]) > 170: # kdyz by se vypis nevesel na obrazovku
-                        #running_program.output_list[output_list_increment][i] = split_text_to_rows(running_program.output_list[output_list_increment][i],170)
-                    #output_text = output_text + running_program.output_list[output_list_increment][i]
                     new_row = str(running_program.output_list[output_list_increment][i])
                     if "bylo dokončeno" in new_row or "byla dokončena" in new_row:
-                        #self.console.configure(text = output_text,text_color="green")
                         add_colored_line(self.console,str(new_row),"green",("Arial",15,"bold"))
                     elif "Chyba" in new_row or "Třídění ukončeno" in new_row or "Celkový počet duplikátů" in new_row:
-                        #self.console.configure(text = output_text,text_color="red")
                         add_colored_line(self.console,str(new_row),"red",("Arial",15,"bold"))
                     elif "Nepáry" in new_row:
                         add_colored_line(self.console,str(new_row),"orange",("Arial",15,"bold"))
@@ -2547,6 +2674,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             if running_program.finish and len(running_program.output_list) == output_list_increment and running_program.output_console2 == previous_console2_text:
                 completed = True
         
+        self.console.update_idletasks()
         run_background.join()
 
     def clear_frame(self,frame): # mazání widgets v daném framu
@@ -2772,22 +2900,54 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             set_max_pallet_num()
         pallets_set.bind("<Return>",max_pallets_num_enter_btn)
 
-    def selected6(self): # checkbox na přepínání: procházet/ neprocházet subsložky
-        if self.checkbox6.get() == 1:
-            dirs_more = customtkinter.CTkImage(Image.open("images/more_dirs.png"),size=(553, 111))
-            self.images2.configure(image =dirs_more)
+    def one_subfolder_checked(self): # checkbox na přepínání: procházet/ neprocházet 1 subsložku
+        self.checkbox6.deselect()
+        if self.one_subfolder.get() == 1:
             if self.checkbox_safe_mode.get()==1:
-                self.console2.configure(text = "Zadaná cesta/ 1.složka/ 2.složka/ složky se soubory",font=("Arial",14,"bold"),text_color="white")
+                dir1sub = customtkinter.CTkImage(Image.open("images/1sub_roz.png"),size=(522, 173))
+                self.images2.configure(image =dir1sub)
+                self.console2.configure(text = "Zadaná cesta/ 1.složka/ složky se soubory",font=("Arial",14,"bold"),text_color="white")
             else:
-                self.console2.configure(text = "Zadaná cesta/ 1.složka/ 2.složka/ soubory volně, neroztříděné",font=("Arial",14,"bold"),text_color="white")
+                nodir1sub = customtkinter.CTkImage(Image.open("images/1sub_vol.png"),size=(513, 142))
+                self.images2.configure(image =nodir1sub)
+                self.console2.configure(text = "Zadaná cesta/ 1.složka/ soubory volně, neroztříděné",font=("Arial",14,"bold"),text_color="white")
         else:
-            dirs_one = customtkinter.CTkImage(Image.open("images/dirs_ba.png"),size=(432, 133))
-            self.images2.configure(image =dirs_one)
             if self.checkbox_safe_mode.get()==1:
+                dirsnosub = customtkinter.CTkImage(Image.open("images/nosub_roz.png"),size=(432, 133))
+                self.images2.configure(image =dirsnosub)
                 self.console2.configure(text = "Zadaná cesta/ složky se soubory",font=("Arial",14,"bold"),text_color="white")
             else:
+                nodirsnosub = customtkinter.CTkImage(Image.open("images/nosub_vol.png"),size=(253, 142))
+                self.images2.configure(image =nodirsnosub)
                 self.console2.configure(text = "Zadaná cesta/ soubory volně, neroztříděné",font=("Arial",14,"bold"),text_color="white")
-
+    
+    def two_subfolders_checked(self): # checkbox na přepínání: procházet/ neprocházet 2 subsložky
+        self.one_subfolder.deselect()
+        if self.checkbox6.get() == 1:
+            if self.checkbox_safe_mode.get()==1:
+                dir2sub = customtkinter.CTkImage(Image.open("images/2sub_roz.png"),size=(553, 111))
+                self.images2.configure(image =dir2sub)
+                self.console2.configure(text = "Zadaná cesta/ 1.složka/ 2.složka/ složky se soubory",font=("Arial",14,"bold"),text_color="white")
+            else:
+                nodir2sub = customtkinter.CTkImage(Image.open("images/2sub_vol.png"),size=(553, 111))
+                self.images2.configure(image =nodir2sub)
+                self.console2.configure(text = "Zadaná cesta/ 1.složka/ 2.složka/ soubory volně, neroztříděné",font=("Arial",14,"bold"),text_color="white")
+        else:
+            if self.checkbox_safe_mode.get()==1:
+                dirsnosub = customtkinter.CTkImage(Image.open("images/nosub_roz.png"),size=(432, 133))
+                self.images2.configure(image =dirsnosub)
+                self.console2.configure(text = "Zadaná cesta/ složky se soubory",font=("Arial",14,"bold"),text_color="white")
+            else:
+                nodirsnosub = customtkinter.CTkImage(Image.open("images/nosub_vol.png"),size=(253, 142))
+                self.images2.configure(image =nodirsnosub)
+                self.console2.configure(text = "Zadaná cesta/ soubory volně, neroztříděné",font=("Arial",14,"bold"),text_color="white")
+    
+    def safe_mode_checked(self):
+        if self.one_subfolder.get() == 1:
+            self.one_subfolder_checked()
+        else:
+            self.two_subfolders_checked()
+    
     def view_image(self,which_one): # zobrazení ilustračního obrázku
         """
         zobrazení ilustračního obrázku
@@ -2839,7 +2999,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         """
         Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
-        if self.checkbox6.get() == 1: # pokud je zvoleno more_dirs v exploreru pouze slozky...
+        if self.checkbox6.get() == 1 or self.one_subfolder.get() == 1: # pokud je zvoleno more_dirs v exploreru pouze slozky...
             output = browseDirectories("only_dirs")
         else:
             output = browseDirectories("all")
@@ -2890,12 +3050,14 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.checkbox4.pack(pady =12,padx=10,anchor ="w")
         self.checkbox5.pack(pady =12,padx=10,anchor ="w")
 
-        self.checkbox6   = customtkinter.CTkCheckBox(master = self.frame4, text = "Projít subsložky?",command = self.selected6)
-        self.checkbox_safe_mode = customtkinter.CTkCheckBox(master = self.frame4, text = "Rozbalit poslední složky?",command = self.selected6)
+        self.one_subfolder = customtkinter.CTkCheckBox(master = self.frame4, text = "Projít 1 subsložku?",command = self.one_subfolder_checked)
+        self.checkbox6   = customtkinter.CTkCheckBox(master = self.frame4, text = "Projít 2 subsložky?",command = self.two_subfolders_checked)
+        self.checkbox_safe_mode = customtkinter.CTkCheckBox(master = self.frame4, text = "Rozbalit poslední složky?",command = self.safe_mode_checked)
         self.images2     = customtkinter.CTkLabel(master = self.frame4,text = "")
         self.console2    = customtkinter.CTkLabel(master = self.frame4,text = " ",font=("Arial",12))
         self.console2.pack(pady =5,padx=10,side=tk.BOTTOM)
         self.images2.pack(side=tk.BOTTOM)
+        self.one_subfolder.pack(pady =10,padx=10,anchor="w",side=tk.LEFT)
         self.checkbox6.pack(pady =10,padx=10,anchor="w",side=tk.LEFT)
         self.checkbox_safe_mode.pack(pady =10,padx=10,anchor="w",side=tk.LEFT)
         self.checkbox_safe_mode.select()
@@ -2915,7 +3077,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.checkbox.select()
         self.selected()
         self.view_image(1)
-        self.selected6()
+        self.two_subfolders_checked()
         #predvyplneni cesty pokud je platna v configu
         read_file_data = read_text_file_data()
         recources_path = read_file_data[2]
