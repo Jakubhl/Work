@@ -16,7 +16,7 @@ root=customtkinter.CTk()
 root.geometry("1200x900")
 root.wm_iconbitmap('images/JHV.ico')
 #root.title("Zpracování souborů z průmyslových kamer")
-root.title("TRIMAZKON v_3.0")
+root.title("TRIMAZKON v_3.2")
 #logo_set = False
 
 def split_text_to_rows(long_string:str,max_chars_on_row:int):
@@ -330,7 +330,8 @@ def browseDirectories(visible_files,start_path=None): # Funkce spouští průzku
 
     Vstupní data:
 
-    0: visible_files = "all" / "only_dirs"
+    0: visible_files = "all" / "only_dirs"\n
+    1: start_path = None -optimalni, docasne se ulozi posledni nastavena cesta v exploreru
 
     Výstupní data:
 
@@ -404,16 +405,15 @@ def browseDirectories(visible_files,start_path=None): # Funkce spouští průzku
     if visible_files == "only_dirs":
         if(start_path != ""):
             path_to_directory = filedialog.askdirectory(initialdir = start_path, title = "Vyberte adresář")
-            if path_to_directory == None:
+            if path_to_directory == None or path_to_directory == "":
                 output = "Přes explorer nebyla vložena žádná cesta"
         else:
             path_to_directory = filedialog.askdirectory(initialdir = "/", title = "Vyberte adresář")
-            if path_to_directory == None:
+            if path_to_directory == None or path_to_directory == "":
                 output = "Přes explorer nebyla vložena žádná cesta"
 
     check = path_check(path_to_directory)
     corrected_path = check
-    
     return [output,corrected_path,name_of_selected_file]
 
 def add_colored_line(text_widget, text, color,font=None):
@@ -532,7 +532,12 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.previous_image_dimensions = 0,0
         self.previous_zoom = 1
         self.selected_image = ""
-        self.path_for_exlorer = None
+        self.path_for_explorer = None
+        self.temp_bmp_folder = "temp_bmp"
+        self.ifz_located = None
+        self.converted_images = []
+        self.increment_of_ifz_image = 0
+        self.default_path = ""
         self.create_widgets()
         self.interrupt = self.interrupt_viewing(self)
         
@@ -553,6 +558,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         for keys in self.unbind_list:
             self.root.unbind(keys)
         
+        if os.path.exists(self.default_path + self.temp_bmp_folder):
+            shutil.rmtree(self.default_path + self.temp_bmp_folder) # vycistit
         #self.path_set.unbind("<Return>")
         menu()
     
@@ -565,8 +572,29 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             files_split = files.split(".")
             if ("."+files_split[len(files_split)-1]) in self.image_extensions:
                 list_of_files_to_view.append(path + files)
+                self.ifz_located = None
 
+            elif ("."+files_split[len(files_split)-1]) == ".ifz":
+                if self.ifz_located == None:
+                    self.ifz_located = True
+                list_of_files_to_view.append(path + files)
+                
         return list_of_files_to_view
+
+    def convert_files(self):
+        name_of_file = self.all_images[self.increment_of_image].split("/")
+        name_of_file = name_of_file[len(name_of_file)-1]
+
+        if os.path.exists(self.default_path + self.temp_bmp_folder):
+            shutil.rmtree(self.default_path + self.temp_bmp_folder) # vycistit
+            os.mkdir(self.default_path + self.temp_bmp_folder)
+        else:
+            os.mkdir(self.default_path + self.temp_bmp_folder)
+        Converting.whole_converting_function(self.default_path,"bmp",self.temp_bmp_folder,None,True,name_of_file)
+        self.converted_images = []
+        for files in os.listdir(self.default_path + self.temp_bmp_folder):
+            if (self.default_path + self.temp_bmp_folder + "/" + files) not in self.converted_images:
+                self.converted_images.append(self.default_path + self.temp_bmp_folder + "/" + files)
 
     def start(self,path): # Ověřování cesty, init, spuštění
         """
@@ -605,26 +633,41 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         #automaticky okamzite otevre prvni z obrazku v dane ceste
         if path_found == True:
             if os.path.exists(path):
-                self.path_for_exlorer = path
+                self.path_for_explorer = path
                 self.all_images = self.get_images(path)
                 if len(self.all_images) != 0:
                     self.image_browser_path = path
                     self.console.configure(text = f"Vložena cesta: {path}",text_color="green")
 
-                    if self.selected_image == "": 
-                        self.view_image(0) #zobrazit hned prvni obrazek po vlozene ceste
-                        self.increment_of_image = 0
+                    if self.ifz_located == None:
+                        if self.selected_image == "": 
+                            #zobrazit hned prvni obrazek po vlozene ceste
+                            self.increment_of_image = 0
+                        else:
+                            #zobrazit obrazek vybrany v exploreru
+                            self.increment_of_image = self.all_images.index(path+self.selected_image)
+
+                        self.view_image(self.increment_of_image)
                         self.current_image_num.configure(text ="/" + str(len(self.all_images)))
                         self.changable_image_num.delete("0","100")
                         self.changable_image_num.insert("0", str(self.increment_of_image+1))
+                    else: # Nejprve prevest do bmp formatu
+                        if self.selected_image == "": 
+                            #zobrazit hned prvni obrazek po vlozene ceste
+                            self.increment_of_image = 0
+                        else:
+                            #zobrazit obrazek vybrany v exploreru
+                            self.increment_of_image = self.all_images.index(path+self.selected_image)
                         
-                    else:
-                        image_location = self.all_images.index(path+self.selected_image)
-                        self.view_image(image_location) #zobrazit obrazek vybrany v exploreru
-                        self.increment_of_image = image_location
+                        self.default_path = path
+                        self.convert_files()
+                        self.view_image(None,self.converted_images[self.increment_of_ifz_image])
                         self.current_image_num.configure(text ="/" + str(len(self.all_images)))
                         self.changable_image_num.delete("0","100")
                         self.changable_image_num.insert("0", str(self.increment_of_image+1))
+                        self.current_image_num_ifz.configure(text ="/" + str(len(self.converted_images)))
+                        self.changable_image_num_ifz.delete("0","100")
+                        self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
 
                 else:
                     self.console.configure(text = "- V zadané cestě nebyly nalezeny obrázky",text_color="red")
@@ -635,8 +678,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         """
         Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
-        if self.path_for_exlorer != None:
-            output = browseDirectories("all",self.path_for_exlorer)
+        if self.path_for_explorer != None:
+            output = browseDirectories("all",self.path_for_explorer)
         else:
             output = browseDirectories("all")
         if str(output[1]) != "/":
@@ -644,6 +687,11 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             self.path_set.insert("0", output[1])
             self.console.configure(text=f"Byla vložena cesta: {output[1]}",text_color="white")
             self.selected_image = output[2]
+            
+            if os.path.exists(self.default_path + self.temp_bmp_folder):
+                shutil.rmtree(self.default_path + self.temp_bmp_folder) # vycistit
+            self.converted_images = []
+            self.increment_of_ifz_image = 0
             self.start(output[1])
 
     def get_frame_dimensions(self): # Vrací aktuální rozměry rámečku
@@ -701,7 +749,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         if zoom > self.previous_zoom: # zda priblizujeme nebo oddalujeme
             new_slider_start = current_h_scrollbar[1]+((scrollbar_length_x-current_h_scrollbar[1]))
             self.horizontal_scrollbar.set(current_h_scrollbar[0],new_slider_start) # nastaveni scrollbaru podle zoomu  
-            print(current_h_scrollbar[0])
             #self.images.place_configure(relx=-(current_h_scrollbar[0]*(self.zoom_slider.get()/100)))
             self.images.place_configure(relx=-(current_h_scrollbar[0]*(self.zoom_slider.get()/100)))
             
@@ -735,7 +782,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         #print(f"New Dimensions: {new_width} x {new_height}")
         return [new_width, new_height]
 
-    def view_image(self,increment_of_image): # Samotné zobrazení obrázku
+    def view_image(self,increment_of_image,direct_path = None): # Samotné zobrazení obrázku
         """
         Samotné zobrazení obrázku
 
@@ -743,7 +790,10 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         -přepočítávání rotace
         """
         if len(self.all_images) != 0:
-            image_to_show = self.all_images[increment_of_image]
+            if direct_path == None:
+                image_to_show = self.all_images[increment_of_image]
+            else:
+                image_to_show = direct_path
             with Image.open(image_to_show) as current_image:
                 current_image = current_image.rotate(self.rotation_angle,expand=True)
                 width,height = current_image.size
@@ -766,13 +816,38 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             else:
                 self.increment_of_image = 0
             
-            self.view_image(self.increment_of_image)
+            if self.ifz_located == None:
+                self.view_image(self.increment_of_image)
+            else:
+                self.convert_files()
+                self.view_image(None,self.converted_images[self.increment_of_ifz_image])
+            
             if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
                 self.current_image_num.configure(text ="/" + str(len(self.all_images)))
                 self.changable_image_num.delete("0","100")
                 self.changable_image_num.insert("0", str(self.increment_of_image+1))
                 self.console.configure(text = str(self.all_images[self.increment_of_image]),text_color="white")
-    
+
+                self.current_image_num_ifz.configure(text ="/" + str(len(self.converted_images)))
+                self.changable_image_num_ifz.delete("0","100")
+                self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
+            
+
+    def next_ifz_image(self): # Další ifz obrázek v pořadí
+        number_of_found_images = len(self.converted_images)
+        if number_of_found_images != 0:
+            if self.increment_of_ifz_image < number_of_found_images -1:
+                self.increment_of_ifz_image += 1
+            else:
+                self.increment_of_ifz_image = 0
+            
+            self.view_image(None,self.converted_images[self.increment_of_ifz_image])
+            if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
+                self.current_image_num_ifz.configure(text ="/" + str(len(self.converted_images)))
+                self.changable_image_num_ifz.delete("0","100")
+                self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
+                self.console.configure(text = str(self.converted_images[self.increment_of_ifz_image]),text_color="white")
+
     def previous_image(self): # Předchozí obrázek v pořadí (šipka vlevo)
         """
         Předchozí obrázek v pořadí (šipka vlevo)
@@ -783,11 +858,35 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.increment_of_image -= 1
             else:
                 self.increment_of_image = number_of_found_images -1
-            self.view_image(self.increment_of_image)
+            
+            if self.ifz_located == None:
+                self.view_image(self.increment_of_image)
+            else:
+                self.convert_files()
+                self.view_image(None,self.converted_images[self.increment_of_ifz_image])
             self.current_image_num.configure(text = "/" + str(len(self.all_images)))
             self.changable_image_num.delete("0","100")
             self.changable_image_num.insert("0", str(self.increment_of_image+1))
             self.console.configure(text = str(self.all_images[self.increment_of_image]),text_color="white")
+
+            self.current_image_num_ifz.configure(text ="/" + str(len(self.converted_images)))
+            self.changable_image_num_ifz.delete("0","100")
+            self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
+
+    def previous_ifz_image(self): # předešlý ifz obrázek v pořadí
+        number_of_found_images = len(self.converted_images)
+        if number_of_found_images != 0:
+            if self.increment_of_ifz_image > 0:
+                self.increment_of_ifz_image -= 1
+            else:
+                self.increment_of_ifz_image = number_of_found_images -1     
+            
+            self.view_image(None,self.converted_images[self.increment_of_ifz_image])
+            if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
+                self.current_image_num_ifz.configure(text ="/" + str(len(self.converted_images)))
+                self.changable_image_num_ifz.delete("0","100")
+                self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
+                self.console.configure(text = str(self.converted_images[self.increment_of_ifz_image]),text_color="white")
 
     class interrupt_viewing: # Pro možnosti vykonávání subprocessu na pozadí
         """
@@ -922,17 +1021,25 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.changable_image_num.insert("0",0)
         self.current_image_num = customtkinter.CTkLabel(master = self.frame_with_path,text = "/0",justify = "left",font=("Arial",16,"bold"))
         button_next  = customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = ">", command = self.next_image,font=("Arial",16,"bold"))
-        button_play  = customtkinter.CTkButton(master = self.frame_with_path, width = 100,height=30,text = "SPUSTIT", command = self.call_image_loop,font=("Arial",16,"bold"))
-        button_stop  = customtkinter.CTkButton(master = self.frame_with_path, width = 100,height=30,text = "STOP", command = self.stop,font=("Arial",16,"bold"))
-        button_save  = customtkinter.CTkButton(master = self.frame_with_path, width = 100,height=30,text = "ULOŽIT", command = lambda: self.copy_image(self.image_browser_path),font=("Arial",16,"bold"))
-        rotate_button = customtkinter.CTkButton(master = self.frame_with_path, width = 100,height=30,text = "OTOČIT", command =  lambda: self.rotate_image(),font=("Arial",16,"bold"))
+        button_play  = customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "SPUSTIT", command = self.call_image_loop,font=("Arial",16,"bold"))
+        button_stop  = customtkinter.CTkButton(master = self.frame_with_path, width = 60,height=30,text = "STOP", command = self.stop,font=("Arial",16,"bold"))
+        button_save  = customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "ULOŽIT", command = lambda: self.copy_image(self.image_browser_path),font=("Arial",16,"bold"))
+        rotate_button = customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "OTOČIT", command =  lambda: self.rotate_image(),font=("Arial",16,"bold"))
         speed_label  = customtkinter.CTkLabel(master = self.frame_with_path,text = "Rychlost:",justify = "left",font=("Arial",12))
         self.speed_slider = customtkinter.CTkSlider(master = self.frame_with_path,width=120,from_=1,to=100,command= self.update_speed_slider)
         self.percent1 = customtkinter.CTkLabel(master = self.frame_with_path,text = "%",justify = "left",font=("Arial",12))
         zoom_label   = customtkinter.CTkLabel(master = self.frame_with_path,text = "ZOOM:",justify = "left",font=("Arial",12))
         self.zoom_slider = customtkinter.CTkSlider(master = self.frame_with_path,width=120,from_=100,to=500,command= self.update_zoom_slider)
         self.percent2 = customtkinter.CTkLabel(master = self.frame_with_path,text = "%",justify = "left",font=("Arial",12))
-        reset_button = customtkinter.CTkButton(master = self.frame_with_path, width = 100,height=30,text = "RESET", command = self.Reset_all,font=("Arial",16,"bold"))
+        reset_button = customtkinter.CTkButton(master = self.frame_with_path, width = 70,height=30,text = "RESET", command = self.Reset_all,font=("Arial",16,"bold"))
+        # prepinani ifz image:
+        ifz_label =         customtkinter.CTkLabel(master = self.frame_with_path,text = "IFZ:",justify = "left",font=("Arial",12))
+        button_back_ifz  =  customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = "<", command = self.previous_ifz_image,font=("Arial",16,"bold"))
+        self.changable_image_num_ifz = customtkinter.CTkEntry(master = self.frame_with_path,width=20,justify = "left",font=("Arial",16,"bold"))
+        self.changable_image_num_ifz.delete("0","100")
+        self.changable_image_num_ifz.insert("0",1)
+        self.current_image_num_ifz = customtkinter.CTkLabel(master = self.frame_with_path,text = "/0",justify = "left",font=("Arial",16,"bold"))
+        button_next_ifz  =  customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = ">", command = self.next_ifz_image,font=("Arial",16,"bold"))
 
         menu_button.grid(column = 0,row=0,pady = 5,padx =0,sticky = tk.W)
         self.path_set.grid(column = 0,row=0,pady = 5,padx =160,sticky = tk.W)
@@ -944,16 +1051,22 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.current_image_num.grid(column = 0,row=2,pady = 5,padx =85,sticky = tk.W)
         button_next.grid(column = 0,row=2,pady = 5,padx =130,sticky = tk.W)
         button_play.grid(column = 0,row=2,pady = 5,padx =160,sticky = tk.W)
-        button_stop.grid(column = 0,row=2,pady = 5,padx =265,sticky = tk.W)
-        button_save.grid(column = 0,row=2,pady = 5,padx =370,sticky = tk.W)
-        rotate_button.grid(column = 0,row=2,pady = 5,padx =475,sticky = tk.W)
-        speed_label.grid(column = 0,row=2,pady = 5,padx =580,sticky = tk.W)
-        self.speed_slider.grid(column = 0,row=2,pady = 5,padx =630,sticky = tk.W)
-        self.percent1.grid(column = 0,row=2,pady = 5,padx =755,sticky = tk.W)
-        zoom_label.grid(column = 0,row=2,pady = 5,padx =800,sticky = tk.W)
-        self.zoom_slider.grid(column = 0,row=2,pady = 5,padx =840,sticky = tk.W)
-        self.percent2.grid(column = 0,row=2,pady = 5,padx =960,sticky = tk.W)
-        reset_button.grid(column = 0,row=2,pady = 5,padx =1005,sticky = tk.W)
+        button_stop.grid(column = 0,row=2,pady = 5,padx =247,sticky = tk.W)
+        button_save.grid(column = 0,row=2,pady = 5,padx =310,sticky = tk.W)
+        rotate_button.grid(column = 0,row=2,pady = 5,padx =395,sticky = tk.W)
+        speed_label.grid(column = 0,row=2,pady = 5,padx =480,sticky = tk.W)
+        self.speed_slider.grid(column = 0,row=2,pady = 5,padx =530,sticky = tk.W)
+        self.percent1.grid(column = 0,row=2,pady = 5,padx =655,sticky = tk.W)
+        zoom_label.grid(column = 0,row=2,pady = 5,padx =700,sticky = tk.W)
+        self.zoom_slider.grid(column = 0,row=2,pady = 5,padx =740,sticky = tk.W)
+        self.percent2.grid(column = 0,row=2,pady = 5,padx =860,sticky = tk.W)
+        reset_button.grid(column = 0,row=2,pady = 5,padx =900,sticky = tk.W)
+        # prepinani ifz:
+        ifz_label.grid(column = 0,row=2,pady = 5,padx =975,sticky = tk.W)
+        button_back_ifz.grid(column = 0,row=2,pady = 5,padx =1000,sticky = tk.W)
+        self.changable_image_num_ifz.grid(column = 0,row=2,pady = 5,padx =1030,sticky = tk.W)
+        self.current_image_num_ifz.grid(column = 0,row=2,pady = 5,padx =1055,sticky = tk.W)
+        button_next_ifz.grid(column = 0,row=2,pady = 5,padx =1075,sticky = tk.W)
         
         self.images = customtkinter.CTkLabel(master = self.main_frame,text = "")
         self.images.place(x=5,y=5)
@@ -1070,15 +1183,14 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             y = self.images.winfo_height()
             x =  x - x*(self.zoom_slider.get()/100)
             y =  y - y*(self.zoom_slider.get()/100)
-            print(x,y)
             def get_direction():
-                option = ""
+                """option = ""
                 if abs(max(x/2,mouse_x)-min(x/2,mouse_x)) > abs(max(y/2,mouse_y)-min(y/2,mouse_y)):
                     option = "horizontal"
                 else:
-                    option = "vertical"
+                    option = "vertical"""
                 #if option == "horizontal":
-                if mouse_x > 200+x/2:
+                if mouse_x > x/2:
                     #right
                     print("right")
                     current_horizontal_value = self.horizontal_scrollbar.get()
@@ -1086,7 +1198,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                         args_tuple_h = (0,current_horizontal_value[0]-0.1)
                         self.on_horizontal_scroll(*args_tuple_h)
                         self.horizontal_scrollbar.set(current_horizontal_value[0]-0.1,current_horizontal_value[1]-0.1)      
-                elif mouse_x < 200+x/2:
+                elif mouse_x < x/2:
                     #left
                     print("left")
                     current_horizontal_value = self.horizontal_scrollbar.get()
@@ -1096,7 +1208,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                         self.horizontal_scrollbar.set(current_horizontal_value[0]+0.1,current_horizontal_value[1]+0.1)
 
                 #if option == "vertical":
-                if mouse_y > 200+y/2:
+                if mouse_y > y/2:
                     #down
                     print("down")
                     current_vertical_value = self.vertical_scrollbar.get()
@@ -1104,7 +1216,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                         args_tuple_v = (0,current_vertical_value[0]-0.1)
                         self.on_vertical_scroll(*args_tuple_v)
                         self.vertical_scrollbar.set(current_vertical_value[0]-0.1,current_vertical_value[1]-0.1)
-                elif mouse_y < 200+y/2:
+                elif mouse_y < y/2:
                     #up
                     print("up")
                     current_vertical_value = self.vertical_scrollbar.get()
@@ -1741,6 +1853,7 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         list_of_folder_names = text_file_data[9]
         self.bmp_folder_name = list_of_folder_names[3]
         self.jpg_folder_name = list_of_folder_names[4]
+        self.temp_path_for_explorer = None
         self.create_convert_option_widgets()
     
     def call_menu(self): # Tlačítko menu (konec, návrat do menu)
@@ -1806,12 +1919,17 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         """
         Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
-        output = browseDirectories("all")
+        if self.temp_path_for_explorer == None:
+            output = browseDirectories("all")
+        else:
+            output = browseDirectories("all",self.temp_path_for_explorer)
+
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])
             #self.console.configure(text=f"Byla vložena cesta: {output[1]}",text_color="green")
             add_colored_line(self.console,f"Byla vložena cesta: {output[1]}","green")
+            self.temp_path_for_explorer = output[1]
         else:
             #self.console.configure(text = str(output[0]),text_color="red")
             add_colored_line(self.console,str(output[0]),"red")
@@ -1851,7 +1969,7 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         self.path_set.pack(pady = 12,padx =0,anchor ="w",side="left",fill="both",expand=True)
         tree.pack(pady = 12,padx =10,anchor ="w",side="left")
 
-        self.label   = customtkinter.CTkLabel(master = self.bottom_frame2,text = f"Konvertované soubory budou vytvořeny uvnitř separátní složky: \"{self.bmp_folder_name}\"\nPodporované formáty: .ifz\nObsahuje-li .ifz soubor více obrázků, budou uloženy v následující syntaxi:\nxxx_0.bmp, xxx_1.bmp ...\nPro správnou funkci programu nesmí cesta obsahovat složky s mezerou v názvu",justify = "left",font=("Arial",16,"bold"))
+        self.label   = customtkinter.CTkLabel(master = self.bottom_frame2,text = f"Konvertované soubory budou vytvořeny uvnitř separátní složky: \"{self.bmp_folder_name}\"\nPodporované formáty: .ifz\nObsahuje-li .ifz soubor více obrázků, budou uloženy v následující syntaxi:\nxxx_0.bmp, xxx_1.bmp ...",justify = "left",font=("Arial",16,"bold"))
         button  = customtkinter.CTkButton(master = self.bottom_frame2, text = "KONVERTOVAT", command = self.start,font=("Arial",20,"bold"))
         #self.console = customtkinter.CTkLabel(master = self.bottom_frame2,text = "",justify = "left",font=("Arial",15))
         self.console = tk.Text(self.bottom_frame2, wrap="word", height=20, width=1200,background="black",font=("Arial",15),state=tk.DISABLED)
@@ -1905,6 +2023,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         self.to_delete_folder_name = list_of_folder_names[2]
         self.console_frame_right_1_text = "","white"
         self.console_frame_right_2_text = "","white"
+        self.temp_path_for_explorer = None
 
         self.create_deleting_option_widgets()
  
@@ -2035,14 +2154,15 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
         if self.checkbox6.get() == 1: # pokud je zvoleno more_dirs v exploreru pouze slozky...
-            output = browseDirectories("only_dirs")
+            output = browseDirectories("only_dirs",self.temp_path_for_explorer)
         else:
-            output = browseDirectories("all")
+            output = browseDirectories("all",self.temp_path_for_explorer)
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])
             #self.console.configure(text=f"Byla vložena cesta: {output[1]}",text_color="green")
             add_colored_line(self.console,f"Byla vložena cesta: {output[1]}","green")
+            self.temp_path_for_explorer = output[1]
         else:
             #self.console.configure(text = str(output[0]),text_color="red")
             add_colored_line(self.console,str(output[0]),"red")
@@ -2550,6 +2670,8 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.nok_folder_name = list_of_folder_names[0]
         self.pairs_folder_name = list_of_folder_names[1]
         self.sort_inside_pair_folder = True
+        self.temp_path_for_explorer = None
+
         self.create_sorting_option_widgets()
     
     def start(self):# Ověřování cesty, init, spuštění
@@ -3000,14 +3122,16 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
         if self.checkbox6.get() == 1 or self.one_subfolder.get() == 1: # pokud je zvoleno more_dirs v exploreru pouze slozky...
-            output = browseDirectories("only_dirs")
+            output = browseDirectories("only_dirs",self.temp_path_for_explorer)
         else:
-            output = browseDirectories("all")
+            output = browseDirectories("all",self.temp_path_for_explorer)
+
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])
             #self.console.configure(text=f"Byla vložena cesta: {output[1]}",text_color="green")
             add_colored_line(self.console,f"Byla vložena cesta: {output[1]}","green")
+            self.temp_path_for_explorer = output[1]
         else:
             #self.console.configure(text = str(output[0]),text_color="red")
             add_colored_line(self.console,str(output[0]),"red")

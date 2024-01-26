@@ -4,7 +4,7 @@ bmp,png
 Podporované typy souborů u možností mazání:
 jpg,bmp,png,ifz
 Základní cesta k souborům:
-C:/Users/kubah/Desktop/JHV/test_images/Keyence/_503_Witte/datumovka/A/Height/
+C:/Users/kubah/Documents/OMRON FZ/USBDisk/Line_0/Image/2023_09_19/OK/
 Základní množství ponechaných souborů:
 1000
 Základní cutoff date:

@@ -29,11 +29,11 @@ def path_check(path_raw):
         return path
 
 application_path = path_check(application_path)
-application_path = application_path + "IfzToBitmap.exe"
+application_path = "\"" + application_path + "IfzToBitmap.exe" + "\""
 
 #only_view_image:bool,ifz_image_name:str
 
-def whole_converting_function(path_given,output_img_format,folder_with_bmp_name,folder_with_jpg_name):
+def whole_converting_function(path_given,output_img_format,folder_with_bmp_name,folder_with_jpg_name,view_in_browser=None,selected_file = None):
     """
     Funkce pro konvertování souborů
 
@@ -49,11 +49,12 @@ def whole_converting_function(path_given,output_img_format,folder_with_bmp_name,
         for files in os.listdir(path_given):
             if supported_formats[0] in files:
                 if not files in files_to_convert:
-                    files_to_convert.append(path_given+files)
+                    #files_to_convert.append(path_given+files)
+                    files_to_convert.append(files)
 
         return files_to_convert
     
-    def form_console_command(files_to_convert,which_format):
+    def form_console_command(files_to_convert,which_format,silent=None):
         command = ""
         converted_files = 0
         if len(files_to_convert) != 0:
@@ -69,41 +70,40 @@ def whole_converting_function(path_given,output_img_format,folder_with_bmp_name,
 
             if which_format == "bmp":
                 make_dir(folder_with_bmp,path_given)
-                command = command + " /o:" + path_given + folder_with_bmp
+                # cesta v uvozovkach kvuli vykonani v cmd
+                command = command + " /o:" + "\""  + path_given + folder_with_bmp + "\""
 
             if which_format == "jpg":
                 make_dir(folder_with_jpg,path_given)
-                command = command + " /o:" + path_given + folder_with_jpg + " /f:jpg"
+                command = command + " /o:" + "\"" + path_given + folder_with_jpg+ "\"" + " /f:jpg"
             
-            output.append(f"- Bylo konvertováno: {converted_files} souborů do formátu: {which_format}")
-            output.append("- Konvertování bylo dokončeno\n")
+            if silent == None:
+                output.append(f"- Bylo konvertováno: {converted_files} souborů do formátu: {which_format}")
+                output.append("- Konvertování bylo dokončeno\n")
             return command
         else:
-            output.append("- Vložená cesta neobsahuje žádné soubory typu .ifz")
+            if silent == None:
+                output.append("- Vložená cesta neobsahuje žádné soubory typu .ifz")
             return False
-
-    def convert_to_ram_memory():
-        command = ""
-        #command = str(application_path) + " byrtobmp " + path_given+ifz_image_name + " "
-
-        if output_img_format == "bmp":
-            make_dir(folder_with_bmp,path_given)
-            command = command + " /o:" + path_given + folder_with_bmp
-
-        if output_img_format == "jpg":
-            make_dir(folder_with_jpg,path_given)
-            command = command + " /o:" + path_given + folder_with_jpg + " /f:jpg"
 
     def main():
         #output.append(f"\nProbíhá konvertování souborů v cestě: {path_given}\n\n")
-        found_files = get_files_to_convert()
-        if output_img_format == "jpg":
-            cmd_command = form_console_command(found_files,"jpg")
-        if output_img_format == "bmp":
-            cmd_command = form_console_command(found_files,"bmp")
-        
-        if cmd_command != False:
-            subprocess.run(cmd_command) #spusteni cmd prompt
+        if view_in_browser == True:
+            found_files = []
+            found_files.append(selected_file)
+            cmd_command = form_console_command(found_files,"bmp",True)
+            
+            if cmd_command != False:
+                subprocess.run(cmd_command, cwd=path_given) #spusteni cmd prompt
+        else:
+            found_files = get_files_to_convert()
+            if output_img_format == "jpg":
+                cmd_command = form_console_command(found_files,"jpg")
+            if output_img_format == "bmp":
+                cmd_command = form_console_command(found_files,"bmp")
+            
+            if cmd_command != False:
+                subprocess.run(cmd_command, cwd=path_given) #spusteni cmd prompt
 
     main()
     return output
