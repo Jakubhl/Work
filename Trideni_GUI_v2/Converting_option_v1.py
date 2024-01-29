@@ -80,6 +80,10 @@ def whole_converting_function(path_given,output_img_format,folder_with_bmp_name,
             if silent == None:
                 output.append(f"- Bylo konvertováno: {converted_files} souborů do formátu: {which_format}")
                 output.append("- Konvertování bylo dokončeno\n")
+            
+            if view_in_browser == True:
+                command += " /h" #nezobrazovat nacitani
+
             return command
         else:
             if silent == None:
