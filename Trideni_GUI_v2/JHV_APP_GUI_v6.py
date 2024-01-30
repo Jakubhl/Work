@@ -140,16 +140,16 @@ def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
 
         # cteme nekolik nazvu slozek:
         static_dirs_names = []
-        for i in range(20,32,2):
+        for i in range(20,34,2):
             Lines[i] = Lines[i].replace("\n","")
             Lines[i] = Lines[i].replace("\"","")
             Lines[i] = Lines[i].replace("/","")
             static_dirs_names.append(Lines[i])
             
         #bezpecny mod?
-        Lines[32] = Lines[32].replace("\n","")
-        if str(Lines[32]) != "":
-            safe_mode = Lines[32]
+        Lines[34] = Lines[34].replace("\n","")
+        if str(Lines[34]) != "":
+            safe_mode = Lines[34]
         else:
             safe_mode = "ano"
 
@@ -287,7 +287,7 @@ def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do 
             input_data_splitted = str(input_data).split(" | ")
             input_data = input_data_splitted[0]
             increment = int(input_data_splitted[1])
-            lines_with_names = [20,22,24,26,28,30]
+            lines_with_names = [20,22,24,26,28,30,32]
             increment = lines_with_names[increment]
             
             lines[increment] = lines[increment].replace("\n","")
@@ -297,7 +297,7 @@ def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do 
             lines[increment] = str(input_data).replace(" ","")+"\n"
         
         elif which_parameter == "sorting_safe_mode":
-            lines[32] = str(input_data) + "\n"
+            lines[34] = str(input_data) + "\n"
 
         #navraceni poli zpet do stringu radku:
         lines[2] = ""
@@ -522,6 +522,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         text_file_data = read_text_file_data()
         list_of_dir_names = text_file_data[9]
         self.copy_dir = list_of_dir_names[5]
+        self.move_dir = list_of_dir_names[6]
         #self.copy_dir = "Vybrané_obrázky"
         self.image_browser_path = ""
         self.unbind_list = []
@@ -818,7 +819,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.images.image = displayed_image
                 self.images.update_idletasks()
 
-    def next_image(self): # Další obrázek v pořadí (šipka vpravo)
+    def next_image(self,silent=False): # Další obrázek v pořadí (šipka vpravo)
         """
         Další obrázek v pořadí (šipka vpravo)
         """
@@ -839,7 +840,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.current_image_num.configure(text ="/" + str(len(self.all_images)))
                 self.changable_image_num.delete("0","100")
                 self.changable_image_num.insert("0", str(self.increment_of_image+1))
-                self.console.configure(text = str(self.all_images[self.increment_of_image]),text_color="white")
+                if silent == False:
+                    self.console.configure(text = str(self.all_images[self.increment_of_image]),text_color="white")
 
                 self.current_image_num_ifz.configure(text ="/" + str(len(self.converted_images)))
                 self.changable_image_num_ifz.delete("0","100")
@@ -953,11 +955,11 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             else:
                 self.view_image(self.increment_of_image)
 
-    def copy_image(self,path): # Tlačítko ULOŽIT, zkopíruje daný obrázek do složky v dané cestě
+    def copy_image(self,path): # Tlačítko Kopír., zkopíruje daný obrázek do složky v dané cestě
         """
-        Tlačítko ULOŽIT, zkopíruje daný obrázek do složky v dané cestě
+        Tlačítko Kopír., zkopíruje daný obrázek do složky v dané cestě
 
-        -název složky přednastaven na Vybrané_obrázky
+        -název složky přednastaven na Kopírované_obrázky
         -vlastnosti obrázku nijak nemění
         """
         image_path = self.all_images[self.increment_of_image]
@@ -969,6 +971,35 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             self.console.configure(text = f"Obrázek zkopírován do zvláštní složky: \"{self.copy_dir}\".  ({image})",text_color="white")
         else:
             self.console.configure(text = f"Obrázek je již zkopírovaný uvnitř složky: {self.copy_dir}.  ({image})",text_color="red")
+
+    def move_image(self): # Tlačítko Přesun., přesune daný obrázek do složky v dané cestě
+        """
+        Tlačítko Přesun., přesune daný obrázek do složky v dané cestě
+
+        -název složky přednastaven na Přesunuté_obrázky
+        """
+        image_path = self.all_images[self.increment_of_image]
+        image = str(image_path).replace(self.image_browser_path,"")
+        if not os.path.exists(self.image_browser_path + "/" + self.move_dir):
+            os.mkdir(self.image_browser_path+ "/" + self.move_dir)
+        if not os.path.exists(self.image_browser_path + "/" + self.move_dir+ "/" + image):
+            shutil.move(self.image_browser_path+ "/" + image,self.image_browser_path + "/" + self.move_dir+ "/" + image)
+            self.console.configure(text = f"Obrázek přesunut do zvláštní složky: \"{self.move_dir}\".  ({image})",text_color="white")
+            self.all_images.pop(self.increment_of_image) # odstraneni z pole
+            self.current_image_num.configure(text ="/" + str(len(self.all_images))) # update maximalniho poctu obrazku
+            self.increment_of_image -=1
+            self.next_image(True)
+
+    def delete_image(self): # Tlačítko SMAZAT
+        image_path = self.all_images[self.increment_of_image]
+        image = str(image_path).replace(self.image_browser_path,"")
+        if os.path.exists(image_path):
+            self.console.configure(text = f"Právě byl smazán obrázek: {image}",text_color="orange")
+            os.remove(image_path)
+            self.all_images.pop(self.increment_of_image) # odstraneni z pole
+            self.current_image_num.configure(text ="/" + str(len(self.all_images))) # update maximalniho poctu obrazku
+            self.increment_of_image -=1
+            self.next_image(True)
 
     def rotate_image(self):
         angles = [90.0,180.0,270.0,0.0]
@@ -1043,9 +1074,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.changable_image_num.insert("0",0)
         self.current_image_num = customtkinter.CTkLabel(master = self.frame_with_path,text = "/0",justify = "left",font=("Arial",16,"bold"))
         button_next  = customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = ">", command = self.next_image,font=("Arial",16,"bold"))
-        button_play  = customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "SPUSTIT", command = self.call_image_loop,font=("Arial",16,"bold"))
+        button_play  = customtkinter.CTkButton(master = self.frame_with_path, width = 90,height=30,text = "SPUSTIT", command = self.call_image_loop,font=("Arial",16,"bold"))
         button_stop  = customtkinter.CTkButton(master = self.frame_with_path, width = 60,height=30,text = "STOP", command = self.stop,font=("Arial",16,"bold"))
-        button_save  = customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "ULOŽIT", command = lambda: self.copy_image(self.image_browser_path),font=("Arial",16,"bold"))
+        button_copy  = customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "Kopír.", command = lambda: self.copy_image(self.image_browser_path),font=("Arial",16,"bold"))
         rotate_button = customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "OTOČIT", command =  lambda: self.rotate_image(),font=("Arial",16,"bold"))
         speed_label  = customtkinter.CTkLabel(master = self.frame_with_path,text = "Rychlost:",justify = "left",font=("Arial",12))
         self.speed_slider = customtkinter.CTkSlider(master = self.frame_with_path,width=120,from_=1,to=100,command= self.update_speed_slider)
@@ -1053,7 +1084,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         zoom_label   = customtkinter.CTkLabel(master = self.frame_with_path,text = "ZOOM:",justify = "left",font=("Arial",12))
         self.zoom_slider = customtkinter.CTkSlider(master = self.frame_with_path,width=120,from_=100,to=500,command= self.update_zoom_slider)
         self.percent2 = customtkinter.CTkLabel(master = self.frame_with_path,text = "%",justify = "left",font=("Arial",12))
-        reset_button = customtkinter.CTkButton(master = self.frame_with_path, width = 70,height=30,text = "RESET", command = self.Reset_all,font=("Arial",16,"bold"))
+        reset_button = customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "RESET", command = self.Reset_all,font=("Arial",16,"bold"))
         # prepinani ifz image:
         ifz_label =         customtkinter.CTkLabel(master = self.frame_with_path,text = "IFZ:",justify = "left",font=("Arial",12))
         button_back_ifz  =  customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = "<", command = self.previous_ifz_image,font=("Arial",16,"bold"))
@@ -1063,6 +1094,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.current_image_num_ifz = customtkinter.CTkLabel(master = self.frame_with_path,text = "/0",justify = "left",font=("Arial",16,"bold"))
         button_next_ifz  =  customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = ">", command = self.next_ifz_image,font=("Arial",16,"bold"))
 
+        button_move = customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "Přesun.", command =  lambda: self.move_image(),font=("Arial",16,"bold"))
+        button_delete = customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "SMAZAT", command =  lambda: self.delete_image(),font=("Arial",16,"bold"))
+
         menu_button.grid(column = 0,row=0,pady = 5,padx =0,sticky = tk.W)
         self.path_set.grid(column = 0,row=0,pady = 5,padx =160,sticky = tk.W)
         manual_path.grid(column = 0,row=0,pady = 5,padx =850,sticky = tk.W)
@@ -1071,24 +1105,28 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         button_back.grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
         self.changable_image_num.grid(column = 0,row=2,pady = 5,padx =40,sticky = tk.W)
         self.current_image_num.grid(column = 0,row=2,pady = 5,padx =85,sticky = tk.W)
-        button_next.grid(column = 0,row=2,pady = 5,padx =130,sticky = tk.W)
-        button_play.grid(column = 0,row=2,pady = 5,padx =160,sticky = tk.W)
-        button_stop.grid(column = 0,row=2,pady = 5,padx =247,sticky = tk.W)
-        button_save.grid(column = 0,row=2,pady = 5,padx =310,sticky = tk.W)
-        rotate_button.grid(column = 0,row=2,pady = 5,padx =395,sticky = tk.W)
-        speed_label.grid(column = 0,row=2,pady = 5,padx =480,sticky = tk.W)
-        self.speed_slider.grid(column = 0,row=2,pady = 5,padx =530,sticky = tk.W)
-        self.percent1.grid(column = 0,row=2,pady = 5,padx =655,sticky = tk.W)
-        zoom_label.grid(column = 0,row=2,pady = 5,padx =700,sticky = tk.W)
-        self.zoom_slider.grid(column = 0,row=2,pady = 5,padx =740,sticky = tk.W)
-        self.percent2.grid(column = 0,row=2,pady = 5,padx =860,sticky = tk.W)
-        reset_button.grid(column = 0,row=2,pady = 5,padx =900,sticky = tk.W)
+        button_next.grid(column = 0,row=2,pady = 5,padx =130,sticky = tk.W)#30
         # prepinani ifz:
-        ifz_label.grid(column = 0,row=2,pady = 5,padx =975,sticky = tk.W)
-        button_back_ifz.grid(column = 0,row=2,pady = 5,padx =1000,sticky = tk.W)
-        self.changable_image_num_ifz.grid(column = 0,row=2,pady = 5,padx =1030,sticky = tk.W)
-        self.current_image_num_ifz.grid(column = 0,row=2,pady = 5,padx =1055,sticky = tk.W)
-        button_next_ifz.grid(column = 0,row=2,pady = 5,padx =1075,sticky = tk.W)
+        ifz_label.grid(column = 0,row=2,pady = 5,padx =160,sticky = tk.W)#25
+        button_back_ifz.grid(column = 0,row=2,pady = 5,padx =185,sticky = tk.W)#30
+        self.changable_image_num_ifz.grid(column = 0,row=2,pady = 5,padx =215,sticky = tk.W)#25
+        self.current_image_num_ifz.grid(column = 0,row=2,pady = 5,padx =240,sticky = tk.W)#20
+        button_next_ifz.grid(column = 0,row=2,pady = 5,padx =260,sticky = tk.W)#30
+        #sliders
+        speed_label.grid(column = 0,row=2,pady = 5,padx =290,sticky = tk.W)#50
+        self.speed_slider.grid(column = 0,row=2,pady = 5,padx =340,sticky = tk.W)#125
+        self.percent1.grid(column = 0,row=2,pady = 5,padx =465,sticky = tk.W)#45
+        zoom_label.grid(column = 0,row=2,pady = 5,padx =510,sticky = tk.W)#40
+        self.zoom_slider.grid(column = 0,row=2,pady = 5,padx =550,sticky = tk.W)#120
+        self.percent2.grid(column = 0,row=2,pady = 5,padx =670,sticky = tk.W)
+        #buttons
+        reset_button.grid(column = 0,row=2,pady = 5,padx =715,sticky = tk.W) #85
+        button_play.grid(column = 0,row=2,pady = 5,padx =800,sticky = tk.W)#95
+        button_stop.grid(column = 0,row=2,pady = 5,padx =895,sticky = tk.W)#65
+        rotate_button.grid(column = 0,row=2,pady = 5,padx =960,sticky = tk.W)#85
+        button_copy.grid(column = 0,row=2,pady = 5,padx =1045,sticky = tk.W)#85
+        button_move.grid(column = 0,row=2,pady = 5,padx =1130,sticky = tk.W)#85
+        button_delete.grid(column = 0,row=2,pady = 5,padx =1215,sticky = tk.W)#85
         
         self.images = customtkinter.CTkLabel(master = self.main_frame,text = "")
         self.images.place(x=5,y=5)
@@ -1122,7 +1160,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 return False
 
         # KEYBOARD BINDING
-        def button_hover(e):
+        def rotate_button_hover(e):
             #rotate_button.configure(text=str(int(self.rotation_angle))+"° + 90°",font=("Arial",15))
             if int(self.rotation_angle==270):
                 rotate_button.configure(text="0°",font=("Arial",15))
@@ -1131,11 +1169,35 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             rotate_button.update_idletasks()
             return
                 
-        def button_hover_leave(e):
+        def rotate_button_hover_leave(e):
             rotate_button.configure(text="OTOČIT",font=("Arial",16,"bold"))
-        rotate_button.bind("<Enter>",button_hover)
-        rotate_button.bind("<Button-1>",button_hover)
-        rotate_button.bind("<Leave>",button_hover_leave)
+        rotate_button.bind("<Enter>",rotate_button_hover)
+        rotate_button.bind("<Button-1>",rotate_button_hover)
+        rotate_button.bind("<Leave>",rotate_button_hover_leave)
+
+        def move_button_hover(e):
+            button_move.configure(text="\"M\"",font=("Arial",16,"bold"))
+            button_move.update_idletasks()
+            return
+                
+        def move_button_hover_leave(e):
+            button_move.configure(text="Přesun.",font=("Arial",16,"bold"))
+
+        button_move.bind("<Enter>",move_button_hover)
+        button_move.bind("<Button-1>",move_button_hover)
+        button_move.bind("<Leave>",move_button_hover_leave)
+
+        def copy_button_hover(e):
+            button_copy.configure(text="\"C\"",font=("Arial",16,"bold"))
+            button_copy.update_idletasks()
+            return
+                
+        def copy_button_hover_leave(e):
+            button_copy.configure(text="Kopír.",font=("Arial",16,"bold"))
+
+        button_copy.bind("<Enter>",copy_button_hover)
+        button_copy.bind("<Button-1>",copy_button_hover)
+        button_copy.bind("<Leave>",copy_button_hover_leave)
 
         def pressed_space(e):
             if focused_entry_widget(): # pokud nabindovany znak neni vepisovan do entry widgetu
@@ -1182,20 +1244,34 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.root.bind("<Down>",pressed_down)
         self.unbind_list.append("<Down>")
 
-        def pressed_save(e):
+        def pressed_copy(e):
             if focused_entry_widget(): # pokud nabindovany znak neni vepisovan do entry widgetu
                 return
             self.copy_image(self.image_browser_path)
-        self.root.bind("<s>",pressed_save)
-        self.unbind_list.append("<s>")
+        self.root.bind("<c>",pressed_copy)
+        self.unbind_list.append("<c>")
 
+        def pressed_move(e):
+            if focused_entry_widget(): # pokud nabindovany znak neni vepisovan do entry widgetu
+                return
+            self.move_image()
+        self.root.bind("<m>",pressed_move)
+        self.unbind_list.append("<m>")
+        
         def pressed_rotate(e):
-            button_hover(e) #update uhlu zobrazovanem na tlacitku
+            rotate_button_hover(e) #update uhlu zobrazovanem na tlacitku
             if focused_entry_widget(): # pokud nabindovany znak neni vepisovan do entry widgetu
                 return
             self.rotate_image()
         self.root.bind("<r>",pressed_rotate)
         self.unbind_list.append("<r>")
+
+        def pressed_delete(e):
+            if focused_entry_widget(): # pokud nabindovany znak neni vepisovan do entry widgetu
+                return
+            self.delete_image()
+        self.root.bind("<Delete>",pressed_delete)
+        self.unbind_list.append("<Delete>")
 
         #Funkce kolecka mysi: priblizovat nebo posouvat vpred/ vzad
         def mouse_wheel1(e): # priblizovat
@@ -1388,7 +1464,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         self.default_displayed_static_dir = 0
         self.default_dir_names = [" (default: Temp)"," (default: PAIRS)"," (default: Ke_smazani)",
                                   " (default: Konvertovane_BMP)"," (default: Konvertovane_JPG)",
-                                  " (default: Vybrane_obrazky)"]
+                                  " (default: Kopírované_obrázky)"," (default: Přesunuté_obrázky)"]
         self.creating_advanced_option_widgets()
     
     def call_menu(self): # Tlačítko menu (konec, návrat do menu)
@@ -1695,7 +1771,8 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                       "Základní název složky se soubory, které jsou určené ke smazání změněn na: ",
                       "Základní název složky pro soubory převedené do .bmp formátu změněn na: ",
                       "Základní název složky pro soubory převedené do .jpg formátu změněn na: ",
-                      "Základní název složky pro zkopírované (uložené) vybrané obrázky z prohlížeče změněn na: "]
+                      "Základní název složky pro zkopírované obrázky z prohlížeče obrázků změněn na: ",
+                      "Základní název složky pro přesunuté obrázky z prohlížeče obrázků změněn na: "]
             colisions = 0
             
             if len(inserted_new_name) != 0:

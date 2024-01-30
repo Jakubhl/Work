@@ -27,7 +27,9 @@ Název složky pro soubory převedené do .bmp formátu:
 Konvertovane_BMP
 Název složky pro soubory převedené do .jpg formátu:
 Konvertovane_JPG
-Název složky pro vybrané obrázky v prohlížeči obrázků:
-Vybrane_obrazky
+Název složky pro kopírované obrázky v prohlížeči obrázků:
+Kopírované_obrázky
+Název složky pro přesunuté obrázky v prohlížeči obrázků:
+Přesunuté_oblásky
 Bezpečný mód při procházení subsložek:
 ano
