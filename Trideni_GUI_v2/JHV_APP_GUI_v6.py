@@ -539,8 +539,11 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.converted_images = []
         self.increment_of_ifz_image = 0
         self.default_path = ""
-        self.previous_x = 0
-        self.previous_y = 0
+        self.previous_height = 0
+        self.previous_width = 0
+        self.mouse_x = 0
+        self.mouse_y = 0
+        self.zoom_increment = 10
         self.create_widgets()
         self.interrupt = self.interrupt_viewing(self)
         
@@ -603,7 +606,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         path_found = True
         if path == "" or path == "/": #pripad, ze bylo pouzito tlacitko spusteni manualne vlozene cesty a nebo je chyba v config souboru
             path_found = False
-            path = self.path_set.get() 
+            path = self.path_set.get()
             if path != "":
                 check = path_check(path)
                 if check == False:
@@ -626,13 +629,24 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     i += 1
                     if i < len(path_splitted):
                         new_path = new_path + frags + "/"
+
                 path = new_path
+
             else:
                 path_found = False
                 self.console.configure(text = "Zadaná cesta: "+str(path)+" neobsahuje žádné obrázky",text_color="red")
         #automaticky okamzite otevre prvni z obrazku v dane ceste
         if path_found == True:
             if os.path.exists(path):
+                #path = path.replace(" ","")
+                while path.endswith(" "):
+                    path = path[:len(path)-1]
+                self.Reset_all()
+                if path.endswith("/") == False:
+                    path = path + "/"
+                    self.path_set.delete("0","300")
+                    self.path_set.insert("0",path)
+                    
                 self.path_for_explorer = path
                 self.all_images = self.get_images(path)
                 if len(self.all_images) != 0:
@@ -701,13 +715,25 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         """
         Vrací aktuální rozměry rámečku
         """
-        whole_app_height = self.root._current_height
-        whole_app_width = self.root._current_width
+        self.main_frame.update_idletasks()
+        whole_app_height = self.main_frame.winfo_height()
+        whole_app_width = self.main_frame.winfo_width()
         width = whole_app_width
-        height = whole_app_height - 129.6
+        height = whole_app_height#-frame_with_path_height-20
         #print(f"Frame Dimensions: {width} x {height}")
         return [width, height]
-              
+    
+    def recalculate_coordinates(self,x, y, smaller_rect, larger_rect):
+        # Calculate scaling factors for x-axis and y-axis
+        x_scale = smaller_rect[0]/larger_rect[0]
+        y_scale = smaller_rect[1]/larger_rect[1]
+        
+        # Calculate new coordinates within the larger rectangle
+        new_x = x * x_scale
+        new_y = y * y_scale
+        
+        return new_x, new_y
+
     def calc_current_format(self,width,height): # Přepočítávání rozměrů obrázku do rozměru rámce podle jeho formátu + zooming
         """
         Přepočítávání rozměrů obrázku do rozměru rámce podle jeho formátu
@@ -716,6 +742,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         -přepočítávání pozicování obrázku a scrollbarů v závislosti na zoomu
         """
         frame_dimensions = self.get_frame_dimensions()
+        self.zoom_slider.update_idletasks()
         zoom = self.zoom_slider.get() / 100
         frame_width, frame_height = frame_dimensions
         image_width = width
@@ -725,74 +752,129 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         # Vmestnani obrazku do velikosti aktualni velikosti ramce podle jeho formatu
         if image_height > image_width:
             new_height = frame_height
-            new_width = int(new_height * image_ratio)
 
-            if new_width > frame_width:
-                new_width = frame_width
-                new_height = int(new_width / image_ratio)
-        else:
-            new_width = frame_width
-            new_height = int(new_width / image_ratio)
-
-            if new_height > frame_height:
-                new_height = frame_height
+            
+            if image_width < frame_width:
                 new_width = int(new_height * image_ratio)
+            
+            else:
+                new_width = frame_width
+                if image_width < frame_width:
+                    new_width = image_width
+                new_height = int(new_width / image_ratio)
 
+        elif image_height < image_width:
+            new_width = frame_width
+
+            if image_height < frame_height:
+                new_height = int(new_width / image_ratio)
+
+            else:
+                new_height = frame_height
+                if image_height < frame_height:
+                    new_height = image_height
+                new_width = int(new_height * image_ratio)
+        
         new_height = new_height * zoom
         new_width = new_width * zoom
 
+        
         # Pocitani delek scrollbaru
-        scrollbar_length_x = min(1.0, frame_width / new_width)
+        """scrollbar_length_x = min(1.0, frame_width / new_width)
         scrollbar_length_y = min(1.0, frame_height / new_height)
         current_h_scrollbar = self.horizontal_scrollbar.get()
-        current_v_scrollbar = self.vertical_scrollbar.get()
+        current_v_scrollbar = self.vertical_scrollbar.get()"""
 
-        mouse_x, mouse_y = self.main_frame.winfo_pointerxy()
-        
-        # uprava scrollbaru pri zoomovani
-        if zoom > self.previous_zoom: # zda priblizujeme nebo oddalujeme
-            new_slider_start = current_h_scrollbar[1]+((scrollbar_length_x-current_h_scrollbar[1]))
-            self.horizontal_scrollbar.set(current_h_scrollbar[0],new_slider_start) # nastaveni scrollbaru podle zoomu  
-            self.images.place_configure(relx=-(current_h_scrollbar[0]*zoom))
-            #self.main_frame.xview_moveto(current_h_scrollbar[0])
-            #self.images.place_configure(x=(-mouse_x/2))
+        if self.previous_height == 0:
+            self.previous_height = new_height
+        if self.previous_width == 0:
+            self.previous_width = new_width
+
+        mouse_x,mouse_y = self.images.winfo_pointerxy()
+        mouse_y -= self.frame_with_path._current_height
+
+        rel_mouse_y = min(1.0,self.mouse_y/(new_height))
+        rel_mouse_x = min(1.0,self.mouse_x/(new_width))
+
+        rel_mouse_y2 = min(1.0,mouse_y/(frame_height))
+        rel_mouse_x2 = min(1.0,mouse_x/(frame_width))
+
+        zoom_grow_x = max(new_width-self.previous_width,self.previous_width-new_width)
+        zoom_grow_y = max(new_height-self.previous_height,self.previous_height-new_height)
+
+        rel_mouse_y = rel_mouse_y*2
+        rel_mouse_x = rel_mouse_x*2
+
+        if rel_mouse_y > 1.0:
+            rel_mouse_y = (rel_mouse_y-1.0)
+            new_pos_y =  (self.mouse_y+zoom_grow_y*rel_mouse_y)
+            new_pos_y2 = (self.mouse_y+zoom_grow_y*min(1.0-rel_mouse_y,1.0+rel_mouse_y))
+            new_pos_y = -new_pos_y
+            new_pos_y2 = -new_pos_y2
             
-            new_slider_start = current_v_scrollbar[1]+((scrollbar_length_y-current_v_scrollbar[1]))
-            self.vertical_scrollbar.set(current_v_scrollbar[0],new_slider_start) # nastaveni scrollbaru podle zoomu
-            self.images.place_configure(rely=-(current_v_scrollbar[0]*zoom))
-            #self.main_frame.yview_moveto(current_v_scrollbar[0])
-            #self.images.place_configure(y=(-mouse_y/2))
+        else:
+            rel_mouse_y = (1.0 - rel_mouse_y)
+            new_pos_y =  (self.mouse_y+zoom_grow_y*rel_mouse_y)
+            new_pos_y2 = (self.mouse_y+zoom_grow_y*min(1.0-rel_mouse_y,1.0+rel_mouse_y))
+        
+        if rel_mouse_x > 1.0:
+            rel_mouse_x = (rel_mouse_x-1.0)
+            new_pos_x =  (self.mouse_x+zoom_grow_x*rel_mouse_x)
+            new_pos_x2 = (self.mouse_x+zoom_grow_x*min(1.0-rel_mouse_x,1.0+rel_mouse_x))
+            new_pos_x = -new_pos_x
+            new_pos_x2 = -new_pos_x2
+            
+        else:
+            rel_mouse_x = (1.0 - rel_mouse_x)
+            new_pos_x =  (self.mouse_x+zoom_grow_x*rel_mouse_x)
+            new_pos_x2 = (self.mouse_x+zoom_grow_x*min(1.0-rel_mouse_x,1.0+rel_mouse_x))
+            
 
-        elif zoom < self.previous_zoom:
-            if (scrollbar_length_x+current_h_scrollbar[0]) <= 1.0:
-                self.horizontal_scrollbar.set(current_h_scrollbar[0],scrollbar_length_x+current_h_scrollbar[0])
-                self.images.place_configure(relx=-(current_h_scrollbar[0]*(self.zoom_slider.get()/100)))
-            else:
-                new_slider_start = current_h_scrollbar[0]-((scrollbar_length_x+current_h_scrollbar[0])-1)
-                self.horizontal_scrollbar.set(new_slider_start,1.0) # nastaveni scrollbaru podle zoomu
-                self.images.place_configure(relx=-(new_slider_start*(self.zoom_slider.get()/100)))
-                #self.horizontal_scrollbar.set(0.0,new_slider_start) # nastaveni scrollbaru podle zoomu
+        movement = 200
+        self.images.place_configure(x = self.images.winfo_x() - zoom_grow_x/2)
+        self.images.place_configure(y = self.images.winfo_y() - zoom_grow_y/2)
+
+        if self.previous_zoom <= zoom:
+            if rel_mouse_x2 > 0.75 and self.images.winfo_x() > -(new_width-frame_width) and new_width > frame_width:
+                self.images.place_configure(x = self.images.winfo_x() - movement)
+            if rel_mouse_x2 < 0.25 and self.images.winfo_x() < 0:
+                self.images.place_configure(x = self.images.winfo_x() + movement)
+
+            if rel_mouse_y2 > 0.75 and self.images.winfo_y() > -(new_height-frame_height) and new_height > frame_height:
+                self.images.place_configure(y = self.images.winfo_y() - movement)
+            if rel_mouse_y2 < 0.25 and self.images.winfo_y() < 0:
+                self.images.place_configure(y = self.images.winfo_y() + movement)
                 
-            #self.images.place_configure(relx=-(new_slider_start*(self.zoom_slider.get()/100))) # posun obrazku podle scrollbaru
+        else:
+            if rel_mouse_x2 < 0.25 and self.images.winfo_x() > -(new_width-frame_width) and new_width > frame_width:
+                self.images.place_configure(x = self.images.winfo_x() - movement)
+            if rel_mouse_x2 > 0.75 and self.images.winfo_x() < 0:
+                self.images.place_configure(x = self.images.winfo_x() + movement)
 
-            if (scrollbar_length_y+current_v_scrollbar[0]) <= 1.0:
-                # pri oddalovani nejprve zvetsujeme scrollbar smerem dolu:
-                self.vertical_scrollbar.set(current_v_scrollbar[0], scrollbar_length_y+current_v_scrollbar[0])
-                #args_tuple_v = current_v_scrollbar[0], scrollbar_length_y+current_v_scrollbar[0]
-                #self.on_vertical_scroll(*args_tuple_v)
-                self.images.place_configure(rely=-(current_v_scrollbar[0]*(self.zoom_slider.get()/100))) # posun obrazku podle scrollbaru
+            if rel_mouse_y2 < 0.25 and self.images.winfo_y() > -(new_height-frame_height) and new_height > frame_height:
+                self.images.place_configure(y = self.images.winfo_y() - movement)
+            if rel_mouse_y2 > 0.75 and self.images.winfo_y() < 0:
+                self.images.place_configure(y = self.images.winfo_y() + movement)
 
-            else: #kdyz je vetsi, jak 1, coz je maximalni souradnice konce scrollbaru
-                # kdyz uz scrollbar dosahuje az dolu, musime uz hybat s obrazkem a zvetsovat scrollbar smerem nahoru podle toho, o kolik byl posunut
-                new_slider_start = current_v_scrollbar[0]-((scrollbar_length_y+current_v_scrollbar[0])-1)
-                self.vertical_scrollbar.set(new_slider_start,1.0) # nastaveni scrollbaru podle zoomu
-                #args_tuple_v = new_slider_start,1.0
-                #self.on_vertical_scroll(*args_tuple_v)
-                #self.vertical_scrollbar.set(0.0,new_slider_start) # nastaveni scrollbaru podle zoomu
-                
-                self.images.place_configure(rely=-(new_slider_start*(self.zoom_slider.get()/100))) # posun obrazku podle scrollbaru
+        print(self.images.winfo_x(),self.images.winfo_y())
+        print(rel_mouse_x2,rel_mouse_y2)
 
+        new_scroll_region = (new_pos_x,
+                             new_pos_y,
+                             new_width+new_pos_x2,
+                             new_height+new_pos_y2
+                            )
+        
+        
+        self.main_frame.update_idletasks()
+        self.images.update_idletasks()
+        if self.state != "running":
+            self.main_frame.configure(scrollregion=new_scroll_region)
+        self.main_frame.update_idletasks()
+        self.previous_height = new_height
+        self.previous_width = new_width
         self.previous_zoom = zoom
+
         #print(f"New Dimensions: {new_width} x {new_height}")
         return [new_width, new_height]
 
@@ -934,11 +1016,15 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
     def stop(self):
         self.state = "stop"
         self.interrupt.stop_loop()
+        self.button_play_stop.configure(text = "SPUSTIT")
+        self.button_play_stop.configure(command = lambda: self.play())
 
-    def call_image_loop(self): # Volání třídy pro vykonávání subprocessu
+    def play(self): # Volání třídy pro vykonávání subprocessu
         self.state = "running"
         self.interrupt.images_loop()
-
+        self.button_play_stop.configure(text = "STOP")
+        self.button_play_stop.configure(command = lambda: self.stop())
+        
     def update_speed_slider(self,*args):
         new_value = int(*args)
         self.percent1.configure(text = "")
@@ -1021,25 +1107,28 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.update_zoom_slider(100)
         self.speed_slider.set(100)
         self.update_speed_slider(100)
-        #self.increment_of_image = 0
-        #view_image(self.increment_of_image)
-        #self.current_image_num.configure(text = str(self.increment_of_image+1) + "/" + str(len(self.all_images)))
-        #console.configure(text = str(self.all_images[self.increment_of_image]))
+        self.images.place_configure(y=0,x=0,relx=0,rely=0)
+        self.view_image(self.increment_of_image)
         self.root.update_idletasks()
     
     def on_vertical_scroll(self,*args): # pohyb obrázkem v závislosti na vertikálním slideru
-        mouse_x, mouse_y = self.main_frame.winfo_pointerxy()
-        new_y_coordinate = args[1]
-        self.main_frame.yview_moveto(new_y_coordinate)
-        self.images.place_configure(rely=-(new_y_coordinate*(self.zoom_slider.get()/100)))
-        #self.images.place_configure(y = -mouse_y/2)
+        zoom = self.zoom_slider.get()/100
+        if len(args) == 2:
+            #print("args v", args)
+            new_y_coordinate = args[1]
+            #self.main_frame.yview_moveto(new_y_coordinate)
+
+            self.images.place_configure(rely=-new_y_coordinate*zoom)
+            #self.images.place_configure(y = -self.mouse_y/2)
 
     def on_horizontal_scroll(self,*args): # pohyb obrázkem v závislosti na horizontálním slideru
-        mouse_x, mouse_y = self.main_frame.winfo_pointerxy()
-        new_x_coordinate = args[1]
-        self.main_frame.xview_moveto(new_x_coordinate)
-        self.images.place_configure(relx=-(new_x_coordinate*(self.zoom_slider.get()/100)))
-        #self.images.place_configure(x = -mouse_x/2)
+        zoom = self.zoom_slider.get()/100
+        if len(args) == 2:
+            #print("args h", args)
+            new_x_coordinate = args[1]
+            #self.main_frame.xview_moveto(new_x_coordinate)
+            self.images.place_configure(relx=-new_x_coordinate*zoom)
+            #self.images.place_configure(x = -self.mouse_x/2)
 
     def create_widgets(self): # Vytvoření veškerých widgets (MAIN image browseru)
         #cisteni menu widgets
@@ -1060,8 +1149,11 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.horizontal_scrollbar = customtkinter.CTkScrollbar(self.background_frame, orientation="horizontal", command=self.on_horizontal_scroll)
         self.horizontal_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
         self.main_frame.configure(xscrollcommand=self.horizontal_scrollbar.set)
+        
+        self.main_frame.configure(scrollregion=self.main_frame.bbox("all"))
+
         self.main_frame.pack(pady=0,padx=5,ipadx=10,ipady=10,fill="both",expand=True,side = "bottom",anchor= "center")
-        self.main_frame.configure(scrollregion=self.background_frame.bbox("all"))
+        #scrollregion = [x_min,y_min,x_max,y_max] hodnoty na scrollbarech
 
         menu_button  = customtkinter.CTkButton(master = self.frame_with_path, width = 150,height=30, text = "MENU", command = lambda: self.call_menu(),font=("Arial",16,"bold"))
         self.path_set = customtkinter.CTkEntry(master = self.frame_with_path,width = 680,height=30,placeholder_text="Zadejte cestu k souborům (kde se soubory přímo nacházejí)")
@@ -1074,8 +1166,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.changable_image_num.insert("0",0)
         self.current_image_num = customtkinter.CTkLabel(master = self.frame_with_path,text = "/0",justify = "left",font=("Arial",16,"bold"))
         button_next  = customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = ">", command = self.next_image,font=("Arial",16,"bold"))
-        button_play  = customtkinter.CTkButton(master = self.frame_with_path, width = 90,height=30,text = "SPUSTIT", command = self.call_image_loop,font=("Arial",16,"bold"))
-        button_stop  = customtkinter.CTkButton(master = self.frame_with_path, width = 60,height=30,text = "STOP", command = self.stop,font=("Arial",16,"bold"))
+        self.button_play_stop  = customtkinter.CTkButton(master = self.frame_with_path, width = 90,height=30,text = "SPUSTIT", command = self.play,font=("Arial",16,"bold"))
+        #button_stop  = customtkinter.CTkButton(master = self.frame_with_path, width = 60,height=30,text = "STOP", command = self.stop,font=("Arial",16,"bold"))
         button_copy  = customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "Kopír.", command = lambda: self.copy_image(self.image_browser_path),font=("Arial",16,"bold"))
         rotate_button = customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "OTOČIT", command =  lambda: self.rotate_image(),font=("Arial",16,"bold"))
         speed_label  = customtkinter.CTkLabel(master = self.frame_with_path,text = "Rychlost:",justify = "left",font=("Arial",12))
@@ -1121,12 +1213,12 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.percent2.grid(column = 0,row=2,pady = 5,padx =670,sticky = tk.W)
         #buttons
         reset_button.grid(column = 0,row=2,pady = 5,padx =715,sticky = tk.W) #85
-        button_play.grid(column = 0,row=2,pady = 5,padx =800,sticky = tk.W)#95
-        button_stop.grid(column = 0,row=2,pady = 5,padx =895,sticky = tk.W)#65
-        rotate_button.grid(column = 0,row=2,pady = 5,padx =960,sticky = tk.W)#85
-        button_copy.grid(column = 0,row=2,pady = 5,padx =1045,sticky = tk.W)#85
-        button_move.grid(column = 0,row=2,pady = 5,padx =1130,sticky = tk.W)#85
-        button_delete.grid(column = 0,row=2,pady = 5,padx =1215,sticky = tk.W)#85
+        self.button_play_stop.grid(column = 0,row=2,pady = 5,padx =800,sticky = tk.W)#95
+        #button_stop.grid(column = 0,row=2,pady = 5,padx =895,sticky = tk.W)#65
+        rotate_button.grid(column = 0,row=2,pady = 5,padx =895,sticky = tk.W)#85
+        button_copy.grid(column = 0,row=2,pady = 5,padx =980,sticky = tk.W)#85
+        button_move.grid(column = 0,row=2,pady = 5,padx =1065,sticky = tk.W)#85
+        button_delete.grid(column = 0,row=2,pady = 5,padx =1150,sticky = tk.W)#85
         
         self.images = customtkinter.CTkLabel(master = self.main_frame,text = "")
         self.images.place(x=5,y=5)
@@ -1204,10 +1296,10 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 return
             if self.state != "stop":
                 self.state = "stop"
-                self.interrupt.stop_loop()
+                self.stop()
             else:
                 self.state = "running"
-                self.interrupt.images_loop()
+                self.play()
         self.root.bind("<space>",pressed_space)
         self.unbind_list.append("<space>")
 
@@ -1276,9 +1368,14 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         #Funkce kolecka mysi: priblizovat nebo posouvat vpred/ vzad
         def mouse_wheel1(e): # priblizovat
             direction = -e.delta
+            self.images.update_idletasks()
+            self.zoom_slider.update_idletasks()
+            self.mouse_x = e.x
+            self.mouse_y = e.y
+
             if direction < 0:
                 #direction = "in"
-                new_value = self.zoom_slider.get()+10
+                new_value = self.zoom_slider.get()+self.zoom_increment
                 if self.zoom_slider._to >= new_value:
                     self.zoom_slider.set(new_value)
                     self.percent2.configure(text=str(int(new_value)) + " %")
@@ -1286,72 +1383,20 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     self.zoom_slider.set(self.zoom_slider._to) # pro pripad, ze by zbyvalo mene nez 5 do maxima 
             else:
                 #direction = "out"
-                new_value = self.zoom_slider.get()-10
+                new_value = self.zoom_slider.get()-self.zoom_increment
                 if self.zoom_slider._from_ <= new_value:
                     self.zoom_slider.set(new_value)
                     self.percent2.configure(text=str(int(new_value)) + " %")
                 else:
-                    self.zoom_slider.set(self.zoom_slider._from_) # pro pripad, ze by zbyvalo vice nez 5 do minima  
-
-            mouse_x, mouse_y = self.main_frame.winfo_pointerxy()
-            #mouse_y-=180
-
-            def get_direction():
-                """option = ""
-                if abs(max(x/2,mouse_x)-min(x/2,mouse_x)) > abs(max(y/2,mouse_y)-min(y/2,mouse_y)):
-                    option = "horizontal"
-                else:
-                    option = "vertical"""
-                #if option == "horizontal":
-                print(-self.images.winfo_x())
-                print(-self.images.winfo_y())
-                if mouse_x/2 > -self.images.winfo_x()+100:
-                    #right
-                    print("right")
-                    current_horizontal_value = self.horizontal_scrollbar.get()
-                    if (current_horizontal_value[0] - 0.01) > 0.00:
-                        args_tuple_h = (0,current_horizontal_value[0]-0.01)
-                        self.on_horizontal_scroll(*args_tuple_h)
-                        self.horizontal_scrollbar.set(current_horizontal_value[0]-0.01,current_horizontal_value[1]-0.01)      
-                elif mouse_x/2 < -self.images.winfo_x()+100:
-                    #left
-                    print("left")
-                    current_horizontal_value = self.horizontal_scrollbar.get()
-                    if (current_horizontal_value[1] + 0.01) < 1.00:
-                        args_tuple_h = (0,current_horizontal_value[0]+0.01)
-                        self.on_horizontal_scroll(*args_tuple_h)
-                        self.horizontal_scrollbar.set(current_horizontal_value[0]+0.01,current_horizontal_value[1]+0.01)
-
-                #if option == "vertical":
-                if mouse_y/2 > -self.images.winfo_y()+100:
-                    #down
-                    print("down")
-                    current_vertical_value = self.vertical_scrollbar.get()
-                    if (current_vertical_value[0] - 0.01) > 0.00:
-                        args_tuple_v = (0,current_vertical_value[0]-0.01)
-                        self.on_vertical_scroll(*args_tuple_v)
-                        self.vertical_scrollbar.set(current_vertical_value[0]-0.01,current_vertical_value[1]-0.01)
-                elif mouse_y/2 < -self.images.winfo_y()+100:
-                    #up
-                    print("up")
-                    current_vertical_value = self.vertical_scrollbar.get()
-                    if (current_vertical_value[1] + 0.01) < 1.00:
-                        args_tuple_v = (0,current_vertical_value[0]+0.01)
-                        self.on_vertical_scroll(*args_tuple_v)
-                        self.vertical_scrollbar.set(current_vertical_value[0]+0.01,current_vertical_value[1]+0.01)
-                
-                self.previous_x = mouse_x
-                self.previous_y = mouse_y
-                print(self.previous_x,self.previous_y)
-                return
-
-            #get_direction()
+                    self.zoom_slider.set(self.zoom_slider._from_) # pro pripad, ze by zbyvalo vice nez 5 do minima
+            
             if len(self.all_images) != 0: # update zobrazeni
                 if self.ifz_located == True:
                     self.view_image(None,self.converted_images[self.increment_of_ifz_image])  
                 else:
-                    self.view_image(self.increment_of_image)      
-        
+                    self.view_image(self.increment_of_image)
+            return
+
         def mouse_wheel2(e): # posouvat obrazky
             direction = -e.delta
             if direction < 0:
@@ -1361,7 +1406,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.previous_image()
 
         self.images.bind("<MouseWheel>",mouse_wheel1)
-        #self.main_frame.bind("<MouseWheel>",mouse_wheel2)
+        #self.main_frame.bind("<MouseWheel>",mouse_wheel1)
         self.frame_with_path.bind("<MouseWheel>",mouse_wheel2)
         self.unbind_list.append("<MouseWheel>")
         
@@ -1370,6 +1415,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             self.images.focus_set()
             self.released = False
             x,y = e.x,e.y
+            self.horizontal_scrollbar.update_idletasks()
+            self.vertical_scrollbar.update_idletasks()
             def get_direction(e):
                 option = ""
                 if abs(max(e.x,x)-min(e.x,x)) > abs(max(e.y,y)-min(e.y,y)):
@@ -1380,14 +1427,16 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     if e.x > x:
                         #right
                         current_horizontal_value = self.horizontal_scrollbar.get()
-                        if (current_horizontal_value[0] - 0.01) > 0.00:
+                        if (current_horizontal_value[0] - 0.01) >= 0.00:
+                            #args_tuple_h = (current_horizontal_value[0]-0.01,current_horizontal_value[1]-0.01)
                             args_tuple_h = (0,current_horizontal_value[0]-0.01)
                             self.on_horizontal_scroll(*args_tuple_h)
                             self.horizontal_scrollbar.set(current_horizontal_value[0]-0.01,current_horizontal_value[1]-0.01)      
                     else:
                         #left
                         current_horizontal_value = self.horizontal_scrollbar.get()
-                        if (current_horizontal_value[1] + 0.01) < 1.00:
+                        if (current_horizontal_value[1] + 0.01) <= 1.00:
+                            #args_tuple_h = (current_horizontal_value[0]+0.01,current_horizontal_value[1]+0.01)
                             args_tuple_h = (0,current_horizontal_value[0]+0.01)
                             self.on_horizontal_scroll(*args_tuple_h)
                             self.horizontal_scrollbar.set(current_horizontal_value[0]+0.01,current_horizontal_value[1]+0.01)
@@ -1396,17 +1445,22 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     if e.y > y:
                         #down
                         current_vertical_value = self.vertical_scrollbar.get()
-                        if (current_vertical_value[0] - 0.01) > 0.00:
+                        if (current_vertical_value[0] - 0.01) >= 0.00:
+                            #args_tuple_v = (current_vertical_value[0]-0.01,current_vertical_value[1]-0.01)
                             args_tuple_v = (0,current_vertical_value[0]-0.01)
                             self.on_vertical_scroll(*args_tuple_v)
                             self.vertical_scrollbar.set(current_vertical_value[0]-0.01,current_vertical_value[1]-0.01)
                     else:
                         #up
                         current_vertical_value = self.vertical_scrollbar.get()
-                        if (current_vertical_value[1] + 0.01) < 1.00:
+                        if (current_vertical_value[1] + 0.01) <= 1.00:
+                            #args_tuple_v = (current_vertical_value[0]+0.01,current_vertical_value[1]+0.01)
                             args_tuple_v = (0,current_vertical_value[0]+0.01)
                             self.on_vertical_scroll(*args_tuple_v)
                             self.vertical_scrollbar.set(current_vertical_value[0]+0.01,current_vertical_value[1]+0.01)
+
+                self.horizontal_scrollbar.update_idletasks()
+                self.vertical_scrollbar.update_idletasks()
                 return
 
             self.images.bind("<Motion>", get_direction)
@@ -1417,6 +1471,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.images.unbind("<Motion>")
                 self.images.unbind("<ButtonRelease-1>")
                 self.released = True
+                return
 
             self.images.bind("<ButtonRelease-1>",end_func)
         self.images.bind("<Button-1>",mouse_clicked)
@@ -1434,7 +1489,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.unbind_list.append("<f>")
 
         def save_path_enter_btn(e):
+            self.root.focus_set()
             self.start(self.path_set.get())
+            
         self.path_set.bind("<Return>",save_path_enter_btn)
 
         #hned na zacatku to vleze do defaultni slozky
