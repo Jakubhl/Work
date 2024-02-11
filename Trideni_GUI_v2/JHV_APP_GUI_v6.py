@@ -716,23 +716,14 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         Vrací aktuální rozměry rámečku
         """
         self.main_frame.update_idletasks()
-        whole_app_height = self.main_frame.winfo_height()
-        whole_app_width = self.main_frame.winfo_width()
+        whole_app_height = self.root._current_height
+        whole_app_width = self.root._current_width
+        #whole_app_height = self.main_frame.winfo_height()
+        #whole_app_width = self.main_frame.winfo_width()
         width = whole_app_width
-        height = whole_app_height#-frame_with_path_height-20
-        #print(f"Frame Dimensions: {width} x {height}")
+        height = whole_app_height-self.frame_with_path._current_height-30
+        print(f"Frame Dimensions: {width} x {height}")
         return [width, height]
-    
-    def recalculate_coordinates(self,x, y, smaller_rect, larger_rect):
-        # Calculate scaling factors for x-axis and y-axis
-        x_scale = smaller_rect[0]/larger_rect[0]
-        y_scale = smaller_rect[1]/larger_rect[1]
-        
-        # Calculate new coordinates within the larger rectangle
-        new_x = x * x_scale
-        new_y = y * y_scale
-        
-        return new_x, new_y
 
     def calc_current_format(self,width,height): # Přepočítávání rozměrů obrázku do rozměru rámce podle jeho formátu + zooming
         """
@@ -747,19 +738,16 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         frame_width, frame_height = frame_dimensions
         image_width = width
         image_height = height
+        print(width,height)
         image_ratio = image_width / image_height
-        
         # Vmestnani obrazku do velikosti aktualni velikosti ramce podle jeho formatu
         if image_height > image_width:
             new_height = frame_height
-
-            
-            if image_width < frame_width:
+            if image_width > frame_width:
                 new_width = int(new_height * image_ratio)
-            
             else:
                 new_width = frame_width
-                if image_width < frame_width:
+                if image_width > frame_width:
                     new_width = image_width
                 new_height = int(new_width / image_ratio)
 
@@ -768,16 +756,26 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
 
             if image_height < frame_height:
                 new_height = int(new_width / image_ratio)
-
             else:
                 new_height = frame_height
                 if image_height < frame_height:
                     new_height = image_height
                 new_width = int(new_height * image_ratio)
+
+        elif image_height == image_width:
+            new_height = frame_height
+            new_width = new_height
+
+        #doublecheck
+        if new_height > frame_height:
+            new_height = frame_height
+            new_width = int(new_height * image_ratio)
+        if new_width > frame_width:
+            new_width = frame_width
+            new_height = int(new_width / image_ratio)
         
         new_height = new_height * zoom
         new_width = new_width * zoom
-
         
         # Pocitani delek scrollbaru
         """scrollbar_length_x = min(1.0, frame_width / new_width)
@@ -796,12 +794,12 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         rel_mouse_y = min(1.0,self.mouse_y/(new_height))
         rel_mouse_x = min(1.0,self.mouse_x/(new_width))
 
-        rel_mouse_y2 = min(1.0,mouse_y/(frame_height))
-        rel_mouse_x2 = min(1.0,mouse_x/(frame_width))
+        rel_mouse_y2 = min(1.0,mouse_y/min(frame_height,new_height))
+        rel_mouse_x2 = min(1.0,mouse_x/min(frame_width,new_width))
 
         zoom_grow_x = max(new_width-self.previous_width,self.previous_width-new_width)
         zoom_grow_y = max(new_height-self.previous_height,self.previous_height-new_height)
-
+        """
         rel_mouse_y = rel_mouse_y*2
         rel_mouse_x = rel_mouse_x*2
 
@@ -827,57 +825,124 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         else:
             rel_mouse_x = (1.0 - rel_mouse_x)
             new_pos_x =  (self.mouse_x+zoom_grow_x*rel_mouse_x)
-            new_pos_x2 = (self.mouse_x+zoom_grow_x*min(1.0-rel_mouse_x,1.0+rel_mouse_x))
+            new_pos_x2 = (self.mouse_x+zoom_grow_x*min(1.0-rel_mouse_x,1.0+rel_mouse_x))"""
             
-
-        movement = 200
+        movement = 100
+        treshold_y_min = 0.3
+        treshold_y_max = 0.7
+        treshold_x_min = 0.3
+        treshold_x_max = 0.7 
+        self.images.update_idletasks()
         self.images.place_configure(x = self.images.winfo_x() - zoom_grow_x/2)
         self.images.place_configure(y = self.images.winfo_y() - zoom_grow_y/2)
-
-        if self.previous_zoom <= zoom:
-            if rel_mouse_x2 > 0.75 and self.images.winfo_x() > -(new_width-frame_width) and new_width > frame_width:
+        self.images.update_idletasks()
+        current_x = self.images.winfo_x()
+        current_y = self.images.winfo_y()
+        max_negative_x = (-new_width+frame_width)
+        max_negative_x = max_negative_x + current_x #narust zoomovanim
+        max_negative_y = (-new_height+frame_height)
+        #max_negative_y = max_negative_y + current_y #narust zoomovanim
+        #print(rel_mouse_x2,rel_mouse_y2)
+        #if (self.zoom_increment/100 == round(self.previous_zoom - zoom,1)) or (-self.zoom_increment/100 == round(self.previous_zoom - zoom,1)):
+        """if (self.previous_zoom < zoom): #PRIBLIZOVANI
+            if rel_mouse_x2 > treshold_x_max and ((self.images.winfo_x()-movement) > max_negative_x) and (new_width > frame_width):
                 self.images.place_configure(x = self.images.winfo_x() - movement)
-            if rel_mouse_x2 < 0.25 and self.images.winfo_x() < 0:
+            if rel_mouse_x2 > treshold_x_max and ((self.images.winfo_x()-movement) < max_negative_x) and (new_width > frame_width):
+                leftover = (self.images.winfo_x()-movement) - max_negative_x
+                self.images.place_configure(x = self.images.winfo_x() + (leftover + movement))
+
+            if rel_mouse_x2 < treshold_x_min and self.images.winfo_x()+ movement < 0:
+                self.images.place_configure(x = self.images.winfo_x() + movement)
+            if rel_mouse_x2 < treshold_x_min and self.images.winfo_x()+ movement > 0:
+                leftover =  self.images.winfo_x()+ movement
+                self.images.place_configure(x = self.images.winfo_x() - leftover+ movement)
+
+            if rel_mouse_y2 > treshold_y_max and ((self.images.winfo_y()-movement) > max_negative_y )and (new_height > frame_height):
+                self.images.place_configure(y = self.images.winfo_y() - movement)
+            if rel_mouse_y2 > treshold_y_max and ((self.images.winfo_y()-movement) < max_negative_y) and (new_height > frame_height):
+                leftover = (self.images.winfo_y()-movement) - max_negative_y
+                self.images.place_configure(y = self.images.winfo_y() + (leftover + movement))
+
+            if rel_mouse_y2 < treshold_y_min and self.images.winfo_y()+ movement < 0:
+                self.images.place_configure(y = self.images.winfo_y() + movement)
+            if rel_mouse_y2 < treshold_y_min and self.images.winfo_y()+ movement > 0:
+                leftover =  self.images.winfo_y()+ movement
+                self.images.place_configure(y = self.images.winfo_y() - leftover+ movement)
+                
+        elif (self.previous_zoom > zoom): #ODDALOVANI
+            if rel_mouse_x2 > treshold_x_min and ((self.images.winfo_x()-movement) > max_negative_x) and (new_width > frame_width):
+                self.images.place_configure(x = self.images.winfo_x() - movement)
+            if rel_mouse_x2 > treshold_x_min and ((self.images.winfo_x()-movement) < max_negative_x) and (new_width > frame_width):
+                leftover = (self.images.winfo_x()-movement) - max_negative_x
+                self.images.place_configure(x = self.images.winfo_x() + (leftover + movement))
+
+            if rel_mouse_x2 < treshold_x_max and self.images.winfo_x()+ movement < 0:
+                self.images.place_configure(x = self.images.winfo_x() + movement)
+            if rel_mouse_x2 < treshold_x_max and self.images.winfo_x()+ movement > 0:
+                leftover =  self.images.winfo_x()+ movement
+                self.images.place_configure(x = self.images.winfo_x() - leftover+ movement)
+
+            if rel_mouse_y2 > treshold_y_min and ((self.images.winfo_y()-movement) > max_negative_y )and (new_height > frame_height):
+                self.images.place_configure(y = self.images.winfo_y() - movement)
+            if rel_mouse_y2 > treshold_y_min and ((self.images.winfo_y()-movement) < max_negative_y) and (new_height > frame_height):
+                leftover = (self.images.winfo_y()-movement) - max_negative_y
+                self.images.place_configure(y = self.images.winfo_y() + (leftover + movement))
+
+            if rel_mouse_y2 < treshold_y_max and self.images.winfo_y()+ movement < 0:
+                self.images.place_configure(y = self.images.winfo_y() + movement)
+            if rel_mouse_y2 < treshold_y_max and self.images.winfo_y()+ movement > 0:
+                leftover =  self.images.winfo_y()+ movement
+                self.images.place_configure(y = self.images.winfo_y() - leftover+ movement)"""
+        if (self.previous_zoom < zoom): #PRIBLIZOVANI
+            if rel_mouse_x2 > treshold_x_max and ((self.images.winfo_x()-movement) > max_negative_x) and (new_width > frame_width):
+                self.images.place_configure(x = self.images.winfo_x() - movement)
+            if rel_mouse_x2 < treshold_x_min and self.images.winfo_x()+ movement < 0:
                 self.images.place_configure(x = self.images.winfo_x() + movement)
 
-            if rel_mouse_y2 > 0.75 and self.images.winfo_y() > -(new_height-frame_height) and new_height > frame_height:
+            if rel_mouse_y2 > treshold_y_max and ((self.images.winfo_y()-movement) > max_negative_y)and (new_height > frame_height):
                 self.images.place_configure(y = self.images.winfo_y() - movement)
-            if rel_mouse_y2 < 0.25 and self.images.winfo_y() < 0:
+            if rel_mouse_y2 < treshold_y_min and self.images.winfo_y()+ movement < 0:
                 self.images.place_configure(y = self.images.winfo_y() + movement)
                 
-        else:
-            if rel_mouse_x2 < 0.25 and self.images.winfo_x() > -(new_width-frame_width) and new_width > frame_width:
+        elif (self.previous_zoom > zoom): #ODDALOVANI
+            if rel_mouse_x2 > treshold_x_min and ((self.images.winfo_x()-movement) > max_negative_x) and (new_width > frame_width):
                 self.images.place_configure(x = self.images.winfo_x() - movement)
-            if rel_mouse_x2 > 0.75 and self.images.winfo_x() < 0:
+            if rel_mouse_x2 < treshold_x_max and self.images.winfo_x()+ movement < 0:
                 self.images.place_configure(x = self.images.winfo_x() + movement)
 
-            if rel_mouse_y2 < 0.25 and self.images.winfo_y() > -(new_height-frame_height) and new_height > frame_height:
+            if rel_mouse_y2 > treshold_y_min and ((self.images.winfo_y()-movement) > max_negative_y)and (new_height > frame_height):
                 self.images.place_configure(y = self.images.winfo_y() - movement)
-            if rel_mouse_y2 > 0.75 and self.images.winfo_y() < 0:
+            if rel_mouse_y2 < treshold_y_max and self.images.winfo_y()+ movement < 0:
                 self.images.place_configure(y = self.images.winfo_y() + movement)
-
-        print(self.images.winfo_x(),self.images.winfo_y())
-        print(rel_mouse_x2,rel_mouse_y2)
-
-        new_scroll_region = (new_pos_x,
-                             new_pos_y,
-                             new_width+new_pos_x2,
-                             new_height+new_pos_y2
-                            )
-        
-        
-        self.main_frame.update_idletasks()
+        else:
+            self.images.place_configure(x = 0)
+            self.images.place_configure(y = 0)
         self.images.update_idletasks()
+        #print(rel_mouse_x2,rel_mouse_y2)
+        #else:
+        """new_scroll_region = (new_pos_x - zoom_grow_x/2,
+                            new_pos_y - zoom_grow_y/2,
+                            new_width+new_pos_x - zoom_grow_x/2,
+                            new_height+new_pos_y - zoom_grow_y/2
+                            )"""
+        """new_scroll_region = (0,
+                            0,
+                            new_width,
+                            new_height
+                            )
+        #self.images.place_configure(x = 0)
+        #self.images.place_configure(y = 0)
+        self.main_frame.update_idletasks()
         if self.state != "running":
             self.main_frame.configure(scrollregion=new_scroll_region)
-        self.main_frame.update_idletasks()
+        self.main_frame.update_idletasks()"""
+            
         self.previous_height = new_height
         self.previous_width = new_width
         self.previous_zoom = zoom
-
-        #print(f"New Dimensions: {new_width} x {new_height}")
+        print(f"New Dimensions: {new_width} x {new_height}")
         return [new_width, new_height]
-
+    
     def view_image(self,increment_of_image,direct_path = None): # Samotné zobrazení obrázku
         """
         Samotné zobrazení obrázku
@@ -893,7 +958,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             with Image.open(image_to_show) as current_image:
                 current_image = current_image.rotate(self.rotation_angle,expand=True)
                 width,height = current_image.size
-            
             dimensions = self.calc_current_format(width,height)
             displayed_image = customtkinter.CTkImage(current_image,size = (dimensions[0],dimensions[1]))
             if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
