@@ -33,3 +33,8 @@ Název složky pro přesunuté obrázky v prohlížeči obrázků:
 Přesunuté_oblásky
 Bezpečný mód při procházení subsložek:
 ano
+Nastavení prohlížeče obrázků: (1. zvolená možnost, 2. krok přibližování [%], 3. krok posunu)
+2
+20
+150
+
