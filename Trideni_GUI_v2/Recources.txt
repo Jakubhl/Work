@@ -4,11 +4,11 @@ bmp,png
 Podporované typy souborů u možností mazání:
 jpg,bmp,png,ifz
 Základní cesta k souborům:
-C:/Users/kubah/Desktop/JHV/test_images/Keyence/_503_Witte/datumovka/A/Normal/Přesunuté_oblásky/
+C:/Users/kubah/Desktop/JHV/test_images/Omron/SnímkySC01_MS500SA/
 Základní množství ponechaných souborů:
-1000
+999
 Základní cutoff date:
-28.2.2023
+28.02.2024
 Prefix funkce:
 Func_
 Prefix kamery:
@@ -30,11 +30,11 @@ Konvertovane_JPG
 Název složky pro kopírované obrázky v prohlížeči obrázků:
 Kopírované_obrázky
 Název složky pro přesunuté obrázky v prohlížeči obrázků:
-Přesunuté_oblásky
+Přesunuté_obrázky
 Bezpečný mód při procházení subsložek:
 ano
 Nastavení prohlížeče obrázků: (1. zvolená možnost, 2. krok přibližování [%], 3. krok posunu)
-2
-20
-150
+1
+10
+100
 
