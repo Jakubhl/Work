@@ -37,4 +37,6 @@ Nastavení prohlížeče obrázků: (1. zvolená možnost, 2. krok přibližová
 1
 10
 100
+Zobrazit changelog?
+ne
 

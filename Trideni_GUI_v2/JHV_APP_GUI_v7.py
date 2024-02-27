@@ -16,7 +16,7 @@ root=customtkinter.CTk()
 root.geometry("1200x900")
 root.wm_iconbitmap('images/logo_TRIMAZKON.ico')
 #root.title("Zpracování souborů z průmyslových kamer")
-root.title("TRIMAZKON v_3.3")
+root.title("TRIMAZKON v_3.4")
 #logo_set = False
 
 def split_text_to_rows(long_string:str,max_chars_on_row:int):
@@ -73,6 +73,7 @@ def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
     9 static_dirs_names\n
     10 sorting_safe_mode\n
     11 image_browser_setting [checkbox, increment, movement]\n
+    12 show_changelog\n
     """
 
     if os.path.exists('Recources.txt'):
@@ -166,9 +167,15 @@ def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
         if (str(Lines[38]) != "") and Lines[38].isdigit():
             image_browser_param[2] = int(Lines[38])
         #print(image_browser_param)
+            
+        Lines[40] = Lines[40].replace("\n","")
+        if Lines[40] != "ano":
+            show_changelog = "ne"
+        else:
+            show_changelog = Lines[40]
 
         return [supported_formats_sorting,supported_formats_deleting,path_repaired,files_to_keep,cutoff_date,
-                prefix_function,prefix_camera,maximalized,max_pallets,static_dirs_names,safe_mode,image_browser_param]
+                prefix_function,prefix_camera,maximalized,max_pallets,static_dirs_names,safe_mode,image_browser_param,show_changelog]
     else:
         print("Chybí konfigurační soubor Recources.txt")
         return [False]*11
@@ -195,6 +202,7 @@ def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do 
     12 new_default_static_dir_name\n
     13 sorting_safe_mode\n
     14 image_browser_param_set\n
+    15 show_change_log\n
     """
     unwanted_chars = ["\"","\n"," ","."]
     if os.path.exists('Recources.txt'):
@@ -319,6 +327,9 @@ def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do 
             lines[36] = str(input_data[0]) + "\n"
             lines[37] = str(input_data[1]) + "\n"
             lines[38] = str(input_data[2]) + "\n"
+
+        elif which_parameter == "show_change_log":
+            lines[40] = "ne" + "\n"
 
         #navraceni poli zpet do stringu radku:
         lines[2] = ""
@@ -464,6 +475,18 @@ def clear_console(text_widget,from_where=None):
     text_widget.delete(from_where, tk.END)
     text_widget.configure(state=tk.DISABLED)
 
+def pop_change_log():
+    popup = customtkinter.CTkToplevel(master= root,takefocus = True)
+    popup.attributes('-topmost', 'true')
+    #geometry_string = "400x500+" + str(int(root.winfo_width()/2))+ "+" + str(int(root.winfo_height()/2))
+    #popup.geometry(str(geometry_string))
+    popup.geometry("600x400")
+    popup.title("Novinky - verze 3.4")
+    popup.label = customtkinter.CTkLabel(popup, text="-Zvětšení písma\n-Oprava chyb při zadávání cesty\n\nMožnosti konvertovat:\n-Nový loading bar\n-Lze konvertovat více souborů\n\nProhlížeč obrázků:\n-Nově lze zkopírovat název aktuálního obrázku s cestou\n\nPokročilé možnosti:\n-Předělání vizualizace přes rolovací nabídku\n-Přidána nastavení pro prohlížeč obrázků\n(Přepínání mezi módy + parametry přibližování)\n\nToto okno se už po dalším spuštění nezobrazí",justify = "left",font = ("Arial",18))
+    popup.label.pack(padx=10, pady=10, anchor = "w")
+
+
+
 def menu(): # Funkce spouští základní menu při spuštění aplikace (MAIN)
     """
     Funkce spouští základní menu při spuštění aplikace (MAIN)
@@ -472,21 +495,25 @@ def menu(): # Funkce spouští základní menu při spuštění aplikace (MAIN)
 
     list_of_menu_frames = [frame_with_buttons,frame_with_logo]
     """
-
     data_read_in_txt = read_text_file_data()
+    if data_read_in_txt[12] == "ano":
+        pop_change_log()
+        write_text_file_data("ne","show_change_log")
+
     if data_read_in_txt[7] == "ano":
         #root.attributes('-fullscreen', True) #fullscreen bez windows tltacitek
         root.after(0, lambda:root.state('zoomed')) # max zoom, porad v okne
 
-    frame_with_logo = customtkinter.CTkFrame(master=root)
+    frame_with_logo = customtkinter.CTkFrame(master=root,corner_radius=0)
     #logo = customtkinter.CTkImage(Image.open("images/logo2.bmp"),size=(571, 70))
     logo = customtkinter.CTkImage(Image.open("images/logo.png"),size=(1200, 100))
     image_logo = customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
-    frame_with_buttons = customtkinter.CTkFrame(master=root)
+    frame_with_buttons = customtkinter.CTkFrame(master=root,corner_radius=0)
     frame_with_logo.pack(pady=0,padx=5,fill="both",expand=False,side = "top")
     image_logo.pack()
     frame_with_buttons.pack(pady=5,padx=5,fill="both",expand=True,side = "top")
-
+    
+    
     list_of_menu_frames = [frame_with_buttons,frame_with_logo]
     
     def call_sorting_option(list_of_menu_frames):
@@ -528,7 +555,10 @@ def menu(): # Funkce spouští základní menu při spuštění aplikace (MAIN)
         else:
             root.after(0, lambda:root.state('zoomed'))
     root.bind("<f>",maximalize_window)
+
+    
     root.mainloop()
+    
 
 class Image_browser: # Umožňuje procházet obrázky a přitom například vybrané přesouvat do jiné složky
     """
@@ -760,9 +790,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         width = whole_app_width
         height = whole_app_height-self.frame_with_path._current_height-30
         #print(f"Frame Dimensions: {width} x {height}")
-        print(root.winfo_screen())
-        print(self.root.winfo_screenwidth(),self.root.winfo_screenheight())
-        print(root.winfo_screenwidth(),root.winfo_screenheight())
         return [width, height]
 
     def calc_current_format(self,width,height): # Přepočítávání rozměrů obrázku do rozměru rámce podle jeho formátu + zooming
@@ -1517,6 +1544,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.images.bind("<MouseWheel>",mouse_wheel1)
         #self.main_frame.bind("<MouseWheel>",mouse_wheel1)
         self.frame_with_path.bind("<MouseWheel>",mouse_wheel2)
+        self.console.bind("<MouseWheel>",mouse_wheel2)
         self.unbind_list.append("<MouseWheel>")
         
         self.released = False
@@ -2007,7 +2035,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             explorer_settings_label = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "Nastavení EXPLORERU: ",justify = "left",font=("Arial",16,"bold"))
             select_by_dir =     customtkinter.CTkCheckBox(master = self.bottom_frame_default_path, text = "Vybrat cestu zvolením složky",font=("Arial",16),command = lambda: select_path_by_dir())
             select_by_file =    customtkinter.CTkCheckBox(master = self.bottom_frame_default_path, text = "Vybrat cestu zvolením souboru (jsou viditelné při vyhledávání)",font=("Arial",16),command = lambda: select_path_by_file())
-            self.path_set =     customtkinter.CTkEntry(master = self.bottom_frame_default_path,width=700,height=30,placeholder_text="")
+            self.path_set =     customtkinter.CTkEntry(master = self.bottom_frame_default_path,width=700,height=30,font=("Arial",16),placeholder_text="")
             button_save5 =      customtkinter.CTkButton(master = self.bottom_frame_default_path,width=50,height=30, text = "Uložit", command = lambda: save_path(),font=("Arial",18,"bold"))
             button_explorer =   customtkinter.CTkButton(master = self.bottom_frame_default_path,width=100,height=30, text = "EXPLORER", command = lambda: call_browseDirectories(),font=("Arial",18,"bold"))
             default_path_insert_console=customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=30,text ="",justify = "left",font=("Arial",18),text_color="white")
@@ -2424,7 +2452,7 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
     
     def selected_jpg(self):
         self.checkbox_bmp.deselect()
-        self.label.configure(text=f"Konvertované soubory budou vytvořeny uvnitř separátní složky: \"{self.jpg_folder_name}\"\nPodporované formáty: .ifz\nObsahuje-li .ifz soubor více obrázků, budou uloženy v následující syntaxi:\nxxx_0.bmp, xxx_1.bmp ...\nPro správnou funkci programu nesmí cesta obsahovat složky s mezerou v názvu")
+        self.label.configure(text=f"Konvertované soubory budou vytvořeny uvnitř separátní složky: \"{self.jpg_folder_name}\"\nPodporované formáty: .ifz\nObsahuje-li .ifz soubor více obrázků, budou uloženy v následující syntaxi:\nxxx_0.bmp, xxx_1.bmp ...")
 
     def create_convert_option_widgets(self):  # Vytváří veškeré widgets (convert option MAIN)
         #cisteni menu widgets
@@ -2434,30 +2462,30 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         self.list_of_menu_frames[0].destroy()
 
         #definice ramcu
-        self.frame_path_input = customtkinter.CTkFrame(master=self.root)
-        self.bottom_frame2    = customtkinter.CTkScrollableFrame(master=self.root)
-        self.bottom_frame1    = customtkinter.CTkFrame(master=self.root,height = 80)
+        self.frame_path_input = customtkinter.CTkFrame(master=self.root,corner_radius=0)
+        self.bottom_frame2    = customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
+        self.bottom_frame1    = customtkinter.CTkFrame(master=self.root,height = 80,corner_radius=0)
         self.frame_path_input.pack(pady=5,padx=5,fill="both",expand=False,side = "top")
         self.bottom_frame2.pack(pady=5,padx=5,fill="both",expand=True,side = "bottom")
         self.bottom_frame1.pack(pady=0,padx=5,fill="x",expand=False,side = "bottom")
 
         self.checkbox_bmp = customtkinter.CTkCheckBox(master = self.bottom_frame1, text = "Konvertovat do formátu .bmp",command=self.selected_bmp,font=("Arial",16,"bold"))
         self.checkbox_jpg = customtkinter.CTkCheckBox(master = self.bottom_frame1, text = "Konvertovat do formátu .jpg",command=self.selected_jpg,font=("Arial",16,"bold"))
-        self.checkbox_bmp.pack(pady =20,padx=10,anchor ="w")
-        self.checkbox_jpg.pack(pady =20,padx=10,anchor ="w")
+        self.checkbox_bmp.pack(pady =10,padx=10,anchor ="w")
+        self.checkbox_jpg.pack(pady =10,padx=10,anchor ="w")
 
         menu_button  = customtkinter.CTkButton(master = self.frame_path_input, width = 180, text = "MENU", command = lambda: self.call_menu(),font=("Arial",20,"bold"))
-        self.path_set = customtkinter.CTkEntry(master = self.frame_path_input,placeholder_text="Zadejte cestu k souborům určeným ke konvertování (kde se soubory přímo nacházejí)")
+        self.path_set = customtkinter.CTkEntry(master = self.frame_path_input,font=("Arial",16),placeholder_text="Zadejte cestu k souborům určeným ke konvertování (kde se soubory přímo nacházejí)")
         tree         = customtkinter.CTkButton(master = self.frame_path_input, width = 180,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"))
         menu_button.pack(pady =12,padx=10,anchor ="w",side="left")
         self.path_set.pack(pady = 12,padx =0,anchor ="w",side="left",fill="both",expand=True)
         tree.pack(pady = 12,padx =10,anchor ="w",side="left")
 
-        self.label   = customtkinter.CTkLabel(master = self.bottom_frame2,text = f"Konvertované soubory budou vytvořeny uvnitř separátní složky: \"{self.bmp_folder_name}\"\nPodporované formáty: .ifz\nObsahuje-li .ifz soubor více obrázků, budou uloženy v následující syntaxi:\nxxx_0.bmp, xxx_1.bmp ...",justify = "left",font=("Arial",16,"bold"))
+        self.label   = customtkinter.CTkLabel(master = self.bottom_frame2,text = f"Konvertované soubory budou vytvořeny uvnitř separátní složky: \"{self.bmp_folder_name}\"\nPodporované formáty: .ifz\nObsahuje-li .ifz soubor více obrázků, budou uloženy v následující syntaxi:\nxxx_0.bmp, xxx_1.bmp ...",justify = "left",font=("Arial",18,"bold"))
         button  = customtkinter.CTkButton(master = self.bottom_frame2, text = "KONVERTOVAT", command = self.start,font=("Arial",20,"bold"))
         self.loading_bar = customtkinter.CTkProgressBar(master = self.bottom_frame2, mode='determinate',width = 800,height =20,progress_color="green",corner_radius=0)
         #self.console = customtkinter.CTkLabel(master = self.bottom_frame2,text = "",justify = "left",font=("Arial",15))
-        self.console = tk.Text(self.bottom_frame2, wrap="word", height=20, width=1200,background="black",font=("Arial",15),state=tk.DISABLED)
+        self.console = tk.Text(self.bottom_frame2, wrap="word", height=20, width=1200,background="black",font=("Arial",16),state=tk.DISABLED)
         self.label.pack(pady =10,padx=10)
         button.pack(pady =20,padx=10)
         button._set_dimensions(300,60)
@@ -2758,15 +2786,15 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         today = Deleting.get_current_date()
         row_index = 0
         label0      = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Dnešní datum: "+today[1],justify = "left",font=("Arial",16,"bold"))
-        label1      = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte datum pro vyhodnocení souborů, jako starších:",justify = "left",font=("Arial",12))
-        set_day     = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30, placeholder_text= self.cutoff_date[0])
+        label1      = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte datum pro vyhodnocení souborů, jako starších:",justify = "left",font=("Arial",16))
+        set_day     = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[0])
         sep1        = customtkinter.CTkLabel(master = self.frame_right,height=20,width=10,text = ".",font=("Arial",20))
-        set_month   = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30, placeholder_text= self.cutoff_date[1])
+        set_month   = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[1])
         sep2        = customtkinter.CTkLabel(master = self.frame_right,height=20,width=10,text = ".",font=("Arial",20))
-        set_year    = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30, placeholder_text= self.cutoff_date[2])
-        button_save1 = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Uložit", command = lambda: set_cutoff_date(),font=("Arial",12,"bold"))
-        insert_button = customtkinter.CTkButton(master = self.frame_right,width=130,height=30, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",12,"bold"))
-        console_frame_right_1 = customtkinter.CTkLabel(master = self.frame_right,height=30,text = console_1_text,justify = "left",font=("Arial",12),text_color=console_1_color)
+        set_year    = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[2])
+        button_save1 = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Uložit", command = lambda: set_cutoff_date(),font=("Arial",18,"bold"))
+        insert_button = customtkinter.CTkButton(master = self.frame_right,width=190,height=30, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",18,"bold"))
+        console_frame_right_1 = customtkinter.CTkLabel(master = self.frame_right,height=30,text = console_1_text,justify = "left",font=("Arial",18),text_color=console_1_color)
         label0.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
         label1.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
         set_day.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
@@ -2775,7 +2803,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         sep2.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=80)
         set_year.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=90)
         button_save1.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=140)
-        insert_button.grid(column =0,row=row_index+3,sticky = tk.W,pady =0,padx=10)
+        insert_button.grid(column =0,row=row_index+3,sticky = tk.W,pady =5,padx=10)
         console_frame_right_1.grid(column =0,row=row_index+4,sticky = tk.W,pady =0,padx=10)
         def new_date_enter_btn(e):
             set_cutoff_date()
@@ -2784,10 +2812,10 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         set_year.bind("<Return>",new_date_enter_btn)
         
         console_2_text, console_2_color = self.console_frame_right_2_text
-        label2          = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte počet ponechaných souborů, vyhodnocených jako starších:",justify = "left",font=("Arial",12))
-        files_to_keep_set = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30, placeholder_text= self.files_to_keep)
-        button_save2    = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Uložit", command = lambda: set_files_to_keep(),font=("Arial",12,"bold"))
-        console_frame_right_2 = customtkinter.CTkLabel(master = self.frame_right,height=30,text =console_2_text,justify = "left",font=("Arial",12),text_color=console_2_color)
+        label2          = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte počet ponechaných souborů, vyhodnocených jako starších:",justify = "left",font=("Arial",16))
+        files_to_keep_set = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30,font=("Arial",16), placeholder_text= self.files_to_keep)
+        button_save2    = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Uložit", command = lambda: set_files_to_keep(),font=("Arial",18,"bold"))
+        console_frame_right_2 = customtkinter.CTkLabel(master = self.frame_right,height=30,text =console_2_text,justify = "left",font=("Arial",18),text_color=console_2_color)
         label2.grid(column =0,row=5,sticky = tk.W,pady =0,padx=10)
         files_to_keep_set.grid(column =0,row=6,sticky = tk.W,pady =0,padx=10)
         button_save2.grid(column =0,row=6,sticky = tk.W,pady =0,padx=60)
@@ -2892,15 +2920,15 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         today = Deleting.get_current_date()
         row_index = 0
         label0      = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Dnešní datum: "+today[1],justify = "left",font=("Arial",16,"bold"))
-        label1      = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte datum pro vyhodnocení souborů, jako starších:",justify = "left",font=("Arial",12))
-        set_day     = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30, placeholder_text= self.cutoff_date[0])
+        label1      = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte datum pro vyhodnocení souborů, jako starších:",justify = "left",font=("Arial",16))
+        set_day     = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[0])
         sep1        = customtkinter.CTkLabel(master = self.frame_right,height=20,width=10,text = ".",font=("Arial",20))
-        set_month   = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30, placeholder_text= self.cutoff_date[1])
+        set_month   = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[1])
         sep2        = customtkinter.CTkLabel(master = self.frame_right,height=20,width=10,text = ".",font=("Arial",20))
-        set_year    = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30, placeholder_text= self.cutoff_date[2])
-        button_save1 = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Uložit", command = lambda: set_cutoff_date(),font=("Arial",12,"bold"))
-        insert_button = customtkinter.CTkButton(master = self.frame_right,width=130,height=30, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",12,"bold"))
-        console_frame_right_1=customtkinter.CTkLabel(master = self.frame_right,height=30,text = console_frame_right_1_text,justify = "left",font=("Arial",12),text_color=console_frame_right_1_color)
+        set_year    = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[2])
+        button_save1 = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Uložit", command = lambda: set_cutoff_date(),font=("Arial",18,"bold"))
+        insert_button = customtkinter.CTkButton(master = self.frame_right,width=190,height=30, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",18,"bold"))
+        console_frame_right_1=customtkinter.CTkLabel(master = self.frame_right,height=30,text = console_frame_right_1_text,justify = "left",font=("Arial",18),text_color=console_frame_right_1_color)
         label0.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
         label1.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
         set_day.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
@@ -2909,7 +2937,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         sep2.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=80)
         set_year.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=90)
         button_save1.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=140)
-        insert_button.grid(column =0,row=row_index+3,sticky = tk.W,pady =0,padx=10)
+        insert_button.grid(column =0,row=row_index+3,sticky = tk.W,pady =5,padx=10)
         console_frame_right_1.grid(column =0,row=row_index+4,sticky = tk.W,pady =0,padx=10)
         def new_date_enter_btn(e):
             set_cutoff_date()
@@ -2918,10 +2946,10 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         set_year.bind("<Return>",new_date_enter_btn)
         
         console_frame_right_2_text, console_frame_right_2_color = self.console_frame_right_2_text
-        label2          = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte počet ponechaných novějších souborů:",justify = "left",font=("Arial",12))
-        files_to_keep_set = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30, placeholder_text= self.files_to_keep)
-        button_save2    = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Uložit", command = lambda: set_files_to_keep(),font=("Arial",12,"bold"))
-        console_frame_right_2=customtkinter.CTkLabel(master = self.frame_right,height=30,text =console_frame_right_2_text,justify = "left",font=("Arial",12),text_color=console_frame_right_2_color)
+        label2          = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte počet ponechaných novějších souborů:",justify = "left",font=("Arial",16))
+        files_to_keep_set = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30,font=("Arial",16), placeholder_text= self.files_to_keep)
+        button_save2    = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Uložit", command = lambda: set_files_to_keep(),font=("Arial",18,"bold"))
+        console_frame_right_2=customtkinter.CTkLabel(master = self.frame_right,height=30,text =console_frame_right_2_text,justify = "left",font=("Arial",18),text_color=console_frame_right_2_color)
         label2.grid(column =0,row=5,sticky = tk.W,pady =0,padx=10)
         files_to_keep_set.grid(column =0,row=6,sticky = tk.W,pady =0,padx=10)
         button_save2.grid(column =0,row=6,sticky = tk.W,pady =0,padx=60)
@@ -3012,18 +3040,18 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         row_index = 0
         label0          = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Dnešní datum: "+today[1],justify = "left",font=("Arial",16,"bold"))
         images2         = customtkinter.CTkLabel(master = self.frame_right,text = "")
-        label1          = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte datum pro vyhodnocení datumu v názvu adresářů, jako staršího:",justify = "left",font=("Arial",12))
-        set_day         = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30, placeholder_text= self.cutoff_date[0])
+        label1          = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte datum pro vyhodnocení datumu v názvu adresářů, jako staršího:",justify = "left",font=("Arial",16))
+        set_day         = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[0])
         sep1            = customtkinter.CTkLabel(master = self.frame_right,height=20,width=10,text = ".",font=("Arial",20))
-        set_month       = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30, placeholder_text= self.cutoff_date[1])
+        set_month       = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[1])
         sep2            = customtkinter.CTkLabel(master = self.frame_right,height=20,width=10,text = ".",font=("Arial",20))
-        set_year        = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30, placeholder_text= self.cutoff_date[2])
-        button_save1    = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Uložit", command = lambda: set_cutoff_date(),font=("Arial",12,"bold"))
-        insert_button = customtkinter.CTkButton(master = self.frame_right,width=130,height=30, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",12,"bold"))
-        console_frame_right_1 = customtkinter.CTkLabel(master = self.frame_right,height=30,text = console_frame_right_1_text,justify = "left",font=("Arial",12),text_color=console_frame_right_1_color)
+        set_year        = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[2])
+        button_save1    = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Uložit", command = lambda: set_cutoff_date(),font=("Arial",18,"bold"))
+        insert_button = customtkinter.CTkButton(master = self.frame_right,width=190,height=30, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",18,"bold"))
+        console_frame_right_1 = customtkinter.CTkLabel(master = self.frame_right,height=30,text = console_frame_right_1_text,justify = "left",font=("Arial",18),text_color=console_frame_right_1_color)
         directories     = customtkinter.CTkImage(Image.open("images/directories.png"),size=(240, 190))
         label0.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
-        images2.grid(column =0,row=row_index,sticky = tk.W,pady =10,padx=500,rowspan=5)
+        images2.grid(column =0,row=row_index,sticky = tk.W,pady =15,padx=600,rowspan=5)
         label1.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
         set_day.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
         sep1.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=40)
@@ -3060,43 +3088,43 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         self.list_of_menu_frames[0].destroy()
 
         #definice ramcu
-        self.frame_path_input = customtkinter.CTkFrame(master=self.root)
-        self.bottom_frame2   = customtkinter.CTkScrollableFrame(master=self.root)
-        self.bottom_frame1   = customtkinter.CTkFrame(master=self.root,height = 80)
-        checkbox_frame  = customtkinter.CTkFrame(master=self.root,width=400)
-        self.frame_right     = customtkinter.CTkScrollableFrame(master=self.root)
+        self.frame_path_input = customtkinter.CTkFrame(master=self.root,corner_radius=0)
+        self.bottom_frame2   = customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
+        self.bottom_frame1   = customtkinter.CTkFrame(master=self.root,height = 80,corner_radius=0)
+        checkbox_frame       = customtkinter.CTkFrame(master=self.root,width=400,height = 150,corner_radius=0)
+        self.frame_right     = customtkinter.CTkFrame(master=self.root,corner_radius=0,height = 150)
         self.frame_path_input.pack(pady=5,padx=5,fill="both",expand=False,side = "top")
         self.bottom_frame2.pack(pady=0,padx=5,fill="both",expand=True,side = "bottom")
         self.bottom_frame1.pack(pady=5,padx=5,fill="x",expand=False,side = "bottom")
         checkbox_frame.pack(pady=0,padx=5,fill="y",expand=False,side="left")
-        self.frame_right.pack(pady=0,padx=5,fill="both",expand=True,side="right")
+        self.frame_right.pack(pady=0,padx=0,fill="both",expand=True,side="right")
         
         menu_button = customtkinter.CTkButton(master = self.frame_path_input, width = 180, text = "MENU", command = lambda: self.call_menu(),font=("Arial",20,"bold"))
-        self.path_set    = customtkinter.CTkEntry(master = self.frame_path_input,placeholder_text="Zadejte cestu k souborům z kamery (kde se přímo nacházejí soubory nebo datumové složky)")
+        self.path_set    = customtkinter.CTkEntry(master = self.frame_path_input,font=("Arial",16),placeholder_text="Zadejte cestu k souborům z kamery (kde se přímo nacházejí soubory nebo datumové složky)")
         tree        = customtkinter.CTkButton(master = self.frame_path_input, width = 180,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"))
         menu_button.pack(pady =12,padx=10,anchor ="w",side="left")
         self.path_set.pack(pady = 12,padx =0,anchor ="w",side="left",fill="both",expand=True)
         tree.pack(pady = 12,padx =10,anchor ="w",side="left")
 
         self.frame_with_checkboxes = checkbox_frame
-        self.checkbox  = customtkinter.CTkCheckBox(master = self.frame_with_checkboxes, text = "Mazání souborů starších než: určité datum",command = lambda: self.selected(True))
-        self.checkbox2 = customtkinter.CTkCheckBox(master = self.frame_with_checkboxes, text = "Redukce novějších, mazání souborů starších než: určité datum",command = lambda: self.selected2(True))
-        self.checkbox3 = customtkinter.CTkCheckBox(master = self.frame_with_checkboxes, text = "Mazání adresářů s názvem ve formátu určitého datumu",command = lambda: self.selected3(True))
+        self.checkbox  = customtkinter.CTkCheckBox(master = self.frame_with_checkboxes,font=("Arial",16), text = "Mazání souborů starších než: určité datum",command = lambda: self.selected(True))
+        self.checkbox2 = customtkinter.CTkCheckBox(master = self.frame_with_checkboxes,font=("Arial",16), text = "Redukce novějších, mazání souborů starších než: určité datum",command = lambda: self.selected2(True))
+        self.checkbox3 = customtkinter.CTkCheckBox(master = self.frame_with_checkboxes,font=("Arial",16), text = "Mazání adresářů s názvem ve formátu určitého datumu",command = lambda: self.selected3(True))
         self.checkbox.pack(pady =10,padx=10,anchor ="w")
         self.checkbox2.pack(pady =10,padx=10,anchor ="w")
         self.checkbox3.pack(pady =10,padx=10,anchor ="w")
 
-        self.checkbox6       = customtkinter.CTkCheckBox(master = self.bottom_frame1, text = "Procházet subsložky? (max:6)",command = self.selected6,font=("Arial",12,"bold"))
-        self.info2           = customtkinter.CTkLabel(master = self.bottom_frame1,text = "",font=("Arial",12,"bold"))
-        self.checkbox_testing = customtkinter.CTkCheckBox(master = self.bottom_frame1, text = f"Režim TESTOVÁNÍ (Soubory vyhodnocené ke smazání se pouze přesunou do složky s názvem: \"{self.to_delete_folder_name}\")",font=("Arial",12,"bold"))
+        self.checkbox6       = customtkinter.CTkCheckBox(master = self.bottom_frame1, text = "Procházet subsložky? (max:6)",command = self.selected6,font=("Arial",16,"bold"))
+        self.info2           = customtkinter.CTkLabel(master = self.bottom_frame1,text = "",font=("Arial",16,"bold"))
+        self.checkbox_testing = customtkinter.CTkCheckBox(master = self.bottom_frame1, text = f"Režim TESTOVÁNÍ (Soubory vyhodnocené ke smazání se pouze přesunou do složky s názvem: \"{self.to_delete_folder_name}\")",font=("Arial",16,"bold"))
         self.checkbox6.grid(column =0,row=0,sticky = tk.W,pady =5,padx=10)
-        self.info2.grid(column =0,row=0,sticky = tk.W,pady =5,padx=250)
+        self.info2.grid(column =0,row=0,sticky = tk.W,pady =5,padx=280)
         self.checkbox_testing.grid(column =0,row=1,sticky = tk.W,pady =5,padx=10)
 
         self.info    = customtkinter.CTkLabel(master = self.bottom_frame2,text = "",font=("Arial",16,"bold"))
         button  = customtkinter.CTkButton(master = self.bottom_frame2, text = "SPUSTIT", command = self.start,font=("Arial",20,"bold"))
         #self.console = customtkinter.CTkLabel(master = self.bottom_frame2,text = " ",justify = "left",font=("Arial",15))
-        self.console = tk.Text(self.bottom_frame2, wrap="word", height=20, width=1200,background="black",font=("Arial",15),state=tk.DISABLED)
+        self.console = tk.Text(self.bottom_frame2, wrap="word", height=20, width=1200,background="black",font=("Arial",16),state=tk.DISABLED)
         self.info.pack(pady = 12,padx =10,anchor="w")
         button.pack(pady =20,padx=10)
         button._set_dimensions(300,60)
@@ -3308,8 +3336,8 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.checkbox4.deselect()
         self.checkbox5.deselect()
 
-        labelx = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=self.height_of_frame6+10,text = "",justify = "left",font=("Arial",12))
-        labelx.grid(column =0,row=0,pady =0,padx=10)
+        label_fill = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=self.height_of_frame6+15,text = "",justify = "left",font=("Arial",12))
+        label_fill.grid(column =0,row=0,pady =0,padx=10)
         
     def selected2(self): #Třídit podle čísla funkce (ID)
         """
@@ -3337,25 +3365,25 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             else:
                 console_frame6_1.configure(text = "Nutný alespoň jeden znak",text_color="red")
 
-        label1          = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=20,text = "Nastavte prefix adresářů:",justify = "left",font=("Arial",12))
-        prefix_set      = customtkinter.CTkEntry(master = self.frame6,width=150,height=30, placeholder_text= self.prefix_func)
-        button_save1    = customtkinter.CTkButton(master = self.frame6,width=50,height=30, text = "Uložit", command = lambda: set_prefix(),font=("Arial",12,"bold"))
-        console_frame6_1 = customtkinter.CTkLabel(master = self.frame6,height=30,text = " ",justify = "left",font=("Arial",12))
-        label1.grid(column =0,row=0,pady =0,padx=10)
+        label1          = customtkinter.CTkLabel(master = self.frame6,text = "Nastavte prefix adresářů:",justify = "left",font=("Arial",16))
+        prefix_set      = customtkinter.CTkEntry(master = self.frame6,width=150,font=("Arial",16), placeholder_text= self.prefix_func)
+        button_save1    = customtkinter.CTkButton(master = self.frame6,width=50, text = "Uložit", command = lambda: set_prefix(),font=("Arial",18,"bold"))
+        console_frame6_1 = customtkinter.CTkLabel(master = self.frame6,text = " ",justify = "left",font=("Arial",18))
+        label1.grid(column =0,row=0,sticky = tk.W,pady =5,padx=10)
         prefix_set.grid(column =0,row=1,sticky = tk.W,pady =0,padx=10)
-        button_save1.grid(column =0,row=1,sticky = tk.E,pady =0,padx=10)
-        console_frame6_1.grid(column =0,row=2,pady =0,padx=10)
+        button_save1.grid(column =0,row=1,sticky = tk.W,pady =0,padx=160)
+        console_frame6_1.grid(column =0,row=2,sticky = tk.W,pady =0,padx=10)
         prefix_set.insert("0", str(self.prefix_func))
         def prefix_enter_btn(e):
             set_prefix()
         prefix_set.bind("<Return>",prefix_enter_btn)
 
-        labelx          = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=30,text = "",justify = "left",font=("Arial",12))
-        checkbox_advance = customtkinter.CTkCheckBox(master = self.frame6,height=30, text = "Pokročilá nastavení",command = self.selected2_advance)
-        labelxx         = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=120,text = "",justify = "left",font=("Arial",12))
-        labelx.grid(column =0,row=3,pady =0,padx=10)
-        checkbox_advance.grid(column =0,row=4,pady =0,padx=10)
-        labelxx.grid(column =0,row=5,pady =0,padx=10)
+        #labelx          = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=30,text = "",justify = "left",font=("Arial",16))
+        checkbox_advance = customtkinter.CTkCheckBox(master = self.frame6,font=("Arial",16), text = "Pokročilá nastavení",command = self.selected2_advance)
+        label_fill         = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=167,text = "",justify = "left",font=("Arial",16))
+        #labelx.grid(column =0,row=3,sticky = tk.W,pady =0,padx=10)
+        checkbox_advance.grid(column =0,row=4,sticky = tk.W,pady =10,padx=10)
+        label_fill.grid(column =0,row=5,sticky = tk.W,pady =0,padx=10)
 
     def selected2_advance(self): # Třídit podle určitého čísla v ID
         """
@@ -3376,22 +3404,22 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
                 console_frame6_1.configure(text = "Nezadali jste číslo",text_color="red")
                 self.by_which_ID_num = ""
 
-        label1           = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=60,
+        label1           = customtkinter.CTkLabel(master = self.frame6,height=60,
                                         text = "Podle kterého čísla v ID se řídit:\n(např. poslední č. v ID = pozice dílu...)\nvolte první = 1 atd. (prázdné = celé ID)",
-                                        justify = "left",font=("Arial",12))
-        num_set          = customtkinter.CTkEntry(master = self.frame6,height=30,width=150, placeholder_text= self.by_which_ID_num)
-        button_save1     = customtkinter.CTkButton(master = self.frame6,height=30,width=50, text = "Uložit", command = lambda: set_which_num_of_ID(),font=("Arial",12,"bold"))
-        console_frame6_1 = customtkinter.CTkLabel(master = self.frame6,height=30,text = " ",justify = "left",font=("Arial",12))
-        labelx2          = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=30,text = "",justify = "left",font=("Arial",12))
-        button_back      = customtkinter.CTkButton(master = self.frame6,width=100,height=30, text = "Zpět", command = self.selected2,font=("Arial",12,"bold"))
-        labelx3          = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=80,text = "",justify = "left",font=("Arial",12))
-        label1.grid(column =0,row=0,pady =0,padx=10)
+                                        justify = "left",font=("Arial",16))
+        num_set          = customtkinter.CTkEntry(master = self.frame6,height=30,width=150,font=("Arial",16), placeholder_text= self.by_which_ID_num)
+        button_save1     = customtkinter.CTkButton(master = self.frame6,height=30,width=50, text = "Uložit", command = lambda: set_which_num_of_ID(),font=("Arial",18,"bold"))
+        console_frame6_1 = customtkinter.CTkLabel(master = self.frame6,height=30,text = " ",justify = "left",font=("Arial",18))
+        #labelx2          = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=30,text = "",justify = "left",font=("Arial",16))
+        button_back      = customtkinter.CTkButton(master = self.frame6,width=100,height=30, text = "Zpět", command = self.selected2,font=("Arial",18,"bold"))
+        label_fill          = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=115,text = "",justify = "left",font=("Arial",16))
+        label1.grid(column =0,row=0,sticky = tk.W,pady =5,padx=10)
         num_set.grid(column =0,row=1,sticky = tk.W,pady =0,padx=10)
-        button_save1.grid(column =0,row=1,sticky = tk.E,pady =0,padx=10)
-        console_frame6_1.grid(column =0,row=2,pady =0,padx=10)  
-        labelx2.grid(column =0,row=3,pady =0,padx=10)
-        button_back.grid(column =0,row=5,pady =0,padx=10)
-        labelx3.grid(column =0,row=6,pady =0,padx=10)
+        button_save1.grid(column =0,row=1,sticky = tk.W,pady =0,padx=160)
+        console_frame6_1.grid(column =0,row=2,sticky = tk.W,pady =5,padx=10)  
+        #labelx2.grid(column =0,row=3,sticky = tk.W,pady =0,padx=10)
+        button_back.grid(column =0,row=5,sticky = tk.W,pady =10,padx=10)
+        label_fill.grid(column =0,row=6,sticky = tk.W,pady =0,padx=10)
         def which_id_num_enter_btn(e):
             set_which_num_of_ID()
         num_set.bind("<Return>",which_id_num_enter_btn)
@@ -3422,21 +3450,21 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             else:
                 console_frame6_1.configure(text = "Nutný alespoň jeden znak",text_color="red")
 
-        label1       = customtkinter.CTkLabel(master = self.frame6,height=20,width=self.width_of_frame6,text = "Nastavte prefix adresářů:",justify = "left",font=("Arial",12))
-        prefix_set   = customtkinter.CTkEntry(master = self.frame6,height=30,width=150, placeholder_text= self.prefix_Cam)
-        button_save1 = customtkinter.CTkButton(master = self.frame6,height=30,width=50, text = "Uložit", command = lambda: set_prefix(),font=("Arial",12,"bold"))
-        console_frame6_1 = customtkinter.CTkLabel(master = self.frame6,height=30,text = " ",justify = "left",font=("Arial",12))
-        labelx       = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=180,text = "",justify = "left",font=("Arial",12))
-        label1.grid(column =0,row=0,pady =0,padx=10)
+        label1       = customtkinter.CTkLabel(master = self.frame6,height=20,text = "Nastavte prefix adresářů:",justify = "left",font=("Arial",16))
+        prefix_set   = customtkinter.CTkEntry(master = self.frame6,height=30,width=150,font=("Arial",16), placeholder_text= self.prefix_Cam)
+        button_save1 = customtkinter.CTkButton(master = self.frame6,height=30,width=50, text = "Uložit", command = lambda: set_prefix(),font=("Arial",18,"bold"))
+        console_frame6_1 = customtkinter.CTkLabel(master = self.frame6,height=30,text = " ",justify = "left",font=("Arial",18))
+        label_fill       = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=205,text = "",justify = "left",font=("Arial",16))
+        label1.grid(column =0,row=0,sticky = tk.W,pady =5,padx=10)
         prefix_set.grid(column =0,row=1,sticky = tk.W,pady =0,padx=10)
-        button_save1.grid(column =0,row=1,sticky = tk.E,pady =0,padx=10)
-        console_frame6_1.grid(column =0,row=2,pady =0,padx=10)
-        labelx.grid(column =0,row=3,pady =0,padx=10)
+        button_save1.grid(column =0,row=1,sticky = tk.W,pady =0,padx=160)
+        console_frame6_1.grid(column =0,row=2,sticky = tk.W,pady =5,padx=10)
+        label_fill.grid(column =0,row=3,pady =0,sticky = tk.W,padx=10)
         prefix_set.insert("0", str(self.prefix_Cam))
         def prefix_enter_btn(e):
             set_prefix()
         prefix_set.bind("<Return>",prefix_enter_btn)
-        
+
     def selected4(self): #Třídit podle obojího (funkce, kamery)
         """
         Nastavení widgets pro třídění podle funkce i čísla kamery
@@ -3450,9 +3478,9 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.checkbox3.deselect()
         self.checkbox5.deselect()
 
-        labelx = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=self.height_of_frame6+10,text = "",justify = "left",font=("Arial",12))
-        labelx.grid(column =0,row=0,pady =0,padx=10)
-        
+        label_fill = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=self.height_of_frame6+15,text = "",justify = "left",font=("Arial",12))
+        label_fill.grid(column =0,row=0,pady =0,padx=10)
+
     def selected5(self): #hledani paru
         """
         Nastavení widgets pro hledání dvakrát vyfocených výrobků za sebou se stejným ID
@@ -3475,7 +3503,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             elif int(input_1) <1:
                 console_frame6_1.configure(text = "Mimo rozsah",text_color="red")
             else:
-                console_frame6_1.configure(text = f"Počet palet nastaven na: {input_1}",text_color="white")
+                console_frame6_1.configure(text = f"Počet palet nastaven na: {input_1}",text_color="green")
                 self.max_num_of_pallets = input_1
                 
         def set_aut_detect():
@@ -3490,22 +3518,22 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             else:
                 self.sort_inside_pair_folder = False
 
-        label1              = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=20,text = "Nastavte počet palet v oběhu:",justify = "left",font=("Arial",12))
-        pallets_set         = customtkinter.CTkEntry(master = self.frame6,width=150,height=30, placeholder_text= self.max_num_of_pallets)
-        button_save1        = customtkinter.CTkButton(master = self.frame6,width=50,height=30, text = "Uložit", command = lambda: set_max_pallet_num(),font=("Arial",12,"bold"))
-        label_aut_detect    = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=60,text = "Možnost aut. detekce:\n(případ, že v cestě nechybí paleta\ns nejvyšším ID)",justify = "left",font=("Arial",12))
-        checkbox_aut_detect = customtkinter.CTkCheckBox(master = self.frame6,width=self.width_of_frame6,height=30, text = "Automatická detekce",command=set_aut_detect)
-        sort_pair_folder    = customtkinter.CTkCheckBox(master = self.frame6,width=self.width_of_frame6,height=90, text = "Třídit uvnitř složky s páry\npodle typu souboru",command = lambda: set_sorting_pair_folder())
-        console_frame6_1    = customtkinter.CTkLabel(master = self.frame6,height=30,text = " ",justify = "left",font=("Arial",12))
-        #labelx              = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=90,text = "",justify = "left",font=("Arial",12))
-        label1.grid(column =0,row=0,pady =0,padx=10)
+        label1              = customtkinter.CTkLabel(master = self.frame6,height=20,text = "Nastavte počet palet v oběhu:",justify = "left",font=("Arial",16))
+        pallets_set         = customtkinter.CTkEntry(master = self.frame6,width=150,height=30, placeholder_text= self.max_num_of_pallets,font=("Arial",16))
+        button_save1        = customtkinter.CTkButton(master = self.frame6,width=50,height=30, text = "Uložit", command = lambda: set_max_pallet_num(),font=("Arial",18,"bold"))
+        label_aut_detect    = customtkinter.CTkLabel(master = self.frame6,height=60,text = "Možnost aut. detekce:\n(případ, že v cestě nechybí nejvyšší ID)",justify = "left",font=("Arial",16))
+        checkbox_aut_detect = customtkinter.CTkCheckBox(master = self.frame6,height=30,font=("Arial",16), text = "Automatická detekce",command=set_aut_detect)
+        sort_pair_folder    = customtkinter.CTkCheckBox(master = self.frame6,height=90,font=("Arial",16), text = "Třídit uvnitř složky s páry\npodle typu souboru",command = lambda: set_sorting_pair_folder())
+        console_frame6_1    = customtkinter.CTkLabel(master = self.frame6,height=30,text = " ",justify = "left",font=("Arial",18))
+        label_fill              = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=0,text = "",justify = "left",font=("Arial",12))
+        label1.grid(column =0,row=0,sticky = tk.W,pady =5,padx=10)
         pallets_set.grid(column =0,row=1,sticky = tk.W,pady =0,padx=10)
-        button_save1.grid(column =0,row=1,sticky = tk.E,pady =0,padx=10)
-        console_frame6_1.grid(column =0,row=2,pady =0,padx=10)
-        label_aut_detect.grid(column =0,row=3,pady =0,padx=10)
-        checkbox_aut_detect.grid(column =0,row=4,pady =0,padx=10)
-        sort_pair_folder.grid(column =0,row=5,pady =0,padx=10)
-        #labelx.grid(column =0,row=5,pady =0,padx=10)
+        button_save1.grid(column =0,row=1,sticky = tk.W,pady =0,padx=160)
+        console_frame6_1.grid(column =0,row=2,sticky = tk.W,pady =5,padx=10)
+        label_aut_detect.grid(column =0,row=3,sticky = tk.W,pady =5,padx=10)
+        checkbox_aut_detect.grid(column =0,row=4,sticky = tk.W,pady =0,padx=10)
+        sort_pair_folder.grid(column =0,row=5,sticky = tk.W,pady =0,padx=10)
+        label_fill.grid(column =0,row=6,pady =0,padx=10)
         checkbox_aut_detect.select()
         sort_pair_folder.select()
         self.sort_inside_pair_folder = True
@@ -3514,26 +3542,27 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             set_max_pallet_num()
         pallets_set.bind("<Return>",max_pallets_num_enter_btn)
 
+
     def one_subfolder_checked(self): # checkbox na přepínání: procházet/ neprocházet 1 subsložku
         self.checkbox6.deselect()
         if self.one_subfolder.get() == 1:
             if self.checkbox_safe_mode.get()==1:
                 dir1sub = customtkinter.CTkImage(Image.open("images/1sub_roz.png"),size=(522, 173))
                 self.images2.configure(image =dir1sub)
-                self.console2.configure(text = "Zadaná cesta/ 1.složka/ složky se soubory",font=("Arial",14,"bold"),text_color="white")
+                self.console2.configure(text = "Zadaná cesta/ 1.složka/ složky se soubory",text_color="white")
             else:
                 nodir1sub = customtkinter.CTkImage(Image.open("images/1sub_vol.png"),size=(513, 142))
                 self.images2.configure(image =nodir1sub)
-                self.console2.configure(text = "Zadaná cesta/ 1.složka/ soubory volně, neroztříděné",font=("Arial",14,"bold"),text_color="white")
+                self.console2.configure(text = "Zadaná cesta/ 1.složka/ soubory volně, neroztříděné",text_color="white")
         else:
             if self.checkbox_safe_mode.get()==1:
                 dirsnosub = customtkinter.CTkImage(Image.open("images/nosub_roz.png"),size=(432, 133))
                 self.images2.configure(image =dirsnosub)
-                self.console2.configure(text = "Zadaná cesta/ složky se soubory",font=("Arial",14,"bold"),text_color="white")
+                self.console2.configure(text = "Zadaná cesta/ složky se soubory",text_color="white")
             else:
                 nodirsnosub = customtkinter.CTkImage(Image.open("images/nosub_vol.png"),size=(253, 142))
                 self.images2.configure(image =nodirsnosub)
-                self.console2.configure(text = "Zadaná cesta/ soubory volně, neroztříděné",font=("Arial",14,"bold"),text_color="white")
+                self.console2.configure(text = "Zadaná cesta/ soubory volně, neroztříděné",text_color="white")
     
     def two_subfolders_checked(self): # checkbox na přepínání: procházet/ neprocházet 2 subsložky
         self.one_subfolder.deselect()
@@ -3541,20 +3570,20 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             if self.checkbox_safe_mode.get()==1:
                 dir2sub = customtkinter.CTkImage(Image.open("images/2sub_roz.png"),size=(553, 111))
                 self.images2.configure(image =dir2sub)
-                self.console2.configure(text = "Zadaná cesta/ 1.složka/ 2.složka/ složky se soubory",font=("Arial",14,"bold"),text_color="white")
+                self.console2.configure(text = "Zadaná cesta/ 1.složka/ 2.složka/ složky se soubory",text_color="white")
             else:
                 nodir2sub = customtkinter.CTkImage(Image.open("images/2sub_vol.png"),size=(553, 111))
                 self.images2.configure(image =nodir2sub)
-                self.console2.configure(text = "Zadaná cesta/ 1.složka/ 2.složka/ soubory volně, neroztříděné",font=("Arial",14,"bold"),text_color="white")
+                self.console2.configure(text = "Zadaná cesta/ 1.složka/ 2.složka/ soubory volně, neroztříděné",text_color="white")
         else:
             if self.checkbox_safe_mode.get()==1:
                 dirsnosub = customtkinter.CTkImage(Image.open("images/nosub_roz.png"),size=(432, 133))
                 self.images2.configure(image =dirsnosub)
-                self.console2.configure(text = "Zadaná cesta/ složky se soubory",font=("Arial",14,"bold"),text_color="white")
+                self.console2.configure(text = "Zadaná cesta/ složky se soubory",text_color="white")
             else:
                 nodirsnosub = customtkinter.CTkImage(Image.open("images/nosub_vol.png"),size=(253, 142))
                 self.images2.configure(image =nodirsnosub)
-                self.console2.configure(text = "Zadaná cesta/ soubory volně, neroztříděné",font=("Arial",14,"bold"),text_color="white")
+                self.console2.configure(text = "Zadaná cesta/ soubory volně, neroztříděné",text_color="white")
     
     def safe_mode_checked(self):
         if self.one_subfolder.get() == 1:
@@ -3634,43 +3663,43 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.list_of_menu_frames[0].grid_forget()
         self.list_of_menu_frames[0].destroy()
         # nastaveni framu
-        self.frame2 = customtkinter.CTkFrame(master=self.root)
-        self.frame5 = customtkinter.CTkScrollableFrame(master=self.root)
-        self.frame3 = customtkinter.CTkFrame(master=self.root,width=400)
-        self.frame4 = customtkinter.CTkScrollableFrame(master=self.root)
+        self.frame2 = customtkinter.CTkFrame(master=self.root,corner_radius=0)
+        self.frame5 = customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
+        self.frame3 = customtkinter.CTkFrame(master=self.root,corner_radius=0,width=400,height = 290)
+        self.frame4 = customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
         self.frame2.pack(pady=0,padx=5,fill="both",expand=False,side = "top")
         self.frame5.pack(pady=0,padx=5,fill="both",expand=True,side = "bottom")
-        self.frame3.pack(pady=10,padx=5,fill="y",expand=False,side="left")
-        self.frame4.pack(pady=10,padx=5,fill="both",expand=True,side="right")
+        self.frame3.pack(pady=5,padx=5,fill="both",expand=False,side="left")
+        self.frame4.pack(pady=5,padx=5,fill="both",expand=True,side="right")
 
-        self.height_of_frame6 = 250
-        self.width_of_frame6 = 200
-        self.frame6 = customtkinter.CTkFrame(master=self.root,height=self.height_of_frame6,width = self.width_of_frame6)
-        self.frame6.pack(pady=10,padx=0,fill="both",expand=False,side = "bottom")
+        self.height_of_frame6 = 290
+        self.width_of_frame6 = 370
+        self.frame6 = customtkinter.CTkFrame(master=self.root,corner_radius=0,width=self.width_of_frame6 ,height=self.height_of_frame6)
+        self.frame6.pack(pady=5,padx=0,fill="both",expand=False,side = "bottom")
 
         menu_button = customtkinter.CTkButton(master = self.frame2, width = 180, text = "MENU", command = lambda: self.call_menu(),font=("Arial",20,"bold"))
-        self.path_set    = customtkinter.CTkEntry(master = self.frame2,placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)")
+        self.path_set    = customtkinter.CTkEntry(master = self.frame2,font=("Arial",16),placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)")
         tree        = customtkinter.CTkButton(master = self.frame2, width = 180,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"))
         menu_button.pack(pady =5,padx=10,anchor ="w",side="left")
         self.path_set.pack(pady = 5,padx =0,anchor ="w",side="left",fill="both",expand=True)
         tree.pack(pady = 5,padx =10,anchor ="w",side="left")
 
-        self.checkbox    = customtkinter.CTkCheckBox(master = self.frame3, text = "Třídit podle typů souborů",command = self.selected)
-        self.checkbox2   = customtkinter.CTkCheckBox(master = self.frame3, text = "Třídit podle čísla funkce (ID)",command = self.selected2)
-        self.checkbox3   = customtkinter.CTkCheckBox(master = self.frame3, text = "Třídit podle čísla kamery",command = self.selected3)
-        self.checkbox4   = customtkinter.CTkCheckBox(master = self.frame3, text = "Třídit podle čísla funkce i kamery",command = self.selected4)
-        self.checkbox5   = customtkinter.CTkCheckBox(master = self.frame3, text = "Najít dvojice (soubory se stejným ID, v řadě za sebou)",command = self.selected5)
+        self.checkbox    = customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Třídit podle typů souborů",command = self.selected)
+        self.checkbox2   = customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Třídit podle čísla funkce (ID)",command = self.selected2)
+        self.checkbox3   = customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Třídit podle čísla kamery",command = self.selected3)
+        self.checkbox4   = customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Třídit podle čísla funkce i kamery",command = self.selected4)
+        self.checkbox5   = customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Najít dvojice (soubory se stejným ID, v řadě za sebou)",command = self.selected5)
         self.checkbox.pack(pady =12,padx=10,anchor ="w")
         self.checkbox2.pack(pady =12,padx=10,anchor ="w")
         self.checkbox3.pack(pady =12,padx=10,anchor ="w")
         self.checkbox4.pack(pady =12,padx=10,anchor ="w")
         self.checkbox5.pack(pady =12,padx=10,anchor ="w")
 
-        self.one_subfolder = customtkinter.CTkCheckBox(master = self.frame4, text = "Projít 1 subsložku?",command = self.one_subfolder_checked)
-        self.checkbox6   = customtkinter.CTkCheckBox(master = self.frame4, text = "Projít 2 subsložky?",command = self.two_subfolders_checked)
-        self.checkbox_safe_mode = customtkinter.CTkCheckBox(master = self.frame4, text = "Rozbalit poslední složky?",command = self.safe_mode_checked)
+        self.one_subfolder = customtkinter.CTkCheckBox(master = self.frame4,font=("Arial",16), text = "Projít 1 subsložku?",command = self.one_subfolder_checked)
+        self.checkbox6   = customtkinter.CTkCheckBox(master = self.frame4,font=("Arial",16), text = "Projít 2 subsložky?",command = self.two_subfolders_checked)
+        self.checkbox_safe_mode = customtkinter.CTkCheckBox(master = self.frame4,font=("Arial",16), text = "Rozbalit poslední složky?",command = self.safe_mode_checked)
         self.images2     = customtkinter.CTkLabel(master = self.frame4,text = "")
-        self.console2    = customtkinter.CTkLabel(master = self.frame4,text = " ",font=("Arial",12))
+        self.console2    = customtkinter.CTkLabel(master = self.frame4,text = " ",font=("Arial",18,"bold"))
         self.console2.pack(pady =5,padx=10,side=tk.BOTTOM)
         self.images2.pack(side=tk.BOTTOM)
         self.one_subfolder.pack(pady =10,padx=10,anchor="w",side=tk.LEFT)
@@ -3679,10 +3708,10 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.checkbox_safe_mode.select()
 
         self.images       = customtkinter.CTkLabel(master = self.frame5,text = "")
-        self.name_example = customtkinter.CTkLabel(master = self.frame5,text = "",font=("Arial",16,"bold"))
+        self.name_example = customtkinter.CTkLabel(master = self.frame5,text = "",font=("Arial",18,"bold"))
         button            = customtkinter.CTkButton(master = self.frame5, text = "SPUSTIT", command = self.start,font=("Arial",20,"bold"))
         #self.console      = customtkinter.CTkLabel(master = self.frame5,text = " ",justify = "left",font=("Arial",15))
-        self.console = tk.Text(self.frame5, wrap="word", height=20, width=1200,background="black",font=("Arial",15),state=tk.DISABLED)
+        self.console = tk.Text(self.frame5, wrap="word", height=20, width=1200,background="black",font=("Arial",16),state=tk.DISABLED)
         self.images.pack()
         self.name_example.pack(pady = 12,padx =10)
         button.pack(pady =12,padx=10)
