@@ -9,6 +9,7 @@ from tkinter import filedialog
 import tkinter as tk
 import threading
 import shutil
+import concurrent.futures
 
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
@@ -478,14 +479,13 @@ def clear_console(text_widget,from_where=None):
 def pop_change_log():
     popup = customtkinter.CTkToplevel(master= root,takefocus = True)
     popup.attributes('-topmost', 'true')
-    #geometry_string = "400x500+" + str(int(root.winfo_width()/2))+ "+" + str(int(root.winfo_height()/2))
-    #popup.geometry(str(geometry_string))
-    popup.geometry("600x400")
-    popup.title("Novinky - verze 3.4")
-    popup.label = customtkinter.CTkLabel(popup, text="-Zvětšení písma\n-Oprava chyb při zadávání cesty\n\nMožnosti konvertovat:\n-Nový loading bar\n-Lze konvertovat více souborů\n\nProhlížeč obrázků:\n-Nově lze zkopírovat název aktuálního obrázku s cestou\n\nPokročilé možnosti:\n-Předělání vizualizace přes rolovací nabídku\n-Přidána nastavení pro prohlížeč obrázků\n(Přepínání mezi módy + parametry přibližování)\n\nToto okno se už po dalším spuštění nezobrazí",justify = "left",font = ("Arial",18))
+    geometry_string = "600x400+" + str(int(root.winfo_screenwidth()/2-300))+ "+" + str(int(root.winfo_screenheight()/2-200))
+    popup.geometry(str(geometry_string))
+    #popup.geometry("600x400")
+    popup.title("updates - verze 3.4")
+    popup.label = customtkinter.CTkLabel(popup, text="-Zvětšení písma\n-Oprava chyb při zadávání cesty\n-\"Přesýpačky\"\n\nMožnosti konvertovat:\n-Nový loading bar\n-Lze konvertovat více souborů\n\nProhlížeč obrázků:\n-Nově lze zkopírovat název aktuálního obrázku s cestou\n-zobrazuje se i samotný název obrázku\n\nPokročilé možnosti:\n-Předělání vizualizace přes rolovací nabídku\n-Přidána nastavení pro prohlížeč obrázků\n(Přepínání mezi módy + parametry přibližování)\n\nToto okno se už po dalším spuštění nezobrazí",justify = "left",font = ("Arial",18))
     popup.label.pack(padx=10, pady=10, anchor = "w")
-
-
+    popup.update()
 
 def menu(): # Funkce spouští základní menu při spuštění aplikace (MAIN)
     """
@@ -558,7 +558,6 @@ def menu(): # Funkce spouští základní menu při spuštění aplikace (MAIN)
 
     
     root.mainloop()
-    
 
 class Image_browser: # Umožňuje procházet obrázky a přitom například vybrané přesouvat do jiné složky
     """
@@ -2369,7 +2368,6 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         run_background = threading.Thread(target=call_converting_main, args=(running_program,))
         run_background.start()
 
-        
         completed =False
         condition_met = False
         previous_len = 0
@@ -2595,7 +2593,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                         #self.console.configure(text = "Provádím navolené možnosti mazání v cestě: " + str(path),text_color="white")
                         add_colored_line(self.console,"- Provádím navolené možnosti mazání v cestě: " + str(path) + "\n","orange")
 
-                        add_colored_line(self.console,"- Sloníku neboj, PRACUJU! :-) !" + "\n","#E75480",("Arial",30,"bold"))
+                        #add_colored_line(self.console,"- Sloníku neboj, PRACUJU! :-) !" + "\n","#E75480",("Arial",30,"bold"))
 
                         self.console.update_idletasks()
                         self.root.update_idletasks()
@@ -3191,9 +3189,12 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.pairs_folder_name = list_of_folder_names[1]
         self.sort_inside_pair_folder = True
         self.temp_path_for_explorer = None
+        self.original_image = Image.open("images/loading3.png")
+        self.original_image = self.original_image.resize((300, 300))
+        self.angle = 0
 
         self.create_sorting_option_widgets()
-    
+
     def start(self):# Ověřování cesty, init, spuštění
         """
         Ověřování cesty, init, spuštění
@@ -3218,7 +3219,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
                     #self.console.configure(text ="Provádím nastavenou možnost třídění v cestě: "+str(path),text_color="white")
                     add_colored_line(self.console,"- Provádím nastavenou možnost třídění v cestě: "+str(path)+"\n","orange")
 
-                    add_colored_line(self.console,"- Sloníku neboj, PRACUJU! :-) !" + "\n","#E75480",("Arial",30,"bold"))
+                    #add_colored_line(self.console,"- Sloníku neboj, PRACUJU! :-) !" + "\n","#E75480",("Arial",30,"bold"))
 
                     self.console.update_idletasks()
                     self.root.update_idletasks()
@@ -3229,6 +3230,8 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
 
     def sort_files(self,path): # Volání externího scriptu
         selected_sort = 0
+        self.loading_bar.set(value = 0)
+
         only_one_subfolder = False
         if self.checkbox.get() == 1:
             selected_sort = 1
@@ -3252,6 +3255,30 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             self.safe_mode = "ne"
         else:
             self.safe_mode = "ano"
+
+        popup = tk.Toplevel(master=root)
+        popup.attributes('-topmost', True)
+        geometry_string = "1000x1000+" + str(int(root.winfo_screenwidth()/2)-500)+ "+" + str(int(root.winfo_screenheight()/2)-500)
+        popup.geometry(str(geometry_string))
+        popup.label = tk.Label(popup)
+        image_ = ImageTk.PhotoImage(self.original_image)
+        popup.label.config(image=image_)  # Update label's image
+        popup.label.image = image_  # Keep a reference to the image to prevent garbage collection
+        popup.label.place(x=0, y=0, relwidth=1, relheight=1)
+        popup.wm_attributes("-transparentcolor","white")# trick to force the bg transparent
+        popup.config(bg= 'white')
+        popup.label.config(bg= 'white')
+        popup.overrideredirect(True)# hide the frame of a window
+        popup.update()
+        popup.label.update()
+
+        def rotate_image():
+            self.angle += 10  # Adjust the rotation speed as needed
+            rotated_image = self.original_image.rotate(self.angle)
+            image_ = ImageTk.PhotoImage(rotated_image)
+            popup.label.config(image=image_)  # Update label's image
+            popup.label.image = image_
+            popup.update()
 
         def call_trideni_main(whole_instance):
             whole_instance.main()
@@ -3278,23 +3305,31 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
 
         output_list_increment = 0
         completed = False
-        output_text = ""
         output_text2 = ""
         previous_console2_text = []
+        previous_progres = 0
 
         while not running_program.finish or completed == False:
             time.sleep(0.05)
+            rotate_image()
+            #progress bar:
+            if running_program.progress != previous_progres:
+                self.loading_bar.set(value = running_program.progress/100)
+                self.root.update_idletasks()
+                root.update_idletasks()
+                self.frame5.update_idletasks()
+
             if len(running_program.output_list) > output_list_increment:
                 for i in range(0,len(running_program.output_list[output_list_increment])):
                     new_row = str(running_program.output_list[output_list_increment][i])
                     if "bylo dokončeno" in new_row or "byla dokončena" in new_row:
-                        add_colored_line(self.console,str(new_row),"green",("Arial",15,"bold"))
+                        add_colored_line(self.console,str(new_row),"green",("Arial",16,"bold"))
                     elif "Chyba" in new_row or "Třídění ukončeno" in new_row or "Celkový počet duplikátů" in new_row:
-                        add_colored_line(self.console,str(new_row),"red",("Arial",15,"bold"))
+                        add_colored_line(self.console,str(new_row),"red",("Arial",16,"bold"))
                     elif "Nepáry" in new_row:
-                        add_colored_line(self.console,str(new_row),"orange",("Arial",15,"bold"))
+                        add_colored_line(self.console,str(new_row),"orange",("Arial",16,"bold"))
                     elif "OK soubory" in new_row:
-                        add_colored_line(self.console,str(new_row),"green",("Arial",15,"bold"))
+                        add_colored_line(self.console,str(new_row),"green",("Arial",16,"bold"))
                     else:
                         add_colored_line(self.console,str(new_row),"white")
                     self.console.update_idletasks()
@@ -3313,11 +3348,13 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
                 previous_console2_text = running_program.output_console2
                 output_text2 = ""
 
-            if running_program.finish and len(running_program.output_list) == output_list_increment and running_program.output_console2 == previous_console2_text:
+            if running_program.finish and len(running_program.output_list) == output_list_increment and running_program.output_console2 == previous_console2_text and int(self.loading_bar.get())== 1:
                 completed = True
         
         self.console.update_idletasks()
+        
         run_background.join()
+        popup.destroy()
 
     def clear_frame(self,frame): # mazání widgets v daném framu
         for widget in frame.winfo_children():
@@ -3542,7 +3579,6 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             set_max_pallet_num()
         pallets_set.bind("<Return>",max_pallets_num_enter_btn)
 
-
     def one_subfolder_checked(self): # checkbox na přepínání: procházet/ neprocházet 1 subsložku
         self.checkbox6.deselect()
         if self.one_subfolder.get() == 1:
@@ -3710,12 +3746,15 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.images       = customtkinter.CTkLabel(master = self.frame5,text = "")
         self.name_example = customtkinter.CTkLabel(master = self.frame5,text = "",font=("Arial",18,"bold"))
         button            = customtkinter.CTkButton(master = self.frame5, text = "SPUSTIT", command = self.start,font=("Arial",20,"bold"))
+        self.loading_bar = customtkinter.CTkProgressBar(master = self.frame5, mode='determinate',width = 800,height =20,progress_color="green",corner_radius=0)
         #self.console      = customtkinter.CTkLabel(master = self.frame5,text = " ",justify = "left",font=("Arial",15))
         self.console = tk.Text(self.frame5, wrap="word", height=20, width=1200,background="black",font=("Arial",16),state=tk.DISABLED)
         self.images.pack()
         self.name_example.pack(pady = 12,padx =10)
         button.pack(pady =12,padx=10)
         button._set_dimensions(300,60)
+        self.loading_bar.pack(pady = 5,padx = 5)
+        self.loading_bar.set(value = 0)
         self.console.pack(pady =10,padx=10)
 
         #default nastaveni:
@@ -3753,5 +3792,6 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.root.bind("<Escape>",unfocus_widget)
         self.unbind_list.append("<Escape>")
         self.path_set.bind("<Return>",unfocus_widget)
+
 menu()
 

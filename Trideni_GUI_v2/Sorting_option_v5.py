@@ -42,6 +42,7 @@ class whole_sorting_function:
         self.printed_ref2 = False
         self.printed_ref3 = False
         self.printed_ref4 = False
+        self.progress = 0
         self.finish = False
         if safe_mode == "ano":
             self.safe_mode = True
@@ -541,9 +542,13 @@ class whole_sorting_function:
                 num_of_files_to_copy+=1
 
     def call_function_search(self):
+        self.progress =5
         self.Collect_files()
+        self.progress =10
         self.Get_suffix()
+        self.progress =20
         functions_found = self.Get_func_list()
+        self.progress =30
         if functions_found != False:
             for functions in functions_found:
                 self.make_dir(self.prefix_func + functions)
@@ -553,21 +558,28 @@ class whole_sorting_function:
             self.remove_empty(folders)
             return False
         without_error=self.Sorting_files(functions_found)
+        self.progress =60
         if without_error == False:
             folders = self.sync_folders(self.path)
             self.remove_empty(folders)
             return False
         folders = self.sync_folders(self.path)
         self.remove_empty(folders)
+        self.progress =80
 
     def call_pair_search(self):
-        self.Collect_files() 
+        self.progress =5
+        self.Collect_files()
+        self.progress =10
         self.Get_suffix() #pro ziskani pole se vsema podporovanyma souborama
+        self.progress =20
         without_error=self.Sorting_files(None) #pro presun lichych souboru do nok slozky
+        self.progress =40
         if without_error == False:
             return False
         if self.aut_detect_num_of_pallets == True:
             ID_list = self.Get_func_list()
+            self.progress =60
             if ID_list != False:
                 self.max_num_of_pallets = int(max(ID_list))
                 self.output.append(f"- Maximální počet palet automaticky nastaven na: {self.max_num_of_pallets}")
@@ -577,6 +589,7 @@ class whole_sorting_function:
         self.sort_by_ID()
         folders = self.sync_folders(self.path)
         self.remove_empty(folders)
+        self.progress =80
 
     def sort_inside_pair_folder(self):
         if self.path.endswith('/') == False:
@@ -621,6 +634,7 @@ class whole_sorting_function:
                     self.output_console2.append(items)
 
                 for paths in result:
+                    self.progress = 0
                     if os.path.exists(paths):
                         self.path = paths
                         self.functions_arr = []
@@ -642,15 +656,20 @@ class whole_sorting_function:
                         folders = self.sync_folders(self.path)
                         
                         if self.sort_option == 0:
+                            self.progress =5
                             self.Collect_files()
+                            self.progress =20
                             formats_found = self.Get_suffix()
+                            self.progress =30
                             for formats in formats_found:
                                 self.make_dir(formats)
                             without_error=self.Sorting_files(None)
+                            self.progress = 60
                             if without_error == False:
                                 self.error = True
                             folders = self.sync_folders(self.path)
                             self.remove_empty(folders)
+                            self.progress = 80
 
                         elif self.sort_option == 1:
                             function_search_result = self.call_function_search()
@@ -658,29 +677,40 @@ class whole_sorting_function:
                                 self.error = True
 
                         elif self.sort_option == 2:
+                            self.progress =5
                             self.Collect_files()
+                            self.progress = 20
                             self.Get_suffix()
+                            self.progress = 30
                             cam_numbers_found = self.Get_cam_num_list()
+                            self.progress = 40
                             for cam_num in cam_numbers_found:
                                 self.make_dir(self.prefix_cam + cam_num)
                             without_error=self.Sorting_files(cam_numbers_found)
+                            self.progress = 60
                             if without_error == False:
                                 self.error = True
                             folders = self.sync_folders(self.path)
                             self.remove_empty(folders)
+                            self.progress = 80
 
                         elif self.sort_option == 3:
+                            self.progress =5
                             self.Collect_files()
+                            self.progress = 20
                             self.Get_suffix()
+                            self.progress = 30
                             both_found = self.Get_both_list()
+                            self.progress = 40
                             for both in both_found:
                                 self.make_dir(both)
                             without_error=self.Sorting_files(both_found)
+                            self.progress = 60
                             if without_error == False:
                                 self.error = True
                             folders = self.sync_folders(self.path)
                             self.remove_empty(folders)
-
+                            self.progress = 80
                         
                         elif self.sort_option == 4: #hledani dvojic, collect ze slozek a vytvoreni slozky se vsema dvojicema - potom si mohou dotridit jinym programem
                             pair_search_result = self.call_pair_search()
@@ -700,20 +730,27 @@ class whole_sorting_function:
                             self.output.append(final_text)
                         
                         self.output_list.append(self.output)
+                    self.progress = 100
 
         else: #nebylo zaskrtnuto prochazet vice souboru
             self.make_dir(self.nok_folder) #vytvoreni zakladnich slozek
             folders = self.sync_folders(self.path)
             if self.sort_option == 0:
+                self.progress =5
                 self.Collect_files()
+                self.progress =10
                 formats_found = self.Get_suffix()
+                self.progress =20
                 for formats in formats_found:
                     self.make_dir(formats)
+                self.progress =40
                 without_error=self.Sorting_files(None)
+                self.progress =60
                 if without_error == False:
                     self.error = True
                 folders = self.sync_folders(self.path)
                 self.remove_empty(folders)
+                self.progress = 80
 
             elif self.sort_option == 1:
                 function_search_result = self.call_function_search()
@@ -721,28 +758,40 @@ class whole_sorting_function:
                     self.error = True
 
             elif self.sort_option == 2:
+                self.progress =5
                 self.Collect_files()
+                self.progress =10
                 self.Get_suffix()
+                self.progress =20
                 cam_numbers_found = self.Get_cam_num_list()
+                self.progress =30
                 for cam_num in cam_numbers_found:
                     self.make_dir(self.prefix_cam + cam_num)
                 without_error=self.Sorting_files(cam_numbers_found)
+                self.progress =60
                 if without_error == False:
                     self.error = True
                 folders = self.sync_folders(self.path)
                 self.remove_empty(folders)
+                self.progress =80
 
             elif self.sort_option == 3:
+                self.progress =5
                 self.Collect_files()
+                self.progress =10
                 self.Get_suffix()
+                self.progress =20
                 both_found = self.Get_both_list()
+                self.progress =30
                 for both in both_found:
                     self.make_dir(both)
                 without_error=self.Sorting_files(both_found)
+                self.progress =60
                 if without_error == False:
                     self.error = True
                 folders = self.sync_folders(self.path)
                 self.remove_empty(folders)
+                self.progress =80
 
             elif self.sort_option == 4:  #hledani dvojic, collect ze slozek a vytvoreni slozky se vsema dvojicema - potom si mohou dotridit jinym programem
                 pair_search_result = self.call_pair_search()
@@ -764,6 +813,7 @@ class whole_sorting_function:
             self.output_list.append(self.output)
 
         time.sleep(0.1)
+        self.progress = 100
         self.finish = True
         return True
         
