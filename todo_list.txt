@@ -1,0 +1,192 @@
+9:32 AM 27/11/2023
+pridat mazani souboru - spoustet batacke soubory pres aplikaci -hotovo
+
+11:02 AM 12/6/2023
+kdyz soubory nemaji priponu, tak hledat ve funkci sort_by_ID pouze jedno opakovani... -hotovo
+pridat do advance: maximalizovat okno pri spusteni -hotovo
+pridat moznost mazat podle creation date - asi neni potreba
+vstupy podporovanych formatu ocistit od tecek a separatoru -hotovo
+pridat moznost testovaciho mazani - ze se soubory presunou do temp slozky - hotovo
+
+11:54 PM 12/6/2023
+pri mazani more dirs celkovy pocet a dokonceno - hotovo
+pridat konverzi z ifz na bmp... - hotovo
+subslozky nebrat to delete folder - hotovo
+checkbox testing zrusit command - hotovo
+
+10:21 AM 12/7/2023
+output do konzole by_which_id - hotovo
+neulozi se pri tlacitku zpet: by_which_id a neulozi se nazev slozky - hotovo
+poresit globals - hotovo
+vylepsit fullscreen - hotovo
+pri hledani paru maximalni cislo palet pro automatickou detekci - pridat checkbox - hotovo
+
+V NOVE VERZI: (potreba novy exe)
+6:40 PM 12/8/2023
+explorer nezobrazuje obrazky - hotovo
+tlacitko otevrit kdyz se nakopiruje cesta - hotovo
+
+5:50 PM 12/16/2023
+pridat prohlizec obrazku, kdyz se neco nelibi zastavit, ulozit - hotovo
+-predelat main_frame do canvas - hotovo
+-usporadano do trid - moznosti prochazet obrazky - hotovo
+
+9:13 PM 12/17/2023
+-usporadano do trid - advanced moznosti - hotovo
+-usporadano do trid - moznosti konvertovani - hotovo
+-usporadano do trid - moznosti mazani - hotovo
+-usporadano do trid - moznosti trideni - hotovo
+-predvyplnit cesty - hotovo
+
+1:24 PM 12/18/2023
+popsat vsechny funkce- hotovo
+zkontrolovat globaly - hotovo
+kdyz pisu do entry widgetu u image browseru, aktivuji se hotkeys... vytvorit fci entry_focus - hotovo
+prompt jestli opravdu spustit mazani - hotovo
+vlozit dnesni datum u vsech moznosti mazani - hotovo
+reagovat na enter v ctkentries - hotovo
+
+3:49 PM 12/19/2023
+drop down menu, vyberte kterou slozku zmenit zakl nazev - hotovo
+kdyz se meni nazev slozky, mit ho tam i predvyplneny - hotovo
+pridat aby neslo nazvat 2 slozky stejne - hotovo
+ke slozkam pridat k cemu jsou - hotovo
+neni spravne predvyplneno u prefixu - hotovo
+predelat advanced - pridat slozky na kopirovani, konvertovani, ke smazani a temp - hotovo
+vymyslet nazev (KONTRIMAZ)(TRIMAZKON) - hotovo
+kdyz bez chyby, console zelene/ cervene
+pridat do uprav slozku vybraze obrazku - hotovo
+upravit logo nazvu, pridat omrona - hotovo
+
+11:53 AM 12/20/2023
+dodelat barvy u deleting setting widgets - hotovo
+kdyz prenastavim pouze mesic, musim se ujistit max dny - hotovo
+kdyz more dirs, nemuzu primo zvolit slozku - predelat, ze kdyz je zaskrtnute more dirs vybiram slozky - hotovo
+zkontrolovat num_of_dots feature - hotovo
+opravit vypisovani prilis dlouheho stringu na jeden radek - hotovo
+
+9:47 PM 12/22/2023
+u more_dirs potreba aby se zobrazovaly cesty postupne - hotovo
+bezpecnostni mod zabranil rozbaleni obsahu... - hotovo
+
+6:03 PM 12/23/2023
+consoli predelat z label na text a vypisovat barvy postupne - hotovo
+po zavreni image browser nejde menu - hotovo
+
+10:45 AM 1/22/2024
+u hledani paru roztridit podle suffixu ve slozce s pary - hotovo
+kdyz v advance vybiram pocatecni cestu, musim vybrat soubor - udelat moznost se slozkou - hotovo
+u hledani paru roztridit podle suffixu ve slozce s pary - pridat zaskrtavatko ano/ne - hotovo
+opravit vypisy s pomlckou - hotovo
+vypsat celkovy pocet dvojic - hotovo
+u prohlizeni obrazku mit moznost prepsat cislo zobrazovanyho obrazku - hotovo
+
+8:57 AM 1/23/2024
+zapamatovat selectnutej obrazek explorerem a ten v image browseru zobrazit jako prvni - hotovo
+zapamatovat selectnutej obrazek manualne a ten v image browseru zobrazit jako prvni - hotovo
+pridat obrazky k prochazeni subslozek - hotovo
+
+9:33 AM 1/24/2024
+Zduraznit info o tom, ze program pracuje - hotovo
+collect pouze files ve slozkach podle suffixu (predejde se chybam) - udelat treba v advance bezpecny mod- rozbaluje pouze slozky s urcitym suffixem -hotovo
+bylo by dobre udelat moznost zvoleni kolik subslozek projit... 1 nebo 2 - hotovo
+koleckem prepinat obrazky kdyz je mys mimo obrazek (na canvasu nebo path_framu) - hotovo
+kdyz pres explorer vlozim cestu, tak docasne ulozit aby v tom explorer zacinal - hotovo
+
+VERZE 3.2:
+
+6:15 PM 1/25/2024
+podivat se, jestli lze tolerovat mezery v nazvech slozek (dat cestu do uvozovek?) - hotovo
+neslo 2000 souboru konvertovat (zvysena kapacita zadanim zakladni cesty) - hotovo
+docasne ulozeni cesty v exploreru, dodelat u trideni, mazani a konvertovani - hotovo
+opraven vypis u trideni a zadavani pres explorer - hotovo
+
+3:43 PM 1/26/2024
+mazat vytvorenou docasnou slozku (kdyz se zmeni cesta nebo se vrati do menu) - hotovo
+prochazet i ifz v prohlizeci (ukladat docasne do slozky), kdyz je vic v jednom ifz prepinat dal... - hotovo
+samostatne prepinani uvnitr ifz... - hotovo
+
+3:30 PM 1/28/2024
+nabindovat sipky na prepinani ifz - hotovo
+schovat nacitani aplikace omron - hotovo
+
+9:22 PM 1/30/2024
+udelat moznost delete obrazku - hotovo
+udelat funkci presunute obrazky (ne zkopirovane), ulozit presat na kopirovat - hotovo
+přidat novou složku do pokročilých možností - hotovo
+
+11:57 AM 2/1/2024
+Tlačítko spustit podruhé zastavit... - hotovo
+
+3:19 PM 2/5/2024
+pri otevrit nesmi chybet lomitko - path check - hotovo
+
+2:50 PM 2/11/2024
+reagovat spravne na zoomslider - hotovo
+
+9:55 PM 2/13/2024
+udelat moznost v advance options nastavit krok narustani zoomu - hotovo
+kdyz priblizuju koleckem, posouvat k tomu mistu podle pozice mysi (jak daleko je mys od hrany {0.2} o tolik posunout mimo pri zvetseni 0.2*new*heigth = y) - hotovo
+pridat moznost prepinani mezi slidebary a pohybem koleckem - hotovo
+
+1:58 PM 2/22/2024
+vlastni loading bar, u converting odstranit loading bar omron - hotovo
+
+10:05 AM 2/26/2024
+advance option, udelat rolovaci nabidku - hotovo
+uplne smazat frame s console v advanced - hotovo
+reagovat na mys v motion... aby slo na jinem monitoru winfo_screen() - nefunguje, pamatuje si pouze, kde byl program spusten
+
+9:07 PM 2/27/2024
+upravit velikosti pismen - hotovo
+pridat pouze jedenkrat vyskakovaci okno s upozornenim, co je noveho - hotovo
+
+10:08 AM 3/1/2024
+loading bar - sorting - hotovo
+
+6:00 PM 3/3/2024
+animace pri nacitani - hotovo
+image browser - pridat jmeno souboru - hotovo
+image browser - rozsirit konzoli - hotovo
+kdyz 2 subslozky a jedna je neroztridena, druha roztridena, nejde... pridat chybovou hlasku - hotovo
+
+
+
+zjistit prepnuti monitoru a upravit podle toho parametry IB
+
+fungovat i pres dhcp connection
+
+moznost pinnout horni frame u IB
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

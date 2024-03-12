@@ -668,13 +668,11 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             if path != "":
                 check = path_check(path)
                 if check == False:
-                    #self.console.configure(text = "Zadaná cesta: "+str(path)+" nebyla nalezena",text_color="red")
                     add_colored_line(self.console,"Zadaná cesta: "+str(path)+" nebyla nalezena","red",None,True)
                 else:
                     path = check
                     path_found = True
             else:
-                #self.console.configure(text = "Nebyla vložena cesta k souborům",text_color="red")
                 add_colored_line(self.console,"Nebyla vložena cesta k souborům","red",None,True)
 
         if os.path.isdir(path) == False: # pokud se nejedna o slozku - je mozne, ze je vlozeny nazev souboru pro zobrazeni, jako prvni
@@ -694,7 +692,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
 
             else:
                 path_found = False
-                #self.console.configure(text = "Zadaná cesta: "+str(path)+" neobsahuje žádné obrázky",text_color="red")
                 add_colored_line(self.console,"Zadaná cesta: "+str(path)+" neobsahuje žádné obrázky","red",None,True)
         #automaticky okamzite otevre prvni z obrazku v dane ceste
         if path_found == True:
@@ -712,7 +709,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.all_images = self.get_images(path)
                 if len(self.all_images) != 0:
                     self.image_browser_path = path
-                    #self.console.configure(text = f"Vložena cesta: {path}",text_color="green")
                     add_colored_line(self.console,f"Vložena cesta: {path}","green",None,True)
 
                     if self.ifz_located == None:
@@ -746,10 +742,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                         self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
 
                 else:
-                    #self.console.configure(text = "- V zadané cestě nebyly nalezeny obrázky",text_color="red")
                     add_colored_line(self.console,"- V zadané cestě nebyly nalezeny obrázky","red",None,True)
             else:
-                #self.console.configure(text = "- Vložená cesta je neplatná",text_color="red")
                 add_colored_line(self.console,"- Vložená cesta je neplatná","red",None,True)
     
     def call_browseDirectories(self): # Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
@@ -763,7 +757,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])
-            #self.console.configure(text=f"Byla vložena cesta: {output[1]}",text_color="white")
             add_colored_line(self.console,f"Byla vložena cesta: {output[1]}","white",None,True)
             self.selected_image = output[2]
             
@@ -1042,8 +1035,12 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.changable_image_num.delete("0","100")
                 self.changable_image_num.insert("0", str(self.increment_of_image+1))
                 if silent == False:
-                    #self.console.configure(text = str(self.all_images[self.increment_of_image]),text_color="white")
-                    add_colored_line(self.console,str(self.all_images[self.increment_of_image]),"white",None,True)
+                    if self.name_or_path.get() == 1:
+                        only_name = str(self.all_images[self.increment_of_image]).split("/")
+                        only_name = only_name[int(len(only_name))-1]
+                        add_colored_line(self.console,str(only_name),"white",None,True)
+                    else:
+                        add_colored_line(self.console,str(self.all_images[self.increment_of_image]),"white",None,True)
 
                 self.current_image_num_ifz.configure(text ="/" + str(len(self.converted_images)))
                 self.changable_image_num_ifz.delete("0","100")
@@ -1062,8 +1059,13 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.current_image_num_ifz.configure(text ="/" + str(len(self.converted_images)))
                 self.changable_image_num_ifz.delete("0","100")
                 self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
-                #self.console.configure(text = str(self.converted_images[self.increment_of_ifz_image]),text_color="white")
-                add_colored_line(self.console,str(self.converted_images[self.increment_of_ifz_image]),"white",None,True)
+                if self.name_or_path.get() == 1:
+                    only_name = str(self.converted_images[self.increment_of_ifz_image]).split("/")
+                    only_name = only_name[int(len(only_name))-1]
+                    add_colored_line(self.console,str(only_name),"white",None,True)
+                else:
+                    add_colored_line(self.console,str(self.converted_images[self.increment_of_ifz_image]),"white",None,True)
+
 
     def previous_image(self): # Předchozí obrázek v pořadí (šipka vlevo)
         """
@@ -1084,8 +1086,13 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             self.current_image_num.configure(text = "/" + str(len(self.all_images)))
             self.changable_image_num.delete("0","100")
             self.changable_image_num.insert("0", str(self.increment_of_image+1))
-            #self.console.configure(text = str(self.all_images[self.increment_of_image]),text_color="white")
-            add_colored_line(self.console,str(self.all_images[self.increment_of_image]),"white",None,True)
+            if self.name_or_path.get() == 1:
+                only_name = str(self.all_images[self.increment_of_image]).split("/")
+                only_name = only_name[int(len(only_name))-1]
+                add_colored_line(self.console,str(only_name),"white",None,True)
+            else:
+                add_colored_line(self.console,str(self.all_images[self.increment_of_image]),"white",None,True)
+
 
             self.current_image_num_ifz.configure(text ="/" + str(len(self.converted_images)))
             self.changable_image_num_ifz.delete("0","100")
@@ -1104,9 +1111,12 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.current_image_num_ifz.configure(text ="/" + str(len(self.converted_images)))
                 self.changable_image_num_ifz.delete("0","100")
                 self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
-                #self.console.configure(text = str(self.converted_images[self.increment_of_ifz_image]),text_color="white")
-                add_colored_line(self.console,str(self.converted_images[self.increment_of_ifz_image]),"white",None,True)
-
+                if self.name_or_path.get() == 1:
+                    only_name = str(self.converted_images[self.increment_of_ifz_image]).split("/")
+                    only_name = only_name[int(len(only_name))-1]
+                    add_colored_line(self.console,str(only_name),"white",None,True)
+                else:
+                    add_colored_line(self.console,str(self.converted_images[self.increment_of_ifz_image]),"white",None,True)
     class interrupt_viewing: # Pro možnosti vykonávání subprocessu na pozadí
         """
         Pro možnosti vykonávání subprocessu na pozadí
@@ -1177,11 +1187,17 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             os.mkdir(path+ "/" + self.copy_dir)
         if not os.path.exists(path + "/" + self.copy_dir+ "/" + image):
             shutil.copy(path+ "/" + image,path + "/" + self.copy_dir+ "/" + image)
-            #self.console.configure(text = f"Obrázek zkopírován do zvláštní složky: \"{self.copy_dir}\".  ({image})",text_color="white")
-            add_colored_line(self.console,f"Obrázek zkopírován do zvláštní složky: \"{self.copy_dir}\".  ({image})","white",None,True)
+            if self.name_or_path.get() == 1:
+                add_colored_line(self.console,f"Obrázek zkopírován do zvláštní složky: \"{self.copy_dir}\".  ({image})","white",None,True)
+            else:
+                add_colored_line(self.console,f"Obrázek zkopírován do zvláštní složky: \"{self.copy_dir}\".  ({image_path})","white",None,True)
+
         else:
-            #self.console.configure(text = f"Obrázek je již zkopírovaný uvnitř složky: {self.copy_dir}.  ({image})",text_color="red")
-            add_colored_line(self.console,f"Obrázek je již zkopírovaný uvnitř složky: {self.copy_dir}.  ({image})","red",None,True)
+            if self.name_or_path.get() == 1:
+                add_colored_line(self.console,f"Obrázek je již zkopírovaný uvnitř složky: {self.copy_dir}.  ({image})","red",None,True)
+            else:
+                add_colored_line(self.console,f"Obrázek je již zkopírovaný uvnitř složky: {self.copy_dir}.  ({image_path})","red",None,True)
+                
 
     def move_image(self): # Tlačítko Přesun., přesune daný obrázek do složky v dané cestě
         """
@@ -1195,8 +1211,10 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             os.mkdir(self.image_browser_path+ "/" + self.move_dir)
         if not os.path.exists(self.image_browser_path + "/" + self.move_dir+ "/" + image):
             shutil.move(self.image_browser_path+ "/" + image,self.image_browser_path + "/" + self.move_dir+ "/" + image)
-            #self.console.configure(text = f"Obrázek přesunut do zvláštní složky: \"{self.move_dir}\".  ({image})",text_color="white")
-            add_colored_line(self.console,f"Obrázek přesunut do zvláštní složky: \"{self.move_dir}\".  ({image})","white",None,True)
+            if self.name_or_path.get() == 1:
+                add_colored_line(self.console,f"Obrázek přesunut do zvláštní složky: \"{self.move_dir}\".  ({image})","white",None,True)
+            else:
+                add_colored_line(self.console,f"Obrázek přesunut do zvláštní složky: \"{self.move_dir}\".  ({image_path})","white",None,True)
             self.all_images.pop(self.increment_of_image) # odstraneni z pole
             self.current_image_num.configure(text ="/" + str(len(self.all_images))) # update maximalniho poctu obrazku
             self.increment_of_image -=1
@@ -1206,8 +1224,11 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         image_path = self.all_images[self.increment_of_image]
         image = str(image_path).replace(self.image_browser_path,"")
         if os.path.exists(image_path):
-            #self.console.configure(text = f"Právě byl smazán obrázek: {image}",text_color="orange")
-            add_colored_line(self.console,f"Právě byl smazán obrázek: {image}","orange",None,True)
+            if self.name_or_path.get() == 1:
+                add_colored_line(self.console,f"Právě byl smazán obrázek: {image}","orange",None,True)
+            else:
+                add_colored_line(self.console,f"Právě byl smazán obrázek: {image_path}","orange",None,True)
+
             os.remove(image_path)
             self.all_images.pop(self.increment_of_image) # odstraneni z pole
             self.current_image_num.configure(text ="/" + str(len(self.all_images))) # update maximalniho poctu obrazku
@@ -1276,18 +1297,15 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.horizontal_scrollbar = customtkinter.CTkScrollbar(self.background_frame, orientation="horizontal", command=self.on_horizontal_scroll)
         self.horizontal_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
         self.main_frame.configure(xscrollcommand=self.horizontal_scrollbar.set)
-        
         self.main_frame.configure(scrollregion=self.main_frame.bbox("all"))
-
         self.main_frame.pack(pady=0,padx=5,ipadx=10,ipady=10,fill="both",expand=True,side = "bottom",anchor= "center")
-        #scrollregion = [x_min,y_min,x_max,y_max] hodnoty na scrollbarech
         
         menu_button  = customtkinter.CTkButton(master = self.frame_with_path, width = 150,height=30, text = "MENU", command = lambda: self.call_menu(),font=("Arial",16,"bold"))
         self.path_set = customtkinter.CTkEntry(master = self.frame_with_path,width = 680,height=30,placeholder_text="Zadejte cestu k souborům (kde se soubory přímo nacházejí)")
         manual_path  = customtkinter.CTkButton(master = self.frame_with_path, width = 120,height=30,text = "Otevřít", command = lambda: self.start(self.path_set.get()),font=("Arial",16,"bold"))
         tree         = customtkinter.CTkButton(master = self.frame_with_path, width = 120,height=30,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",16,"bold"))
-        #self.console = customtkinter.CTkLabel(master = self.frame_with_path,text = "",height=15,justify = "left",font=("Arial",16),text_color="white")
-        self.console = tk.Text(self.frame_with_path, wrap="none", height=0, width=105,background="black",font=("Arial",16),state=tk.DISABLED)
+        self.name_or_path = customtkinter.CTkCheckBox(master = self.frame_with_path,font=("Arial",16), text = "Název/cesta")
+        self.console = tk.Text(self.frame_with_path, wrap="none", height=0, width=180,background="black",font=("Arial",14),state=tk.DISABLED)
         button_back  = customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = "<", command = self.previous_image,font=("Arial",16,"bold"))
         self.changable_image_num = customtkinter.CTkEntry(master = self.frame_with_path,width=45,justify = "left",font=("Arial",16,"bold"))
         self.changable_image_num.delete("0","100")
@@ -1295,7 +1313,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.current_image_num = customtkinter.CTkLabel(master = self.frame_with_path,text = "/0",justify = "left",font=("Arial",16,"bold"))
         button_next  = customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = ">", command = self.next_image,font=("Arial",16,"bold"))
         self.button_play_stop  = customtkinter.CTkButton(master = self.frame_with_path, width = 90,height=30,text = "SPUSTIT", command = self.play,font=("Arial",16,"bold"))
-        #button_stop  = customtkinter.CTkButton(master = self.frame_with_path, width = 60,height=30,text = "STOP", command = self.stop,font=("Arial",16,"bold"))
         button_copy  = customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "Kopír.", command = lambda: self.copy_image(self.image_browser_path),font=("Arial",16,"bold"))
         rotate_button = customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "OTOČIT", command =  lambda: self.rotate_image(),font=("Arial",16,"bold"))
         speed_label  = customtkinter.CTkLabel(master = self.frame_with_path,text = "Rychlost:",justify = "left",font=("Arial",12))
@@ -1321,7 +1338,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.path_set.grid(column = 0,row=0,pady = 5,padx =160,sticky = tk.W)
         manual_path.grid(column = 0,row=0,pady = 5,padx =850,sticky = tk.W)
         tree.grid(column = 0,row=0,pady = 5,padx =975,sticky = tk.W)
-        self.console.grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
+        self.name_or_path.grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
+        self.console.grid(column = 0,row=1,pady = 5,padx =160,sticky = tk.W)
         button_back.grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
         self.changable_image_num.grid(column = 0,row=2,pady = 5,padx =40,sticky = tk.W)
         self.current_image_num.grid(column = 0,row=2,pady = 5,padx =85,sticky = tk.W)
@@ -1350,6 +1368,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
 
         self.images = customtkinter.CTkLabel(master = self.main_frame,text = "")
         self.images.place(x=5,y=5)
+        self.name_or_path.select()
 
         def jump_to_image(e):
             if self.changable_image_num.get().isdigit():
@@ -3747,7 +3766,6 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.name_example = customtkinter.CTkLabel(master = self.frame5,text = "",font=("Arial",18,"bold"))
         button            = customtkinter.CTkButton(master = self.frame5, text = "SPUSTIT", command = self.start,font=("Arial",20,"bold"))
         self.loading_bar = customtkinter.CTkProgressBar(master = self.frame5, mode='determinate',width = 800,height =20,progress_color="green",corner_radius=0)
-        #self.console      = customtkinter.CTkLabel(master = self.frame5,text = " ",justify = "left",font=("Arial",15))
         self.console = tk.Text(self.frame5, wrap="word", height=20, width=1200,background="black",font=("Arial",16),state=tk.DISABLED)
         self.images.pack()
         self.name_example.pack(pady = 12,padx =10)
@@ -3771,7 +3789,6 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             #self.console.configure(text="Byla vložena cesta z konfiguračního souboru",text_color="white")
             add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white")
         else:
-            #self.console.configure(text="Konfigurační soubor obsahuje neplatnou cestu k souborům (můžete vložit v pokročilém nastavení)",text_color="orange")
             add_colored_line(self.console,"Konfigurační soubor obsahuje neplatnou cestu k souborům (můžete vložit v pokročilém nastavení)","orange")
 
         def maximalize_window(e):
