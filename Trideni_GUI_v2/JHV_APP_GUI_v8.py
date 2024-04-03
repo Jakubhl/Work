@@ -601,6 +601,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.chosen_option = text_file_data[11][0]
         self.zoom_increment = text_file_data[11][1]
         self.zoom_movement = text_file_data[11][2]
+        self.image_queue = ["","","","","","","","","","",""]
+        self.flow_direction = ""
         self.create_widgets()
         self.interrupt = self.interrupt_viewing(self)
         
@@ -612,7 +614,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         if self.state == "running":
             self.stop()
 
-        list_of_frames = [self.main_frame,self.frame_with_path,self.background_frame]
+        list_of_frames = [self.main_frame,self.frame_with_path,self.background_frame,self.image_film_frame_center,self.image_film_frame_right,self.image_film_frame_left]
         for frames in list_of_frames:
             frames.pack_forget()
             frames.grid_forget()
@@ -780,6 +782,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         #whole_app_width = self.main_frame.winfo_width()
         width = whole_app_width
         height = whole_app_height-self.frame_with_path._current_height-30
+        height = height - self.image_film_frame_left._current_height
         #print(f"Frame Dimensions: {width} x {height}")
         return [width, height]
 
@@ -1012,10 +1015,73 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.images.image = displayed_image
                 self.images.update_idletasks()
 
+            def open_image(increment_of_image_given,position):
+                increment_of_image = increment_of_image_given + position
+                number_of_found_images = len(self.all_images)
+                if increment_of_image < 0:
+                    increment_of_image = number_of_found_images + increment_of_image
+
+                elif increment_of_image > number_of_found_images-1:
+                    increment_of_image = 0 + (increment_of_image-number_of_found_images)
+
+                image_to_show = self.all_images[increment_of_image]
+                with Image.open(image_to_show) as current_image:
+                    opened_image = current_image.rotate(self.rotation_angle,expand=True)
+                return opened_image
+
+            image_center= customtkinter.CTkImage(current_image,size = ((100,100)))
+            image_film_dimensions = [80,80]
+
+            half_image_queue = int(len(self.image_queue)/2)
+            
+
+            if "" in self.image_queue: #kdyz jeste nejsou zadne poukladane, preloading
+                #CENTER image preload
+                self.image_queue[half_image_queue] = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
+
+                for i in range(0,half_image_queue): #LEFT
+                    current_image = open_image(increment_of_image,-half_image_queue+i)
+                    self.image_queue[i] = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
+                    
+                for i in range(0,half_image_queue): #RIGHT
+                    current_image = open_image(increment_of_image,+i+1)
+                    self.image_queue[i+half_image_queue+1] = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
+            else:
+                if self.flow_direction == "left":
+                    current_image = open_image(increment_of_image,-half_image_queue)
+                    preopened_image = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
+                    
+                    self.image_queue.pop(len(self.image_queue)-1)
+                    self.image_queue.insert(0,preopened_image)
+
+                elif self.flow_direction == "right":
+                    current_image = open_image(increment_of_image,half_image_queue)
+                    preopened_image = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
+                    self.image_queue.append(preopened_image)
+                    self.image_queue.pop(0)
+                    
+            if self.image_film_frame_left.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
+                for i in range(0,half_image_queue):
+                    self.left_labels[i].configure(image = self.image_queue[i])
+                    self.left_labels[i].image = self.image_queue[i]
+                    self.left_labels[i].update_idletasks()
+                
+            if self.image_film_frame_center.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
+                self.images_film_center.configure(image = image_center)
+                self.images_film_center.image = image_center
+                self.images_film_center.update_idletasks()
+
+            if self.image_film_frame_right.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
+                for i in range(0,half_image_queue):
+                    self.right_labels[i].configure(image = self.image_queue[half_image_queue+i+1])
+                    self.right_labels[i].image = self.image_queue[half_image_queue+i+1]
+                    self.right_labels[i].update_idletasks()
+            
     def next_image(self,silent=False): # Další obrázek v pořadí (šipka vpravo)
         """
         Další obrázek v pořadí (šipka vpravo)
         """
+        self.flow_direction = "right"
         number_of_found_images = len(self.all_images)
         if number_of_found_images != 0:
             if self.increment_of_image < number_of_found_images -1:
@@ -1069,6 +1135,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         """
         Předchozí obrázek v pořadí (šipka vlevo)
         """
+        self.flow_direction = "left"
         number_of_found_images = len(self.all_images)
         if number_of_found_images != 0:
             if self.increment_of_image > 0:
@@ -1286,8 +1353,42 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.frame_with_path = customtkinter.CTkFrame(master=self.root,height = 200)
         self.background_frame = customtkinter.CTkFrame(master=self.root)
         self.main_frame      = customtkinter.CTkCanvas(master=self.background_frame,background="black",highlightthickness=0)
+        self.image_film_frame_left = customtkinter.CTkFrame(master=self.root,height = 100)
+        self.image_film_frame_center = customtkinter.CTkFrame(master=self.root,height = 100,width = 200)
+        self.image_film_frame_right = customtkinter.CTkFrame(master=self.root,height = 100)
         self.frame_with_path.pack(pady=5,padx=5,fill="x",expand=False,side = "top")
-        self.background_frame.pack(pady=0,padx=5,ipadx=10,ipady=10,fill="both",expand=True,side = "bottom")
+        self.background_frame.pack(pady=0,padx=5,ipadx=10,ipady=10,fill="both",expand=True,side = "top")
+        self.image_film_frame_left.pack(pady=5,expand=True,side = "left",fill="x")
+        self.image_film_frame_center.pack(pady=5,expand=False,side = "left",anchor = "center")
+        self.image_film_frame_right.pack(pady=5,expand=True,side = "left",fill="x")
+
+        images_film_left1 = customtkinter.CTkLabel(master = self.image_film_frame_left,text = "")
+        images_film_left1.pack(padx = 10,side = "right")
+        images_film_left2 = customtkinter.CTkLabel(master = self.image_film_frame_left,text = "")
+        images_film_left2.pack(padx = 10,side = "right")
+        images_film_left3 = customtkinter.CTkLabel(master = self.image_film_frame_left,text = "")
+        images_film_left3.pack(padx = 10,side = "right")
+        images_film_left4 = customtkinter.CTkLabel(master = self.image_film_frame_left,text = "")
+        images_film_left4.pack(padx = 10,side = "right")
+        images_film_left5 = customtkinter.CTkLabel(master = self.image_film_frame_left,text = "")
+        images_film_left5.pack(padx = 10,side = "right")
+
+        self.images_film_center = customtkinter.CTkLabel(master = self.image_film_frame_center,text = "")
+        self.images_film_center.pack(padx = 10)
+
+        images_film_right1 = customtkinter.CTkLabel(master = self.image_film_frame_right,text = "")
+        images_film_right1.pack(padx = 10,side = "left")
+        images_film_right2 = customtkinter.CTkLabel(master = self.image_film_frame_right,text = "")
+        images_film_right2.pack(padx = 10,side = "left")
+        images_film_right3 = customtkinter.CTkLabel(master = self.image_film_frame_right,text = "")
+        images_film_right3.pack(padx = 10,side = "left")
+        images_film_right4 = customtkinter.CTkLabel(master = self.image_film_frame_right,text = "")
+        images_film_right4.pack(padx = 10,side = "left")
+        images_film_right5 = customtkinter.CTkLabel(master = self.image_film_frame_right,text = "")
+        images_film_right5.pack(padx = 10,side = "left")
+
+        self.left_labels = [images_film_left5,images_film_left4,images_film_left3,images_film_left2,images_film_left1]
+        self.right_labels = [images_film_right1,images_film_right2,images_film_right3,images_film_right4,images_film_right5]
 
         self.vertical_scrollbar = customtkinter.CTkScrollbar(self.background_frame, orientation="vertical", command=self.on_vertical_scroll)
         self.vertical_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)

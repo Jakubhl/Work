@@ -150,13 +150,20 @@ image browser - pridat jmeno souboru - hotovo
 image browser - rozsirit konzoli - hotovo
 kdyz 2 subslozky a jedna je neroztridena, druha roztridena, nejde... pridat chybovou hlasku - hotovo
 
+9:52 PM 4/3/2024
+udelat film obrazku pred a po... nacist v mensi kvalite + nenacitat vzdy znovu - hotovo
 
 
 zjistit prepnuti monitoru a upravit podle toho parametry IB
 
-fungovat i pres dhcp connection
+moznost provest pripojeni k serveru - predelat cely system otevirani obrazku podle ftp serveru
+
+udelat moznosti nastaveni poctu zobrazovanych obrazku ve fronte + moznost film vubec nezobrazovat
+
 
 moznost pinnout horni frame u IB
+
+
 
 
 
