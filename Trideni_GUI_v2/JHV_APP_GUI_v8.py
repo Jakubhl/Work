@@ -4,7 +4,7 @@ import time
 from PIL import Image, ImageTk
 import Sorting_option_v5 as Trideni
 import Deleting_option_v1 as Deleting
-import Converting_option_v2 as Converting
+import Converting_option_v3 as Converting
 from tkinter import filedialog
 import tkinter as tk
 import threading
@@ -16,7 +16,7 @@ root=customtkinter.CTk()
 root.geometry("1200x900")
 root.wm_iconbitmap('images/logo_TRIMAZKON.ico')
 #root.title("Zpracování souborů z průmyslových kamer")
-root.title("TRIMAZKON v_3.4")
+root.title("TRIMAZKON v_3.5")
 #logo_set = False
 
 def split_text_to_rows(long_string:str,max_chars_on_row:int):
@@ -601,8 +601,12 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.chosen_option = text_file_data[11][0]
         self.zoom_increment = text_file_data[11][1]
         self.zoom_movement = text_file_data[11][2]
-        self.image_queue = ["","","","","","","","","","",""]
+        self.image_film = True
+        self.number_of_film_images = 6
+        self.image_queue = [""]*((self.number_of_film_images*2)+1)
         self.flow_direction = ""
+        self.ifz_converted_for_film = []
+        self.ifz_count = 1
         self.create_widgets()
         self.interrupt = self.interrupt_viewing(self)
         
@@ -628,6 +632,10 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         #self.path_set.unbind("<Return>")
         menu()
     
+    def clear_frame(self,frame):
+        for widget in frame.winfo_children():
+            widget.destroy()
+
     def get_images(self,path):  # Seznam všech obrázků v podporovaném formátu (včetně cesty)
         """
         Seznam všech obrázků v podporovaném formátu (včetně cesty)
@@ -640,23 +648,94 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 list_of_files_to_view.append(path + files)
                 if ("."+files_split[len(files_split)-1]) == ".ifz":
                     self.ifz_located = True
-                
         return list_of_files_to_view
 
     def convert_files(self):
-        name_of_file = self.all_images[self.increment_of_image].split("/")
-        name_of_file = name_of_file[len(name_of_file)-1]
+        if self.image_film == False:
+            name_of_file = self.all_images[self.increment_of_image].split("/")
+            name_of_file = name_of_file[len(name_of_file)-1]
+            #vytvoreni temp slozky:
+            if os.path.exists(self.default_path + self.temp_bmp_folder):
+                shutil.rmtree(self.default_path + self.temp_bmp_folder) # vycistit
+                os.mkdir(self.default_path + self.temp_bmp_folder)
+            else:
+                os.mkdir(self.default_path + self.temp_bmp_folder)
 
-        if os.path.exists(self.default_path + self.temp_bmp_folder):
-            shutil.rmtree(self.default_path + self.temp_bmp_folder) # vycistit
-            os.mkdir(self.default_path + self.temp_bmp_folder)
+            Converting.whole_converting_function(self.default_path,"bmp",self.temp_bmp_folder,None,True,name_of_file)
+            self.converted_images = []
+            for files in os.listdir(self.default_path + self.temp_bmp_folder):
+                if (self.default_path + self.temp_bmp_folder + "/" + files) not in self.converted_images:
+                    self.converted_images.append(self.default_path + self.temp_bmp_folder + "/" + files)
+
+        elif self.image_film == True:
+            #1) uprava nazvu pro konvertovani
+            names_of_files_to_be_converted = []
+            num_of_preload_images = len(self.image_queue)-1
+            for i in range(0,len(self.image_queue)):
+                image_index = int(self.increment_of_image+i-(num_of_preload_images/2))
+                if image_index < 0:
+                    image_index = len(self.all_images) + image_index
+                elif image_index > len(self.all_images)-1:
+                    image_index = 0 + (image_index-len(self.all_images))
+                name_of_file = self.all_images[image_index].split("/")
+                name_of_file = name_of_file[len(name_of_file)-1]
+                names_of_files_to_be_converted.append(name_of_file)
+            #2) vytvareni temp slozky
+            found_files=[]
+            if not os.path.exists(self.default_path + self.temp_bmp_folder):
+                os.mkdir(self.default_path + self.temp_bmp_folder)
+            else:
+                for files in os.listdir(self.default_path + self.temp_bmp_folder):
+                    if ".bmp" in files:
+                        found_files.append(files[:-6])
+            #3) check jestli uz neni konvertovane
+            to_convert =[]
+            for i in range(0,len(names_of_files_to_be_converted)):
+                if names_of_files_to_be_converted[i][:-4] not in found_files: #_x (x muze nabyvat max hodnoty 8)
+                    to_convert.append(names_of_files_to_be_converted[i])
+            #print("converting",to_convert)
+            #5) volani funkce pro konvertovani
+            Converting.whole_converting_function(self.default_path,"bmp",self.temp_bmp_folder,None,True,to_convert)
+            #6) mazani nepotrebnych
+            for files in os.listdir(self.default_path + self.temp_bmp_folder):
+                if (str(files[:-6])+".ifz") not in names_of_files_to_be_converted:
+                    os.remove(self.default_path + self.temp_bmp_folder + "/" + files)
+                    #print("deleting",files)
+                
+            #8) plneni pole s kompletni cestou ve spravnem poradi...
+            largest_ifz_num = 1
+            self.converted_images = []
+            for i in range(0,len(names_of_files_to_be_converted)):
+                for files in os.listdir(self.default_path + self.temp_bmp_folder):
+                    # urcovani poctu ifz v jednom souboru (vykonat pouze jednou pro vsechny soubory)
+                    if i == 0:
+                        if files[-5:-4].isdigit():
+                            if int(files[-5:-4]) +1 > largest_ifz_num:
+                                largest_ifz_num = int(files[-5:-4])+1
+                    if ((self.default_path + self.temp_bmp_folder + "/" + files) not in self.converted_images):
+                        if names_of_files_to_be_converted[i] == files[:-6]+".ifz":
+                            self.converted_images.append(self.default_path + self.temp_bmp_folder + "/" + files)
+            self.ifz_count = largest_ifz_num
+
+    def make_image_film_widgets(self):
+        if len(self.image_queue)>len(self.all_images):
+            self.image_queue = [""]*(len(self.all_images))
+            if len(self.image_queue) % 2 == 0: #nesmi byt sudé...
+                self.image_queue.append("") #kdyztak prictu jeste jeden prvek... append
         else:
-            os.mkdir(self.default_path + self.temp_bmp_folder)
-        Converting.whole_converting_function(self.default_path,"bmp",self.temp_bmp_folder,None,True,name_of_file)
-        self.converted_images = []
-        for files in os.listdir(self.default_path + self.temp_bmp_folder):
-            if (self.default_path + self.temp_bmp_folder + "/" + files) not in self.converted_images:
-                self.converted_images.append(self.default_path + self.temp_bmp_folder + "/" + files)
+            self.image_queue = [""]*((self.number_of_film_images*2)+1)
+        
+        self.left_labels = [""]*int((len(self.image_queue)-1)/2)
+        self.right_labels = [""]*int((len(self.image_queue)-1)/2)
+        self.clear_frame(self.image_film_frame_left)
+        self.clear_frame(self.image_film_frame_right)
+
+        for i in range(0,len(self.left_labels)):
+            self.left_labels[len(self.left_labels)-i-1] = customtkinter.CTkLabel(master = self.image_film_frame_left,text = "")
+            self.left_labels[len(self.left_labels)-i-1].pack(side = "right",padx=5)
+
+            self.right_labels[i] = customtkinter.CTkLabel(master = self.image_film_frame_right,text = "")
+            self.right_labels[i].pack(side = "left",padx=10)
 
     def start(self,path): # Ověřování cesty, init, spuštění
         """
@@ -700,18 +779,18 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 #path = path.replace(" ","")
                 while path.endswith(" "):
                     path = path[:len(path)-1]
-                self.Reset_all()
+
                 if path.endswith("/") == False:
                     path = path + "/"
                     self.path_set.delete("0","300")
                     self.path_set.insert("0",path)
-                    
                 self.path_for_explorer = path
                 self.all_images = self.get_images(path)
+                #self.Reset_all()
                 if len(self.all_images) != 0:
                     self.image_browser_path = path
                     add_colored_line(self.console,f"Vložena cesta: {path}","green",None,True)
-
+                    self.make_image_film_widgets()
                     if self.ifz_located == None:
                         if self.selected_image == "": 
                             #zobrazit hned prvni obrazek po vlozene ceste
@@ -731,14 +810,15 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                         else:
                             #zobrazit obrazek vybrany v exploreru
                             self.increment_of_image = self.all_images.index(path+self.selected_image)
-                        
+
                         self.default_path = path
                         self.convert_files()
-                        self.view_image(None,self.converted_images[self.increment_of_ifz_image])
+                        center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
+                        self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image])
                         self.current_image_num.configure(text ="/" + str(len(self.all_images)))
                         self.changable_image_num.delete("0","100")
                         self.changable_image_num.insert("0", str(self.increment_of_image+1))
-                        self.current_image_num_ifz.configure(text ="/" + str(len(self.converted_images)))
+                        self.current_image_num_ifz.configure(text ="/" + str(self.ifz_count))
                         self.changable_image_num_ifz.delete("0","100")
                         self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
 
@@ -763,11 +843,11 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             
             if os.path.exists(self.default_path + self.temp_bmp_folder):
                 shutil.rmtree(self.default_path + self.temp_bmp_folder) # vycistit
-            self.converted_images = []
             self.increment_of_ifz_image = 0
-            self.ifz_located = None
             self.changable_image_num_ifz.delete("0","100")
             self.changable_image_num_ifz.insert("0",0)
+            self.image_queue = [""]*((self.number_of_film_images*2)+1)
+            self.converted_images = []
             self.start(output[1])
 
     def get_frame_dimensions(self): # Vrací aktuální rozměry rámečku
@@ -903,9 +983,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.images.place_configure(y = self.images.winfo_y() + movement)
             if rel_mouse_y2 < treshold_y_max and self.images.winfo_y()+ movement > 0:
                 self.images.place_configure(y = 0)
-        else:
-            self.images.place_configure(x = 0)
-            self.images.place_configure(y = 0)
+        #else:
+            #self.images.place_configure(x = 0)
+            #self.images.place_configure(y = 0)
         self.images.update_idletasks()
 
         #print(rel_mouse_x2,rel_mouse_y2)
@@ -990,7 +1070,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         #print(f"New Dimensions: {new_width} x {new_height}")
         return [new_width, new_height]
     
-    def view_image(self,increment_of_image,direct_path = None): # Samotné zobrazení obrázku
+    def view_image(self,increment_of_image,direct_path = None,only_refresh=None): # Samotné zobrazení obrázku
         """
         Samotné zobrazení obrázku
 
@@ -1002,6 +1082,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 image_to_show = self.all_images[increment_of_image]
             else:
                 image_to_show = direct_path
+
             with Image.open(image_to_show) as current_image:
                 current_image = current_image.rotate(self.rotation_angle,expand=True)
                 width,height = current_image.size
@@ -1015,67 +1096,82 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.images.image = displayed_image
                 self.images.update_idletasks()
 
-            def open_image(increment_of_image_given,position):
-                increment_of_image = increment_of_image_given + position
-                number_of_found_images = len(self.all_images)
-                if increment_of_image < 0:
-                    increment_of_image = number_of_found_images + increment_of_image
+            if self.image_film == True: #refreshujeme pouze stredovy obrazek jinak i okolni
+                image_center= customtkinter.CTkImage(current_image,size = ((100,100)))
+                if self.image_film_frame_center.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
+                    self.images_film_center.configure(image = image_center)
+                    self.images_film_center.image = image_center
+                    self.images_film_center.update_idletasks()
 
-                elif increment_of_image > number_of_found_images-1:
-                    increment_of_image = 0 + (increment_of_image-number_of_found_images)
+                if only_refresh == None:
+                    def open_image(increment_of_image_given,position):
+                        if self.ifz_located == None:
+                            increment_of_image = increment_of_image_given + position
+                            number_of_found_images = len(self.all_images)
+                            if increment_of_image < 0:
+                                increment_of_image = number_of_found_images + increment_of_image
 
-                image_to_show = self.all_images[increment_of_image]
-                with Image.open(image_to_show) as current_image:
-                    opened_image = current_image.rotate(self.rotation_angle,expand=True)
-                return opened_image
+                            elif increment_of_image > number_of_found_images-1:
+                                increment_of_image = 0 + (increment_of_image-number_of_found_images)
 
-            image_center= customtkinter.CTkImage(current_image,size = ((100,100)))
-            image_film_dimensions = [80,80]
+                            if len(self.all_images) > abs(increment_of_image):
+                                image_to_show = self.all_images[increment_of_image]
+                                with Image.open(image_to_show) as current_image:
 
-            half_image_queue = int(len(self.image_queue)/2)
-            
+                                    opened_image = current_image.rotate(self.rotation_angle,expand=True)
+                                return opened_image
+                            else:
+                                return False
+                        elif self.ifz_located == True:
+                            converted_images_index = (position * self.ifz_count) #+ self.increment_of_ifz_image
+                            image_to_show = self.converted_images[converted_images_index + self.increment_of_ifz_image]
+                            with Image.open(image_to_show) as current_image:
+                                opened_image = current_image.rotate(self.rotation_angle,expand=True)
 
-            if "" in self.image_queue: #kdyz jeste nejsou zadne poukladane, preloading
-                #CENTER image preload
-                self.image_queue[half_image_queue] = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
+                            return opened_image
+                        
+                    image_film_dimensions = [80,80]
+                    half_image_queue = int(len(self.image_queue)/2)
 
-                for i in range(0,half_image_queue): #LEFT
-                    current_image = open_image(increment_of_image,-half_image_queue+i)
-                    self.image_queue[i] = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
-                    
-                for i in range(0,half_image_queue): #RIGHT
-                    current_image = open_image(increment_of_image,+i+1)
-                    self.image_queue[i+half_image_queue+1] = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
-            else:
-                if self.flow_direction == "left":
-                    current_image = open_image(increment_of_image,-half_image_queue)
-                    preopened_image = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
-                    
-                    self.image_queue.pop(len(self.image_queue)-1)
-                    self.image_queue.insert(0,preopened_image)
+                    if "" in self.image_queue: #kdyz jeste nejsou zadne poukladane, preloading
+                        #CENTER image preload
+                        self.image_queue[half_image_queue] = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
 
-                elif self.flow_direction == "right":
-                    current_image = open_image(increment_of_image,half_image_queue)
-                    preopened_image = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
-                    self.image_queue.append(preopened_image)
-                    self.image_queue.pop(0)
-                    
-            if self.image_film_frame_left.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
-                for i in range(0,half_image_queue):
-                    self.left_labels[i].configure(image = self.image_queue[i])
-                    self.left_labels[i].image = self.image_queue[i]
-                    self.left_labels[i].update_idletasks()
-                
-            if self.image_film_frame_center.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
-                self.images_film_center.configure(image = image_center)
-                self.images_film_center.image = image_center
-                self.images_film_center.update_idletasks()
+                        for i in range(0,half_image_queue): #LEFT
+                            current_image = open_image(increment_of_image,-half_image_queue+i)
+                            if current_image != False:
+                                self.image_queue[i] = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
+                            
+                        for i in range(0,half_image_queue): #RIGHT
+                            current_image = open_image(increment_of_image,+i+1)
+                            if current_image != False:
+                                self.image_queue[i+half_image_queue+1] = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
+                    else:
+                        if self.flow_direction == "left":
+                            current_image = open_image(increment_of_image,-half_image_queue)
+                            if current_image != False:
+                                preopened_image = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
+                                self.image_queue.pop(len(self.image_queue)-1)
+                                self.image_queue.insert(0,preopened_image)
 
-            if self.image_film_frame_right.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
-                for i in range(0,half_image_queue):
-                    self.right_labels[i].configure(image = self.image_queue[half_image_queue+i+1])
-                    self.right_labels[i].image = self.image_queue[half_image_queue+i+1]
-                    self.right_labels[i].update_idletasks()
+                        elif self.flow_direction == "right":
+                            current_image = open_image(increment_of_image,half_image_queue)
+                            if current_image != False:
+                                preopened_image = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
+                                self.image_queue.append(preopened_image)
+                                self.image_queue.pop(0)
+
+                    if self.image_film_frame_left.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
+                        for i in range(0,half_image_queue):
+                            self.left_labels[i].configure(image = self.image_queue[i],padx=10)
+                            self.left_labels[i].image = self.image_queue[i]
+                            self.left_labels[i].update_idletasks()
+
+                    if self.image_film_frame_right.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
+                        for i in range(0,half_image_queue):
+                            self.right_labels[i].configure(image = self.image_queue[half_image_queue+i+1],padx=10)
+                            self.right_labels[i].image = self.image_queue[half_image_queue+i+1]
+                            self.right_labels[i].update_idletasks()
             
     def next_image(self,silent=False): # Další obrázek v pořadí (šipka vpravo)
         """
@@ -1093,7 +1189,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.view_image(self.increment_of_image)
             else:
                 self.convert_files()
-                self.view_image(None,self.converted_images[self.increment_of_ifz_image])
+                center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
+                self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image])
             
             if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
                 self.current_image_num.configure(text ="/" + str(len(self.all_images)))
@@ -1107,29 +1204,30 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     else:
                         add_colored_line(self.console,str(self.all_images[self.increment_of_image]),"white",None,True)
 
-                self.current_image_num_ifz.configure(text ="/" + str(len(self.converted_images)))
+                self.current_image_num_ifz.configure(text ="/" + str(self.ifz_count))
                 self.changable_image_num_ifz.delete("0","100")
-                self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))          
+                self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
 
     def next_ifz_image(self): # Další ifz obrázek v pořadí
-        number_of_found_images = len(self.converted_images)
+        number_of_found_images = self.ifz_count
         if number_of_found_images != 0:
             if self.increment_of_ifz_image < number_of_found_images -1:
                 self.increment_of_ifz_image += 1
             else:
                 self.increment_of_ifz_image = 0
-            
-            self.view_image(None,self.converted_images[self.increment_of_ifz_image])
+
+            center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
+            self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image])
             if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
-                self.current_image_num_ifz.configure(text ="/" + str(len(self.converted_images)))
+                self.current_image_num_ifz.configure(text ="/" + str(self.ifz_count))
                 self.changable_image_num_ifz.delete("0","100")
                 self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
                 if self.name_or_path.get() == 1:
-                    only_name = str(self.converted_images[self.increment_of_ifz_image]).split("/")
+                    only_name = str(self.converted_images[center_image_index + self.increment_of_ifz_image]).split("/")
                     only_name = only_name[int(len(only_name))-1]
                     add_colored_line(self.console,str(only_name),"white",None,True)
                 else:
-                    add_colored_line(self.console,str(self.converted_images[self.increment_of_ifz_image]),"white",None,True)
+                    add_colored_line(self.console,str(self.converted_images[center_image_index + self.increment_of_ifz_image]),"white",None,True)
 
     def previous_image(self): # Předchozí obrázek v pořadí (šipka vlevo)
         """
@@ -1147,7 +1245,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.view_image(self.increment_of_image)
             else:
                 self.convert_files()
-                self.view_image(None,self.converted_images[self.increment_of_ifz_image])
+                center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
+                self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image])
             self.current_image_num.configure(text = "/" + str(len(self.all_images)))
             self.changable_image_num.delete("0","100")
             self.changable_image_num.insert("0", str(self.increment_of_image+1))
@@ -1159,21 +1258,22 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 add_colored_line(self.console,str(self.all_images[self.increment_of_image]),"white",None,True)
 
 
-            self.current_image_num_ifz.configure(text ="/" + str(len(self.converted_images)))
+            self.current_image_num_ifz.configure(text ="/" + str(self.ifz_count))
             self.changable_image_num_ifz.delete("0","100")
             self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
 
     def previous_ifz_image(self): # předešlý ifz obrázek v pořadí
-        number_of_found_images = len(self.converted_images)
+        number_of_found_images = self.ifz_count
         if number_of_found_images != 0:
             if self.increment_of_ifz_image > 0:
                 self.increment_of_ifz_image -= 1
             else:
                 self.increment_of_ifz_image = number_of_found_images -1     
             
-            self.view_image(None,self.converted_images[self.increment_of_ifz_image])
+            center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
+            self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image])
             if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
-                self.current_image_num_ifz.configure(text ="/" + str(len(self.converted_images)))
+                self.current_image_num_ifz.configure(text ="/" + str(self.ifz_count))
                 self.changable_image_num_ifz.delete("0","100")
                 self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
                 if self.name_or_path.get() == 1:
@@ -1236,9 +1336,11 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         # update image po zoomu
         if len(self.all_images) != 0:
             if self.ifz_located == True:
-                self.view_image(None,self.converted_images[self.increment_of_ifz_image])
+                if len(self.converted_images) != 0:
+                    center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
+                    self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],True)
             else:
-                self.view_image(self.increment_of_image)
+                self.view_image(self.increment_of_image,None,True)
 
     def copy_image(self,path): # Tlačítko Kopír., zkopíruje daný obrázek do složky v dané cestě
         """
@@ -1307,9 +1409,14 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         else:
             self.rotation_angle = 0.0
         if self.ifz_located == True:
-            self.view_image(None, self.converted_images[self.increment_of_ifz_image])
+            if len(self.converted_images) != 0:
+                center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
+                self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],True)
         else:
-            self.view_image(self.increment_of_image)
+            self.view_image(self.increment_of_image,None,True)
+        
+        self.images.place_configure(x = 0,y = 0)
+        #self.images.place_configure(y=0,x=0,relx=0,rely=0)
 
     def Reset_all(self): # Vrátí všechny slidery a natočení obrázku do původní polohy
         """
@@ -1321,8 +1428,10 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.speed_slider.set(100)
         self.update_speed_slider(100)
         self.images.place_configure(y=0,x=0,relx=0,rely=0)
-        self.view_image(self.increment_of_image)
+        self.view_image(self.increment_of_image,None,True)
         self.root.update_idletasks()
+        self.images.update_idletasks()
+        self.main_frame.update_idletasks()
     
     def on_vertical_scroll(self,*args): # pohyb obrázkem v závislosti na vertikálním slideru
         zoom = self.zoom_slider.get()/100
@@ -1359,36 +1468,11 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.frame_with_path.pack(pady=5,padx=5,fill="x",expand=False,side = "top")
         self.background_frame.pack(pady=0,padx=5,ipadx=10,ipady=10,fill="both",expand=True,side = "top")
         self.image_film_frame_left.pack(pady=5,expand=True,side = "left",fill="x")
-        self.image_film_frame_center.pack(pady=5,expand=False,side = "left",anchor = "center")
+        self.image_film_frame_center.pack(pady=5,padx=10,expand=False,side = "left",anchor = "center")
         self.image_film_frame_right.pack(pady=5,expand=True,side = "left",fill="x")
 
-        images_film_left1 = customtkinter.CTkLabel(master = self.image_film_frame_left,text = "")
-        images_film_left1.pack(padx = 10,side = "right")
-        images_film_left2 = customtkinter.CTkLabel(master = self.image_film_frame_left,text = "")
-        images_film_left2.pack(padx = 10,side = "right")
-        images_film_left3 = customtkinter.CTkLabel(master = self.image_film_frame_left,text = "")
-        images_film_left3.pack(padx = 10,side = "right")
-        images_film_left4 = customtkinter.CTkLabel(master = self.image_film_frame_left,text = "")
-        images_film_left4.pack(padx = 10,side = "right")
-        images_film_left5 = customtkinter.CTkLabel(master = self.image_film_frame_left,text = "")
-        images_film_left5.pack(padx = 10,side = "right")
-
         self.images_film_center = customtkinter.CTkLabel(master = self.image_film_frame_center,text = "")
-        self.images_film_center.pack(padx = 10)
-
-        images_film_right1 = customtkinter.CTkLabel(master = self.image_film_frame_right,text = "")
-        images_film_right1.pack(padx = 10,side = "left")
-        images_film_right2 = customtkinter.CTkLabel(master = self.image_film_frame_right,text = "")
-        images_film_right2.pack(padx = 10,side = "left")
-        images_film_right3 = customtkinter.CTkLabel(master = self.image_film_frame_right,text = "")
-        images_film_right3.pack(padx = 10,side = "left")
-        images_film_right4 = customtkinter.CTkLabel(master = self.image_film_frame_right,text = "")
-        images_film_right4.pack(padx = 10,side = "left")
-        images_film_right5 = customtkinter.CTkLabel(master = self.image_film_frame_right,text = "")
-        images_film_right5.pack(padx = 10,side = "left")
-
-        self.left_labels = [images_film_left5,images_film_left4,images_film_left3,images_film_left2,images_film_left1]
-        self.right_labels = [images_film_right1,images_film_right2,images_film_right3,images_film_right4,images_film_right5]
+        self.images_film_center.pack()
 
         self.vertical_scrollbar = customtkinter.CTkScrollbar(self.background_frame, orientation="vertical", command=self.on_vertical_scroll)
         self.vertical_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -1420,7 +1504,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         zoom_label   = customtkinter.CTkLabel(master = self.frame_with_path,text = "ZOOM:",justify = "left",font=("Arial",12))
         self.zoom_slider = customtkinter.CTkSlider(master = self.frame_with_path,width=120,from_=100,to=500,command= self.update_zoom_slider)
         self.percent2 = customtkinter.CTkLabel(master = self.frame_with_path,text = "%",justify = "left",font=("Arial",12))
-        reset_button = customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "RESET", command = self.Reset_all,font=("Arial",16,"bold"))
+        reset_button = customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "RESET", command = lambda: self.Reset_all,font=("Arial",16,"bold"))
         # prepinani ifz image:
         ifz_label =         customtkinter.CTkLabel(master = self.frame_with_path,text = "IFZ:",justify = "left",font=("Arial",12))
         button_back_ifz  =  customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = "<", command = self.previous_ifz_image,font=("Arial",16,"bold"))
@@ -1476,7 +1560,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     self.increment_of_image = inserted_value-1
                     if self.ifz_located == True:
                         self.convert_files()
-                        self.view_image(None,self.converted_images[self.increment_of_ifz_image])
+                        center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
+                        self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image])
+                        #self.view_image(None,self.converted_images[self.increment_of_ifz_image])
                     else:
                         self.view_image(self.increment_of_image)
             self.changable_image_num.delete("0","100")
@@ -1644,9 +1730,11 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             
             if len(self.all_images) != 0: # update zobrazeni
                 if self.ifz_located == True:
-                    self.view_image(None,self.converted_images[self.increment_of_ifz_image])  
+                    center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
+                    self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],True)
+                    #self.view_image(None,self.converted_images[self.increment_of_ifz_image])  
                 else:
-                    self.view_image(self.increment_of_image)
+                    self.view_image(self.increment_of_image,None,True)
 
             return
 
@@ -1754,7 +1842,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         if path != "/" and path != False:
             self.path_set.delete("0","200")
             self.path_set.insert("0", path)
-            #self.console.configure(text="Byla vložena cesta z konfiguračního souboru",text_color="white")
             add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white",None,True)
             self.root.update_idletasks()
             self.image_browser_path = path
@@ -3560,7 +3647,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
                 self.by_which_ID_num = ""
 
         label1           = customtkinter.CTkLabel(master = self.frame6,height=60,
-                                        text = "Podle kterého čísla v ID se řídit:\n(např. poslední č. v ID = pozice dílu...)\nvolte první = 1 atd. (prázdné = celé ID)",
+                                        text = "Podle kterého čísla v ID se řídit:\nvolte první = 1 atd.\nprázdné = celé ID (aut. detekce)",
                                         justify = "left",font=("Arial",16))
         num_set          = customtkinter.CTkEntry(master = self.frame6,height=30,width=150,font=("Arial",16), placeholder_text= self.by_which_ID_num)
         button_save1     = customtkinter.CTkButton(master = self.frame6,height=30,width=50, text = "Uložit", command = lambda: set_which_num_of_ID(),font=("Arial",18,"bold"))

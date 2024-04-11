@@ -153,15 +153,36 @@ kdyz 2 subslozky a jedna je neroztridena, druha roztridena, nejde... pridat chyb
 9:52 PM 4/3/2024
 udelat film obrazku pred a po... nacist v mensi kvalite + nenacitat vzdy znovu - hotovo
 
+8:46 PM 4/10/2024
+upravit pro ifz - hotovo
+
+11:12 AM 4/11/2024
+trideni podle id upravit napovedu, jednickova soustava?... - hotovo
+priblizovani koleckem nezustane pri prepnuti obrazku - hotovo
+
+
+
+
+
+
+chovani, kdyz je mene souboru v ceste
+
+udelat moznosti nastaveni poctu zobrazovanych obrazku ve fronte + moznost film vubec nezobrazovat
+
+moznost pinnout horni frame u IB
+
+
+
 
 zjistit prepnuti monitoru a upravit podle toho parametry IB
 
 moznost provest pripojeni k serveru - predelat cely system otevirani obrazku podle ftp serveru
 
-udelat moznosti nastaveni poctu zobrazovanych obrazku ve fronte + moznost film vubec nezobrazovat
 
 
-moznost pinnout horni frame u IB
+
+
+
 
 
 
