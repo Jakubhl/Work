@@ -39,3 +39,7 @@ Nastavení prohlížeče obrázků: (1. zvolená možnost, 2. krok přibližová
 100
 Zobrazit changelog?
 ne
+Zobrazovat v prohlížeči obrázků film obrázků?
+ano
+Kolik obrázků ve filmu obrázků zobrazovat na každé straně?
+7

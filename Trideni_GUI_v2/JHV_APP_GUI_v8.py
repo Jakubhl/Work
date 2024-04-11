@@ -74,6 +74,8 @@ def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
     10 sorting_safe_mode\n
     11 image_browser_setting [checkbox, increment, movement]\n
     12 show_changelog\n
+    13 image_film\n
+    14 num_of_IB_film_images\n
     """
 
     if os.path.exists('Recources.txt'):
@@ -166,16 +168,28 @@ def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
             image_browser_param[1] = int(Lines[37])
         if (str(Lines[38]) != "") and Lines[38].isdigit():
             image_browser_param[2] = int(Lines[38])
-        #print(image_browser_param)
             
         Lines[40] = Lines[40].replace("\n","")
         if Lines[40] != "ano":
             show_changelog = "ne"
         else:
             show_changelog = Lines[40]
+        
+        Lines[42] = Lines[42].replace("\n","")
+        if Lines[42] != "ano":
+            image_film = "ne"
+        else:
+            image_film = Lines[42]
+
+        Lines[44] = Lines[44].replace("\n","")
+        if Lines[44].isdigit():
+            num_of_IB_film_images = int(Lines[44])
+        else:
+            num_of_IB_film_images = 6 #default
 
         return [supported_formats_sorting,supported_formats_deleting,path_repaired,files_to_keep,cutoff_date,
-                prefix_function,prefix_camera,maximalized,max_pallets,static_dirs_names,safe_mode,image_browser_param,show_changelog]
+                prefix_function,prefix_camera,maximalized,max_pallets,static_dirs_names,safe_mode,image_browser_param,
+                show_changelog,image_film,num_of_IB_film_images]
     else:
         print("Chybí konfigurační soubor Recources.txt")
         return [False]*11
@@ -203,6 +217,8 @@ def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do 
     13 sorting_safe_mode\n
     14 image_browser_param_set\n
     15 show_change_log\n
+    16 image_film\n
+    17 num_of_IB_film_images\n
     """
     unwanted_chars = ["\"","\n"," ","."]
     if os.path.exists('Recources.txt'):
@@ -330,6 +346,14 @@ def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do 
 
         elif which_parameter == "show_change_log":
             lines[40] = "ne" + "\n"
+
+        elif which_parameter == "image_film":
+            lines[42] = lines[42].replace("\n","")
+            lines[42] = str(input_data)+"\n"
+        
+        elif which_parameter == "num_of_IB_film_images":
+            lines[44] = lines[44].replace("\n","")
+            lines[44] = str(input_data)+"\n"
 
         #navraceni poli zpet do stringu radku:
         lines[2] = ""
@@ -481,8 +505,8 @@ def pop_change_log():
     geometry_string = "600x400+" + str(int(root.winfo_screenwidth()/2-300))+ "+" + str(int(root.winfo_screenheight()/2-200))
     popup.geometry(str(geometry_string))
     #popup.geometry("600x400")
-    popup.title("updates - verze 3.4")
-    popup.label = customtkinter.CTkLabel(popup, text="-Zvětšení písma\n-Oprava chyb při zadávání cesty\n-\"Přesýpačky\"\n\nMožnosti konvertovat:\n-Nový loading bar\n-Lze konvertovat více souborů\n\nProhlížeč obrázků:\n-Nově lze zkopírovat název aktuálního obrázku s cestou\n-zobrazuje se i samotný název obrázku\n\nPokročilé možnosti:\n-Předělání vizualizace přes rolovací nabídku\n-Přidána nastavení pro prohlížeč obrázků\n(Přepínání mezi módy + parametry přibližování)\n\nToto okno se už po dalším spuštění nezobrazí",justify = "left",font = ("Arial",18))
+    popup.title("updates - verze 3.5")
+    popup.label = customtkinter.CTkLabel(popup, text="- přidán film obrázků před a po (včetně ifz)\n- oprava chyb při přibližování obrázku\n- oprava chyb při rotování obrázku\n- nové možnosti v pokročilých možnostech",justify = "left",font = ("Arial",18))
     popup.label.pack(padx=10, pady=10, anchor = "w")
     popup.update()
 
@@ -601,8 +625,11 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.chosen_option = text_file_data[11][0]
         self.zoom_increment = text_file_data[11][1]
         self.zoom_movement = text_file_data[11][2]
-        self.image_film = True
-        self.number_of_film_images = 6
+        if text_file_data[13] == "ano":
+            self.image_film = True
+        else:
+            self.image_film = False
+        self.number_of_film_images = text_file_data[14]
         self.image_queue = [""]*((self.number_of_film_images*2)+1)
         self.flow_direction = ""
         self.ifz_converted_for_film = []
@@ -735,7 +762,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             self.left_labels[len(self.left_labels)-i-1].pack(side = "right",padx=5)
 
             self.right_labels[i] = customtkinter.CTkLabel(master = self.image_film_frame_right,text = "")
-            self.right_labels[i].pack(side = "left",padx=10)
+            self.right_labels[i].pack(side = "left",padx=5)
 
     def start(self,path): # Ověřování cesty, init, spuštění
         """
@@ -790,7 +817,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 if len(self.all_images) != 0:
                     self.image_browser_path = path
                     add_colored_line(self.console,f"Vložena cesta: {path}","green",None,True)
-                    self.make_image_film_widgets()
+                    if self.image_film == True:
+                        self.make_image_film_widgets()
                     if self.ifz_located == None:
                         if self.selected_image == "": 
                             #zobrazit hned prvni obrazek po vlozene ceste
@@ -862,7 +890,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         #whole_app_width = self.main_frame.winfo_width()
         width = whole_app_width
         height = whole_app_height-self.frame_with_path._current_height-30
-        height = height - self.image_film_frame_left._current_height
+        if self.image_film == True:
+            height = height - self.image_film_frame_left._current_height
         #print(f"Frame Dimensions: {width} x {height}")
         return [width, height]
 
@@ -1467,12 +1496,13 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.image_film_frame_right = customtkinter.CTkFrame(master=self.root,height = 100)
         self.frame_with_path.pack(pady=5,padx=5,fill="x",expand=False,side = "top")
         self.background_frame.pack(pady=0,padx=5,ipadx=10,ipady=10,fill="both",expand=True,side = "top")
-        self.image_film_frame_left.pack(pady=5,expand=True,side = "left",fill="x")
-        self.image_film_frame_center.pack(pady=5,padx=10,expand=False,side = "left",anchor = "center")
-        self.image_film_frame_right.pack(pady=5,expand=True,side = "left",fill="x")
+        if self.image_film == True:
+            self.image_film_frame_left.pack(pady=5,expand=True,side = "left",fill="x")
+            self.image_film_frame_center.pack(pady=5,padx=10,expand=False,side = "left",anchor = "center")
+            self.image_film_frame_right.pack(pady=5,expand=True,side = "left",fill="x")
 
-        self.images_film_center = customtkinter.CTkLabel(master = self.image_film_frame_center,text = "")
-        self.images_film_center.pack()
+            self.images_film_center = customtkinter.CTkLabel(master = self.image_film_frame_center,text = "")
+            self.images_film_center.pack()
 
         self.vertical_scrollbar = customtkinter.CTkScrollbar(self.background_frame, orientation="vertical", command=self.on_vertical_scroll)
         self.vertical_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -2233,6 +2263,17 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 write_text_file_data(writeable_param,"image_browser_param_set")
                 label_IB6.configure(text = str(int(*args)) + " px")
 
+        def on_off_image_film():
+            if switch_image_film.get() == 1:
+                write_text_file_data("ano","image_film")
+            else:
+                write_text_file_data("ne","image_film")
+
+        def change_image_film_number(*args):
+            write_text_file_data(int(*args),"num_of_IB_film_images")
+            num_of_image_film_images.configure(text = str(int(*args)) + " obrázků na každé straně")
+
+
         if self.submenu_option == "default_path":
             row_index = 1
             label5 =            customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "Nastavte základní cestu k souborům při spuštění:",justify = "left",font=("Arial",18,"bold"))
@@ -2417,6 +2458,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             self.text_file_data = read_text_file_data()
             text_increment = str(self.text_file_data[11][1]) + " %"
             text_movement = str(self.text_file_data[11][2]) + " px"
+            text_image_film = str(self.text_file_data[14]) + " obrázků na každé straně"
             label_IB1 = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "1. Zvolte způsob přibližování:",justify = "left",font=("Arial",18,"bold"))
             label_IB2 = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "- Možnost bez posuvníků funguje nejlépe na obrazovce ve windows nastavené, jako HLAVNÍ a v maximalizovaném okně aplikace\n- U možnosti s posuvníky na těchto podmínkách nezáleží",justify = "left",font=("Arial",16,"bold"))
             checkbox_omron_option = customtkinter.CTkCheckBox(master = self.bottom_frame_default_path, text = "Přibližování/ oddalování ke/ od kurzoru myši (bez posuvníků)",command = lambda: select_zoom_option(),font=("Arial",16))
@@ -2427,6 +2469,10 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             label_IB5 = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "3. Nastavte velikost kroku při posouvání přibližováním kolečkem myši:",justify = "left",font=("Arial",18,"bold"))
             zoom_movement_set = customtkinter.CTkSlider(master=self.bottom_frame_default_path,width=300,height=15,from_=50,to=300,number_of_steps= 5,command= update_zoom_movement_slider)
             label_IB6 = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = text_movement,justify = "left",font=("Arial",16))
+            label_image_film = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "4. Upravte nastavení filmu obrázků:",justify = "left",font=("Arial",18,"bold"))
+            switch_image_film = customtkinter.CTkCheckBox(master = self.bottom_frame_default_path, text = "Zapnuto",command = lambda: on_off_image_film(),font=("Arial",16))
+            num_of_image_film_images_slider = customtkinter.CTkSlider(master=self.bottom_frame_default_path,width=300,height=15,from_=1,to=15,command= change_image_film_number)
+            num_of_image_film_images = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = text_image_film,justify = "left",font=("Arial",16))
             main_console =      customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = str(main_console_text),text_color=str(main_console_text_color),justify = "left",font=("Arial",18))
             label_IB1.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
             label_IB2.grid(column =0,row=row_index+2,sticky = tk.W,pady =10,padx=10)
@@ -2438,15 +2484,22 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             label_IB5.grid(column =0,row=row_index+8,sticky = tk.W,pady =20,padx=10)
             zoom_movement_set.grid(column =0,row=row_index+9,sticky = tk.W,pady =0,padx=10)
             label_IB6.grid(column =0,row=row_index+9,sticky = tk.W,pady =0,padx=320)
-            main_console.grid(column =0,row=row_index+10,sticky = tk.W,pady =50,padx=10)
+            label_image_film.grid(column =0,row=row_index+10,sticky = tk.W,pady =20,padx=10)
+            switch_image_film.grid(column =0,row=row_index+11,sticky = tk.W,pady =0,padx=10)
+            num_of_image_film_images_slider.grid(column =0,row=row_index+12,sticky = tk.W,pady =20,padx=10)
+            num_of_image_film_images.grid(column =0,row=row_index+12,sticky = tk.W,pady =20,padx=320)
+            main_console.grid(column =0,row=row_index+13,sticky = tk.W,pady =50,padx=10)
 
             zoom_increment_set.set(self.text_file_data[11][1])
             zoom_movement_set.set(self.text_file_data[11][2])
+            num_of_image_film_images_slider.set(self.text_file_data[14])
 
             if int(self.text_file_data[11][0]) == 1:
                 checkbox_omron_option.select()
             if int(self.text_file_data[11][0]) == 2:
-                checkbox_slidebar_option.select()  
+                checkbox_slidebar_option.select()
+            if self.text_file_data[13] == "ano":
+                switch_image_film.select()  
 
     def drop_down_chosen_option(self,*args):
         option_chosen = self.drop_down_options.get()
