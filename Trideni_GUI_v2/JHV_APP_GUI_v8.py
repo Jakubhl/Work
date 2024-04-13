@@ -9,7 +9,9 @@ from tkinter import filedialog
 import tkinter as tk
 import threading
 import shutil
+import sys
 
+initial_path = "C:\Users\kubah\Desktop\JHV\Work\Trideni_GUI_v2"
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 root=customtkinter.CTk()
@@ -44,14 +46,13 @@ def path_check(path_raw):
     if backslash[0] in path:
         newPath = path.replace(os.sep, '/')
         path = newPath
-
     if path.endswith('/') == False:
         newPath = path + "/"
         path = newPath
-
+    #oprava mezery v nazvu
+    path = r"{}".format(path)
     if not os.path.exists(path):
         return False
-
     else:
         return path
 
@@ -489,6 +490,17 @@ def add_colored_line(text_widget, text, color,font=None,delete_line = None):
 
     text_widget.configure(state=tk.DISABLED)
 
+def save_path(console,path_entered):
+    path_given = path_entered
+    path_checked = path_check(path_given)
+    if path_checked != False and path_checked != "/":
+        console_input = write_text_file_data(path_checked,"default_path")
+        add_colored_line(console,console_input,"green",None,True)
+    elif path_checked != "/":
+        add_colored_line(console,f"Zadaná cesta: {path_given} nebyla nalezena, nebude tedy uložena","red",None,True)
+    elif path_checked == "/":
+        add_colored_line(console,"Nebyla vložena žádná cesta k souborům","red",None,True)
+
 def clear_console(text_widget,from_where=None):
     """
     Vymaže celou consoli
@@ -506,7 +518,7 @@ def pop_change_log():
     popup.geometry(str(geometry_string))
     #popup.geometry("600x400")
     popup.title("updates - verze 3.5")
-    popup.label = customtkinter.CTkLabel(popup, text="- přidán film obrázků před a po (včetně ifz)\n- oprava chyb při přibližování obrázku\n- oprava chyb při rotování obrázku\n- nové možnosti v pokročilých možnostech",justify = "left",font = ("Arial",18))
+    popup.label = customtkinter.CTkLabel(popup, text="- přidán film obrázků před a po (včetně ifz)\n- oprava chyb při přibližování obrázku\n- oprava chyb při rotování obrázku\n- nové možnosti v pokročilých možnostech\n- nově možnost uložit základní cestu i mimo nastavení",justify = "left",font = ("Arial",18))
     popup.label.pack(padx=10, pady=10, anchor = "w")
     popup.update()
 
@@ -536,7 +548,7 @@ def menu(): # Funkce spouští základní menu při spuštění aplikace (MAIN)
     image_logo.pack()
     frame_with_buttons.pack(pady=5,padx=5,fill="both",expand=True,side = "top")
     
-    
+    IB_as_def_browser_path = None
     list_of_menu_frames = [frame_with_buttons,frame_with_logo]
     
     def call_sorting_option(list_of_menu_frames):
@@ -550,7 +562,10 @@ def menu(): # Funkce spouští základní menu při spuštění aplikace (MAIN)
         Converting_option(root,list_of_menu_frames)
     def call_view_option(list_of_menu_frames):
         root.unbind("<f>")
-        Image_browser(root,list_of_menu_frames)
+        if IB_as_def_browser_path == None:
+            Image_browser(root,list_of_menu_frames)
+        else:
+            Image_browser(root,list_of_menu_frames,IB_as_def_browser_path)
     def call_advanced_option(list_of_menu_frames):
         root.unbind("<f>")
         Advanced_option(root,list_of_menu_frames)
@@ -567,6 +582,12 @@ def menu(): # Funkce spouští základní menu při spuštění aplikace (MAIN)
     viewer_button.pack(pady =0,padx=0,side="top",anchor="n")
     advanced_button.pack(pady =10,padx=0,side="top",anchor="n")
 
+    #pripad pouzivani image browseru TRIMAZKON, jako vychozi prohlizec pro windows
+    if len(sys.argv) > 1:
+        IB_as_def_browser_path = sys.argv[1]
+        print(IB_as_def_browser_path)
+        call_view_option(list_of_menu_frames)
+
     def maximalize_window(e):
         # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
         currently_focused = str(root.focus_get())
@@ -578,8 +599,6 @@ def menu(): # Funkce spouští základní menu při spuštění aplikace (MAIN)
         else:
             root.after(0, lambda:root.state('zoomed'))
     root.bind("<f>",maximalize_window)
-
-    
     root.mainloop()
 
 class Image_browser: # Umožňuje procházet obrázky a přitom například vybrané přesouvat do jiné složky
@@ -589,9 +608,10 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
     - umožňuje: měnit rychlost přehrávání, přiblížení, otočení obrázku
     - reaguje na klávesové zkratky
     """
-    def __init__(self,root,list_of_menu_frames):
+    def __init__(self,root,list_of_menu_frames,IB_as_def_browser_path = None):
         self.root = root
         self.list_of_menu_frames = list_of_menu_frames
+        self.IB_as_def_browser_path = IB_as_def_browser_path
         self.all_images = []
         self.increment_of_image = 0
         self.state = "stop"
@@ -632,8 +652,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.number_of_film_images = text_file_data[14]
         self.image_queue = [""]*((self.number_of_film_images*2)+1)
         self.flow_direction = ""
-        self.ifz_converted_for_film = []
         self.ifz_count = 1
+        self.count_of_ifz_images_defined = False
+        self.name_hide_index = 0
         self.create_widgets()
         self.interrupt = self.interrupt_viewing(self)
         
@@ -695,6 +716,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     self.converted_images.append(self.default_path + self.temp_bmp_folder + "/" + files)
 
         elif self.image_film == True:
+            #uvazuje se, ze konvertovane obrazky budou koncit: _x.bmp, kde x bude nabyvat maximalne hodnot 0-8 nebo bez _x ...
             #1) uprava nazvu pro konvertovani
             names_of_files_to_be_converted = []
             num_of_preload_images = len(self.image_queue)-1
@@ -713,36 +735,54 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 os.mkdir(self.default_path + self.temp_bmp_folder)
             else:
                 for files in os.listdir(self.default_path + self.temp_bmp_folder):
-                    if ".bmp" in files:
+                    if ".bmp" in files and files[-6:-5] == "_":
                         found_files.append(files[:-6])
+                    elif ".bmp" in files:
+                        found_files.append(files[:-4])
             #3) check jestli uz neni konvertovane
             to_convert =[]
             for i in range(0,len(names_of_files_to_be_converted)):
                 if names_of_files_to_be_converted[i][:-4] not in found_files: #_x (x muze nabyvat max hodnoty 8)
                     to_convert.append(names_of_files_to_be_converted[i])
             #print("converting",to_convert)
-            #5) volani funkce pro konvertovani
+
+            #4) volani funkce pro konvertovani
             Converting.whole_converting_function(self.default_path,"bmp",self.temp_bmp_folder,None,True,to_convert)
-            #6) mazani nepotrebnych
-            for files in os.listdir(self.default_path + self.temp_bmp_folder):
-                if (str(files[:-6])+".ifz") not in names_of_files_to_be_converted:
-                    os.remove(self.default_path + self.temp_bmp_folder + "/" + files)
-                    #print("deleting",files)
-                
-            #8) plneni pole s kompletni cestou ve spravnem poradi...
-            largest_ifz_num = 1
-            self.converted_images = []
-            for i in range(0,len(names_of_files_to_be_converted)):
+
+            #5) definice poctu ifz
+            if self.count_of_ifz_images_defined == False:
+                self.name_hide_index = 0
+                largest_ifz_num = 1
                 for files in os.listdir(self.default_path + self.temp_bmp_folder):
-                    # urcovani poctu ifz v jednom souboru (vykonat pouze jednou pro vsechny soubory)
-                    if i == 0:
+                    # urcovani poctu ifz v jednom souboru (vykonat pouze jednou pro vsechny soubory
+                    if files[-6:-5] == "_":
                         if files[-5:-4].isdigit():
                             if int(files[-5:-4]) +1 > largest_ifz_num:
                                 largest_ifz_num = int(files[-5:-4])+1
+                    else:
+                        #nenalezeny zadne dalsi ifz podobrazky
+                        self.name_hide_index = 2
+                self.ifz_count = largest_ifz_num
+                self.count_of_ifz_images_defined = True
+
+            #6) mazani nepotrebnych
+            for files in os.listdir(self.default_path + self.temp_bmp_folder):
+                if (str(files[:(-6+self.name_hide_index)])+".ifz") not in names_of_files_to_be_converted:
+                    os.remove(self.default_path + self.temp_bmp_folder + "/" + files)
+                    #print("deleting",files)
+
+            #8) plneni pole s kompletni cestou ve spravnem poradi...
+            self.converted_images = []
+            for i in range(0,len(names_of_files_to_be_converted)):
+                matches_made = 0
+                for files in os.listdir(self.default_path + self.temp_bmp_folder):
                     if ((self.default_path + self.temp_bmp_folder + "/" + files) not in self.converted_images):
-                        if names_of_files_to_be_converted[i] == files[:-6]+".ifz":
-                            self.converted_images.append(self.default_path + self.temp_bmp_folder + "/" + files)
-            self.ifz_count = largest_ifz_num
+                        if names_of_files_to_be_converted[i] == files[:(-6+self.name_hide_index)]+".ifz":
+                            self.converted_images.append(self.default_path + self.temp_bmp_folder + "/" + files)   
+                            matches_made += 1
+                            #pro zefektivnění:
+                            if matches_made == self.ifz_count:
+                                break
 
     def make_image_film_widgets(self):
         if len(self.image_queue)>len(self.all_images):
@@ -769,6 +809,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         Ověřování cesty, init, spuštění
         """
         path_found = True
+        self.count_of_ifz_images_defined = False
         if path == "" or path == "/": #pripad, ze bylo pouzito tlacitko spusteni manualne vlozene cesty a nebo je chyba v config souboru
             path_found = False
             path = self.path_set.get()
@@ -811,6 +852,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     path = path + "/"
                     self.path_set.delete("0","300")
                     self.path_set.insert("0",path)
+                #oprava mezery v nazvu
+                full_path = r"{}".format(path)
+                path = full_path
                 self.path_for_explorer = path
                 self.all_images = self.get_images(path)
                 #self.Reset_all()
@@ -839,7 +883,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                             #zobrazit obrazek vybrany v exploreru
                             self.increment_of_image = self.all_images.index(path+self.selected_image)
 
-                        self.default_path = path
+                        self.default_path = r"{}".format(path)
                         self.convert_files()
                         center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
                         self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image])
@@ -1239,14 +1283,14 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
 
     def next_ifz_image(self): # Další ifz obrázek v pořadí
         number_of_found_images = self.ifz_count
-        if number_of_found_images != 0:
+        if number_of_found_images != 0 and number_of_found_images != 1:
             if self.increment_of_ifz_image < number_of_found_images -1:
                 self.increment_of_ifz_image += 1
             else:
                 self.increment_of_ifz_image = 0
 
             center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
-            self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image])
+            self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],True)
             if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
                 self.current_image_num_ifz.configure(text ="/" + str(self.ifz_count))
                 self.changable_image_num_ifz.delete("0","100")
@@ -1293,14 +1337,14 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
 
     def previous_ifz_image(self): # předešlý ifz obrázek v pořadí
         number_of_found_images = self.ifz_count
-        if number_of_found_images != 0:
+        if number_of_found_images != 0 and number_of_found_images != 1:
             if self.increment_of_ifz_image > 0:
                 self.increment_of_ifz_image -= 1
             else:
                 self.increment_of_ifz_image = number_of_found_images -1     
             
             center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
-            self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image])
+            self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],True)
             if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
                 self.current_image_num_ifz.configure(text ="/" + str(self.ifz_count))
                 self.changable_image_num_ifz.delete("0","100")
@@ -1457,7 +1501,12 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.speed_slider.set(100)
         self.update_speed_slider(100)
         self.images.place_configure(y=0,x=0,relx=0,rely=0)
-        self.view_image(self.increment_of_image,None,True)
+        if self.ifz_located == True:
+            if len(self.converted_images) != 0:
+                center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
+                self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],True)
+        else:
+            self.view_image(self.increment_of_image,None,True)
         self.root.update_idletasks()
         self.images.update_idletasks()
         self.main_frame.update_idletasks()
@@ -1500,7 +1549,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             self.image_film_frame_left.pack(pady=5,expand=True,side = "left",fill="x")
             self.image_film_frame_center.pack(pady=5,padx=10,expand=False,side = "left",anchor = "center")
             self.image_film_frame_right.pack(pady=5,expand=True,side = "left",fill="x")
-
             self.images_film_center = customtkinter.CTkLabel(master = self.image_film_frame_center,text = "")
             self.images_film_center.pack()
 
@@ -1515,8 +1563,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         
         menu_button  = customtkinter.CTkButton(master = self.frame_with_path, width = 150,height=30, text = "MENU", command = lambda: self.call_menu(),font=("Arial",16,"bold"))
         self.path_set = customtkinter.CTkEntry(master = self.frame_with_path,width = 680,height=30,placeholder_text="Zadejte cestu k souborům (kde se soubory přímo nacházejí)")
-        manual_path  = customtkinter.CTkButton(master = self.frame_with_path, width = 120,height=30,text = "Otevřít", command = lambda: self.start(self.path_set.get()),font=("Arial",16,"bold"))
+        manual_path  = customtkinter.CTkButton(master = self.frame_with_path, width = 90,height=30,text = "Otevřít", command = lambda: self.start(self.path_set.get()),font=("Arial",16,"bold"))
         tree         = customtkinter.CTkButton(master = self.frame_with_path, width = 120,height=30,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",16,"bold"))
+        button_save_path = customtkinter.CTkButton(master = self.frame_with_path,width=50,height=30, text = "Uložit cestu", command = lambda: save_path(self.console,self.path_set.get()),font=("Arial",16,"bold"))
         self.name_or_path = customtkinter.CTkCheckBox(master = self.frame_with_path,font=("Arial",16), text = "Název/cesta")
         self.console = tk.Text(self.frame_with_path, wrap="none", height=0, width=180,background="black",font=("Arial",14),state=tk.DISABLED)
         button_back  = customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = "<", command = self.previous_image,font=("Arial",16,"bold"))
@@ -1534,7 +1583,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         zoom_label   = customtkinter.CTkLabel(master = self.frame_with_path,text = "ZOOM:",justify = "left",font=("Arial",12))
         self.zoom_slider = customtkinter.CTkSlider(master = self.frame_with_path,width=120,from_=100,to=500,command= self.update_zoom_slider)
         self.percent2 = customtkinter.CTkLabel(master = self.frame_with_path,text = "%",justify = "left",font=("Arial",12))
-        reset_button = customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "RESET", command = lambda: self.Reset_all,font=("Arial",16,"bold"))
+        reset_button = customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "RESET", command = lambda: self.Reset_all(),font=("Arial",16,"bold"))
         # prepinani ifz image:
         ifz_label =         customtkinter.CTkLabel(master = self.frame_with_path,text = "IFZ:",justify = "left",font=("Arial",12))
         button_back_ifz  =  customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = "<", command = self.previous_ifz_image,font=("Arial",16,"bold"))
@@ -1543,14 +1592,14 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.changable_image_num_ifz.insert("0",1)
         self.current_image_num_ifz = customtkinter.CTkLabel(master = self.frame_with_path,text = "/0",justify = "left",font=("Arial",16,"bold"))
         button_next_ifz  =  customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = ">", command = self.next_ifz_image,font=("Arial",16,"bold"))
-
         button_move = customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "Přesun.", command =  lambda: self.move_image(),font=("Arial",16,"bold"))
         button_delete = customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "SMAZAT", command =  lambda: self.delete_image(),font=("Arial",16,"bold"))
 
         menu_button.grid(column = 0,row=0,pady = 5,padx =0,sticky = tk.W)
         self.path_set.grid(column = 0,row=0,pady = 5,padx =160,sticky = tk.W)
         manual_path.grid(column = 0,row=0,pady = 5,padx =850,sticky = tk.W)
-        tree.grid(column = 0,row=0,pady = 5,padx =975,sticky = tk.W)
+        tree.grid(column = 0,row=0,pady = 5,padx =945,sticky = tk.W)
+        button_save_path.grid(column = 0,row=0,pady = 5,padx =1070,sticky = tk.W)
         self.name_or_path.grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
         self.console.grid(column = 0,row=1,pady = 5,padx =160,sticky = tk.W)
         button_back.grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
@@ -1866,19 +1915,28 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             
         self.path_set.bind("<Return>",save_path_enter_btn)
 
-        #hned na zacatku to vleze do defaultni slozky
-        text_file_data = read_text_file_data()
-        path = text_file_data[2]
-        if path != "/" and path != False:
+        #kdyz je vyuzit TRIMAZKON, jako vychozi prohlizec obrazku
+        if self.IB_as_def_browser_path != None:
             self.path_set.delete("0","200")
-            self.path_set.insert("0", path)
-            add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white",None,True)
+            self.path_set.insert("0", self.IB_as_def_browser_path)
+            add_colored_line(self.console,"Děkujeme, že využíváte TRIMAZKON, jako výchozí prohlížeč!","white",None,True)
             self.root.update_idletasks()
-            self.image_browser_path = path
-            self.start(path)
+            self.image_browser_path = self.IB_as_def_browser_path
+            self.start(self.IB_as_def_browser_path)
+        #hned na zacatku to vleze do defaultni slozky
         else:
-            #self.console.configure(text = "Konfigurační soubor obsahuje neplatnou cestu k souborům\n(můžete vložit v pokročilém nastavení)",text_color="orange")
-            add_colored_line(self.console,"Konfigurační soubor obsahuje neplatnou cestu k souborům\n(můžete vložit v pokročilém nastavení)","orange",None,True)
+            text_file_data = read_text_file_data()
+            path = text_file_data[2]
+            if path != "/" and path != False:
+                self.path_set.delete("0","200")
+                self.path_set.insert("0", path)
+                add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white",None,True)
+                self.root.update_idletasks()
+                self.image_browser_path = path
+                self.start(path)
+            else:
+                #self.console.configure(text = "Konfigurační soubor obsahuje neplatnou cestu k souborům\n(můžete vložit v pokročilém nastavení)",text_color="orange")
+                add_colored_line(self.console,"Konfigurační soubor obsahuje neplatnou cestu k souborům\n(můžete vložit v pokročilém nastavení)","orange",None,True)
 
 class Advanced_option: # Umožňuje nastavit základní parametry, které ukládá do textového souboru
     """
@@ -2529,15 +2587,10 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         self.list_of_menu_frames[0].pack_forget()
         self.list_of_menu_frames[0].grid_forget()
         self.list_of_menu_frames[0].destroy()
-
-        #self.main_console_frame          = customtkinter.CTkFrame(master=self.root)
         self.bottom_frame_default_path   = customtkinter.CTkFrame(master=self.root,corner_radius=0)
         self.top_frame                   = customtkinter.CTkFrame(master=self.root,corner_radius=0)
-        #self.main_console_frame.pack(pady=5,padx=5,fill="both",expand=True,side = "bottom")
-        
         self.top_frame.pack(pady=2.5,padx=5,fill="x",expand=False,side = "top")
         self.bottom_frame_default_path.pack(pady=2.5,padx=5,fill="both",expand=True,side = "bottom")
-
         
         label0          = customtkinter.CTkLabel(master = self.top_frame,height=20,text = "Nastavte požadované parametry (nastavení bude uloženo i po vypnutí aplikace): ",justify = "left",font=("Arial",20,"bold"))
         menu_button     = customtkinter.CTkButton(master = self.top_frame, width = 180,height=40, text = "MENU", command = lambda: self.call_menu(),font=("Arial",20,"bold"))
@@ -3358,9 +3411,12 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         menu_button = customtkinter.CTkButton(master = self.frame_path_input, width = 180, text = "MENU", command = lambda: self.call_menu(),font=("Arial",20,"bold"))
         self.path_set    = customtkinter.CTkEntry(master = self.frame_path_input,font=("Arial",16),placeholder_text="Zadejte cestu k souborům z kamery (kde se přímo nacházejí soubory nebo datumové složky)")
         tree        = customtkinter.CTkButton(master = self.frame_path_input, width = 180,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"))
+        button_save_path = customtkinter.CTkButton(master = self.frame_path_input,width=50,text = "Uložit cestu", command = lambda: save_path(self.console,self.path_set.get()),font=("Arial",20,"bold"))
         menu_button.pack(pady =12,padx=10,anchor ="w",side="left")
         self.path_set.pack(pady = 12,padx =0,anchor ="w",side="left",fill="both",expand=True)
         tree.pack(pady = 12,padx =10,anchor ="w",side="left")
+        button_save_path.pack(pady = 5,padx =0,anchor ="w",side="left")
+
 
         self.frame_with_checkboxes = checkbox_frame
         self.checkbox  = customtkinter.CTkCheckBox(master = self.frame_with_checkboxes,font=("Arial",16), text = "Mazání souborů starších než: určité datum",command = lambda: self.selected(True))
@@ -3974,9 +4030,11 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         menu_button = customtkinter.CTkButton(master = self.frame2, width = 180, text = "MENU", command = lambda: self.call_menu(),font=("Arial",20,"bold"))
         self.path_set    = customtkinter.CTkEntry(master = self.frame2,font=("Arial",16),placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)")
         tree        = customtkinter.CTkButton(master = self.frame2, width = 180,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"))
+        button_save_path = customtkinter.CTkButton(master = self.frame2,width=50,text = "Uložit cestu", command = lambda: save_path(self.console,self.path_set.get()),font=("Arial",20,"bold"))
         menu_button.pack(pady =5,padx=10,anchor ="w",side="left")
         self.path_set.pack(pady = 5,padx =0,anchor ="w",side="left",fill="both",expand=True)
         tree.pack(pady = 5,padx =10,anchor ="w",side="left")
+        button_save_path.pack(pady = 5,padx =0,anchor ="w",side="left")
 
         self.checkbox    = customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Třídit podle typů souborů",command = self.selected)
         self.checkbox2   = customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Třídit podle čísla funkce (ID)",command = self.selected2)

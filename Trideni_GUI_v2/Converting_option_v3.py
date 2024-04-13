@@ -24,7 +24,8 @@ def path_check(path_raw):
         return path
 
 application_path = path_check(application_path)
-application_path = "\"" + application_path + "IfzToBitmap.exe" + "\""
+if application_path != False:
+    application_path = "\"" + application_path + "IfzToBitmap.exe" + "\""
 
 #only_view_image:bool,ifz_image_name:str
 
@@ -65,33 +66,38 @@ class whole_converting_function:
     def form_console_command(self,files_to_convert,which_format,silent=None):
         command = ""
         if len(files_to_convert) != 0:
-            command = str(application_path) + " byrtobmp " + files_to_convert[0] + " "
-            self.converted_files +=1
-            if len(files_to_convert) != 1:
-                i=0
-                for files in files_to_convert:
-                    self.converted_files +=1
-                    i+=1
-                    if i>1:
-                        command = command + " " + files
+            if application_path != False:
+                command = str(application_path) + " byrtobmp " + files_to_convert[0] + " "
+                self.converted_files +=1
+                if len(files_to_convert) != 1:
+                    i=0
+                    for files in files_to_convert:
+                        self.converted_files +=1
+                        i+=1
+                        if i>1:
+                            command = command + " " + files
 
-            if which_format == "bmp":
-                self.make_dir(self.folder_with_bmp,self.path_given)
-                # cesta v uvozovkach kvuli vykonani v cmd
-                command = command + " /o:" + "\""  + self.path_given + self.folder_with_bmp + "\""
+                if which_format == "bmp":
+                    self.make_dir(self.folder_with_bmp,self.path_given)
+                    # cesta v uvozovkach kvuli vykonani v cmd
+                    command = command + " /o:" + "\""  + self.path_given + self.folder_with_bmp + "\""
 
-            if which_format == "jpg":
-                self.make_dir(self.folder_with_jpg,self.path_given)
-                command = command + " /o:" + "\"" + self.path_given + self.folder_with_jpg+ "\"" + " /f:jpg"
-            
-            if silent == None:
-                self.output.append(f"- Bylo konvertováno: {self.converted_files-1} souborů do formátu: {which_format}")
-                self.output.append("- Konvertování bylo dokončeno\n")
-            
-            #if self.view_in_browser == True:
-            command += " /h" #nezobrazovat nacitani
+                if which_format == "jpg":
+                    self.make_dir(self.folder_with_jpg,self.path_given)
+                    command = command + " /o:" + "\"" + self.path_given + self.folder_with_jpg+ "\"" + " /f:jpg"
+                
+                if silent == None:
+                    self.output.append(f"- Bylo konvertováno: {self.converted_files-1} souborů do formátu: {which_format}")
+                    self.output.append("- Konvertování bylo dokončeno\n")
+                
+                #if self.view_in_browser == True:
+                command += " /h" #nezobrazovat nacitani
 
-            return command
+                return command
+            else:
+                if silent == None:
+                    self.output.append("- Počáteční cesta aplikace pro konvertování nebyla nalezena")
+                return False
         else:
             if silent == None:
                 self.output.append("- Vložená cesta neobsahuje žádné soubory typu .ifz")

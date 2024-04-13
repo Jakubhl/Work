@@ -4,7 +4,7 @@ bmp,png
 Podporované typy souborů u možností mazání:
 jpg,bmp,png,ifz
 Základní cesta k souborům:
-C:/Users/kubah/Desktop/JHV/test_images/Keyence/_503_Witte/datumovka/A/Normal/
+C:/Users/kubah/Pictures/Screenshots/
 Základní množství ponechaných souborů:
 999
 Základní cutoff date:
@@ -34,7 +34,7 @@ Přesunuté_obrázky
 Bezpečný mód při procházení subsložek:
 ano
 Nastavení prohlížeče obrázků: (1. zvolená možnost, 2. krok přibližování [%], 3. krok posunu)
-1
+2
 10
 100
 Zobrazit changelog?
