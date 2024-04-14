@@ -11,15 +11,42 @@ import threading
 import shutil
 import sys
 
-initial_path = "C:\Users\kubah\Desktop\JHV\Work\Trideni_GUI_v2"
+def path_check(path_raw,only_repair = None):
+    path=path_raw
+    backslash = "\ "
+    if backslash[0] in path:
+        newPath = path.replace(backslash[0], '/')
+        path = newPath
+    if path.endswith('/') == False:
+        newPath = path + "/"
+        path = newPath
+    #oprava mezery v nazvu
+    path = r"{}".format(path)
+    if not os.path.exists(path) and only_repair == None:
+        return False
+    else:
+        return path
+
+initial_path = path_check(os.getcwd())
+if len(sys.argv) > 1: #spousteni pres cmd
+    raw_path = str(sys.argv[0])
+    initial_path = path_check(raw_path,True)
+    initial_path_splitted = initial_path.split("/")
+    initial_path = ""
+    for i in range(0,len(initial_path_splitted)-2):
+        initial_path += str(initial_path_splitted[i])+"/"
+
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 root=customtkinter.CTk()
 root.geometry("1200x900")
-root.wm_iconbitmap('images/logo_TRIMAZKON.ico')
+root.wm_iconbitmap(initial_path+'images/logo_TRIMAZKON.ico')
 #root.title("Zpracování souborů z průmyslových kamer")
 root.title("TRIMAZKON v_3.5")
-#logo_set = False
+#pro pripad vypisovani do konzole z exe:
+# sys.stdout = sys.__stdout__
+# print(initial_path)
+# input("continue")
 
 def split_text_to_rows(long_string:str,max_chars_on_row:int):
     letter_number = 0
@@ -39,22 +66,6 @@ def split_text_to_rows(long_string:str,max_chars_on_row:int):
         long_string += (items + "\n")
     
     return long_string
-
-def path_check(path_raw):
-    path=path_raw
-    backslash = "\ "
-    if backslash[0] in path:
-        newPath = path.replace(os.sep, '/')
-        path = newPath
-    if path.endswith('/') == False:
-        newPath = path + "/"
-        path = newPath
-    #oprava mezery v nazvu
-    path = r"{}".format(path)
-    if not os.path.exists(path):
-        return False
-    else:
-        return path
 
 def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
     """
@@ -79,9 +90,9 @@ def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
     14 num_of_IB_film_images\n
     """
 
-    if os.path.exists('Recources.txt'):
+    if os.path.exists(initial_path+'Recources.txt'):
         cutoff_date = ["","",""]
-        with open('Recources.txt','r',encoding='utf-8',errors='replace') as recources_file:
+        with open(initial_path+'Recources.txt','r',encoding='utf-8',errors='replace') as recources_file:
             Lines = recources_file.readlines()
         supported_formats_sorting = []
         supported_formats_deleting = []
@@ -222,9 +233,9 @@ def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do 
     17 num_of_IB_film_images\n
     """
     unwanted_chars = ["\"","\n"," ","."]
-    if os.path.exists('Recources.txt'):
+    if os.path.exists(initial_path+'Recources.txt'):
         report = ""
-        with open('Recources.txt', 'r',encoding='utf-8',errors='replace') as recources:
+        with open(initial_path+'Recources.txt', 'r',encoding='utf-8',errors='replace') as recources:
             lines = recources.readlines()
 
         supported_formats_sorting = []
@@ -373,7 +384,7 @@ def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do 
         lines[4] = lines[4]+"\n"
 
         # Write the modified lines back to the file
-        with open('Recources.txt', 'w',encoding='utf-8',errors='replace') as recources2:
+        with open(initial_path+'Recources.txt', 'w',encoding='utf-8',errors='replace') as recources2:
             recources2.writelines(lines)
 
         return report
@@ -518,11 +529,11 @@ def pop_change_log():
     popup.geometry(str(geometry_string))
     #popup.geometry("600x400")
     popup.title("updates - verze 3.5")
-    popup.label = customtkinter.CTkLabel(popup, text="- přidán film obrázků před a po (včetně ifz)\n- oprava chyb při přibližování obrázku\n- oprava chyb při rotování obrázku\n- nové možnosti v pokročilých možnostech\n- nově možnost uložit základní cestu i mimo nastavení",justify = "left",font = ("Arial",18))
+    popup.label = customtkinter.CTkLabel(popup, text="\n- přidán film obrázků před a po (včetně ifz)\n- oprava chyb při přibližování obrázku\n- oprava chyb při rotování obrázku\n- nové možnosti v pokročilých možnostech\n- nově možnost uložit základní cestu i mimo nastavení\n- možnost nastavit TRIMAZKON, jako defaultní prohlížeč obrázků",justify = "left",font = ("Arial",18))
     popup.label.pack(padx=10, pady=10, anchor = "w")
     popup.update()
 
-def menu(): # Funkce spouští základní menu při spuštění aplikace (MAIN)
+def menu(image_opened = True): # Funkce spouští základní menu při spuštění aplikace (MAIN)
     """
     Funkce spouští základní menu při spuštění aplikace (MAIN)
 
@@ -541,7 +552,7 @@ def menu(): # Funkce spouští základní menu při spuštění aplikace (MAIN)
 
     frame_with_logo = customtkinter.CTkFrame(master=root,corner_radius=0)
     #logo = customtkinter.CTkImage(Image.open("images/logo2.bmp"),size=(571, 70))
-    logo = customtkinter.CTkImage(Image.open("images/logo.png"),size=(1200, 100))
+    logo = customtkinter.CTkImage(Image.open(initial_path+"images/logo.png"),size=(1200, 100))
     image_logo = customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
     frame_with_buttons = customtkinter.CTkFrame(master=root,corner_radius=0)
     frame_with_logo.pack(pady=0,padx=5,fill="both",expand=False,side = "top")
@@ -560,12 +571,9 @@ def menu(): # Funkce spouští základní menu při spuštění aplikace (MAIN)
     def call_convert_option(list_of_menu_frames):
         root.unbind("<f>")
         Converting_option(root,list_of_menu_frames)
-    def call_view_option(list_of_menu_frames):
+    def call_view_option(list_of_menu_frames,path_given = None,selected_image = ""):
         root.unbind("<f>")
-        if IB_as_def_browser_path == None:
-            Image_browser(root,list_of_menu_frames)
-        else:
-            Image_browser(root,list_of_menu_frames,IB_as_def_browser_path)
+        Image_browser(root,list_of_menu_frames,path_given,selected_image)
     def call_advanced_option(list_of_menu_frames):
         root.unbind("<f>")
         Advanced_option(root,list_of_menu_frames)
@@ -581,13 +589,7 @@ def menu(): # Funkce spouští základní menu při spuštění aplikace (MAIN)
     convert_button.pack(pady =10,padx=0,side="top",anchor="n")
     viewer_button.pack(pady =0,padx=0,side="top",anchor="n")
     advanced_button.pack(pady =10,padx=0,side="top",anchor="n")
-
-    #pripad pouzivani image browseru TRIMAZKON, jako vychozi prohlizec pro windows
-    if len(sys.argv) > 1:
-        IB_as_def_browser_path = sys.argv[1]
-        print(IB_as_def_browser_path)
-        call_view_option(list_of_menu_frames)
-
+ 
     def maximalize_window(e):
         # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
         currently_focused = str(root.focus_get())
@@ -599,7 +601,21 @@ def menu(): # Funkce spouští základní menu při spuštění aplikace (MAIN)
         else:
             root.after(0, lambda:root.state('zoomed'))
     root.bind("<f>",maximalize_window)
-    root.mainloop()
+
+    #pripad pouzivani image browseru TRIMAZKON, jako vychozi prohlizec pro windows
+    if len(sys.argv) > 1 and image_opened == False:
+        raw_path = str(sys.argv[1])
+        IB_as_def_browser_path=path_check(raw_path,True)
+        IB_as_def_browser_path_splitted = IB_as_def_browser_path.split("/")
+        IB_as_def_browser_path = ""
+        for i in range(0,len(IB_as_def_browser_path_splitted)-2):
+            IB_as_def_browser_path += IB_as_def_browser_path_splitted[i]+"/"
+        image_opened = True
+        root.update()
+        selected_image = IB_as_def_browser_path_splitted[len(IB_as_def_browser_path_splitted)-2]
+        call_view_option(list_of_menu_frames,IB_as_def_browser_path,selected_image)
+
+    root.mainloop()   
 
 class Image_browser: # Umožňuje procházet obrázky a přitom například vybrané přesouvat do jiné složky
     """
@@ -608,7 +624,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
     - umožňuje: měnit rychlost přehrávání, přiblížení, otočení obrázku
     - reaguje na klávesové zkratky
     """
-    def __init__(self,root,list_of_menu_frames,IB_as_def_browser_path = None):
+    def __init__(self,root,list_of_menu_frames,IB_as_def_browser_path = None,selected_image = ""):
         self.root = root
         self.list_of_menu_frames = list_of_menu_frames
         self.IB_as_def_browser_path = IB_as_def_browser_path
@@ -631,7 +647,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         
         self.previous_image_dimensions = 0,0
         self.previous_zoom = 1
-        self.selected_image = ""
+        self.selected_image = selected_image
         self.path_for_explorer = None
         self.temp_bmp_folder = "temp_bmp"
         self.ifz_located = None
@@ -783,7 +799,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                             #pro zefektivnění:
                             if matches_made == self.ifz_count:
                                 break
-
     def make_image_film_widgets(self):
         if len(self.image_queue)>len(self.all_images):
             self.image_queue = [""]*(len(self.all_images))
@@ -1156,21 +1171,27 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             else:
                 image_to_show = direct_path
 
-            with Image.open(image_to_show) as current_image:
-                current_image = current_image.rotate(self.rotation_angle,expand=True)
-                width,height = current_image.size
+            with Image.open(image_to_show) as opened_image:
+            #current_image= Image.open(image_to_show)
+                rotated_image = opened_image.rotate(self.rotation_angle,expand=True)
+                width,height = rotated_image.size
+
             if self.chosen_option == 1:
                 dimensions = self.calc_current_format(width,height)
             else:
                 dimensions = self.sliders_calc_current_format(width,height)
-            displayed_image = customtkinter.CTkImage(current_image,size = (dimensions[0],dimensions[1]))
+            #displayed_image = customtkinter.CTkImage(rotated_image,size = (dimensions[0],dimensions[1]))
+            resized_image = rotated_image.resize((int(dimensions[0]), int(dimensions[1])))
+            displayed_image = ImageTk.PhotoImage(resized_image)
             if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
                 self.images.configure(image = displayed_image)
                 self.images.image = displayed_image
                 self.images.update_idletasks()
 
             if self.image_film == True: #refreshujeme pouze stredovy obrazek jinak i okolni
-                image_center= customtkinter.CTkImage(current_image,size = ((100,100)))
+                #image_center= customtkinter.CTkImage(rotated_image,size = ((100,100)))
+                resized_image_center = rotated_image.resize((100, 100))
+                image_center = ImageTk.PhotoImage(resized_image_center)
                 if self.image_film_frame_center.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
                     self.images_film_center.configure(image = image_center)
                     self.images_film_center.image = image_center
@@ -1208,29 +1229,34 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
 
                     if "" in self.image_queue: #kdyz jeste nejsou zadne poukladane, preloading
                         #CENTER image preload
-                        self.image_queue[half_image_queue] = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
+                        resized_image_center = resized_image_center.resize((image_film_dimensions[0],image_film_dimensions[1]))
+                        self.image_queue[half_image_queue] = ImageTk.PhotoImage(resized_image_center)
 
                         for i in range(0,half_image_queue): #LEFT
                             current_image = open_image(increment_of_image,-half_image_queue+i)
                             if current_image != False:
-                                self.image_queue[i] = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
+                                resized_image = current_image.resize((image_film_dimensions[0],image_film_dimensions[1]))
+                                self.image_queue[i] = ImageTk.PhotoImage(resized_image)
                             
                         for i in range(0,half_image_queue): #RIGHT
                             current_image = open_image(increment_of_image,+i+1)
                             if current_image != False:
-                                self.image_queue[i+half_image_queue+1] = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
+                                resized_image = current_image.resize((image_film_dimensions[0],image_film_dimensions[1]))
+                                self.image_queue[i+half_image_queue+1] = ImageTk.PhotoImage(resized_image)
                     else:
                         if self.flow_direction == "left":
                             current_image = open_image(increment_of_image,-half_image_queue)
                             if current_image != False:
-                                preopened_image = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
+                                resized_image = current_image.resize((image_film_dimensions[0],image_film_dimensions[1]))
+                                preopened_image = ImageTk.PhotoImage(resized_image)
                                 self.image_queue.pop(len(self.image_queue)-1)
                                 self.image_queue.insert(0,preopened_image)
 
                         elif self.flow_direction == "right":
                             current_image = open_image(increment_of_image,half_image_queue)
                             if current_image != False:
-                                preopened_image = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
+                                resized_image = current_image.resize((image_film_dimensions[0],image_film_dimensions[1]))
+                                preopened_image = ImageTk.PhotoImage(resized_image)
                                 self.image_queue.append(preopened_image)
                                 self.image_queue.pop(0)
 
@@ -1530,6 +1556,24 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             self.images.place_configure(relx=-new_x_coordinate*zoom)
             #self.images.place_configure(x = -self.mouse_x/2)
 
+    def refresh_console_setting(self):
+        if self.name_or_path.get() == 1:
+            if self.ifz_located == None:
+                only_name = str(self.all_images[self.increment_of_image]).split("/")
+            else:
+                center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
+                only_name = str(self.converted_images[center_image_index + self.increment_of_ifz_image]).split("/")
+
+            only_name = only_name[int(len(only_name))-1]
+            add_colored_line(self.console,str(only_name),"white",None,True)
+
+        else:
+            if self.ifz_located == None:
+                add_colored_line(self.console,str(self.all_images[self.increment_of_image]),"white",None,True)
+            else:
+                center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
+                add_colored_line(self.console,str(self.converted_images[center_image_index + self.increment_of_ifz_image]),"white",None,True)
+
     def create_widgets(self): # Vytvoření veškerých widgets (MAIN image browseru)
         #cisteni menu widgets
         for frames in self.list_of_menu_frames: 
@@ -1537,12 +1581,13 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             frames.grid_forget()
             frames.destroy()
         
-        self.frame_with_path = customtkinter.CTkFrame(master=self.root,height = 200)
-        self.background_frame = customtkinter.CTkFrame(master=self.root)
-        self.main_frame      = customtkinter.CTkCanvas(master=self.background_frame,background="black",highlightthickness=0)
-        self.image_film_frame_left = customtkinter.CTkFrame(master=self.root,height = 100)
-        self.image_film_frame_center = customtkinter.CTkFrame(master=self.root,height = 100,width = 200)
-        self.image_film_frame_right = customtkinter.CTkFrame(master=self.root,height = 100)
+        self.frame_with_path = customtkinter.CTkFrame(master=self.root,height = 200,corner_radius=0)
+        self.background_frame = customtkinter.CTkFrame(master=self.root,corner_radius=0)
+        #self.main_frame      = customtkinter.CTkCanvas(master=self.background_frame,background="black",highlightthickness=0)
+        self.main_frame      = tk.Canvas(master=self.background_frame,background="black",highlightthickness=0,borderwidth=0)
+        self.image_film_frame_left = customtkinter.CTkFrame(master=self.root,height = 100,corner_radius=0)
+        self.image_film_frame_center = customtkinter.CTkFrame(master=self.root,height = 100,width = 200,corner_radius=0)
+        self.image_film_frame_right = customtkinter.CTkFrame(master=self.root,height = 100,corner_radius=0)
         self.frame_with_path.pack(pady=5,padx=5,fill="x",expand=False,side = "top")
         self.background_frame.pack(pady=0,padx=5,ipadx=10,ipady=10,fill="both",expand=True,side = "top")
         if self.image_film == True:
@@ -1566,7 +1611,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         manual_path  = customtkinter.CTkButton(master = self.frame_with_path, width = 90,height=30,text = "Otevřít", command = lambda: self.start(self.path_set.get()),font=("Arial",16,"bold"))
         tree         = customtkinter.CTkButton(master = self.frame_with_path, width = 120,height=30,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",16,"bold"))
         button_save_path = customtkinter.CTkButton(master = self.frame_with_path,width=50,height=30, text = "Uložit cestu", command = lambda: save_path(self.console,self.path_set.get()),font=("Arial",16,"bold"))
-        self.name_or_path = customtkinter.CTkCheckBox(master = self.frame_with_path,font=("Arial",16), text = "Název/cesta")
+        self.name_or_path = customtkinter.CTkCheckBox(master = self.frame_with_path,font=("Arial",16), text = "Název/cesta",command= lambda: self.refresh_console_setting())
         self.console = tk.Text(self.frame_with_path, wrap="none", height=0, width=180,background="black",font=("Arial",14),state=tk.DISABLED)
         button_back  = customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = "<", command = self.previous_image,font=("Arial",16,"bold"))
         self.changable_image_num = customtkinter.CTkEntry(master = self.frame_with_path,width=45,justify = "left",font=("Arial",16,"bold"))
@@ -1628,7 +1673,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         button_move.grid(column = 0,row=2,pady = 5,padx =1065,sticky = tk.W)#85
         button_delete.grid(column = 0,row=2,pady = 5,padx =1150,sticky = tk.W)#85
 
-        self.images = customtkinter.CTkLabel(master = self.main_frame,text = "")
+        #self.images = customtkinter.CTkLabel(master = self.main_frame,text = "")
+        self.images = tk.Label(master = self.main_frame,text = "",highlightthickness=0,borderwidth=0)
         self.images.place(x=5,y=5)
         self.name_or_path.select()
 
@@ -3358,7 +3404,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         button_save1    = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Uložit", command = lambda: set_cutoff_date(),font=("Arial",18,"bold"))
         insert_button = customtkinter.CTkButton(master = self.frame_right,width=190,height=30, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",18,"bold"))
         console_frame_right_1 = customtkinter.CTkLabel(master = self.frame_right,height=30,text = console_frame_right_1_text,justify = "left",font=("Arial",18),text_color=console_frame_right_1_color)
-        directories     = customtkinter.CTkImage(Image.open("images/directories.png"),size=(240, 190))
+        directories     = customtkinter.CTkImage(Image.open(initial_path+"images/directories.png"),size=(240, 190))
         label0.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
         images2.grid(column =0,row=row_index,sticky = tk.W,pady =15,padx=600,rowspan=5)
         label1.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
@@ -3503,7 +3549,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.pairs_folder_name = list_of_folder_names[1]
         self.sort_inside_pair_folder = True
         self.temp_path_for_explorer = None
-        self.original_image = Image.open("images/loading3.png")
+        self.original_image = Image.open(initial_path+"images/loading3.png")
         self.original_image = self.original_image.resize((300, 300))
         self.angle = 0
 
@@ -3517,7 +3563,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         if self.checkbox.get()+self.checkbox2.get()+self.checkbox3.get()+self.checkbox4.get()+self.checkbox5.get() == 0:
             #self.console.configure(text = "Nevybrali jste žádný způsob třídění :-)",text_color="red")
             add_colored_line(self.console,"Nevybrali jste žádný způsob třídění :-)","red")
-            nothing = customtkinter.CTkImage(Image.open("images/nothing.png"),size=(1, 1))
+            nothing = customtkinter.CTkImage(Image.open(initial_path+"images/nothing.png"),size=(1, 1))
             self.images.configure(image = nothing)
             self.name_example.configure(text = "")
 
@@ -3897,20 +3943,20 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.checkbox6.deselect()
         if self.one_subfolder.get() == 1:
             if self.checkbox_safe_mode.get()==1:
-                dir1sub = customtkinter.CTkImage(Image.open("images/1sub_roz.png"),size=(522, 173))
+                dir1sub = customtkinter.CTkImage(Image.open(initial_path+"images/1sub_roz.png"),size=(522, 173))
                 self.images2.configure(image =dir1sub)
                 self.console2.configure(text = "Zadaná cesta/ 1.složka/ složky se soubory",text_color="white")
             else:
-                nodir1sub = customtkinter.CTkImage(Image.open("images/1sub_vol.png"),size=(513, 142))
+                nodir1sub = customtkinter.CTkImage(Image.open(initial_path+"images/1sub_vol.png"),size=(513, 142))
                 self.images2.configure(image =nodir1sub)
                 self.console2.configure(text = "Zadaná cesta/ 1.složka/ soubory volně, neroztříděné",text_color="white")
         else:
             if self.checkbox_safe_mode.get()==1:
-                dirsnosub = customtkinter.CTkImage(Image.open("images/nosub_roz.png"),size=(432, 133))
+                dirsnosub = customtkinter.CTkImage(Image.open(initial_path+"images/nosub_roz.png"),size=(432, 133))
                 self.images2.configure(image =dirsnosub)
                 self.console2.configure(text = "Zadaná cesta/ složky se soubory",text_color="white")
             else:
-                nodirsnosub = customtkinter.CTkImage(Image.open("images/nosub_vol.png"),size=(253, 142))
+                nodirsnosub = customtkinter.CTkImage(Image.open(initial_path+"images/nosub_vol.png"),size=(253, 142))
                 self.images2.configure(image =nodirsnosub)
                 self.console2.configure(text = "Zadaná cesta/ soubory volně, neroztříděné",text_color="white")
     
@@ -3918,20 +3964,20 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.one_subfolder.deselect()
         if self.checkbox6.get() == 1:
             if self.checkbox_safe_mode.get()==1:
-                dir2sub = customtkinter.CTkImage(Image.open("images/2sub_roz.png"),size=(553, 111))
+                dir2sub = customtkinter.CTkImage(Image.open(initial_path+"images/2sub_roz.png"),size=(553, 111))
                 self.images2.configure(image =dir2sub)
                 self.console2.configure(text = "Zadaná cesta/ 1.složka/ 2.složka/ složky se soubory",text_color="white")
             else:
-                nodir2sub = customtkinter.CTkImage(Image.open("images/2sub_vol.png"),size=(553, 111))
+                nodir2sub = customtkinter.CTkImage(Image.open(initial_path+"images/2sub_vol.png"),size=(553, 111))
                 self.images2.configure(image =nodir2sub)
                 self.console2.configure(text = "Zadaná cesta/ 1.složka/ 2.složka/ soubory volně, neroztříděné",text_color="white")
         else:
             if self.checkbox_safe_mode.get()==1:
-                dirsnosub = customtkinter.CTkImage(Image.open("images/nosub_roz.png"),size=(432, 133))
+                dirsnosub = customtkinter.CTkImage(Image.open(initial_path+"images/nosub_roz.png"),size=(432, 133))
                 self.images2.configure(image =dirsnosub)
                 self.console2.configure(text = "Zadaná cesta/ složky se soubory",text_color="white")
             else:
-                nodirsnosub = customtkinter.CTkImage(Image.open("images/nosub_vol.png"),size=(253, 142))
+                nodirsnosub = customtkinter.CTkImage(Image.open(initial_path+"images/nosub_vol.png"),size=(253, 142))
                 self.images2.configure(image =nodirsnosub)
                 self.console2.configure(text = "Zadaná cesta/ soubory volně, neroztříděné",text_color="white")
     
@@ -3946,28 +3992,28 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         zobrazení ilustračního obrázku
         """
         if self.checkbox.get()+self.checkbox2.get()+self.checkbox3.get()+self.checkbox4.get()+self.checkbox5.get() == 0:
-            nothing = customtkinter.CTkImage(Image.open("images/nothing.png"),size=(1, 1))
+            nothing = customtkinter.CTkImage(Image.open(initial_path+"images/nothing.png"),size=(1, 1))
             self.images.configure(image = nothing)
             self.name_example.configure(text = "")
         else:
             if which_one == 1:
-                type_24 = customtkinter.CTkImage(Image.open("images/24_type.png"),size=(224, 85))
+                type_24 = customtkinter.CTkImage(Image.open(initial_path+"images/24_type.png"),size=(224, 85))
                 self.images.configure(image =type_24)
                 self.name_example.configure(text = f"221013_092241_0000000842_21_&Cam1Img  => .Height <=  .bmp\n(Podporované formáty:{self.supported_formats_sorting})")
             if which_one == 2:
-                func_24 = customtkinter.CTkImage(Image.open("images/24_func.png"),size=(363, 85))
+                func_24 = customtkinter.CTkImage(Image.open(initial_path+"images/24_func.png"),size=(363, 85))
                 self.images.configure(image =func_24)
                 self.name_example.configure(text = f"221013_092241_0000000842_  => 21 <=  _&Cam1Img.Height.bmp\n(Podporované formáty:{self.supported_formats_sorting})")
             if which_one == 3:
-                cam_24 = customtkinter.CTkImage(Image.open("images/24_cam.png"),size=(437, 85))
+                cam_24 = customtkinter.CTkImage(Image.open(initial_path+"images/24_cam.png"),size=(437, 85))
                 self.images.configure(image =cam_24)
                 self.name_example.configure(text = f"221013_092241_0000000842_21_&  => Cam1 <=  Img.Height.bmp\n(Podporované formáty:{self.supported_formats_sorting})")
             if which_one == 4:
-                both_24 = customtkinter.CTkImage(Image.open("images/24_both.png"),size=(900, 170))
+                both_24 = customtkinter.CTkImage(Image.open(initial_path+"images/24_both.png"),size=(900, 170))
                 self.images.configure(image =both_24)
                 self.name_example.configure(text = f"221013_092241_0000000842_  => 21 <=  _&  => Cam1 <=  Img.Height.bmp\n(Podporované formáty:{self.supported_formats_sorting})")
             if which_one == 5:
-                PAIRS = customtkinter.CTkImage(Image.open("images/25basic.png"),size=(265, 85))
+                PAIRS = customtkinter.CTkImage(Image.open(initial_path+"images/25basic.png"),size=(265, 85))
                 self.images.configure(image =PAIRS)
                 self.name_example.configure(
                     text = f"Nakopíruje nalezené dvojice souborů do složky s názvem PAIRS\n(např. obsluha vloží dvakrát stejnou paletu po sobě před kameru)\n2023_04_13-07_11_09_xxxx_=> 0020 <=_&Cam2Img.Height.bmp\n(funkce postupuje podle časové známky v názvu souboru, kdy byly soubory pořízeny)\n(Podporované formáty:{self.supported_formats_sorting})")
@@ -4107,5 +4153,4 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.unbind_list.append("<Escape>")
         self.path_set.bind("<Return>",unfocus_widget)
 
-menu()
-
+menu(image_opened = False)

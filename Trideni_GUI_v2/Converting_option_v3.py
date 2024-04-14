@@ -1,29 +1,36 @@
 import os
 import subprocess
-import time
+import sys
 
-whole_app_path = os.getcwd()
-application_path = whole_app_path + "/convert_application/"
-
-
-def path_check(path_raw):
+def path_check(path_raw,only_repair = None):
     path=path_raw
     backslash = "\ "
     if backslash[0] in path:
-        newPath = path.replace(os.sep, '/')
+        newPath = path.replace(backslash[0], '/')
         path = newPath
 
     if path.endswith('/') == False:
         newPath = path + "/"
         path = newPath
 
-    if not os.path.exists(path):
+    if not os.path.exists(path) and only_repair==None:
         return False
-
     else:
         return path
 
+whole_app_path = os.getcwd()
+if len(sys.argv) > 1: #spousteni pres cmd
+    raw_path = str(sys.argv[0])
+    initial_path = path_check(raw_path,True)
+    initial_path_splitted = initial_path.split("/")
+    whole_app_path = ""
+    for i in range(0,len(initial_path_splitted)-2):
+        whole_app_path += initial_path_splitted[i]+"/"
+
+
+application_path = str(whole_app_path) + "/convert_application/"
 application_path = path_check(application_path)
+
 if application_path != False:
     application_path = "\"" + application_path + "IfzToBitmap.exe" + "\""
 
@@ -32,7 +39,6 @@ if application_path != False:
 class whole_converting_function:
     """
     Funkce pro konvertování souborů
-
     """
     def __init__(self,path_given,output_img_format,folder_with_bmp_name,folder_with_jpg_name,view_in_browser=None,selected_file = None):
         self.folder_with_bmp = folder_with_bmp_name

@@ -170,14 +170,15 @@ opravit chybu pri otevirani cesty s mezerou v nazvu u IB - hotovo
 opravit chybu pri nacitani ifz bez zadneho podobrazku - hotovo
 oprava tlacitka reset - hotovo
 
+11:33 AM 4/14/2024
+moznost nastavit trimazkon, jako vychozi prohlizec obrazku (problem ze nezname cestu, kde se aplikace nachazi) - hotovo (zapína se skrze registry)
+kdyz IB jako default prohlizec, nenacte se selectnutej obrazek -hotovo
+okamzite updatovat zmeny v konzoli u IB - hotovo
+
+
 
 
 prenastavovat ip adresy?
-
-monznost nastavit trimazkon, jako vychozi prohlizec obrazku (problem ze nezname cestu, kde se aplikace nachazi)
-
-
-
 
 
 moznost pinnout horni frame u IB
