@@ -175,17 +175,20 @@ moznost nastavit trimazkon, jako vychozi prohlizec obrazku (problem ze nezname c
 kdyz IB jako default prohlizec, nenacte se selectnutej obrazek -hotovo
 okamzite updatovat zmeny v konzoli u IB - hotovo
 
+8:51 07.05.2024
+prenastavovat ip adresy? - samostatna aplikace - hotovo
 
 
-
-prenastavovat ip adresy?
+moznost provest pripojeni k serveru - predelat cely system otevirani obrazku podle ftp serveru
 
 
 moznost pinnout horni frame u IB
 
 zjistit prepnuti monitoru a upravit podle toho parametry IB
 
-moznost provest pripojeni k serveru - predelat cely system otevirani obrazku podle ftp serveru
+
+
+
 
 
 
