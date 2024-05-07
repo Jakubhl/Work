@@ -73,7 +73,7 @@ class whole_converting_function:
         command = ""
         if len(files_to_convert) != 0:
             if application_path != False:
-                command = str(application_path) + " byrtobmp " + files_to_convert[0] + " "
+                command = str(application_path) + " byrtobmp "+ "\"" + files_to_convert[0] + "\""+ " "
                 self.converted_files +=1
                 if len(files_to_convert) != 1:
                     i=0
@@ -81,7 +81,7 @@ class whole_converting_function:
                         self.converted_files +=1
                         i+=1
                         if i>1:
-                            command = command + " " + files
+                            command = command + " " + "\""+ files+ "\""
 
                 if which_format == "bmp":
                     self.make_dir(self.folder_with_bmp,self.path_given)
