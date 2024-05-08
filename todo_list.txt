@@ -175,16 +175,37 @@ moznost nastavit trimazkon, jako vychozi prohlizec obrazku (problem ze nezname c
 kdyz IB jako default prohlizec, nenacte se selectnutej obrazek -hotovo
 okamzite updatovat zmeny v konzoli u IB - hotovo
 
+4:56 PM 4/15/2024
+filmovy pas bind na prepinani koleckem - hotovo
+
+6:23 PM 4/16/2024
+verze 3.5.2
+
+1:17 PM 4/20/2024
+obrazek z teams... defautni aplikace to prevede TRIMAZKON nee -hotovo (mezera v nazvu obrazku)
+vetsi prostredni obrazek u IB - hotovo
+
 8:51 07.05.2024
-prenastavovat ip adresy? - samostatna aplikace - hotovo
+prenastavovat ip adresy? - ANO moznost pridat poznamky, kliknout na projekt a hned se prenastavi adresa - hotovo
 
 
-moznost provest pripojeni k serveru - predelat cely system otevirani obrazku podle ftp serveru
+
+
+sitovy disk mount do windows
+
+moznost rozkliknout podrobnosti o projektu nebo scrollable frame
+
+schovat masku...
+
+
+
 
 
 moznost pinnout horni frame u IB
 
 zjistit prepnuti monitoru a upravit podle toho parametry IB
+
+
 
 
 
