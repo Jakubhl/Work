@@ -179,6 +179,19 @@ okamzite updatovat zmeny v konzoli u IB - hotovo
 prenastavovat ip adresy? - samostatna aplikace - hotovo
 
 
+u ip odstanit okno console...
+
+schovat masku ve vizualizaci
+
+kdyz je vice radku - predelat frames na scrollable nebo rozbalit po rozkliku
+
+pridat srdicko - oblibene ip adresy... az 60 - vyuzivat excel
+
+
+
+
+
+
 moznost provest pripojeni k serveru - predelat cely system otevirani obrazku podle ftp serveru
 
 
