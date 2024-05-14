@@ -42,7 +42,7 @@ root=customtkinter.CTk()
 root.geometry("1200x900")
 root.wm_iconbitmap(initial_path+'images/logo_TRIMAZKON.ico')
 #root.title("Zpracování souborů z průmyslových kamer")
-root.title("TRIMAZKON v_3.5")
+root.title("TRIMAZKON v_3.5.3")
 #pro pripad vypisovani do konzole z exe:
 # sys.stdout = sys.__stdout__
 # print(initial_path)
@@ -529,7 +529,7 @@ def pop_change_log():
     popup.geometry(str(geometry_string))
     #popup.geometry("600x400")
     popup.title("updates - verze 3.5")
-    popup.label = customtkinter.CTkLabel(popup, text="\n- přidán film obrázků před a po (včetně ifz)\n- oprava chyb při přibližování obrázku\n- oprava chyb při rotování obrázku\n- nové možnosti v pokročilých možnostech\n- nově možnost uložit základní cestu i mimo nastavení\n- možnost nastavit TRIMAZKON, jako defaultní prohlížeč obrázků",justify = "left",font = ("Arial",18))
+    popup.label = customtkinter.CTkLabel(popup, text="\n- přidán film obrázků před a po (včetně ifz)\n- oprava chyb při přibližování obrázku\n- oprava chyb při rotování obrázku\n- nové možnosti v pokročilých možnostech\n- nově možnost uložit základní cestu i mimo nastavení\n- možnost nastavit TRIMAZKON, jako defaultní prohlížeč obrázků)\n-přepínání obrázků kolečkem na filmu obrázků",justify = "left",font = ("Arial",18))
     popup.label.pack(padx=10, pady=10, anchor = "w")
     popup.update()
 
@@ -760,7 +760,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             for i in range(0,len(names_of_files_to_be_converted)):
                 if names_of_files_to_be_converted[i][:-4] not in found_files: #_x (x muze nabyvat max hodnoty 8)
                     to_convert.append(names_of_files_to_be_converted[i])
-            #print("converting",to_convert)
+            # print("converting",to_convert)
 
             #4) volani funkce pro konvertovani
             Converting.whole_converting_function(self.default_path,"bmp",self.temp_bmp_folder,None,True,to_convert)
@@ -785,7 +785,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             for files in os.listdir(self.default_path + self.temp_bmp_folder):
                 if (str(files[:(-6+self.name_hide_index)])+".ifz") not in names_of_files_to_be_converted:
                     os.remove(self.default_path + self.temp_bmp_folder + "/" + files)
-                    #print("deleting",files)
+                    # print("deleting",files)
 
             #8) plneni pole s kompletni cestou ve spravnem poradi...
             self.converted_images = []
@@ -799,7 +799,17 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                             #pro zefektivnění:
                             if matches_made == self.ifz_count:
                                 break
+            # print(self.converted_images)
+                             
     def make_image_film_widgets(self):
+        def mouse_wheel2(e): # posouvat obrazky
+            direction = -e.delta
+            if direction < 0:
+                #direction = "forward"
+                self.next_image()
+            else:
+                self.previous_image()
+            
         if len(self.image_queue)>len(self.all_images):
             self.image_queue = [""]*(len(self.all_images))
             if len(self.image_queue) % 2 == 0: #nesmi byt sudé...
@@ -814,9 +824,10 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
 
         for i in range(0,len(self.left_labels)):
             self.left_labels[len(self.left_labels)-i-1] = customtkinter.CTkLabel(master = self.image_film_frame_left,text = "")
+            self.left_labels[len(self.left_labels)-i-1].bind("<MouseWheel>",mouse_wheel2)
             self.left_labels[len(self.left_labels)-i-1].pack(side = "right",padx=5)
-
             self.right_labels[i] = customtkinter.CTkLabel(master = self.image_film_frame_right,text = "")
+            self.right_labels[i].bind("<MouseWheel>",mouse_wheel2)
             self.right_labels[i].pack(side = "left",padx=5)
 
     def start(self,path): # Ověřování cesty, init, spuštění
@@ -1180,18 +1191,18 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 dimensions = self.calc_current_format(width,height)
             else:
                 dimensions = self.sliders_calc_current_format(width,height)
-            #displayed_image = customtkinter.CTkImage(rotated_image,size = (dimensions[0],dimensions[1]))
-            resized_image = rotated_image.resize((int(dimensions[0]), int(dimensions[1])))
-            displayed_image = ImageTk.PhotoImage(resized_image)
+            displayed_image = customtkinter.CTkImage(rotated_image,size = (dimensions[0],dimensions[1]))
+            #resized_image = rotated_image.resize((int(dimensions[0]), int(dimensions[1])))
+            #displayed_image = ImageTk.PhotoImage(resized_image)
             if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
                 self.images.configure(image = displayed_image)
                 self.images.image = displayed_image
                 self.images.update_idletasks()
 
             if self.image_film == True: #refreshujeme pouze stredovy obrazek jinak i okolni
-                #image_center= customtkinter.CTkImage(rotated_image,size = ((100,100)))
-                resized_image_center = rotated_image.resize((100, 100))
-                image_center = ImageTk.PhotoImage(resized_image_center)
+                image_center= customtkinter.CTkImage(rotated_image,size = ((150,150)))
+                #resized_image_center = rotated_image.resize((100, 100))
+                #image_center = ImageTk.PhotoImage(resized_image_center)
                 if self.image_film_frame_center.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
                     self.images_film_center.configure(image = image_center)
                     self.images_film_center.image = image_center
@@ -1229,34 +1240,39 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
 
                     if "" in self.image_queue: #kdyz jeste nejsou zadne poukladane, preloading
                         #CENTER image preload
-                        resized_image_center = resized_image_center.resize((image_film_dimensions[0],image_film_dimensions[1]))
-                        self.image_queue[half_image_queue] = ImageTk.PhotoImage(resized_image_center)
+                        self.image_queue[half_image_queue] = customtkinter.CTkImage(rotated_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
+                        #resized_image_center = resized_image_center.resize((image_film_dimensions[0],image_film_dimensions[1]))
+                        #self.image_queue[half_image_queue] = ImageTk.PhotoImage(resized_image_center)
 
                         for i in range(0,half_image_queue): #LEFT
                             current_image = open_image(increment_of_image,-half_image_queue+i)
                             if current_image != False:
-                                resized_image = current_image.resize((image_film_dimensions[0],image_film_dimensions[1]))
-                                self.image_queue[i] = ImageTk.PhotoImage(resized_image)
+                                self.image_queue[i] = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
+                                # resized_image = current_image.resize((image_film_dimensions[0],image_film_dimensions[1]))
+                                # self.image_queue[i] = ImageTk.PhotoImage(resized_image)
                             
                         for i in range(0,half_image_queue): #RIGHT
                             current_image = open_image(increment_of_image,+i+1)
                             if current_image != False:
-                                resized_image = current_image.resize((image_film_dimensions[0],image_film_dimensions[1]))
-                                self.image_queue[i+half_image_queue+1] = ImageTk.PhotoImage(resized_image)
+                                self.image_queue[i+half_image_queue+1] = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
+                                # resized_image = current_image.resize((image_film_dimensions[0],image_film_dimensions[1]))
+                                # self.image_queue[i+half_image_queue+1] = ImageTk.PhotoImage(resized_image)
                     else:
                         if self.flow_direction == "left":
                             current_image = open_image(increment_of_image,-half_image_queue)
                             if current_image != False:
-                                resized_image = current_image.resize((image_film_dimensions[0],image_film_dimensions[1]))
-                                preopened_image = ImageTk.PhotoImage(resized_image)
+                                preopened_image = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
+                                # resized_image = current_image.resize((image_film_dimensions[0],image_film_dimensions[1]))
+                                # preopened_image = ImageTk.PhotoImage(resized_image)
                                 self.image_queue.pop(len(self.image_queue)-1)
                                 self.image_queue.insert(0,preopened_image)
 
                         elif self.flow_direction == "right":
                             current_image = open_image(increment_of_image,half_image_queue)
                             if current_image != False:
-                                resized_image = current_image.resize((image_film_dimensions[0],image_film_dimensions[1]))
-                                preopened_image = ImageTk.PhotoImage(resized_image)
+                                preopened_image = customtkinter.CTkImage(current_image,size = (image_film_dimensions[0],image_film_dimensions[1]))
+                                # resized_image = current_image.resize((image_film_dimensions[0],image_film_dimensions[1]))
+                                # preopened_image = ImageTk.PhotoImage(resized_image)
                                 self.image_queue.append(preopened_image)
                                 self.image_queue.pop(0)
 
@@ -1583,8 +1599,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         
         self.frame_with_path = customtkinter.CTkFrame(master=self.root,height = 200,corner_radius=0)
         self.background_frame = customtkinter.CTkFrame(master=self.root,corner_radius=0)
-        #self.main_frame      = customtkinter.CTkCanvas(master=self.background_frame,background="black",highlightthickness=0)
-        self.main_frame      = tk.Canvas(master=self.background_frame,background="black",highlightthickness=0,borderwidth=0)
+        self.main_frame      = customtkinter.CTkCanvas(master=self.background_frame,background="black",highlightthickness=0)
+        #self.main_frame      = tk.Canvas(master=self.background_frame,background="black",highlightthickness=0,borderwidth=0)
         self.image_film_frame_left = customtkinter.CTkFrame(master=self.root,height = 100,corner_radius=0)
         self.image_film_frame_center = customtkinter.CTkFrame(master=self.root,height = 100,width = 200,corner_radius=0)
         self.image_film_frame_right = customtkinter.CTkFrame(master=self.root,height = 100,corner_radius=0)
@@ -1673,8 +1689,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         button_move.grid(column = 0,row=2,pady = 5,padx =1065,sticky = tk.W)#85
         button_delete.grid(column = 0,row=2,pady = 5,padx =1150,sticky = tk.W)#85
 
-        #self.images = customtkinter.CTkLabel(master = self.main_frame,text = "")
-        self.images = tk.Label(master = self.main_frame,text = "",highlightthickness=0,borderwidth=0)
+        self.images = customtkinter.CTkLabel(master = self.main_frame,text = "")
+        #self.images = tk.Label(master = self.main_frame,text = "",highlightthickness=0,borderwidth=0)
         self.images.place(x=5,y=5)
         self.name_or_path.select()
 
@@ -1875,6 +1891,11 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         #self.main_frame.bind("<MouseWheel>",mouse_wheel1)
         self.frame_with_path.bind("<MouseWheel>",mouse_wheel2)
         self.console.bind("<MouseWheel>",mouse_wheel2)
+        if self.image_film == True:
+            self.image_film_frame_left.bind("<MouseWheel>",mouse_wheel2)
+            self.image_film_frame_center.bind("<MouseWheel>",mouse_wheel2)
+            self.image_film_frame_right.bind("<MouseWheel>",mouse_wheel2)
+            self.images_film_center.bind("<MouseWheel>",mouse_wheel2)
         self.unbind_list.append("<MouseWheel>")
         
         self.released = False
@@ -2376,7 +2397,6 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         def change_image_film_number(*args):
             write_text_file_data(int(*args),"num_of_IB_film_images")
             num_of_image_film_images.configure(text = str(int(*args)) + " obrázků na každé straně")
-
 
         if self.submenu_option == "default_path":
             row_index = 1

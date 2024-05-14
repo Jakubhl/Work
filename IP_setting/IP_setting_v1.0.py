@@ -275,36 +275,40 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         
     def make_project_cells(self,only_one_new=None):
         self.read_excel_data()
-        padx_list = [10,220,400,600,800]
+        # padx_list = [10,220,400,600,800]
+        padx_list = [10,220,400,450,650]
         if only_one_new == None:
             self.clear_frame(self.project_tree)
             # y = widgets ve smeru y, x = widgets ve smeru x
             for y in range(0,len(self.all_rows)):
-                project_frame =  customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,fg_color="black",border_width=2)
-                project_frame.pack(pady=0,padx=5,fill="x",expand=False,side = "bottom",anchor="w")
+                #project_frame =  customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,fg_color="black",border_width=2)
+                project_frame =  customtkinter.CTkScrollableFrame(master=self.project_tree,corner_radius=0,fg_color="black",border_width=2,height=50)
+                project_frame.pack(pady=0,padx=5,fill="x",expand=True,side = "bottom",anchor="w")
                 # binding the click on widget
                 #project_frame.bind("<Button-1>",self.clicked_on_project)
                 project_frame.bind("<Button-1>",lambda e, widget_id = y: self.clicked_on_project(e, widget_id))
                 for x in range(0,len(self.all_rows[y])):
-                    if x == 0:
-                        button =  customtkinter.CTkButton(master = project_frame,width = 160,height=30,text = self.all_rows[y][x], command = lambda widget_id = y: self.change_computer_ip(widget_id),font=("Arial",20,"bold"),corner_radius=0)
-                        button.grid(column = 0,row=y,pady = 0,padx =padx_list[x],sticky = tk.W)
-                    else:
-                        parameter =  customtkinter.CTkLabel(master = project_frame,height=30,text = self.all_rows[y][x],font=("Arial",20,"bold"),justify='left')
-                        parameter.grid(column = 0,row=y,pady = 5,padx =padx_list[x],sticky = tk.W)
+                    if x != 2: #nevypisujeme masku
+                        if x == 0:
+                            button =  customtkinter.CTkButton(master = project_frame,width = 160,height=30,text = self.all_rows[y][x], command = lambda widget_id = y: self.change_computer_ip(widget_id),font=("Arial",20,"bold"),corner_radius=0)
+                            button.grid(column = 0,row=y,pady = 0,padx =padx_list[x],sticky = tk.W)
+                        else:
+                            parameter =  customtkinter.CTkLabel(master = project_frame,height=30,text = self.all_rows[y][x],font=("Arial",20,"bold"),justify='left')
+                            parameter.grid(column = 0,row=y,pady = 5,padx =padx_list[x],sticky = tk.W)
         else: #pridani pouze noveho
             project_frame =  customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,fg_color="black",border_width=2)
             project_frame.pack(pady=0,padx=5,fill="x",expand=False,side = "bottom",anchor="w")
             y = len(self.all_rows)-1
             for x in range(0,len(self.all_rows[y])):
-                if x == 0:
-                    button =  customtkinter.CTkButton(master = project_frame,width = 160,height=30,text = self.all_rows[y][x], command = lambda widget_id=y: self.change_computer_ip(widget_id),font=("Arial",20,"bold"),corner_radius=0)
-                    button.grid(column = 0,row=y,pady = 0,padx =padx_list[x],sticky = tk.W)
-                    # binding the click on widget
-                    project_frame.bind("<Button-1>",lambda e, widget_id = y: self.clicked_on_project(e, widget_id))
-                else:
-                    parameter =  customtkinter.CTkLabel(master = project_frame,height=30,text = self.all_rows[y][x],font=("Arial",20,"bold"),justify='left')
-                    parameter.grid(column = 0,row=y,pady = 5,padx =padx_list[x],sticky = tk.W)
+                if x != 2: #nevypisujeme masku
+                    if x == 0:
+                        button =  customtkinter.CTkButton(master = project_frame,width = 160,height=30,text = self.all_rows[y][x], command = lambda widget_id=y: self.change_computer_ip(widget_id),font=("Arial",20,"bold"),corner_radius=0)
+                        button.grid(column = 0,row=y,pady = 0,padx =padx_list[x],sticky = tk.W)
+                        # binding the click on widget
+                        project_frame.bind("<Button-1>",lambda e, widget_id = y: self.clicked_on_project(e, widget_id))
+                    else:
+                        parameter =  customtkinter.CTkLabel(master = project_frame,height=30,text = self.all_rows[y][x],font=("Arial",20,"bold"),justify='left')
+                        parameter.grid(column = 0,row=y,pady = 5,padx =padx_list[x],sticky = tk.W)
 
     def edit_project(self):
         if self.last_project_name != "":
@@ -340,8 +344,8 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         button_search.grid(column = 0,row=0,pady = 5,padx =245,sticky = tk.W)
         button_add.grid(column = 0,row=0,pady = 5,padx =320,sticky = tk.W)
         button_remove.grid(column = 0,row=0,pady = 5,padx =425,sticky = tk.W)
-        button_edit.grid(column = 0,row=0,pady = 5,padx =550,sticky = tk.W)
-        self.drop_down_options.grid(column = 0,row=0,pady = 5,padx =680,sticky = tk.W)
+        button_edit.grid(column = 0,row=0,pady = 5,padx =545,sticky = tk.W)
+        self.drop_down_options.grid(column = 0,row=0,pady = 5,padx =672,sticky = tk.W)
         self.main_console.grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
         
         self.make_project_cells()
