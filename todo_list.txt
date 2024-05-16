@@ -188,25 +188,20 @@ vetsi prostredni obrazek u IB - hotovo
 8:51 07.05.2024
 prenastavovat ip adresy? - ANO moznost pridat poznamky, kliknout na projekt a hned se prenastavi adresa - hotovo
 
+9:42 AM 5/16/2024
+schovat masku ve vizualizaci - hotovo
+vše posunout o řádek, na prvním řádku mít přednastavený defaultní nastavení - hotovo
+full screen na 3 možnosti = malý jen tlačítka, windowed, full screen - hotovo
+pridat srdicko - oblibene ip adresy... az 60 - vyuzivat excel - hotovo (presun na prvni radek a ulozeni do excelu)
 
 
-vše posunout o řádek, na prvním řádku mít přednastavený defaultní nastavení
-
-sitovy disk mount do windows
-
-schovat masku...
-
-full screen na 3 možnosti = malý jen tlačítka, windowed, full screen
+sitovy disk mount do windows - dodelat visualizaci
 
 seřazovat podle abecedy
 
-u ip odstanit okno console...
-
-schovat masku ve vizualizaci
-
 kdyz je vice radku - predelat frames na scrollable nebo rozbalit po rozkliku - asi rozdelit vice framu na radek...
 
-pridat srdicko - oblibene ip adresy... az 60 - vyuzivat excel
+
 
 
 
@@ -214,8 +209,6 @@ pridat srdicko - oblibene ip adresy... az 60 - vyuzivat excel
 
 
 moznost provest pripojeni k serveru - predelat cely system otevirani obrazku podle ftp serveru
-
-
 
 moznost pinnout horni frame u IB
 

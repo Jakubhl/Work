@@ -2,5 +2,5 @@
 DELL ntb>*********************************************************************************************************************
 C:\Users\jakub.hlavacek.local\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages/customtkinter;customtkinter/
 
-pyinstaller --noconfirm --onefile -w --add-data "C:\Users\jakub.hlavacek.local\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\customtkinter;customtkinter/" IP_setting_v1.0.py
+pyinstaller --noconfirm -noconsole --onefile -w --add-data "C:\Users\jakub.hlavacek.local\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\customtkinter;customtkinter/" IP_setting_v1.0.py
 
