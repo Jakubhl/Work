@@ -3,7 +3,7 @@ import tkinter as tk
 from openpyxl import load_workbook
 import subprocess
 import os
-import ipaddress
+import re
 
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
@@ -48,6 +48,7 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
     """
     Umožňuje měnit nastavení statických IP adres
     """
+
     def __init__(self,root):
         self.root = root
         self.rows_taken = 0
@@ -194,7 +195,7 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
             if self.project_list[i] == wanted_project and len(str(self.project_list[i])) == len(str(wanted_project)):
                 row_index = self.project_list.index(wanted_project)
                 workbook = load_workbook(self.excel_file_path)
-                worksheet = workbook.active
+                worksheet = workbook["ip_adress_list"]
                 worksheet.delete_rows(row_index+1)
                 workbook.save(self.excel_file_path)
                 workbook.close()
@@ -305,16 +306,22 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         if no_read == None:
             self.read_excel_data()
         # padx_list = [10,220,400,600,800]
-        padx_list = [10,220,400,450,650]
+        #padx_list = [10,220,400,450,650]
+        padx_list = [10,190,400,450,650]
+
         # pouze jeden novy projekt
-        if only_one_new != None:
+        """if only_one_new != None:
             # y = widgets ve smeru y, x = widgets ve smeru x
-            project_frame =  customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,fg_color="black",border_width=2)
-            project_frame.pack(pady=0,padx=5,fill="x",expand=False,side = "bottom",anchor="w")
+            #project_frame =  customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,fg_color="black",border_width=2,width=900)
+            #project_frame.pack(pady=0,padx=5,fill="x",expand=False,side = "bottom",anchor="w")
             y = len(self.all_rows)-1
+            project_frame.grid(row=y,column=0,padx=0,sticky=tk.W)
             for x in range(0,len(self.all_rows[y])):
                 if x != 2: #nevypisujeme masku
                     if x == 0:
+                        project_frame =  customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,fg_color="black",border_width=2,height=50,width=180)
+                        project_frame.grid(row=y,column=0,padx=padx_list[x],sticky=tk.W)
+                        project_frame.grid_propagate(0)
                         button =  customtkinter.CTkButton(master = project_frame,width = 160,height=30,text = self.all_rows[y][x], command = lambda widget_id=y: self.change_computer_ip(widget_id),font=("Arial",20,"bold"),corner_radius=0)
                         button.grid(column = 0,row=y,pady = 0,padx =padx_list[x],sticky = tk.W)
                         # binding the click on widget
@@ -323,26 +330,44 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
                     else:
                         textfill = self.all_rows[y][x]
                         parameter =  customtkinter.CTkLabel(master = project_frame,height=30,text = textfill,font=("Arial",20,"bold"),justify='left')
-                        parameter.grid(column = 0,row=y,pady = 5,padx =padx_list[x],sticky = tk.W)
+                        parameter.grid(column = 0,row=0,pady = 10,padx =5,sticky = tk.W)
                             
-        else: # kompletni prepis
-            self.clear_frame(self.project_tree)
-            # y = widgets ve smeru y, x = widgets ve smeru x
-            for y in range(0,len(self.all_rows)):
-                project_frame =  customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,fg_color="black",border_width=2,height=50)
-                #project_frame =  customtkinter.CTkScrollableFrame(master=self.project_tree,corner_radius=0,fg_color="black",border_width=2,height=50)
-                project_frame.pack(pady=0,padx=5,fill="x",expand=False,side = "bottom",anchor="w")
-                # binding the click on widget
-                project_frame.bind("<Button-1>",lambda e, widget_id = y: self.clicked_on_project(e, widget_id))
-                for x in range(0,len(self.all_rows[y])):
-                    if x != 2: #nevypisujeme masku
-                        if x == 0:
-                            button =  customtkinter.CTkButton(master = project_frame,width = 160,height=30,text = self.all_rows[y][x], command = lambda widget_id = y: self.change_computer_ip(widget_id),font=("Arial",20,"bold"),corner_radius=0)
-                            button.grid(column = 0,row=y,pady = 0,padx =padx_list[x],sticky = tk.W)
-                        else:
-                            parameter =  customtkinter.CTkLabel(master = project_frame,width = 200,height=30,text = self.all_rows[y][x],font=("Arial",20,"bold"),justify='left')
-                            parameter.grid(column = 0,row=y,pady = 5,padx =padx_list[x],sticky=tk.W)
-                            #parameter.grid_propagate(0)
+        else: # kompletni prepis"""
+        self.clear_frame(self.project_tree)
+
+        column1 =  customtkinter.CTkLabel(master = self.project_tree, width = 20,height=30,text = "Projekt: ",font=("Arial",20,"bold"))
+        column2 =  customtkinter.CTkLabel(master = self.project_tree, width = 20,height=30,text = "IPv4 adresa: ",font=("Arial",20,"bold"))
+        column3 =  customtkinter.CTkLabel(master = self.project_tree, width = 20,height=30,text = "Poznámky: ",font=("Arial",20,"bold"))
+        column1.grid(column = 0,row=0,pady = 5,padx =10,sticky = tk.W)
+        column2.grid(column = 0,row=0,pady = 5,padx =190,sticky = tk.W)
+        column3.grid(column = 0,row=0,pady = 5,padx =450,sticky = tk.W)
+        # y = widgets ve smeru y, x = widgets ve smeru x
+        for y in range(0,len(self.all_rows)):
+            #project_frame =  customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,fg_color="black",border_width=2,height=50,width=900)
+            
+            #project_frame =  customtkinter.CTkScrollableFrame(master=self.project_tree,corner_radius=0,fg_color="black",border_width=2,height=50)
+            #project_frame.pack(pady=0,padx=5,fill="x",expand=False,side = "bottom",anchor="w")
+            #project_frame.grid(row=y,column=0,padx=0,sticky=tk.W)
+            
+            # binding the click on widget
+            #project_frame.bind("<Button-1>",lambda e, widget_id = y: self.clicked_on_project(e, widget_id))
+            for x in range(0,len(self.all_rows[y])):
+                if x != 2: #nevypisujeme masku
+                    if x == 0:
+                        project_frame =  customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,fg_color="black",border_width=2,height=50,width=180)
+                        project_frame.grid(row=y+1,column=0,padx=padx_list[x],sticky=tk.W)
+                        project_frame.grid_propagate(0)
+                        button =  customtkinter.CTkButton(master = project_frame,width = 160,text = self.all_rows[y][x], command = lambda widget_id = y: self.change_computer_ip(widget_id),font=("Arial",20,"bold"),corner_radius=0)
+                        button.grid(column = 0,row=0,pady = 10,padx =10)
+                    else:
+                        project_frame =  customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,fg_color="black",border_width=2,height=50,width=300)
+                        project_frame.grid(row=y+1,column=0,padx=padx_list[x],sticky=tk.W)
+                        project_frame.grid_propagate(0)
+                        parameter =  customtkinter.CTkLabel(master = project_frame,width = 200,text = self.all_rows[y][x],font=("Arial",20,"bold"),justify='left')
+                        #parameter.grid(column = 0,row=y,pady = 5,padx =padx_list[x],sticky=tk.W)
+                        parameter.grid(column = 0,row=0,pady = 10,padx =5,sticky=tk.W)
+
+                        #parameter.grid_propagate(0)
 
     def edit_project(self):
         result = self.check_given_input()
@@ -373,6 +398,32 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         else:
              add_colored_line(self.main_console,f"Připojení selhalo (vlastní IP adresa? musí být zvolena alespoň 1 složka...)","red",None,True)
 
+    def get_ipv4_addresses(self):
+        # Run the ipconfig command
+        result = subprocess.run(['ipconfig'], capture_output=True, text=True)
+        # Regular expression to match the IPv4 address
+        ipv4_pattern = re.compile(r'IPv4 Address[.\s]*: ([\d.]+)')
+        # Dictionary to store interface names and their IPv4 addresses
+        ipv4_addresses = []
+        # Split the output by lines
+        lines = result.stdout.splitlines()
+        current_interface = None
+        # Iterate over each line to find interface names and IPv4 addresses
+        for line in lines:
+            if line.strip():
+                # Detect interface name
+                if line[0].isalpha():
+                    current_interface = line.strip()
+                else:
+                    # Detect IPv4 address for the current interface
+                    match = ipv4_pattern.search(line)
+                    if match and current_interface:
+                        ipv4_addresses.append(current_interface)
+                        ipv4_addresses.append(match.group(1))
+                        #ipv4_addresses[current_interface] = match.group(1)
+        
+        return ipv4_addresses
+
     def option_change(self,args):
         self.default_connection_option = self.connection_option_list.index(self.drop_down_options.get())
         #pamatovat si naposledy zvoleny:
@@ -381,6 +432,12 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         worksheet['B' + str(1)] = int(self.default_connection_option)
         workbook.save(filename=self.excel_file_path)
         workbook.close()
+
+        current_connection = self.get_ipv4_addresses()
+        message = ""
+        for items in current_connection:
+            message = message + items + " "
+        add_colored_line(self.main_console,f"Současné připojení: {message}","white",None,True)
     
     def make_project_first(self,save = True):
         result = self.check_given_input()
@@ -397,7 +454,7 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
                 self.make_project_cells()
             else:
                 self.make_project_cells(None,True)
-            add_colored_line(self.main_console,f"A je to, můžeme jít domů :)","green",None,True)
+            add_colored_line(self.main_console,f"Hotovo","green",None,True)
         elif result == None:
             add_colored_line(self.main_console,f"Nejprve vyberte projekt","orange",None,True)
         else:
@@ -410,13 +467,15 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         self.project_tree.pack(pady=5,padx=5,fill="both",expand=True,side = "top")
         # project_tree.grid(column = 0,row=0,pady = 5,padx =10,sticky = tk.W)
 
+        
+
         project_label =  customtkinter.CTkLabel(master = main_widgets, width = 20,height=30,text = "Projekt: ",font=("Arial",20,"bold"))
         self.search_input = customtkinter.CTkEntry(master = main_widgets,font=("Arial",20),width=150,height=30,placeholder_text="Název projektu",corner_radius=0)
         button_search =  customtkinter.CTkButton(master = main_widgets, width = 20,height=30,text = "Vyhledat",command =  lambda: self.make_project_first(False),font=("Arial",16,"bold"),corner_radius=0)
         button_add =  customtkinter.CTkButton(master = main_widgets, width = 20,height=30,text = "Nový projekt", command = lambda: self.add_new_project(),font=("Arial",16,"bold"),corner_radius=0)
         button_remove = customtkinter.CTkButton(master = main_widgets, width = 80,height=30,text = "Smazat projekt", command =  lambda: self.delete_project(),font=("Arial",16,"bold"),corner_radius=0)
         button_edit = customtkinter.CTkButton(master = main_widgets, width = 80,height=30,text = "Editovat projekt",command =  lambda: self.edit_project(),font=("Arial",16,"bold"),corner_radius=0)
-        self.drop_down_options = customtkinter.CTkOptionMenu(master = main_widgets,width=100,height=30,values=self.connection_option_list,font=("Arial",16,"bold"),corner_radius=0,command=  lambda args="": self.option_change(args))
+        self.drop_down_options = customtkinter.CTkOptionMenu(master = main_widgets,width=100,height=30,values=self.connection_option_list,font=("Arial",16,"bold"),corner_radius=0,command=  self.option_change)
         button_make_first = customtkinter.CTkButton(master = main_widgets, width = 80,height=30,text = "Přesunout na začátek",command =  lambda: self.make_project_first(),font=("Arial",16,"bold"),corner_radius=0)
 
         self.main_console = tk.Text(main_widgets, wrap="none", height=0, width=180,background="black",font=("Arial",14),state=tk.DISABLED)
@@ -433,20 +492,26 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         self.main_console.grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
         
         self.drop_down_options.set(self.connection_option_list[self.default_connection_option])
+        self.option_change("")
 
         self.make_project_cells(None,True)
 
         def maximalize_window(e):
+            self.root.update_idletasks()
+            current_width = int(self.root.winfo_width())
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
             if self.focused_entry_widget(): # pokud nabindovane pismeno neni vepisovano do entry widgetu
+                print("focused entry")
                 return
-            if int(self.root._current_width) > 1200:
-                self.root.after(0, lambda:self.root.state('normal'))
+            if int(current_width) > 1200:
+                #self.root.after(0, lambda:self.root.state('normal'))
+                self.root.state('normal')
                 self.root.geometry("210x500")
-            elif int(self.root._current_width) == 500:
+            elif int(current_width) ==210:
                 self.root.geometry("1200x900")
             else:
-                self.root.after(0, lambda:self.root.state('zoomed'))
+                #self.root.after(0, lambda:self.root.state('zoomed'))
+                self.root.state('zoomed')
         self.root.bind("<f>",maximalize_window)
 
     
