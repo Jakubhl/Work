@@ -583,9 +583,13 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         drive_letter = str(self.drive_letter_input.get())
         if len(str(self.DL_manual_entry.get())) > 0:
             drive_letter = str(self.DL_manual_entry.get())
+        
+        remove_persistent_command = "net use /persistent:No"
+        subprocess.call(remove_persistent_command, shell=True)
 
-        first_command = "net use " + drive_letter +": /del"
-        subprocess.call(first_command, shell=True)
+        delete_command = "net use " + drive_letter +": /delete"
+        subprocess.call(delete_command, shell=True)
+
         add_colored_line(self.main_console,f"Disky s označením {drive_letter} byly odpojeny","orange",None,True)
         self.close_window(child_root)
 
@@ -618,20 +622,20 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         password = "*Jhv2708"
 
         Drive_letter = str(self.disc_all_rows[button_row][1])
-        print(Drive_letter)
         ftp_adress = str(self.disc_all_rows[button_row][2])
-        print(ftp_adress)
+        raw_ftp_address = r"{}".format(ftp_adress)
+        print(raw_ftp_address)
+        ftp_adress = raw_ftp_address
         user = str(self.disc_all_rows[button_row][3])
-        print(user)
         password = str(self.disc_all_rows[button_row][4])
-        print(password)
 
-        first_command = "net use " + Drive_letter +": /del"
+        remove_persistent_command = "net use /persistent:No"
+        subprocess.call(remove_persistent_command, shell=True)
+
+        delete_command = "net use " + Drive_letter +": /delete"
+        subprocess.call(delete_command, shell=True)
         second_command = "net use " + Drive_letter +": " + ftp_adress+" /user:" + user + " " + password
 
-        # Disconnect anything on drive letter:
-        #subprocess.call(r'net use T: /del', shell=True)
-        subprocess.call(first_command, shell=True)
         # result = subprocess.call(r'net use T: \\192.168.14.245\Data /user:Vision *Jhv2708', shell=True,stdout=subprocess.PIPE)
         result = subprocess.call(second_command, shell=True,stdout=subprocess.PIPE)
 
