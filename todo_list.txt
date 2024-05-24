@@ -194,18 +194,15 @@ vše posunout o řádek, na prvním řádku mít přednastavený defaultní nast
 full screen na 3 možnosti = malý jen tlačítka, windowed, full screen - hotovo
 pridat srdicko - oblibene ip adresy... az 60 - vyuzivat excel - hotovo (presun na prvni radek a ulozeni do excelu)
 
+1:11 PM 5/24/2024
+sitovy disk mount do windows - dodelat visualizaci - hotovo
+když v excelu vyplním číslo, nelze... - hotovo
+duplikáty projektů po vyhledávání... - vyreseno
 
-sitovy disk mount do windows - dodelat visualizaci
 
 seřazovat podle abecedy
 
 kdyz je vice radku - predelat frames na scrollable nebo rozbalit po rozkliku - asi zobrazit pouze první, zbytek po rozkliku...
-
-když v excelu vyplním číslo, nelze...
-
-duplikáty projektů po vyhledávání...
-
-
 
 
 
