@@ -584,9 +584,6 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         if len(str(self.DL_manual_entry.get())) > 0:
             drive_letter = str(self.DL_manual_entry.get())
         
-        remove_persistent_command = "net use /persistent:No"
-        subprocess.call(remove_persistent_command, shell=True)
-
         delete_command = "net use " + drive_letter +": /delete"
         subprocess.call(delete_command, shell=True)
 
@@ -629,12 +626,9 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         user = str(self.disc_all_rows[button_row][3])
         password = str(self.disc_all_rows[button_row][4])
 
-        remove_persistent_command = "net use /persistent:No"
-        subprocess.call(remove_persistent_command, shell=True)
-
-        delete_command = "net use " + Drive_letter +": /delete"
+        delete_command = "net use " + Drive_letter + ": /delete"
         subprocess.call(delete_command, shell=True)
-        second_command = "net use " + Drive_letter +": " + ftp_adress+" /user:" + user + " " + password
+        second_command = "net use " + Drive_letter + ": " + ftp_adress + " /user:" + user + " " + password + " /persistent:Yes"
 
         # result = subprocess.call(r'net use T: \\192.168.14.245\Data /user:Vision *Jhv2708', shell=True,stdout=subprocess.PIPE)
         result = subprocess.call(second_command, shell=True,stdout=subprocess.PIPE)
