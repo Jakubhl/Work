@@ -8,6 +8,7 @@ import time
 import threading
 import psutil
 import socket
+from PIL import Image, ImageTk
 
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
@@ -58,9 +59,9 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         self.rows_taken = 0
         self.all_rows = []
         self.project_list = []
-        app_path = os.getcwd()
-        app_path = path_check(app_path,True)
-        self.excel_file_path = app_path + "saved_addresses_2.xlsx"
+        self.app_path = os.getcwd()
+        self.app_path = path_check(self.app_path,True)
+        self.excel_file_path = self.app_path + "saved_addresses_2.xlsx"
         #default:
         self.connection_option_list = ["Ethernet",
                              "Ethernet 1",
@@ -137,7 +138,8 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         all_options = worksheet['B' + str(2)].value
         all_options = str(all_options).split(",")
         for i in range (0,len(all_options)):
-            self.connection_option_list.append(all_options[i])
+            if all_options[i] != "":
+                self.connection_option_list.append(all_options[i])
 
         workbook.close()
               
@@ -382,7 +384,7 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         FTP_adress =                customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "ftp adresa: ",font=("Arial",20,"bold"))
         self.FTP_adress_input =     customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=500,height=30,corner_radius=0)
         user =                      customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Uživatelské jméno: ",font=("Arial",20,"bold"))
-        self.username_input =           customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0)
+        self.username_input =       customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0)
         password =                  customtkinter.CTkLabel(master = child_root, width = 60,height=30,text = "Heslo: ",font=("Arial",20,"bold"))
         self.password_input =       customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0)
         notes =                     customtkinter.CTkLabel(master = child_root, width = 60,height=30,text = "Poznámky: ",font=("Arial",20,"bold"))
@@ -399,7 +401,7 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         FTP_adress.             grid(column = 0,row=4,pady = 5,padx =10,sticky = tk.W)
         self.FTP_adress_input.  grid(column = 0,row=5,pady = 5,padx =10,sticky = tk.W)
         user.                   grid(column = 0,row=6,pady = 5,padx =10,sticky = tk.W)
-        self.username_input.        grid(column = 0,row=7,pady = 5,padx =10,sticky = tk.W)
+        self.username_input.    grid(column = 0,row=7,pady = 5,padx =10,sticky = tk.W)
         password.               grid(column = 0,row=8,pady = 5,padx =10,sticky = tk.W)
         self.password_input.    grid(column = 0,row=9,pady = 5,padx =10,sticky = tk.W)
         notes.                  grid(column = 0,row=10,pady = 5,padx =10,sticky = tk.W)
@@ -613,7 +615,7 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
             if not self.disc_all_rows[i][1] in found_drive_letters:
                 found_drive_letters.append(self.disc_all_rows[i][1])
         
-        label =                     customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Vyberte disk: ",font=("Arial",20,"bold"))
+        label =                     customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Vyberte disk nebo vyhledejte manuálně: ",font=("Arial",20,"bold"))
         self.drive_letter_input =   customtkinter.CTkOptionMenu(master = child_root,font=("Arial",20),width=200,height=30,values=found_drive_letters,corner_radius=0)
         self.DL_manual_entry =      customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0,placeholder_text="manuálně")
         del_button =                customtkinter.CTkButton(master = child_root, width = 200,height=30,text = "Odpojit", command = lambda: self.delete_disc(child_root),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
@@ -772,7 +774,102 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
             found_address = self.get_current_ip_address(items)
             self.current_address_list.append(found_address)
         print(self.current_address_list)
-            
+    
+    def manage_interfaces(self,child_root,given_input,operation = None):
+        index =0
+        changes_were_made = False
+        if operation == "add_new":
+            if given_input.replace(" ","") != "":
+                self.connection_option_list.insert(0,given_input)
+                add_colored_line(self.main_console,f"Přidán nový interface: {given_input}","green",None,True)
+                changes_were_made = True
+            else:
+                add_colored_line(self.main_console,"Vložte název","red",None,True)
+        
+        elif operation == "remove":
+            if given_input.replace(" ","") != "":
+                try:
+                    index = self.connection_option_list.index(given_input)
+                    self.connection_option_list.pop(index)
+                    add_colored_line(self.main_console,f"Interface: {given_input} smazán","orange",None,True)
+                    changes_were_made = True
+                except ValueError:
+                    add_colored_line(self.main_console,"Interface nenalezen","red",None,True)
+                
+            elif self.interface_input.get() != "":
+                given_input = self.interface_input.get()
+                index = self.connection_option_list.index(given_input)
+                self.connection_option_list.pop(index)
+                add_colored_line(self.main_console,f"Interface: {given_input} smazán","orange",None,True)
+                changes_were_made = True
+            else:
+                add_colored_line(self.main_console,"Vyberte interface","red",None,True)
+
+        if changes_were_made == True:
+            workbook = load_workbook(self.excel_file_path)
+            worksheet = workbook["Settings"]
+            self.default_connection_option = 0
+            excel_string_of_options = ""
+            worksheet['B' + str(1)] = int(self.default_connection_option)
+            for items in self.connection_option_list:
+                if items != "":
+                    excel_string_of_options = excel_string_of_options + str(items) + ","
+            print(excel_string_of_options)
+            worksheet['B' + str(2)] = excel_string_of_options
+            workbook.save(filename=self.excel_file_path)
+            workbook.close()
+                
+        self.drop_down_options.configure(values = self.connection_option_list)
+        self.drop_down_options.set(self.connection_option_list[self.default_connection_option])
+        self.interface_input.configure(values = self.connection_option_list)
+        self.interface_input.set(self.connection_option_list[self.default_connection_option])
+        # self.close_window(child_root)
+
+    def connection_option_setting_menu(self):
+        self.read_excel_data()
+        child_root=customtkinter.CTk()
+        child_root.geometry("520x400")
+        child_root.title("Nastavení možností připojení (interface list)")
+
+        label =             customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Vyberte nebo vyhledejte manuálně: ",font=("Arial",20,"bold"))
+        self.interface_input = customtkinter.CTkOptionMenu(master = child_root,font=("Arial",20),width=200,height=30,values=self.connection_option_list,corner_radius=0)
+        manual_entry_interface = customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0,placeholder_text="manuálně")
+        add_button =        customtkinter.CTkButton(master = child_root, width = 150,height=30,text = "Přidat", command = lambda: self.manage_interfaces(child_root,manual_entry_interface.get(),"add_new"),font=("Arial",20,"bold"),corner_radius=0,fg_color="green")
+        del_button =        customtkinter.CTkButton(master = child_root, width = 150,height=30,text = "Smazat", command = lambda: self.manage_interfaces(child_root,manual_entry_interface.get(),"remove"),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
+        
+        
+        label.              grid(column = 0,row=0,pady = 5,padx =10,sticky = tk.W)
+        self.interface_input.grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
+        manual_entry_interface.grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
+        add_button.         grid(column = 0,row=3,pady = 5,padx =10,sticky = tk.W)
+        del_button.         grid(column = 0,row=3,pady = 5,padx =170,sticky = tk.W)
+        
+
+        child_root.mainloop()
+
+
+    """
+
+        self.default_connection_option = self.connection_option_list.index(self.drop_down_options.get())
+        #pamatovat si naposledy zvoleny zpusob pripojeni:
+        workbook = load_workbook(self.excel_file_path)
+        worksheet = workbook["Settings"]
+        worksheet['B' + str(1)] = int(self.default_connection_option)
+        workbook.save(filename=self.excel_file_path)
+        workbook.close()
+        # ziskat data o aktualnim pripojeni
+        current_connection = self.get_ipv4_addresses()
+        message = ""
+        for items in current_connection:
+            message = message + items + " "
+        add_colored_line(self.main_console,f"Současné připojení: {message}","white",None,True)
+
+        #ziskat soucasna nastaveni na ruznych pripojeni
+        self.get_current_ip_list()
+        if  self.static_label2.winfo_exists():
+            self.static_label2.configure(text=self.current_address_list[self.default_connection_option])"""
+
+
     def create_widgets(self):
         self.clear_frame(self.root)
         self.managing_disc = False
@@ -792,6 +889,7 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         
         connect_label =         customtkinter.CTkLabel(master = main_widgets, width = 100,height=30,text = "Připojení: ",font=("Arial",20,"bold"))
         self.drop_down_options = customtkinter.CTkOptionMenu(master = main_widgets,width=200,height=30,values=self.connection_option_list,font=("Arial",16,"bold"),corner_radius=0,command=  self.option_change)
+        button_settings =       customtkinter.CTkButton(master = main_widgets, width = 30,height=30,text="⚒",command =  lambda: self.connection_option_setting_menu(),font=("Arial",22,"bold"),corner_radius=0)
         static_label =          customtkinter.CTkLabel(master = main_widgets, height=30,text = "Static:",font=("Arial",20,"bold"))
         self.static_label2 =    customtkinter.CTkLabel(master = main_widgets, height=30,text = "",font=("Arial",20,"bold"))
         button_change_window =  customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Připojování k síťovým diskům",command =  lambda: self.create_widgets_disc(),font=("Arial",16,"bold"),corner_radius=0,fg_color="green")
@@ -808,9 +906,10 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
 
         connect_label.          grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
         self.drop_down_options. grid(column = 0,row=1,pady = 0,padx =110,sticky = tk.W)
-        static_label.           grid(column = 0,row=1,pady = 0,padx =315,sticky = tk.W)
-        self.static_label2.     grid(column = 0,row=1,pady = 0,padx =380,sticky = tk.W)
-        button_change_window.   grid(column = 0,row=1,pady = 0,padx =550,sticky = tk.W)
+        button_settings.        grid(column = 0,row=1,pady = 0,padx =315,sticky = tk.W)
+        static_label.           grid(column = 0,row=1,pady = 0,padx =355,sticky = tk.W)
+        self.static_label2.     grid(column = 0,row=1,pady = 0,padx =420,sticky = tk.W)
+        button_change_window.   grid(column = 0,row=1,pady = 0,padx =590,sticky = tk.W)
         
         self.main_console.grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
         

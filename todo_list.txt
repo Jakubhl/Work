@@ -203,18 +203,19 @@ duplikáty projektů po vyhledávání... - vyreseno
 převést vykonávání mapování do threadu kvůli blokaci - hotovo
 zobrazovat současnou statickou ip adresu - hotovo
 při mapování nebo odpojování disků restartovat windows explorer - hotovo
+nabindovat enter - hotovo
+pridat prompt na upravu seznamu moznych pripojeni (ethernet...) - hotovo
 
 
 
-nabindovat enter 
+kdyz nakliknuty projekt a pridat novy, tak kopirovat vse (do menu noveho pridat zaskrtavatko vyplnit nakliknutym projektem)
+
 
 udelat skupinu oblibenych - samostatný frame - muze pak byt klidně duplikát
 
-pridat prompt na upravu seznamu moznych pripojeni (ethernet...)
-
 seřazovat podle abecedy ???
 
-kdyz je vice radku - predelat frames na scrollable nebo rozbalit po rozkliku - asi zobrazit pouze první, zbytek po rozkliku...
+kdyz je vice radku - predelat frames na scrollable nebo rozbalit po rozkliku - asi zobrazit pouze první, zbytek po rozkliku... (edit staci?)
 
 
 
