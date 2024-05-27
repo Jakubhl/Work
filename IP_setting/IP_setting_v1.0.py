@@ -4,12 +4,16 @@ from openpyxl import load_workbook
 import subprocess
 import os
 import re
+import time
+import threading
+import psutil
+import socket
 
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 root=customtkinter.CTk()
 root.geometry("1200x900")
-root.title("IP nastavovač v2.0")
+root.title("IP manager v2.0")
 
 def path_check(path_raw,only_repair = None):
     path=path_raw
@@ -79,6 +83,7 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         self.last_project_password = ""
 
         self.managing_disc = False
+        self.connection_status = None
 
         self.read_excel_data()
         self.create_widgets()
@@ -579,13 +584,21 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         else:
             add_colored_line(self.main_console,f"Projekt nenalezen","red",None,True)
     
+    def refresh_explorer(self):
+        refresh_explorer="taskkill /f /im explorer.exe"
+        subprocess.run(refresh_explorer, shell=True)
+        refresh_explorer="start explorer.exe"
+        subprocess.run(refresh_explorer, shell=True)
+
     def delete_disc(self,child_root):
         drive_letter = str(self.drive_letter_input.get())
         if len(str(self.DL_manual_entry.get())) > 0:
             drive_letter = str(self.DL_manual_entry.get())
         
         delete_command = "net use " + drive_letter +": /delete"
-        subprocess.call(delete_command, shell=True)
+        subprocess.run(delete_command, shell=True)
+
+        self.refresh_explorer()
 
         add_colored_line(self.main_console,f"Disky s označením {drive_letter} byly odpojeny","orange",None,True)
         self.close_window(child_root)
@@ -602,22 +615,17 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         
         label =                     customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Vyberte disk: ",font=("Arial",20,"bold"))
         self.drive_letter_input =   customtkinter.CTkOptionMenu(master = child_root,font=("Arial",20),width=200,height=30,values=found_drive_letters,corner_radius=0)
-        self.DL_manual_entry =         customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0,placeholder_text="manuálně")
-        del_button = customtkinter.CTkButton(master = child_root, width = 200,height=30,text = "Odpojit", command = lambda: self.delete_disc(child_root),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
+        self.DL_manual_entry =      customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0,placeholder_text="manuálně")
+        del_button =                customtkinter.CTkButton(master = child_root, width = 200,height=30,text = "Odpojit", command = lambda: self.delete_disc(child_root),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
         
-        label.              grid(column = 0,row=0,pady = 5,padx =10,sticky = tk.W)
-        self.drive_letter_input. grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
-        self.DL_manual_entry.  grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
-        del_button.         grid(column = 0,row=3,pady = 5,padx =10,sticky = tk.W)
+        label.                      grid(column = 0,row=0,pady = 5,padx =10,sticky = tk.W)
+        self.drive_letter_input.    grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
+        self.DL_manual_entry.       grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
+        del_button.                 grid(column = 0,row=3,pady = 5,padx =10,sticky = tk.W)
 
         child_root.mainloop()
-        
-    def map_disc(self,button_row):
-        Drive_letter = "T"
-        ftp_adress = r"\\192.168.14.245\Data"
-        user = "Vision"
-        password = "*Jhv2708"
 
+    def map_disc(self,button_row):
         Drive_letter = str(self.disc_all_rows[button_row][1])
         ftp_adress = str(self.disc_all_rows[button_row][2])
         raw_ftp_address = r"{}".format(ftp_adress)
@@ -627,14 +635,29 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         password = str(self.disc_all_rows[button_row][4])
 
         delete_command = "net use " + Drive_letter + ": /delete"
-        subprocess.call(delete_command, shell=True)
-        second_command = "net use " + Drive_letter + ": " + ftp_adress + " /user:" + user + " " + password + " /persistent:Yes"
+        subprocess.run(delete_command, shell=True)
+        second_command = "net use " + Drive_letter + ": " + ftp_adress + " /user:" + user + " " + password + " /persistent:No"
 
-        # result = subprocess.call(r'net use T: \\192.168.14.245\Data /user:Vision *Jhv2708', shell=True,stdout=subprocess.PIPE)
-        result = subprocess.call(second_command, shell=True,stdout=subprocess.PIPE)
+        def call_subprocess():
+            #process = subprocess.Popen(second_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            #stdout, stderr = process.communicate()
+            #self.connection_status = process.returncode
+            self.connection_status = subprocess.call(second_command,shell=True,text=True)
+            # self.connection_status = subprocess.Popen(second_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        
+        run_background = threading.Thread(target=call_subprocess,)
+        run_background.start()
 
-        if result == 0:
+        time_start = time.time()
+        while self.connection_status==None:
+            time.sleep(0.05)
+            if time.time() - time_start > 3:
+                print("terminated due to runtime error")
+                break\
+
+        if self.connection_status == 0:
              add_colored_line(self.main_console,f"Disk úspěšně připojen","green",None,True)
+             self.refresh_explorer()
         else:
              add_colored_line(self.main_console,f"Připojení selhalo (nesedí vlastní IP adresa? ixon? musí být zvolena alespoň 1 složka...)","red",None,True)
 
@@ -666,20 +689,25 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
 
     def option_change(self,args):
         self.default_connection_option = self.connection_option_list.index(self.drop_down_options.get())
-        #pamatovat si naposledy zvoleny:
+        #pamatovat si naposledy zvoleny zpusob pripojeni:
         workbook = load_workbook(self.excel_file_path)
         worksheet = workbook["Settings"]
         worksheet['B' + str(1)] = int(self.default_connection_option)
         workbook.save(filename=self.excel_file_path)
         workbook.close()
-
+        # ziskat data o aktualnim pripojeni
         current_connection = self.get_ipv4_addresses()
         message = ""
         for items in current_connection:
             message = message + items + " "
         add_colored_line(self.main_console,f"Současné připojení: {message}","white",None,True)
+
+        #ziskat soucasna nastaveni na ruznych pripojeni
+        self.get_current_ip_list()
+        if  self.static_label2.winfo_exists():
+            self.static_label2.configure(text=self.current_address_list[self.default_connection_option])
     
-    def make_project_first(self,save = True):
+    def make_project_first(self,purpouse=None):
         result = self.check_given_input()
         if result == True:
             #zmena poradi
@@ -694,15 +722,16 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
                 self.save_excel_data(self.all_rows[i][0],self.all_rows[i][1],self.all_rows[i][2],self.all_rows[i][3],None,row+1)
 
             self.make_project_cells()
-            #else:
-            #    self.make_project_cells(None,True)
-            add_colored_line(self.main_console,f"Projekt {self.all_rows[0][0]} byl přesunut na začátek","green",None,True)
+            if purpouse == "search":
+                add_colored_line(self.main_console,f"Projekt {self.all_rows[0][0]} nalezen","green",None,True)
+            else:
+                add_colored_line(self.main_console,f"Projekt {self.all_rows[0][0]} přesunut na začátek","green",None,True)
         elif result == None:
             add_colored_line(self.main_console,f"Nejprve vyberte projekt","orange",None,True)
         else:
             add_colored_line(self.main_console,"Projekt nenalezen","red",None,True)
 
-    def make_project_first_disc(self):
+    def make_project_first_disc(self,purpouse = None):
         result = self.check_given_input()
         if result == True:
             #zmena poradi
@@ -717,12 +746,33 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
 
             self.make_project_cells_disc()
 
-            add_colored_line(self.main_console,f"Projekt {self.disc_all_rows[0][0]} byl přesunut na začátek","green",None,True)
+            if purpouse == "search":
+                add_colored_line(self.main_console,f"Projekt {self.disc_all_rows[0][0]} nalezen","green",None,True)
+            else:
+                add_colored_line(self.main_console,f"Projekt {self.disc_all_rows[0][0]} přesunut na začátek","green",None,True)
         elif result == None:
             add_colored_line(self.main_console,f"Nejprve vyberte projekt","orange",None,True)
         else:
             add_colored_line(self.main_console,"Projekt nenalezen","red",None,True)
 
+    def get_current_ip_address(self,interface_name):
+        # Get network interfaces and their addresses
+        addresses = psutil.net_if_addrs()
+        # Check if the specified interface exists
+        if interface_name in addresses:
+            for addr in addresses[interface_name]:
+                if addr.family == socket.AF_INET:  # IPv4 address
+                    return addr.address
+        else:
+            return "Nenalezeno"
+
+    def get_current_ip_list(self):
+        self.current_address_list = []
+        for items in self.connection_option_list:
+            found_address = self.get_current_ip_address(items)
+            self.current_address_list.append(found_address)
+        print(self.current_address_list)
+            
     def create_widgets(self):
         self.clear_frame(self.root)
         self.managing_disc = False
@@ -732,19 +782,21 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         self.project_tree.pack(pady=5,padx=5,fill="both",expand=True,side = "top")
         # project_tree.grid(column = 0,row=0,pady = 5,padx =10,sticky = tk.W)
 
-        project_label =  customtkinter.CTkLabel(master = main_widgets, width = 100,height=30,text = "Projekt: ",font=("Arial",20,"bold"))
-        self.search_input = customtkinter.CTkEntry(master = main_widgets,font=("Arial",20),width=150,height=30,placeholder_text="Název projektu",corner_radius=0)
-        button_search =  customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Vyhledat",command =  lambda: self.make_project_first(False),font=("Arial",16,"bold"),corner_radius=0)
-        button_add =  customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Nový projekt", command = lambda: self.add_new_project(),font=("Arial",16,"bold"),corner_radius=0)
-        button_remove = customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Smazat projekt", command =  lambda: self.delete_project(),font=("Arial",16,"bold"),corner_radius=0)
-        button_edit = customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Editovat projekt",command =  lambda: self.edit_project(),font=("Arial",16,"bold"),corner_radius=0)
-        button_make_first = customtkinter.CTkButton(master = main_widgets, width = 200,height=30,text = "Přesunout na začátek",command =  lambda: self.make_project_first(),font=("Arial",16,"bold"),corner_radius=0)
+        project_label =         customtkinter.CTkLabel(master = main_widgets, width = 100,height=30,text = "Projekt: ",font=("Arial",20,"bold"))
+        self.search_input =     customtkinter.CTkEntry(master = main_widgets,font=("Arial",20),width=150,height=30,placeholder_text="Název projektu",corner_radius=0)
+        button_search =         customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Vyhledat",command =  lambda: self.make_project_first("search"),font=("Arial",16,"bold"),corner_radius=0)
+        button_add =            customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Nový projekt", command = lambda: self.add_new_project(),font=("Arial",16,"bold"),corner_radius=0)
+        button_remove =         customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Smazat projekt", command =  lambda: self.delete_project(),font=("Arial",16,"bold"),corner_radius=0)
+        button_edit =           customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Editovat projekt",command =  lambda: self.edit_project(),font=("Arial",16,"bold"),corner_radius=0)
+        button_make_first =     customtkinter.CTkButton(master = main_widgets, width = 200,height=30,text = "Přesunout na začátek",command =  lambda: self.make_project_first(),font=("Arial",16,"bold"),corner_radius=0)
         
-        connect_label =  customtkinter.CTkLabel(master = main_widgets, width = 100,height=30,text = "Připojení: ",font=("Arial",20,"bold"))
+        connect_label =         customtkinter.CTkLabel(master = main_widgets, width = 100,height=30,text = "Připojení: ",font=("Arial",20,"bold"))
         self.drop_down_options = customtkinter.CTkOptionMenu(master = main_widgets,width=200,height=30,values=self.connection_option_list,font=("Arial",16,"bold"),corner_radius=0,command=  self.option_change)
-        button_change_window = customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Připojování k síťovým diskům",command =  lambda: self.create_widgets_disc(),font=("Arial",16,"bold"),corner_radius=0,fg_color="green")
+        static_label =          customtkinter.CTkLabel(master = main_widgets, height=30,text = "Static:",font=("Arial",20,"bold"))
+        self.static_label2 =    customtkinter.CTkLabel(master = main_widgets, height=30,text = "",font=("Arial",20,"bold"))
+        button_change_window =  customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Připojování k síťovým diskům",command =  lambda: self.create_widgets_disc(),font=("Arial",16,"bold"),corner_radius=0,fg_color="green")
 
-        self.main_console = tk.Text(main_widgets, wrap="none", height=0, width=180,background="black",font=("Arial",14),state=tk.DISABLED)
+        self.main_console = tk.Text(main_widgets, wrap="none", height=0, width=180,background="black",font=("Arial",20),state=tk.DISABLED)
 
         project_label.      grid(column = 0,row=0,pady = 5,padx =0,sticky = tk.W)
         self.search_input.  grid(column = 0,row=0,pady = 5,padx =100,sticky = tk.W)
@@ -754,9 +806,11 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         button_edit.        grid(column = 0,row=0,pady = 5,padx =590,sticky = tk.W)
         button_make_first.  grid(column = 0,row=0,pady = 5,padx =720,sticky = tk.W)
 
-        connect_label.      grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
-        self.drop_down_options.grid(column = 0,row=1,pady = 0,padx =110,sticky = tk.W)
-        button_change_window.grid(column = 0,row=1,pady = 0,padx =315,sticky = tk.W)
+        connect_label.          grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
+        self.drop_down_options. grid(column = 0,row=1,pady = 0,padx =110,sticky = tk.W)
+        static_label.           grid(column = 0,row=1,pady = 0,padx =315,sticky = tk.W)
+        self.static_label2.     grid(column = 0,row=1,pady = 0,padx =380,sticky = tk.W)
+        button_change_window.   grid(column = 0,row=1,pady = 0,padx =550,sticky = tk.W)
         
         self.main_console.grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
         
@@ -764,6 +818,8 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         self.option_change("")
 
         self.make_project_cells(None,True)
+        self.get_current_ip_list()
+        self.static_label2.configure(text=self.current_address_list[self.default_connection_option])
 
         def maximalize_window(e):
             self.root.update_idletasks()
@@ -783,6 +839,16 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
                 self.root.state('zoomed')
         self.root.bind("<f>",maximalize_window)
 
+        def unfocus_widget(e):
+            #print(self.root.focus_get())
+            self.root.focus_set()
+        self.root.bind("<Escape>",unfocus_widget)
+        self.search_input.bind("<Return>",unfocus_widget)
+
+        def call_search(e):
+            self.make_project_first("search")
+        self.search_input.bind("<Return>",call_search)
+
     def create_widgets_disc(self):
         self.clear_frame(self.root)
         self.managing_disc = True
@@ -794,7 +860,7 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
 
         project_label =         customtkinter.CTkLabel(master = main_widgets, width = 100,height=30,text = "Projekt: ",font=("Arial",20,"bold"))
         self.search_input =     customtkinter.CTkEntry(master = main_widgets,font=("Arial",20),width=150,height=30,placeholder_text="Název projektu",corner_radius=0)
-        button_search =         customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Vyhledat",command =  lambda: self.make_project_first_disc(),font=("Arial",16,"bold"),corner_radius=0)
+        button_search =         customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Vyhledat",command =  lambda: self.make_project_first_disc("search"),font=("Arial",16,"bold"),corner_radius=0)
         button_add =            customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Nový projekt", command = lambda: self.add_new_project_disc(),font=("Arial",16,"bold"),corner_radius=0)
         button_remove =         customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Smazat projekt", command =  lambda: self.delete_project_disc(),font=("Arial",16,"bold"),corner_radius=0)
         button_edit =           customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Editovat projekt",command =  lambda: self.edit_project(),font=("Arial",16,"bold"),corner_radius=0)
@@ -803,7 +869,7 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         button_change_window = customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Měnit IP adresu",command =  lambda: self.create_widgets(),font=("Arial",16,"bold"),corner_radius=0,fg_color="green")
         delete_disc          = customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Odpojit síťový disk",command =  lambda: self.delete_disc_option_menu(),font=("Arial",16,"bold"),corner_radius=0,fg_color="red")
 
-        self.main_console = tk.Text(main_widgets, wrap="none", height=0, width=180,background="black",font=("Arial",14),state=tk.DISABLED)
+        self.main_console = tk.Text(main_widgets, wrap="none", height=0, width=180,background="black",font=("Arial",20),state=tk.DISABLED)
 
         project_label.      grid(column = 0,row=0,pady = 5,padx =0,sticky = tk.W)
         self.search_input.  grid(column = 0,row=0,pady = 5,padx =100,sticky = tk.W)
@@ -813,8 +879,8 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         button_edit.        grid(column = 0,row=0,pady = 5,padx =590,sticky = tk.W)
         button_make_first.  grid(column = 0,row=0,pady = 5,padx =720,sticky = tk.W)
 
-        button_change_window.grid(column = 0,row=1,pady = 0,padx =10,sticky = tk.W)
-        delete_disc         .grid(column = 0,row=1,pady = 0,padx =140,sticky = tk.W)
+        button_change_window.grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
+        delete_disc         .grid(column = 0,row=1,pady = 5,padx =140,sticky = tk.W)
         
         self.main_console.grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
         self.option_change("")
@@ -837,6 +903,16 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
                 #self.root.after(0, lambda:self.root.state('zoomed'))
                 self.root.state('zoomed')
         self.root.bind("<f>",maximalize_window)
-        
+
+        def unfocus_widget(e):
+            #print(self.root.focus_get())
+            self.root.focus_set()
+        self.root.bind("<Escape>",unfocus_widget)
+        self.search_input.bind("<Return>",unfocus_widget)
+
+        def call_search(e):
+            self.make_project_first_disc("search")
+        self.search_input.bind("<Return>",call_search)
+
 IP_assignment(root)
 root.mainloop()

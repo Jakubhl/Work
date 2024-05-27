@@ -199,15 +199,24 @@ sitovy disk mount do windows - dodelat visualizaci - hotovo
 když v excelu vyplním číslo, nelze... - hotovo
 duplikáty projektů po vyhledávání... - vyreseno
 
+3:15 PM 5/27/2024
+převést vykonávání mapování do threadu kvůli blokaci - hotovo
+zobrazovat současnou statickou ip adresu - hotovo
+při mapování nebo odpojování disků restartovat windows explorer - hotovo
 
-seřazovat podle abecedy
+
+
+nabindovat enter 
+
+udelat skupinu oblibenych - samostatný frame - muze pak byt klidně duplikát
+
+pridat prompt na upravu seznamu moznych pripojeni (ethernet...)
+
+seřazovat podle abecedy ???
 
 kdyz je vice radku - predelat frames na scrollable nebo rozbalit po rozkliku - asi zobrazit pouze první, zbytek po rozkliku...
 
 
-
-
-moznost provest pripojeni k serveru - predelat cely system otevirani obrazku podle ftp serveru
 
 moznost pinnout horni frame u IB
 
