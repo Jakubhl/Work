@@ -206,21 +206,25 @@ při mapování nebo odpojování disků restartovat windows explorer - hotovo
 nabindovat enter - hotovo
 pridat prompt na upravu seznamu moznych pripojeni (ethernet...) - hotovo
 
+8:32 AM 5/28/2024
+pridat konzoli do promptu s interfacama - hotovo
+kdyz nakliknuty projekt a pridat novy, tak kopirovat vse (do menu noveho pridat zaskrtavatko vyplnit nakliknutym projektem) - hotovo
 
 
-kdyz nakliknuty projekt a pridat novy, tak kopirovat vse (do menu noveho pridat zaskrtavatko vyplnit nakliknutym projektem)
+_________________________________________________________________________________todo:_____________________________________________________________________________________________
+udelat skupinu oblibenych - v editu moznost pridat do oblibenych a tlacitko zobrazit pouze oblibene
+ukladat oblibene z vertikalniho sloupce
+smazat nadbytky
 
-
-udelat skupinu oblibenych - samostatný frame - muze pak byt klidně duplikát
-
+_________________________________________________________________________________ip manager_____________________________________________________________________________________________
 seřazovat podle abecedy ???
-
 kdyz je vice radku - predelat frames na scrollable nebo rozbalit po rozkliku - asi zobrazit pouze první, zbytek po rozkliku... (edit staci?)
 
 
-
+_________________________________________________________________________________trimazkon_____________________________________________________________________________________________
 moznost pinnout horni frame u IB
-
+male tlacitko nastaveni vsude...
+predelat visualizaci u nastaveni na klasicke okno se zalozkami
 zjistit prepnuti monitoru a upravit podle toho parametry IB
 
 
