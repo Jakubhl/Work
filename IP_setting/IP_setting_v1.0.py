@@ -119,6 +119,7 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         # seznam vsech statickych ip adres
         self.all_rows = []
         self.project_list = []
+        self.favourite_list = []
         worksheet = workbook[excel_worksheet]
         for row in worksheet.iter_rows(values_only=True):
             row_array = []
@@ -132,7 +133,7 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
             self.project_list.insert(0,row_array[0])
             self.all_rows.insert(0,row_array)
             for items in row[4:5]:
-                self.favourite_list.append(items)
+                self.favourite_list.insert(0,items)
             
 
         # seznam vsech ftp pripojeni k diskum
@@ -162,7 +163,7 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
             if all_options[i] != "":
                 self.connection_option_list.append(all_options[i])
                      
-    def save_excel_data(self,project_name,IP_adress,mask,notes,only_edit = None,force_row_to_print=None):
+    def save_excel_data(self,project_name,IP_adress,mask,notes,only_edit = None,force_row_to_print=None,fav_status = None):
         workbook = load_workbook(self.excel_file_path)
         if self.show_favourite:
             excel_worksheet = "ip_adress_fav_list"
@@ -187,6 +188,9 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         worksheet['C' + str(row_to_print)] = mask
         #D = poznamky
         worksheet['D' + str(row_to_print)] = notes
+        #E = oblibenost
+        if fav_status != None:
+            worksheet['E' + str(row_to_print)] = fav_status
 
         workbook.save(filename=self.excel_file_path)
         workbook.close()
@@ -241,33 +245,62 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         else:
             return False
 
-    def switch_fav_status(self):
-        # přepnutí
-        project_to_move = self.all_rows[self.last_project_id]
+    def switch_fav_status(self,operation:str):
+        selected_project = self.all_rows[self.last_project_id]
+        if self.show_favourite == False:
+            if operation == "add_favourite":
+                # swich statusu:
+                self.save_excel_data(self.all_rows[self.last_project_id][0],self.all_rows[self.last_project_id][1],self.all_rows[self.last_project_id][2],self.all_rows[self.last_project_id][3],True,None,fav_status=1)
+                # přepnutí
+                self.show_favourite = True
+                self.read_excel_data()
+                # do tohoto prostředí uložím na začátek
+                self.all_rows.insert(0,selected_project)
+                for i in range(0,len(self.all_rows)):
+                    row = (len(self.all_rows)-1)-i
+                    self.save_excel_data(self.all_rows[i][0],self.all_rows[i][1],self.all_rows[i][2],self.all_rows[i][3],None,row+1,fav_status=1)
+                # přepnutí zpět
+                self.show_favourite = False
+                self.read_excel_data()
+            
+            elif operation == "del_favourite":
+                # swich statusu:
+                self.save_excel_data(self.all_rows[self.last_project_id][0],self.all_rows[self.last_project_id][1],self.all_rows[self.last_project_id][2],self.all_rows[self.last_project_id][3],True,None,fav_status=0)
+                # přepnutí
+                self.show_favourite = True
+                self.read_excel_data()
+                # z tohoto prostředí smažu
+                self.delete_project(wanted_project=selected_project[0],silence=True)
+                # přepnutí zpět
+                self.show_favourite = False
+                self.read_excel_data()
 
-        if self.show_favourite == True:
+        elif self.show_favourite:
+            # z aktuálního prostředí smažu
+            self.delete_project(wanted_project=selected_project[0],silence=True)
+            # musim prepnout prostředí jen kvůli změně statusu
             self.show_favourite = False
             self.read_excel_data()
-        else:
-            self.show_favourite = True
-            self.read_excel_data()
+            match_found = False
+            print(self.project_list,selected_project)
+            for i in range(0,len(self.project_list)):
+                if self.project_list[i] == selected_project[0] and len(str(self.project_list[i])) == len(str(selected_project[0])):
+                    row_index = self.project_list.index(selected_project[0])
+                    match_found = True
+            if match_found:
+                print("match",self.all_rows[row_index][0])
+                row = len(self.all_rows) - row_index
+                self.save_excel_data(self.all_rows[row_index][0],self.all_rows[row_index][1],self.all_rows[row_index][2],self.all_rows[row_index][3],None,row,fav_status=0)
 
-        # do tohoto prostředí uložím na začátek
-        self.all_rows.insert(0,project_to_move)
-        for i in range(0,len(self.all_rows)):
-            row = (len(self.all_rows)-1)-i
-            self.save_excel_data(self.all_rows[i][0],self.all_rows[i][1],self.all_rows[i][2],self.all_rows[i][3],None,row+1)
-
-        # přepnutí zpět
-        if self.show_favourite == True:
-            self.show_favourite = False
-            self.read_excel_data()
-        else:
+            # přepnutí zpět
             self.show_favourite = True
             self.read_excel_data()
         
-        # z původního prostředí smažu nee?
-        #self.delete_project()
+        if operation == "with_refresh":
+            add_colored_line(self.main_console,f"Projekt: {selected_project[0]} byl odebrán z oblíbených","green",None,True)
+            self.make_project_cells(no_read=True)
+
+
 
     def save_new_project_data(self,child_root,only_edit = None,make_fav=False):
         project_name = str(self.name_input.get())
@@ -290,23 +323,23 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         if errors ==0:
             self.read_excel_data()
             if only_edit == None:
-                self.save_excel_data(project_name,IP_adress,mask,notes)
+                self.save_excel_data(project_name,IP_adress,mask,notes,None,None,fav_status=0)
             else:
-                self.save_excel_data(project_name,IP_adress,mask,notes,True)
+                self.save_excel_data(project_name,IP_adress,mask,notes,True,None,fav_status=0)
             self.close_window(child_root)
             self.make_project_cells()
 
             if only_edit == None:
                 add_colored_line(self.main_console,f"Přidán nový projekt: {project_name}","green",None,True)
             else:
-                if self.show_favourite == True and make_fav == False:
-                    self.switch_fav_status()
-                    add_colored_line(self.main_console,f"Projekt: {project_name} úspěšně pozměněn a odebrán z oblíbených","green",None,True)
-                elif self.show_favourite == False and make_fav == True:
-                    self.switch_fav_status()
-                    add_colored_line(self.main_console,f"Projekt: {project_name} úspěšně pozměněn a přidán do oblíbených","green",None,True)
-                else:
-                    add_colored_line(self.main_console,f"Projekt: {project_name} úspěšně pozměněn","green",None,True)
+                # if self.show_favourite == True and make_fav == False:
+                #     self.switch_fav_status("del_favourite")
+                #     add_colored_line(self.main_console,f"Projekt: {project_name} úspěšně pozměněn a odebrán z oblíbených","green",None,True)
+                # elif self.show_favourite == False and make_fav == True:
+                #     self.switch_fav_status("add_favourite")
+                #     add_colored_line(self.main_console,f"Projekt: {project_name} úspěšně pozměněn a přidán do oblíbených","green",None,True)
+                # else:
+                add_colored_line(self.main_console,f"Projekt: {project_name} úspěšně pozměněn","green",None,True)
     
     def save_new_project_data_disc(self,child_root,only_edit = None):
         project_name =  str(self.name_input.get())
@@ -336,28 +369,32 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
                 self.make_project_cells_disc()
                 add_colored_line(self.main_console,f"Projekt: {project_name} úspěšně pozměněn","green",None,True)
 
-    def delete_project(self):
-        self.read_excel_data()
-        wanted_project = str(self.search_input.get().replace(" ",""))
+    def delete_project(self,wanted_project=None,silence=None):
+        if wanted_project == None:
+            self.read_excel_data()
+            wanted_project = str(self.search_input.get().replace(" ",""))
         project_found = False
+        workbook = load_workbook(self.excel_file_path)
+        if self.show_favourite:
+            excel_worksheet = "ip_adress_fav_list"
+        else:
+            excel_worksheet = "ip_address_list"
+        worksheet = workbook[excel_worksheet]
+
         for i in range(0,len(self.project_list)):
-            if self.project_list[i] == wanted_project and len(str(self.project_list[i])) == len(str(wanted_project)):
+            if self.project_list[i] == wanted_project and len(str(self.project_list[i])) == len(str(wanted_project)) and project_found == False:
                 row_index = self.project_list.index(wanted_project)
-                workbook = load_workbook(self.excel_file_path)
-                if self.show_favourite:
-                    excel_worksheet = "ip_adress_fav_list"
-                else:
-                    excel_worksheet = "ip_address_list"
-                worksheet = workbook[excel_worksheet]
                 worksheet.delete_rows(len(self.all_rows)-row_index)
-                workbook.save(self.excel_file_path)
-                workbook.close()
-                self.make_project_cells() #refresh = cele zresetovat, jine: id, poradi...
                 project_found = True
+
+        workbook.save(self.excel_file_path)
+        workbook.close()
+        if silence == None:
+            if project_found:
                 add_colored_line(self.main_console,f"Projekt {wanted_project} byl odstraněn","orange",None,True)
-                break
-        if project_found == False:
-            add_colored_line(self.main_console,f"Zadaný projekt: {wanted_project} nebyl nalezen","red",None,True)
+                self.make_project_cells() #refresh = cele zresetovat, jine: id, poradi...
+            else:
+                add_colored_line(self.main_console,f"Zadaný projekt: {wanted_project} nebyl nalezen","red",None,True)
 
     def delete_project_disc(self):
         self.read_excel_data()
@@ -401,7 +438,7 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
                 self.password_input.insert("0",str(self.last_project_password))
                 self.notes_input.insert(tk.END,str(self.last_project_notes))
 
-    def make_favourite_toggle(self,e):
+    """def make_favourite_toggle(self,e):
         if self.make_project_favourite:
             self.make_project_favourite = False
             self.make_fav_btn.configure(text = "❌",font=("Arial",100),text_color = "red")
@@ -409,7 +446,7 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         else:
             self.make_project_favourite = True
             self.make_fav_btn.configure(text = "🐘",font=("Arial",130),text_color = "pink")
-            self.make_fav_label.configure(text = "Oblíbený ❤️")
+            self.make_fav_label.configure(text = "Oblíbený ❤️")"""
             
     def add_new_project(self,edit = None):
         child_root=customtkinter.CTk()
@@ -596,8 +633,17 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
             self.search_input.insert("0",str(self.disc_all_rows[widget_id][0]))
 
         self.check_given_input()
-        if hearth == True:
-            print("❤️")
+        if hearth == "favourite":
+            add_colored_line(self.main_console,f"Projekt: {self.all_rows[widget_id][0]} byl odebrán z oblíbených","green",None,True)
+            self.switch_fav_status("del_favourite")
+            #refresh obrazku oblibenosti:
+            self.make_project_cells()
+        elif hearth == "no_favourite":
+            add_colored_line(self.main_console,f"Projekt: {self.all_rows[widget_id][0]} byl přidán do oblíbených","green",None,True)
+            self.switch_fav_status("add_favourite")
+            self.make_project_cells()
+
+            print("❤️",hearth)
         print(widget_id)
 
     def make_project_cells(self,no_read = None):
@@ -633,11 +679,11 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
             if is_favourite:
                 filled_hearth =  customtkinter.CTkLabel(master = project_frame, width = 45,height=45,text = "🐘",font=("Arial",35),text_color="pink")
                 filled_hearth.grid(column = 0,row=0,pady = 2,padx =2)
-                filled_hearth.bind("<Button-1>",lambda e, widget_id = y: self.clicked_on_project(e, widget_id,True))
+                filled_hearth.bind("<Button-1>",lambda e, widget_id = y: self.clicked_on_project(e, widget_id,"favourite"))
             else:
                 unfilled_hearth =  customtkinter.CTkLabel(master = project_frame, width =45,height=45,text = "♡",font=("Arial",40),text_color="red")
                 unfilled_hearth.grid(column = 0,row=0,pady = 2,padx =2)
-                unfilled_hearth.bind("<Button-1>",lambda e, widget_id = y: self.clicked_on_project(e, widget_id,True))
+                unfilled_hearth.bind("<Button-1>",lambda e, widget_id = y: self.clicked_on_project(e, widget_id,"no_favourite"))
             
             for x in range(0,len(self.all_rows[y])):
                 if x != 2: #nevypisujeme masku
@@ -836,14 +882,16 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         if result == True:
             #zmena poradi
             project = self.all_rows[self.last_project_id]
+            favourite_status = self.favourite_list[self.last_project_id]
             self.all_rows.pop(self.last_project_id)
             self.all_rows.insert(0,project)
+            self.favourite_list.pop(self.last_project_id)
+            self.favourite_list.insert(0,favourite_status)
             #self.all_rows.append(project)
             #if save == True:
             for i in range(0,len(self.all_rows)):
                 row = (len(self.all_rows)-1)-i
-                
-                self.save_excel_data(self.all_rows[i][0],self.all_rows[i][1],self.all_rows[i][2],self.all_rows[i][3],None,row+1)
+                self.save_excel_data(self.all_rows[i][0],self.all_rows[i][1],self.all_rows[i][2],self.all_rows[i][3],None,row+1,fav_status=self.favourite_list[i])
 
             self.make_project_cells()
             if purpouse == "search":
@@ -969,7 +1017,7 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         
         child_root.mainloop()
 
-    def show_favourite_toggle(self):
+    def show_favourite_toggle(self): # hlavni prepinaci tlacitko oblibene/ neoblibene
         if self.show_favourite == True:
             self.show_favourite = False
             self.search_input.delete("0","300")
@@ -979,9 +1027,13 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
             self.last_project_notes = ""
             self.last_project_id = ""
             self.show_only_fav.configure(text = "Oblíbené")
-            self.option_change("")
+            # self.option_change("")
             self.make_project_cells()
-        else:
+            # self.button_add_main.configure
+            self.button_remove_main.configure(command = lambda: self.delete_project())
+            # self.button_edit_main.configure
+        else: 
+            # favourite window
             self.show_favourite = True
             self.search_input.delete("0","300")
             self.last_project_name = ""
@@ -989,9 +1041,11 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
             self.last_project_mask = ""
             self.last_project_notes = ""
             self.last_project_id = ""
-            self.show_only_fav.configure(text = "Neoblíbené")
-            self.option_change("")
+            self.show_only_fav.configure(text = "Všechny projekty")
+            # self.option_change("")
             self.make_project_cells()
+
+            self.button_remove_main.configure(command = lambda: self.switch_fav_status("with_refresh"))
 
     def create_widgets(self):
         self.clear_frame(self.root)
@@ -1005,11 +1059,14 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         project_label =         customtkinter.CTkLabel(master = main_widgets, width = 100,height=30,text = "Projekt: ",font=("Arial",20,"bold"))
         self.search_input =     customtkinter.CTkEntry(master = main_widgets,font=("Arial",20),width=150,height=30,placeholder_text="Název projektu",corner_radius=0)
         button_search =         customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Vyhledat",command =  lambda: self.make_project_first("search"),font=("Arial",16,"bold"),corner_radius=0)
-        button_add =            customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Nový projekt", command = lambda: self.add_new_project(),font=("Arial",16,"bold"),corner_radius=0)
-        button_remove =         customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Smazat projekt", command =  lambda: self.delete_project(),font=("Arial",16,"bold"),corner_radius=0)
-        button_edit =           customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Editovat projekt",command =  lambda: self.edit_project(),font=("Arial",16,"bold"),corner_radius=0)
+        self.button_add_main =  customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Nový projekt", command = lambda: self.add_new_project(),font=("Arial",16,"bold"),corner_radius=0)
+        self.button_remove_main = customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Smazat projekt", command =  lambda: self.delete_project(),font=("Arial",16,"bold"),corner_radius=0)
+        self.button_edit_main = customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Editovat projekt",command =  lambda: self.edit_project(),font=("Arial",16,"bold"),corner_radius=0)
         button_make_first =     customtkinter.CTkButton(master = main_widgets, width = 190,height=30,text = "Přesunout na začátek",command =  lambda: self.make_project_first(),font=("Arial",16,"bold"),corner_radius=0)
-        self.show_only_fav =    customtkinter.CTkButton(master = main_widgets, width = 190,height=30,text = "Oblíbené",command =  lambda: self.show_favourite_toggle(),font=("Arial",16,"bold"),corner_radius=0)
+        if self.show_favourite:
+            self.show_only_fav =    customtkinter.CTkButton(master = main_widgets, width = 190,height=30,text = "Všechny projekty",command =  lambda: self.show_favourite_toggle(),font=("Arial",16,"bold"),corner_radius=0)
+        else:
+            self.show_only_fav =    customtkinter.CTkButton(master = main_widgets, width = 190,height=30,text = "Oblíbené",command =  lambda: self.show_favourite_toggle(),font=("Arial",16,"bold"),corner_radius=0)
 
         connect_label =         customtkinter.CTkLabel(master = main_widgets, width = 100,height=30,text = "Připojení: ",font=("Arial",20,"bold"))
         self.drop_down_options = customtkinter.CTkOptionMenu(master = main_widgets,width=200,height=30,values=self.connection_option_list,font=("Arial",16,"bold"),corner_radius=0,command=  self.option_change)
@@ -1024,9 +1081,9 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         project_label.      grid(column = 0,row=0,pady = 5,padx =0,sticky = tk.W)
         self.search_input.  grid(column = 0,row=0,pady = 5,padx =100,sticky = tk.W)
         button_search.      grid(column = 0,row=0,pady = 5,padx =255,sticky = tk.W)
-        button_add.         grid(column = 0,row=0,pady = 5,padx =360,sticky = tk.W)
-        button_remove.      grid(column = 0,row=0,pady = 5,padx =465,sticky = tk.W)
-        button_edit.        grid(column = 0,row=0,pady = 5,padx =590,sticky = tk.W)
+        self.button_add_main.grid(column = 0,row=0,pady = 5,padx =360,sticky = tk.W)
+        self.button_remove_main.grid(column = 0,row=0,pady = 5,padx =465,sticky = tk.W)
+        self.button_edit_main.grid(column = 0,row=0,pady = 5,padx =590,sticky = tk.W)
         button_make_first.  grid(column = 0,row=0,pady = 5,padx =720,sticky = tk.W)
         self.show_only_fav. grid(column = 0,row=0,pady = 5,padx =915,sticky = tk.W)
 

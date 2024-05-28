@@ -210,11 +210,18 @@ pridat prompt na upravu seznamu moznych pripojeni (ethernet...) - hotovo
 pridat konzoli do promptu s interfacama - hotovo
 kdyz nakliknuty projekt a pridat novy, tak kopirovat vse (do menu noveho pridat zaskrtavatko vyplnit nakliknutym projektem) - hotovo
 
+9:58 PM 5/28/2024
+ukladat oblibene z vertikalniho sloupce - hotovo
+udelat skupinu oblibenych - v editu moznost pridat do oblibenych a tlacitko zobrazit pouze oblibene - hotovo
+zmena funkce tlacitka smazat pri prepnuti mezi oblibene/ neoblibene projekty - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
-udelat skupinu oblibenych - v editu moznost pridat do oblibenych a tlacitko zobrazit pouze oblibene
-ukladat oblibene z vertikalniho sloupce
+
 smazat nadbytky
+
+nepamatovat si u switch_fav_status selected project... nakopiruje, potom změní v okně...
+
+dodelat edit nebo novy projekt v zavislosti na oblibenosti
 
 _________________________________________________________________________________ip manager_____________________________________________________________________________________________
 seřazovat podle abecedy ???
