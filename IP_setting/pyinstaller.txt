@@ -5,4 +5,16 @@ C:\Users\jakub.hlavacek.local\AppData\Local\Packages\PythonSoftwareFoundation.Py
 pyinstaller --noconfirm -noconsole --onefile -w --add-data "C:\Users\jakub.hlavacek.local\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\customtkinter;customtkinter/" IP_setting_v1.0.py
 
 antivir friendly:
-pyinstaller --noconfirm --noconsole --onefile -w --add-data "C:\Users\jakub.hlavacek.local\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\customtkinter;customtkinter/" IP_setting_v1.0.py
+pyinstaller --noconfirm --noconsole --onefile -w --add-data "C:\Users\jakub.hlavacek.local\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\customtkinter;customtkinter/" IP_setting_v3.0.py
+
+console:
+pyinstaller --noconfirm --onefile --add-data "C:\Users\jakub.hlavacek.local\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\customtkinter;customtkinter/" IP_setting_v3.0.py
+
+
+udelat vyjimku:
+
+exceptions: Add-MpPreference -ExclusionPath "C:\Path\To\Exclude"
+
+seznam vyjimek:
+
+(Get-MpPreference).ExclusionPath

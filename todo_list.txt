@@ -215,19 +215,38 @@ ukladat oblibene z vertikalniho sloupce - hotovo
 udelat skupinu oblibenych - v editu moznost pridat do oblibenych a tlacitko zobrazit pouze oblibene - hotovo
 zmena funkce tlacitka smazat pri prepnuti mezi oblibene/ neoblibene projekty - hotovo
 
+10:45 AM 5/29/2024
+koukat se na aktualni hodnotu v search u switch_fav_status... kdyby se prepsala na posledni chvili - hotovo
+smazat nadbytky -hotovo
+dodelat edit nebo novy projekt v zavislosti na oblibenosti-hotovo
+
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-smazat nadbytky
-
-nepamatovat si u switch_fav_status selected project... nakopiruje, potom změní v okně...
-
-dodelat edit nebo novy projekt v zavislosti na oblibenosti
-
 _________________________________________________________________________________ip manager_____________________________________________________________________________________________
+
+
+
+prepis zmen oblibene -> vsechny 
+
+kdyz je projekt smazán, smazat i z oblíbených
+
+problem s mezerou v nazvu projektu
+
+overit pridani noveho projektu se zmenami
+
+okno novy projekt a statusy
+
+
+overit pripojene disky - podle toho naplnit disky k odpojeni
+
+obarvit prave pripojeny disk
+
+
+
+udelat neco s tim adminem pri spousteni
 seřazovat podle abecedy ???
 kdyz je vice radku - predelat frames na scrollable nebo rozbalit po rozkliku - asi zobrazit pouze první, zbytek po rozkliku... (edit staci?)
-
-
 _________________________________________________________________________________trimazkon_____________________________________________________________________________________________
 moznost pinnout horni frame u IB
 male tlacitko nastaveni vsude...
