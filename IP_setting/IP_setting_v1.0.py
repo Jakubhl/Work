@@ -48,7 +48,7 @@ def add_colored_line(text_widget, text, color,font=None,delete_line = None):
 
     text_widget.configure(state=tk.DISABLED)
 
-class IP_assignment: # Umožňuje procházet obrázky a přitom například vybrané přesouvat do jiné složky
+class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
     """
     Umožňuje měnit nastavení statických IP adres
     """
@@ -246,10 +246,10 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         else:
             return False
 
-    def switch_fav_status(self,operation:str,project_given=None):
+    def switch_fav_status(self,operation:str,project_given=None,new_project = None,deleting_whole_project = False):
         # selected_project = self.all_rows[self.last_project_id]
         if project_given == None:
-            selected_project = str(self.search_input.get().replace(" ",""))
+            selected_project = str(self.search_input.get())
             if selected_project not in self.project_list:
                 add_colored_line(self.main_console,"Nebyl vložen projekt",color="red",font=None,delete_line=True)
                 return
@@ -260,7 +260,10 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         if self.show_favourite == False:
             if operation == "add_favourite":
                 # swich statusu:
-                self.save_excel_data(self.all_rows[self.last_project_id][0],self.all_rows[self.last_project_id][1],self.all_rows[self.last_project_id][2],self.all_rows[self.last_project_id][3],True,None,fav_status=1)
+                if new_project:
+                    self.save_excel_data(selected_project[0],selected_project[1],selected_project[2],selected_project[3],None,None,fav_status=1)                    
+                else:
+                    self.save_excel_data(selected_project[0],selected_project[1],selected_project[2],selected_project[3],True,None,fav_status=1)
                 # přepnutí
                 self.show_favourite = True
                 self.read_excel_data()
@@ -275,7 +278,8 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
             
             elif operation == "del_favourite":
                 # swich statusu:
-                self.save_excel_data(selected_project[0],selected_project[1],selected_project[2],selected_project[3],True,None,fav_status=0)
+                if not deleting_whole_project:
+                    self.save_excel_data(selected_project[0],selected_project[1],selected_project[2],selected_project[3],True,None,fav_status=0)
                 # přepnutí
                 self.show_favourite = True
                 self.read_excel_data()
@@ -309,13 +313,11 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
             self.show_favourite = False
             self.read_excel_data()
             match_found = False
-            print(self.project_list,selected_project)
             for i in range(0,len(self.project_list)):
                 if self.project_list[i] == selected_project[0] and len(str(self.project_list[i])) == len(str(selected_project[0])):
                     row_index = self.project_list.index(selected_project[0])
                     match_found = True
             if match_found:
-                print("match",self.all_rows[row_index][0])
                 row = len(self.all_rows) - row_index
                 self.save_excel_data(self.all_rows[row_index][0],self.all_rows[row_index][1],self.all_rows[row_index][2],self.all_rows[row_index][3],None,row,fav_status=0)
 
@@ -353,16 +355,17 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
             self.read_excel_data()
 
             if only_edit == None: # pridavam novy projekt
-                self.save_excel_data(project_name,IP_adress,mask,notes,None,None,fav_status)
-                add_colored_line(self.main_console,f"Přidán nový projekt: {project_name}","green",None,True)
-                new_project = [project_name,IP_adress,mask,notes,fav_status]
-                self.switch_fav_status("add_favourite",new_project)
-
+                if make_fav:
+                    new_project = [project_name,IP_adress,mask,notes,1]
+                    self.switch_fav_status("add_favourite",new_project,new_project=True)
+                    add_colored_line(self.main_console,f"Přidán nový oblíbený projekt: {project_name}","green",None,True)
+                else:
+                    self.save_excel_data(project_name,IP_adress,mask,notes,None,None,fav_status)
+                    add_colored_line(self.main_console,f"Přidán nový projekt: {project_name}","green",None,True)
             else:
                 # kdyz edituji muze mit projekt jiz prideleny status
                 current_fav_status = self.is_project_favourite(self.last_project_id)
                 self.save_excel_data(project_name,IP_adress,mask,notes,True,None,fav_status=current_fav_status)
-                print(make_fav,"make fav status")
                 if make_fav:
                     project_with_changes = [project_name,IP_adress,mask,notes,current_fav_status]
                     self.switch_fav_status("add_favourite",project_with_changes)
@@ -413,9 +416,10 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
                 add_colored_line(self.main_console,f"Projekt: {project_name} úspěšně pozměněn","green",None,True)
 
     def delete_project(self,wanted_project=None,silence=None):
+        remove_favourite_as_well = False
         if wanted_project == None:
             self.read_excel_data()
-            wanted_project = str(self.search_input.get().replace(" ",""))
+            wanted_project = str(self.search_input.get())
         project_found = False
         workbook = load_workbook(self.excel_file_path)
         if self.show_favourite:
@@ -427,21 +431,30 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         for i in range(0,len(self.project_list)):
             if self.project_list[i] == wanted_project and len(str(self.project_list[i])) == len(str(wanted_project)) and project_found == False:
                 row_index = self.project_list.index(wanted_project)
+                print(self.favourite_list[row_index],"  ",self.all_rows[row_index],self.show_favourite)
                 worksheet.delete_rows(len(self.all_rows)-row_index)
                 project_found = True
+                #pokud ma status oblibenosti, tak vymazat i z oblibenych:
+                if self.favourite_list[row_index] == 1 and self.show_favourite == False:
+                    remove_favourite_as_well = True
+                    deleted_project = self.all_rows[row_index]
+            workbook.save(self.excel_file_path)
+            workbook.close()
 
-        workbook.save(self.excel_file_path)
-        workbook.close()
         if silence == None:
             if project_found:
                 add_colored_line(self.main_console,f"Projekt {wanted_project} byl odstraněn","orange",None,True)
                 self.make_project_cells() #refresh = cele zresetovat, jine: id, poradi...
             else:
                 add_colored_line(self.main_console,f"Zadaný projekt: {wanted_project} nebyl nalezen","red",None,True)
+        
+        if remove_favourite_as_well:
+            self.switch_fav_status("del_favourite",deleted_project,deleting_whole_project = True)
+
 
     def delete_project_disc(self):
         self.read_excel_data()
-        wanted_project = str(self.search_input.get().replace(" ",""))
+        wanted_project = str(self.search_input.get())
         project_found = False
         for i in range(0,len(self.disc_project_list)):
             if self.disc_project_list[i] == wanted_project and len(str(self.disc_project_list[i])) == len(str(wanted_project)):
@@ -481,16 +494,30 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
                 self.password_input.insert("0",str(self.last_project_password))
                 self.notes_input.insert(tk.END,str(self.last_project_notes))
 
-    def make_favourite_toggle_via_edit(self,e):
-        if self.is_project_favourite(self.last_project_id):
-            self.make_project_favourite = False
-            self.make_fav_btn.configure(text = "❌",font=("Arial",100),text_color = "red")
-            self.make_fav_label.configure(text = "Neoblíbený")
-        else:
-            self.make_project_favourite = True
+    def make_favourite_toggle_via_edit(self,e,new_project = False):
+        def do_favourite():
             self.make_fav_btn.configure(text = "🐘",font=("Arial",130),text_color = "pink")
             self.make_fav_label.configure(text = "Oblíbený ❤️")
-            
+        
+        def unfavourite():
+            self.make_fav_btn.configure(text = "❌",font=("Arial",100),text_color = "red")
+            self.make_fav_label.configure(text = "Neoblíbený")
+
+        if new_project:
+            if self.make_project_favourite == None or self.make_project_favourite == True:
+                self.make_project_favourite = False
+                unfavourite()
+            else:
+                self.make_project_favourite = True
+                do_favourite()
+        else:
+            if self.is_project_favourite(self.last_project_id):
+                self.make_project_favourite = False
+                unfavourite()
+            else:
+                self.make_project_favourite = True
+                do_favourite()
+        
     def add_new_project(self,edit = None):
         if self.show_favourite:
             #přepnutí do hlavního prostředí
@@ -539,14 +566,18 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         project_name.           grid(column = 0,row=0,pady = 5,padx =10,sticky = tk.W)
         copy_check.             grid(column = 0,row=0,pady = 5,padx =240,sticky = tk.W)
         self.name_input.        grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
-        if edit:
-            self.make_fav_label.grid(column = 0,row=1,pady = 5,padx =240,sticky = tk.W)
+        # if edit:
+        self.make_fav_label.grid(column = 0,row=1,pady = 5,padx =240,sticky = tk.W)
         IP_adress.              grid(column = 0,row=3,pady = 5,padx =10,sticky = tk.W)
+        # if edit:
+        fav_frame.          grid(row=3,column=0,padx=240,sticky=tk.W,rowspan=4)
+        fav_frame.          grid_propagate(0)
+        self.make_fav_btn.  grid(column=0,row=0)
         if edit:
-            fav_frame.          grid(row=3,column=0,padx=240,sticky=tk.W,rowspan=4)
-            fav_frame.          grid_propagate(0)
-            self.make_fav_btn.  grid(column=0,row=0)
             self.make_fav_btn.  bind("<Button-1>",lambda e: self.make_favourite_toggle_via_edit(e))
+        else:
+            self.make_fav_btn.  bind("<Button-1>",lambda e: self.make_favourite_toggle_via_edit(e,new_project=True))
+
         self.IP_adress_input.   grid(column = 0,row=4,pady = 5,padx =10,sticky = tk.W)
         mask.                   grid(column = 0,row=5,pady = 5,padx =10,sticky = tk.W)
         self.mask_input.        grid(column = 0,row=6,pady = 5,padx =10,sticky = tk.W)
@@ -1101,7 +1132,6 @@ class IP_assignment: # Umožňuje procházet obrázky a přitom například vybr
         else: 
             # favourite window
             self.show_favourite = True
-            
             self.last_project_name = ""
             self.last_project_ip = ""
             self.last_project_mask = ""

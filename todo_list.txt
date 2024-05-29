@@ -220,6 +220,13 @@ koukat se na aktualni hodnotu v search u switch_fav_status... kdyby se prepsala 
 smazat nadbytky -hotovo
 dodelat edit nebo novy projekt v zavislosti na oblibenosti-hotovo
 
+10:38 PM 5/29/2024
+prepis zmen oblibene -> vsechny - hotovo
+kdyz je projekt smazán, smazat i z oblíbených - hotovo
+problem s mezerou v nazvu projektu - hotovo
+overit pridani noveho projektu se zmenami - hotovo
+okno novy projekt a statusy - hotovo
+
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -227,24 +234,14 @@ ________________________________________________________________________________
 
 
 
-prepis zmen oblibene -> vsechny 
-
-kdyz je projekt smazán, smazat i z oblíbených
-
-problem s mezerou v nazvu projektu
-
-overit pridani noveho projektu se zmenami
-
-okno novy projekt a statusy
-
-
-overit pripojene disky - podle toho naplnit disky k odpojeni
+overit pripojene disky - podle toho naplnit nabidku: disky k odpojeni
 
 obarvit prave pripojeny disk
 
 
 
-udelat neco s tim adminem pri spousteni
+
+udelat neco s tim adminem pri spousteni - exeption?
 seřazovat podle abecedy ???
 kdyz je vice radku - predelat frames na scrollable nebo rozbalit po rozkliku - asi zobrazit pouze první, zbytek po rozkliku... (edit staci?)
 _________________________________________________________________________________trimazkon_____________________________________________________________________________________________
