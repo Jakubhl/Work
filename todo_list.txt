@@ -227,19 +227,20 @@ problem s mezerou v nazvu projektu - hotovo
 overit pridani noveho projektu se zmenami - hotovo
 okno novy projekt a statusy - hotovo
 
+12:35 PM 5/30/2024
+pamatovat si obrazovku, na ktere program skoncil (oblibene, disky, vsechny projekty), stejne tak i zobrazeni - hotovo
+prvni klik na obrazek oblibenosti nefunguje - hotovo
+opraveny moznosti s intefaces
+overit pripojene disky - podle toho naplnit nabidku: disky k odpojeni - hotovo
+obarvit prave pripojeny disk - hotovo
+udelat refresh tlacitko win exploreru + make_disk_cells - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 _________________________________________________________________________________ip manager_____________________________________________________________________________________________
 
 
-
-overit pripojene disky - podle toho naplnit nabidku: disky k odpojeni
-
-obarvit prave pripojeny disk
-
-
-
+tab bindings + enter pri vyplnovani
 
 udelat neco s tim adminem pri spousteni - exeption?
 seřazovat podle abecedy ???
@@ -250,6 +251,9 @@ male tlacitko nastaveni vsude...
 predelat visualizaci u nastaveni na klasicke okno se zalozkami
 zjistit prepnuti monitoru a upravit podle toho parametry IB
 
+udelat change log na uvodni obrazovce trimazkonu
+
+nacitaci animace na uvodni obrazovce
 
 
 

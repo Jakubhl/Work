@@ -554,7 +554,7 @@ def menu(image_opened = True): # Funkce spouští základní menu při spuštěn
     #logo = customtkinter.CTkImage(Image.open("images/logo2.bmp"),size=(571, 70))
     logo = customtkinter.CTkImage(Image.open(initial_path+"images/logo.png"),size=(1200, 100))
     image_logo = customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
-    frame_with_buttons = customtkinter.CTkFrame(master=root,corner_radius=0)
+    frame_with_buttons = customtkinter.CTkFrame(master=root,corner_radius=0,fg_color="black")
     frame_with_logo.pack(pady=0,padx=5,fill="both",expand=False,side = "top")
     image_logo.pack()
     frame_with_buttons.pack(pady=5,padx=5,fill="both",expand=True,side = "top")
@@ -584,11 +584,23 @@ def menu(image_opened = True): # Funkce spouští základní menu při spuštěn
     viewer_button   = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Procházet obrázky", command = lambda: call_view_option(list_of_menu_frames),font=("Arial",25,"bold"))
     advanced_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Pokročilé možnosti", command = lambda: call_advanced_option(list_of_menu_frames),font=("Arial",25,"bold"))
 
-    sorting_button.pack(pady =(50,10),padx=0,side="top",anchor="n")
-    deleting_button.pack(pady =0,padx=0,side="top",anchor="n")
-    convert_button.pack(pady =10,padx=0,side="top",anchor="n")
-    viewer_button.pack(pady =0,padx=0,side="top",anchor="n")
-    advanced_button.pack(pady =10,padx=0,side="top",anchor="n")
+    changle_log = tk.Text(frame_with_buttons, wrap="none", height=200, width=50,background="black",font=("Arial",14)) #,state=tk.DISABLED
+    changle_log = customtkinter.CTkLabel(master=frame_with_buttons, width= 200,height=500,text="blabla",fg_color="yellow")
+
+    # sorting_button.pack(pady =(50,10),padx=0,side="top",anchor="n")
+    # deleting_button.pack(pady =0,padx=0,side="top",anchor="n")
+    # convert_button.pack(pady =10,padx=0,side="top",anchor="n")
+    # viewer_button.pack(pady =0,padx=0,side="top",anchor="n")
+    # advanced_button.pack(pady =10,padx=0,side="top",anchor="n")
+    padx_val= int(root._current_width)/2 - 200 
+
+    sorting_button.     grid(column = 0,row = 0,pady =(50,10),  padx=padx_val)
+    deleting_button.    grid(column = 0,row = 1,pady =0,        padx=padx_val)
+    convert_button.     grid(column = 0,row = 2,pady =10,       padx=padx_val)
+    viewer_button.      grid(column = 0,row = 3,pady =0,        padx=padx_val)
+    advanced_button.    grid(column = 0,row = 4,pady =10,       padx=padx_val)
+    changle_log.        grid(column = 1,row = 0,pady =10,       padx=10,rowspan=5,sticky = tk.E)
+    # changle_log.pack(pady =10,padx=0,side="right",anchor="e")
  
     def maximalize_window(e):
         # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
