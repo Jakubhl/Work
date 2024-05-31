@@ -235,16 +235,27 @@ overit pripojene disky - podle toho naplnit nabidku: disky k odpojeni - hotovo
 obarvit prave pripojeny disk - hotovo
 udelat refresh tlacitko win exploreru + make_disk_cells - hotovo
 
+10:18 AM 5/31/2024
+udelat novou visualizaci, prepinani mezi okny, jako karty zeshora - hotovo
+formát tlačítek - hotovo
+osetrit vstupy u noveho disku - hotovo
+zjistovat offline status - hotovo
+tab bindings + enter pri vyplnovani- hotovo
+vylepsena detekce pripojenych disků - hotovo
+kdyz je vice radku - predelat frames na scrollable nebo rozbalit po rozkliku - asi zobrazit pouze první, zbytek po rozkliku... - hotovo
+nove otevirani oken v zavislosti na soucasne pozici aplikace - hotovo
+refresh static po pridani/odebrani interfacu - hotovo
+Nova verze - 3.6 - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 _________________________________________________________________________________ip manager_____________________________________________________________________________________________
 
 
-tab bindings + enter pri vyplnovani
+
 
 udelat neco s tim adminem pri spousteni - exeption?
 seřazovat podle abecedy ???
-kdyz je vice radku - predelat frames na scrollable nebo rozbalit po rozkliku - asi zobrazit pouze první, zbytek po rozkliku... (edit staci?)
+
 _________________________________________________________________________________trimazkon_____________________________________________________________________________________________
 moznost pinnout horni frame u IB
 male tlacitko nastaveni vsude...
