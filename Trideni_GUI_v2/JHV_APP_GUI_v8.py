@@ -5,6 +5,7 @@ from PIL import Image, ImageTk
 import Sorting_option_v5 as Trideni
 import Deleting_option_v1 as Deleting
 import Converting_option_v3 as Converting
+import IP_setting_v1 as IP_setting
 from tkinter import filedialog
 import tkinter as tk
 import threading
@@ -42,7 +43,7 @@ root=customtkinter.CTk()
 root.geometry("1200x900")
 root.wm_iconbitmap(initial_path+'images/logo_TRIMAZKON.ico')
 #root.title("Zpracování souborů z průmyslových kamer")
-root.title("TRIMAZKON v_3.5.3")
+root.title("TRIMAZKON v_3.6.0")
 #pro pripad vypisovani do konzole z exe:
 # sys.stdout = sys.__stdout__
 # print(initial_path)
@@ -484,7 +485,7 @@ def browseDirectories(visible_files,start_path=None): # Funkce spouští průzku
     corrected_path = check
     return [output,corrected_path,name_of_selected_file]
 
-def add_colored_line(text_widget, text, color,font=None,delete_line = None):
+def add_colored_line(text_widget, text, color,font=None,delete_line = None,no_indent=None):
     """
     Vloží řádek do console
     """
@@ -497,7 +498,10 @@ def add_colored_line(text_widget, text, color,font=None,delete_line = None):
         text_widget.insert("current lineend",text, color)
     else:
         text_widget.tag_configure(color, foreground=color,font=font)
-        text_widget.insert(tk.END,"    > "+ text+"\n", color)
+        if no_indent:
+            text_widget.insert(tk.END,text+"\n", color)
+        else:
+            text_widget.insert(tk.END,"    > "+ text+"\n", color)
 
     text_widget.configure(state=tk.DISABLED)
 
@@ -554,13 +558,16 @@ def menu(image_opened = True): # Funkce spouští základní menu při spuštěn
     #logo = customtkinter.CTkImage(Image.open("images/logo2.bmp"),size=(571, 70))
     logo = customtkinter.CTkImage(Image.open(initial_path+"images/logo.png"),size=(1200, 100))
     image_logo = customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
-    frame_with_buttons = customtkinter.CTkFrame(master=root,corner_radius=0,fg_color="black")
+    
+    frame_with_buttons_right = customtkinter.CTkFrame(master=root,corner_radius=0)#,fg_color="black")
+    frame_with_buttons = customtkinter.CTkFrame(master=root,corner_radius=0)#,fg_color="black")
     frame_with_logo.pack(pady=0,padx=5,fill="both",expand=False,side = "top")
     image_logo.pack()
-    frame_with_buttons.pack(pady=5,padx=5,fill="both",expand=True,side = "top")
+    frame_with_buttons_right.pack(pady=0,padx=0,fill="both",expand=True,side = "right")
+    frame_with_buttons.pack(pady=0,padx=0,fill="both",expand=True,side = "left")
     
     IB_as_def_browser_path = None
-    list_of_menu_frames = [frame_with_buttons,frame_with_logo]
+    list_of_menu_frames = [frame_with_buttons,frame_with_logo,frame_with_buttons_right]
     
     def call_sorting_option(list_of_menu_frames):
         root.unbind("<f>")
@@ -574,6 +581,9 @@ def menu(image_opened = True): # Funkce spouští základní menu při spuštěn
     def call_view_option(list_of_menu_frames,path_given = None,selected_image = ""):
         root.unbind("<f>")
         Image_browser(root,list_of_menu_frames,path_given,selected_image)
+    def call_ip_manager(list_of_menu_frames):
+        root.unbind("<f>")
+        IP_manager(root,list_of_menu_frames)
     def call_advanced_option(list_of_menu_frames):
         root.unbind("<f>")
         Advanced_option(root,list_of_menu_frames)
@@ -582,25 +592,42 @@ def menu(image_opened = True): # Funkce spouští základní menu při spuštěn
     deleting_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Možnosti mazání souborů", command = lambda: call_deleting_option(list_of_menu_frames),font=("Arial",25,"bold"))
     convert_button  = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Možnosti konvertování souborů", command = lambda: call_convert_option(list_of_menu_frames),font=("Arial",25,"bold"))
     viewer_button   = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Procházet obrázky", command = lambda: call_view_option(list_of_menu_frames),font=("Arial",25,"bold"))
+    ip_setting_button = customtkinter.CTkButton(master= frame_with_buttons, width= 400,height=100, text = "Měnit IP/ připojit disky", command = lambda: call_ip_manager(list_of_menu_frames),font=("Arial",25,"bold"))
     advanced_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Pokročilé možnosti", command = lambda: call_advanced_option(list_of_menu_frames),font=("Arial",25,"bold"))
+    # changle_log = tk.Text(frame_with_buttons_right, wrap="none", height=25, width=40,background="black",borderwidth=2,font=("Arial",20),state=tk.DISABLED)
+    changle_log = customtkinter.CTkTextbox(master=frame_with_buttons_right, width= 600,height=550,fg_color="#212121",font=("Arial",20),border_color="#636363",border_width=3,corner_radius=0)
 
-    changle_log = tk.Text(frame_with_buttons, wrap="none", height=200, width=50,background="black",font=("Arial",14)) #,state=tk.DISABLED
-    changle_log = customtkinter.CTkLabel(master=frame_with_buttons, width= 200,height=500,text="blabla",fg_color="yellow")
+    sorting_button.     pack(pady =(50,10), padx=20,side="top",anchor="e")
+    deleting_button.    pack(pady =0,       padx=20,side="top",anchor="e")
+    convert_button.     pack(pady =10,      padx=20,side="top",anchor="e")
+    viewer_button.      pack(pady =0,       padx=20,side="top",anchor="e")
+    ip_setting_button.  pack(pady = 10,     padx=20,side="top",anchor="e")
+    advanced_button.    pack(pady =0,       padx=20,side="top",anchor="e")
+    changle_log.        pack(pady =(50,10), padx=20,side="top",anchor="w")
 
-    # sorting_button.pack(pady =(50,10),padx=0,side="top",anchor="n")
-    # deleting_button.pack(pady =0,padx=0,side="top",anchor="n")
-    # convert_button.pack(pady =10,padx=0,side="top",anchor="n")
-    # viewer_button.pack(pady =0,padx=0,side="top",anchor="n")
-    # advanced_button.pack(pady =10,padx=0,side="top",anchor="n")
-    padx_val= int(root._current_width)/2 - 200 
-
-    sorting_button.     grid(column = 0,row = 0,pady =(50,10),  padx=padx_val)
-    deleting_button.    grid(column = 0,row = 1,pady =0,        padx=padx_val)
-    convert_button.     grid(column = 0,row = 2,pady =10,       padx=padx_val)
-    viewer_button.      grid(column = 0,row = 3,pady =0,        padx=padx_val)
-    advanced_button.    grid(column = 0,row = 4,pady =10,       padx=padx_val)
-    changle_log.        grid(column = 1,row = 0,pady =10,       padx=10,rowspan=5,sticky = tk.E)
-    # changle_log.pack(pady =10,padx=0,side="right",anchor="e")
+    changle_log.insert("current lineend"," Verze 3.4\n")
+    changle_log.insert("current lineend",
+""" - velikost písma
+ - načítací animace
+ - nové konzole (převedeno na thread "real time")
+ - image browser - jména souborů (zkopírovatelná)
+ - chybové hlášky při procházení subfolderů
+ - pokročilá nastavení - nová vizualizace + nový způsob nabídky\n""")
+    changle_log.insert("current lineend","\n Verze 3.5\n")
+    changle_log.insert("current lineend",
+""" - film obrázků před a po + bind přepínání kolečkem
+ - možnost procházet obrázky ve formátu .ifz
+ - třídění podle ID - úprava popisu
+ - oprava zoomování obrázku
+ - nové možnosti v pokročilých možnostech
+ - oprava chyb se soubory s mezerou v názvu
+ - možnost nastavit trimazkon, jako výchozí prohlížeč obrázků\n""")
+    changle_log.insert("current lineend","\n Verze 3.6.0\n")
+    changle_log.insert("current lineend",
+""" - Nové možnosti změny IP a mountění disků (import ver.3.7)
+ - okno s posledními provedenými změnami v menu
+ - nová vizualizace u možností nastavení (okno se záložkami)
+ - možnost schovat nabídku u prohlížeče obrázků\n""")
  
     def maximalize_window(e):
         # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
@@ -609,9 +636,12 @@ def menu(image_opened = True): # Funkce spouští základní menu při spuštěn
             return
         if int(root._current_width) > 1200:
             root.after(0, lambda:root.state('normal'))
+            # root.state('normal')
             root.geometry("1200x900")
         else:
             root.after(0, lambda:root.state('zoomed'))
+            # root.state('zoomed')
+        root.update()
     root.bind("<f>",maximalize_window)
 
     #pripad pouzivani image browseru TRIMAZKON, jako vychozi prohlizec pro windows
@@ -2661,10 +2691,12 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
 
     def creating_advanced_option_widgets(self): # Vytváří veškeré widgets (advance option MAIN)
         #cisteni menu widgets
-        #for frames in list_of_menu_frames: 
-        self.list_of_menu_frames[0].pack_forget()
-        self.list_of_menu_frames[0].grid_forget()
-        self.list_of_menu_frames[0].destroy()
+        for i in range(0,len(self.list_of_menu_frames)):
+            if i != 1:
+                self.list_of_menu_frames[i].pack_forget()
+                self.list_of_menu_frames[i].grid_forget()
+                self.list_of_menu_frames[i].destroy()
+        
         self.bottom_frame_default_path   = customtkinter.CTkFrame(master=self.root,corner_radius=0)
         self.top_frame                   = customtkinter.CTkFrame(master=self.root,corner_radius=0)
         self.top_frame.pack(pady=2.5,padx=5,fill="x",expand=False,side = "top")
@@ -2843,10 +2875,11 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
 
     def create_convert_option_widgets(self):  # Vytváří veškeré widgets (convert option MAIN)
         #cisteni menu widgets
-        #for frames in self.list_of_menu_frames: 
-        self.list_of_menu_frames[0].pack_forget()
-        self.list_of_menu_frames[0].grid_forget()
-        self.list_of_menu_frames[0].destroy()
+        for i in range(0,len(self.list_of_menu_frames)):
+            if i != 1:
+                self.list_of_menu_frames[i].pack_forget()
+                self.list_of_menu_frames[i].grid_forget()
+                self.list_of_menu_frames[i].destroy()
 
         #definice ramcu
         self.frame_path_input = customtkinter.CTkFrame(master=self.root,corner_radius=0)
@@ -3469,10 +3502,11 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
 
     def create_deleting_option_widgets(self):  # Vytváří veškeré widgets (delete option MAIN)
         #cisteni menu widgets
-        #for frames in self.list_of_menu_frames: 
-        self.list_of_menu_frames[0].pack_forget()
-        self.list_of_menu_frames[0].grid_forget()
-        self.list_of_menu_frames[0].destroy()
+        for i in range(0,len(self.list_of_menu_frames)):
+            if i != 1:
+                self.list_of_menu_frames[i].pack_forget()
+                self.list_of_menu_frames[i].grid_forget()
+                self.list_of_menu_frames[i].destroy()
 
         #definice ramcu
         self.frame_path_input = customtkinter.CTkFrame(master=self.root,corner_radius=0)
@@ -4087,9 +4121,11 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
 
     def create_sorting_option_widgets(self):  # Vytváří veškeré widgets (sorting option MAIN)
         # cisteni menu widgets:
-        self.list_of_menu_frames[0].pack_forget()
-        self.list_of_menu_frames[0].grid_forget()
-        self.list_of_menu_frames[0].destroy()
+        for i in range(0,len(self.list_of_menu_frames)):
+            if i != 1:
+                self.list_of_menu_frames[i].pack_forget()
+                self.list_of_menu_frames[i].grid_forget()
+                self.list_of_menu_frames[i].destroy()
         # nastaveni framu
         self.frame2 = customtkinter.CTkFrame(master=self.root,corner_radius=0)
         self.frame5 = customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
@@ -4184,5 +4220,48 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.root.bind("<Escape>",unfocus_widget)
         self.unbind_list.append("<Escape>")
         self.path_set.bind("<Return>",unfocus_widget)
+
+class IP_manager: # Umožňuje nastavit možnosti třídění souborů
+    """
+    Umožňuje měnit statickou IPv4 adresu a spravovat síťové disky
+
+    - pracuje s excelovým souborem, kam ukládá data o projektech a o nastavení\n
+    - umožňuje projekty doplňovat poznámkami\n
+    - umožňuje odpojit síťový disk\n
+    - umožňuje namountit síťový disk a trvale jej přidat do windows exploreru\n
+    - poskytuje informaci o aktuální statické ip adrese u daného interfacu\n
+    - poskytuje informaci o současně připojených síťových discích\n
+    - poskytuje informaci o namountěných offline síťových discích\n
+    - vše je ošetřeno timeoutem\n
+    """
+    def __init__(self,root,list_of_menu_frames):
+        self.root = root
+        self.list_of_menu_frames = list_of_menu_frames
+        
+        
+        self.create_IP_manager_widgets()
+    
+    def create_IP_manager_widgets(self):
+        #cisteni menu widgets
+        for i in range(0,len(self.list_of_menu_frames)):
+            if i != 1:
+                self.list_of_menu_frames[i].pack_forget()
+                self.list_of_menu_frames[i].grid_forget()
+                self.list_of_menu_frames[i].destroy()
+
+        def call_subprocess(whole_instance):
+            whole_instance.run_app()
+        
+        ip_assignment_prg = IP_setting.IP_assignment(self.root)
+        run_background = threading.Thread(target=call_subprocess, args=(ip_assignment_prg,))
+        run_background.start()
+
+        # time_start = time.time()
+        # while not ip_assignment_prg.menu_called:
+        #     time.sleep(0.05)
+
+        run_background.join()
+        print("now")
+        # self.ip_assignment.create_widgets()
 
 menu(image_opened = False)

@@ -246,24 +246,29 @@ kdyz je vice radku - predelat frames na scrollable nebo rozbalit po rozkliku - a
 nove otevirani oken v zavislosti na soucasne pozici aplikace - hotovo
 refresh static po pridani/odebrani interfacu - hotovo
 Nova verze - 3.6 - hotovo
+
+10:51 AM 6/3/2024
+udelat change log na uvodni obrazovce trimazkonu - hotovo
+ip_manager - oprava chybovych hlasek - hotovo
+ip_manager - nejde stredni obrazovka - hotovo
+pravým tlačítkem kopírovat projekt - hláška, bind - hotovo
+
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 _________________________________________________________________________________ip manager_____________________________________________________________________________________________
 
 
 
-
 udelat neco s tim adminem pri spousteni - exeption?
 seřazovat podle abecedy ???
-
 _________________________________________________________________________________trimazkon_____________________________________________________________________________________________
-moznost pinnout horni frame u IB
-male tlacitko nastaveni vsude...
 predelat visualizaci u nastaveni na klasicke okno se zalozkami
+moznost pinnout horni frame u IB
+pamatovat si poslední obrazovky - do excelu
+
+male tlacitko nastaveni vsude...
 zjistit prepnuti monitoru a upravit podle toho parametry IB
-
-udelat change log na uvodni obrazovce trimazkonu
-
 nacitaci animace na uvodni obrazovce
 
 
