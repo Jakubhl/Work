@@ -252,7 +252,7 @@ udelat change log na uvodni obrazovce trimazkonu - hotovo
 ip_manager - oprava chybovych hlasek - hotovo
 ip_manager - nejde stredni obrazovka - hotovo
 pravým tlačítkem kopírovat projekt - hláška, bind - hotovo
-
+import ip_manageru do trimazkonu - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -263,9 +263,9 @@ ________________________________________________________________________________
 udelat neco s tim adminem pri spousteni - exeption?
 seřazovat podle abecedy ???
 _________________________________________________________________________________trimazkon_____________________________________________________________________________________________
-predelat visualizaci u nastaveni na klasicke okno se zalozkami
+predelat visualizaci u pokrocileho nastaveni na klasicke okno se zalozkami
 moznost pinnout horni frame u IB
-pamatovat si poslední obrazovky - do excelu
+
 
 male tlacitko nastaveni vsude...
 zjistit prepnuti monitoru a upravit podle toho parametry IB

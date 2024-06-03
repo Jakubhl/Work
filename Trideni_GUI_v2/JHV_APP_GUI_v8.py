@@ -588,13 +588,14 @@ def menu(image_opened = True): # Funkce spouští základní menu při spuštěn
         root.unbind("<f>")
         Advanced_option(root,list_of_menu_frames)
     
-    sorting_button  = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Možnosti třídění souborů", command = lambda: call_sorting_option(list_of_menu_frames),font=("Arial",25,"bold"))
-    deleting_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Možnosti mazání souborů", command = lambda: call_deleting_option(list_of_menu_frames),font=("Arial",25,"bold"))
-    convert_button  = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Možnosti konvertování souborů", command = lambda: call_convert_option(list_of_menu_frames),font=("Arial",25,"bold"))
+    sorting_button  = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Třídit soubory", command = lambda: call_sorting_option(list_of_menu_frames),font=("Arial",25,"bold"))
+    deleting_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Mazat soubory", command = lambda: call_deleting_option(list_of_menu_frames),font=("Arial",25,"bold"))
+    convert_button  = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Konvertovat soubory", command = lambda: call_convert_option(list_of_menu_frames),font=("Arial",25,"bold"))
     viewer_button   = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Procházet obrázky", command = lambda: call_view_option(list_of_menu_frames),font=("Arial",25,"bold"))
     ip_setting_button = customtkinter.CTkButton(master= frame_with_buttons, width= 400,height=100, text = "Měnit IP/ připojit disky", command = lambda: call_ip_manager(list_of_menu_frames),font=("Arial",25,"bold"))
-    advanced_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Pokročilé možnosti", command = lambda: call_advanced_option(list_of_menu_frames),font=("Arial",25,"bold"))
+    advanced_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Pokročilá nastavení", command = lambda: call_advanced_option(list_of_menu_frames),font=("Arial",25,"bold"))
     # changle_log = tk.Text(frame_with_buttons_right, wrap="none", height=25, width=40,background="black",borderwidth=2,font=("Arial",20),state=tk.DISABLED)
+    changle_log_label = customtkinter.CTkLabel(master=frame_with_buttons_right, width= 600,height=50,font=("Arial",24,"bold"),text="Seznam posledně provedených změn: ")
     changle_log = customtkinter.CTkTextbox(master=frame_with_buttons_right, width= 600,height=550,fg_color="#212121",font=("Arial",20),border_color="#636363",border_width=3,corner_radius=0)
 
     sorting_button.     pack(pady =(50,10), padx=20,side="top",anchor="e")
@@ -603,7 +604,8 @@ def menu(image_opened = True): # Funkce spouští základní menu při spuštěn
     viewer_button.      pack(pady =0,       padx=20,side="top",anchor="e")
     ip_setting_button.  pack(pady = 10,     padx=20,side="top",anchor="e")
     advanced_button.    pack(pady =0,       padx=20,side="top",anchor="e")
-    changle_log.        pack(pady =(50,10), padx=20,side="top",anchor="w")
+    changle_log_label.  pack(pady = (50,5), padx=20,side="top",anchor="w")
+    changle_log.        pack(pady =0,       padx=20,side="top",anchor="w")
 
     changle_log.insert("current lineend"," Verze 3.4\n")
     changle_log.insert("current lineend",
@@ -625,7 +627,7 @@ def menu(image_opened = True): # Funkce spouští základní menu při spuštěn
     changle_log.insert("current lineend","\n Verze 3.6.0\n")
     changle_log.insert("current lineend",
 """ - Nové možnosti změny IP a mountění disků (import ver.3.7)
- - okno s posledními provedenými změnami v menu
+ - okno s informacemi o aktualizacích v menu
  - nová vizualizace u možností nastavení (okno se záložkami)
  - možnost schovat nabídku u prohlížeče obrázků\n""")
  
@@ -4237,10 +4239,11 @@ class IP_manager: # Umožňuje nastavit možnosti třídění souborů
     def __init__(self,root,list_of_menu_frames):
         self.root = root
         self.list_of_menu_frames = list_of_menu_frames
-        
-        
         self.create_IP_manager_widgets()
-    
+
+    def callback(self):
+        menu()
+
     def create_IP_manager_widgets(self):
         #cisteni menu widgets
         for i in range(0,len(self.list_of_menu_frames)):
@@ -4249,19 +4252,6 @@ class IP_manager: # Umožňuje nastavit možnosti třídění souborů
                 self.list_of_menu_frames[i].grid_forget()
                 self.list_of_menu_frames[i].destroy()
 
-        def call_subprocess(whole_instance):
-            whole_instance.run_app()
+        self.ip_assignment_prg = IP_setting.IP_assignment(self.root,self.callback)
         
-        ip_assignment_prg = IP_setting.IP_assignment(self.root)
-        run_background = threading.Thread(target=call_subprocess, args=(ip_assignment_prg,))
-        run_background.start()
-
-        # time_start = time.time()
-        # while not ip_assignment_prg.menu_called:
-        #     time.sleep(0.05)
-
-        run_background.join()
-        print("now")
-        # self.ip_assignment.create_widgets()
-
 menu(image_opened = False)

@@ -103,7 +103,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
     Umožňuje měnit nastavení statických IP adres
     """
 
-    def __init__(self,root):
+    def __init__(self,root,callback_function):
+        self.callback = callback_function
         self.root = root
         self.rows_taken = 0
         self.all_rows = []
@@ -132,7 +133,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.connection_status = None
         self.make_project_favourite = False
         self.favourite_list = []
-        self.menu_called = False
         # init data z excelu, sheet: Settings
         workbook = load_workbook(self.excel_file_path)
         worksheet = workbook["Settings"]
@@ -152,8 +152,12 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         else:
             self.show_favourite = False
         
-        self.def_show_disk = worksheet['B' + str(4)].value
-        
+        def_show_disk = worksheet['B' + str(4)].value
+        if int(def_show_disk) == 1:
+            self.create_widgets_disk()
+        else:
+            self.create_widgets()
+
         def_window_size = worksheet['B' + str(5)].value
         if int(def_window_size) == 0:
             self.root.state('normal')
@@ -169,15 +173,14 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.root.state('normal')
             self.root.geometry(f"260x500+{0}+{0}")
         workbook.close()
-
-    
+        # self.run_app()
         
     def call_menu(self): # Tlačítko menu (konec, návrat do menu)
         """
         Funkce čistí všechny zaplněné rámečky a funguje, jako tlačítko zpět do hlavního menu trimazkonu
         """
         self.clear_frame(self.root)
-        self.menu_called = True
+        self.callback()
 
     def clear_frame(self,frame):
         for widget in frame.winfo_children():
@@ -1443,6 +1446,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.make_project_first("search")
         self.search_input.bind("<Return>",call_search)
 
+        
+
     def call_make_cells_disk(self):
         self.make_project_cells_disk()
 
@@ -1458,9 +1463,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.project_tree.pack(pady=5,padx=5,fill="both",expand=True,side = "top")
         # project_tree.grid(column = 0,row=0,pady = 5,padx =10,sticky = tk.W)
 
-        button_switch_all_ip =    customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "IP - všechny",command =  lambda: self.create_widgets(fav_status=False),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
-        button_switch_favourite_ip = customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "IP - oblíbené",command =  lambda: self.create_widgets(fav_status=True),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
-        button_switch_disk =    customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "Síťové disky",command =  lambda: self.create_widgets_disk(),font=("Arial",25,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
+        main_menu_button =              customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "MENU",command =  lambda: self.call_menu(),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        button_switch_all_ip =          customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "IP - všechny",command =  lambda: self.create_widgets(fav_status=False),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        button_switch_favourite_ip =    customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "IP - oblíbené",command =  lambda: self.create_widgets(fav_status=True),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        button_switch_disk =            customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "Síťové disky",command =  lambda: self.create_widgets_disk(),font=("Arial",25,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
 
         project_label =         customtkinter.CTkLabel(master = main_widgets, width = 100,height=40,text = "Projekt: ",font=("Arial",20,"bold"))
         self.search_input =     customtkinter.CTkEntry(master = main_widgets,font=("Arial",20),width=160,height=40,placeholder_text="Název projektu",corner_radius=0)
@@ -1475,12 +1481,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         delete_disk          = customtkinter.CTkButton(master = main_widgets, width = 250,height=40,text = "Odpojit síťový disk",command =  lambda: self.delete_disk_option_menu(),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
         self.main_console = tk.Text(main_widgets, wrap="none", height=0, width=180,background="black",font=("Arial",20),state=tk.DISABLED)
 
-        button_switch_all_ip.       grid(column = 0,row=0,pady = (10,0),padx =0,sticky = tk.W)
-        button_switch_favourite_ip. grid(column = 0,row=0,pady = (10,0),padx =210,sticky = tk.W)
-        button_switch_disk.         grid(column = 0,row=0,pady = (10,0),padx =420,sticky = tk.W)
-        button_switch_all_ip.       grid_propagate(0)
-        button_switch_favourite_ip. grid_propagate(0)
-        button_switch_disk.         grid_propagate(0)
+        main_menu_button.           grid(column = 0,row=0,pady = (10,0),padx =0,sticky = tk.W)
+        button_switch_all_ip.       grid(column = 0,row=0,pady = (10,0),padx =210,sticky = tk.W)
+        button_switch_favourite_ip. grid(column = 0,row=0,pady = (10,0),padx =420,sticky = tk.W)
+        button_switch_disk.         grid(column = 0,row=0,pady = (10,0),padx =630,sticky = tk.W)
         project_label.      grid(column = 0,row=0,pady = 5,padx =0,sticky = tk.W)
         self.search_input.  grid(column = 0,row=0,pady = 5,padx =90,sticky = tk.W)
         button_search.      grid(column = 0,row=0,pady = 5,padx =255,sticky = tk.W)
@@ -1533,12 +1537,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.root.update()
         self.call_make_cells_disk()
 
-    def run_app(self):
-        print("run",self.def_show_disk)
-        if int(self.def_show_disk) == 1:
-            self.create_widgets_disk()
-        else:
-            self.create_widgets()
-        print("done?")
+    
 # IP_assignment(root)
 # root.mainloop()
