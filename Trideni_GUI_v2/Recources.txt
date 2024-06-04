@@ -34,9 +34,9 @@ Přesunuté_obrázky
 Bezpečný mód při procházení subsložek:
 ano
 Nastavení prohlížeče obrázků: (1. zvolená možnost, 2. krok přibližování [%], 3. krok posunu)
-2
-10
-100
+1
+50
+150
 Zobrazit changelog?
 ne
 Zobrazovat v prohlížeči obrázků film obrázků?

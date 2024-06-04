@@ -2081,7 +2081,8 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         """
         self.list_of_frames = [self.top_frame,
                                self.bottom_frame_default_path,
-                               self.list_of_menu_frames[1]]
+                               self.list_of_menu_frames[1],
+                               self.menu_buttons_frame]
         for frames in self.list_of_frames:
             frames.pack_forget()
             frames.grid_forget()
@@ -2113,7 +2114,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         else:
             write_text_file_data("ne","sorting_safe_mode")
 
-    def setting_widgets(self,exception,main_console_text = None,main_console_text_color = None): # samotné možnosti úprav parametrů uložených v textové souboru
+    def setting_widgets(self,exception=False,main_console_text = None,main_console_text_color = None,submenu_option = None): # samotné možnosti úprav parametrů uložených v textové souboru
         """
         Nabídka možností úprav
 
@@ -2124,7 +2125,6 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         4 = set_image_browser_setting
 
         """
-
         if main_console_text == None:
                 main_console_text = ""
         if main_console_text_color == None:
@@ -2151,6 +2151,9 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         row_index = 0
         #button_back_to_main_menu = customtkinter.CTkButton(master = self.bottom_frame_default_path,width=100,height=50, text = "ZPĚT", command = lambda: self.sub_menu(),font=("Arial",20,"bold"))
         #button_back_to_main_menu.grid(column =0,row=row_index,sticky = tk.W,pady =10,padx=10)
+
+        for buttons in self.option_buttons:
+            buttons.configure(fg_color = "black")
 
         def call_browseDirectories(): # Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
             """
@@ -2248,7 +2251,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                     main_console.configure(text="U nastavení roku jste nezadali číslo",text_color="red")
 
             write_text_file_data(cutoff_date,"default_cutoff_date")
-            self.setting_widgets(False, main_console._text,main_console._text_color)
+            self.setting_widgets(False, main_console._text,main_console._text_color,submenu_option="set_default_parametres")
 
         def set_files_to_keep():
             input_files_to_keep = files_to_keep_set.get()
@@ -2266,7 +2269,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 main_console.configure(text="")
                 main_console.configure(text="Nazadali jste číslo",text_color="red")
 
-            self.setting_widgets(False,main_console._text,main_console._text_color)
+            self.setting_widgets(False,main_console._text,main_console._text_color,submenu_option="set_default_parametres")
 
         def insert_current_date():
             today = Deleting.get_current_date()
@@ -2277,7 +2280,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 cutoff_date[i-1]=items
             main_console.configure(text="")
             main_console.configure(text="Bylo vloženo dnešní datum (Momentálně všechny soubory vyhodnoceny, jako starší!)",text_color="orange")
-            self.setting_widgets(cutoff_date,main_console._text,main_console._text_color)
+            self.setting_widgets(cutoff_date,main_console._text,main_console._text_color,submenu_option="set_default_parametres")
 
         def set_new_default_prefix(which_folder):
             report = ""
@@ -2292,7 +2295,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                         self.default_displayed_prefix_dir = "func"
                     main_console.configure(text="")
                     main_console.configure(text=report,text_color="green")
-                    self.setting_widgets(False,main_console._text,main_console._text_color) # refresh
+                    self.setting_widgets(False,main_console._text,main_console._text_color,submenu_option="set_folder_names") # refresh
                 else:
                     main_console.configure(text="")
                     main_console.configure(text = "Zadané jméno je již zabrané",text_color="red")
@@ -2339,7 +2342,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                             neme_list_without_suffix = inserted_new_name.replace(str(self.default_dir_names[i]),"")
                             main_console.configure(text="")
                             main_console.configure(text=report[i]+neme_list_without_suffix,text_color="green")
-                            self.setting_widgets(False,main_console._text,main_console._text_color) # refresh
+                            self.setting_widgets(False,main_console._text,main_console._text_color,submenu_option="set_folder_names") # refresh
                 else:
                     main_console.configure(text="")
                     main_console.configure(text = "Zadané jméno je již zabrané",text_color="red")
@@ -2369,7 +2372,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                     main_console_text_add = write_text_file_data(new_format,"add_supported_deleting_formats")
                     main_console.configure(text="")
                     main_console.configure(text=main_console_text_add,text_color="white")
-            self.setting_widgets(False,main_console._text,main_console._text_color)
+            self.setting_widgets(False,main_console._text,main_console._text_color,submenu_option="set_supported_formats")
 
         def pop_format(which_operation):
             if which_operation == 0:
@@ -2385,7 +2388,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                     main_console.configure(text="")
                     main_console.configure(text=main_console_text_pop,text_color="white")
 
-            self.setting_widgets(False,main_console._text,main_console._text_color)
+            self.setting_widgets(False,main_console._text,main_console._text_color,submenu_option="set_supported_formats")
 
         def set_max_num_of_pallets():
             input_1 = set_max_pallets.get()
@@ -2442,7 +2445,8 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             write_text_file_data(int(*args),"num_of_IB_film_images")
             num_of_image_film_images.configure(text = str(int(*args)) + " obrázků na každé straně")
 
-        if self.submenu_option == "default_path":
+        if submenu_option == "default_path":
+            self.option_buttons[0].configure(fg_color="#212121")
             row_index = 1
             label5 =            customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "Nastavte základní cestu k souborům při spuštění:",justify = "left",font=("Arial",18,"bold"))
             explorer_settings_label = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "Nastavení EXPLORERU: ",justify = "left",font=("Arial",16,"bold"))
@@ -2485,7 +2489,8 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             else:
                 self.checkbox_maximalized.deselect()
 
-        if self.submenu_option == "set_folder_names":
+        if submenu_option == "set_folder_names":
+            self.option_buttons[1].configure(fg_color="#212121")
             #upravovani prefixu slozek, default: pro trideni podle kamer
             label_folder_prefixes      = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "1. Vyberte prefix složky, u které chcete změnit základní název:",justify = "left",font=("Arial",18,"bold"))
             drop_down_dir_names        = customtkinter.CTkOptionMenu(master = self.bottom_frame_default_path,width=290,values=self.drop_down_prefix_dir_names_list,font=("Arial",16),command= change_prefix_dir)
@@ -2533,14 +2538,17 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             #nastaveni defaultniho vyberu z drop-down menu
             drop_down_static_dir_names.set(self.drop_down_static_dir_names_list[drop_down_increment])
 
-        if self.submenu_option == "set_default_parametres":
+        if submenu_option == "set_default_parametres":
+            self.option_buttons[2].configure(fg_color="#212121")
             #widgets na nastaveni zakladniho poctu palet v obehu
-            label_pallets = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "1. Nastavte základní maximální počet paletek v oběhu:",justify = "left",font=("Arial",18,"bold"))
-            set_max_pallets = customtkinter.CTkEntry(master = self.bottom_frame_default_path,width=100,height=30,font=("Arial",16), placeholder_text= str(default_max_num_of_pallets))
-            button_save_max_num_of_pallets = customtkinter.CTkButton(master = self.bottom_frame_default_path,width=50,height=30, text = "Uložit", command = lambda: set_max_num_of_pallets(),font=("Arial",18,"bold"))
-            label_pallets.grid(column =0,row=row_index+1,sticky = tk.W,pady =10,padx=10)
-            set_max_pallets.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
-            button_save_max_num_of_pallets.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=110)
+            first_option_frame =                customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
+            first_option_frame.                 pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
+            label_pallets =                     customtkinter.CTkLabel(master = first_option_frame,height=50,text = "1. Nastavte základní maximální počet paletek v oběhu:",justify = "left",font=("Arial",22,"bold"))
+            set_max_pallets =                   customtkinter.CTkEntry(master = first_option_frame,width=100,height=50,font=("Arial",20), placeholder_text= str(default_max_num_of_pallets))
+            button_save_max_num_of_pallets =    customtkinter.CTkButton(master = first_option_frame,width=60,height=50, text = "Uložit", command = lambda: set_max_num_of_pallets(),font=("Arial",22,"bold"))
+            label_pallets.                      grid(column =0,row=row_index+1,sticky = tk.W,pady =10,padx=10)
+            set_max_pallets.                    grid(column =0,row=row_index+2,sticky = tk.W,pady =(0,10),padx=10)
+            button_save_max_num_of_pallets.     grid(column =0,row=row_index+2,sticky = tk.W,pady =(0,10),padx=110)
             def new_max_pallets_enter_btn(e):
                 set_max_num_of_pallets()
                 self.root.focus_set()
@@ -2548,38 +2556,42 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
 
             #widgets na nastaveni zakladniho poctu files_to_keep
             files_to_keep_console_text ="Aktuálně nastavené minimum: "+str(files_to_keep)
-            label_files_to_keep = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "2. Nastavte základní počet ponechaných souborů, vyhodnocených jako starších:",justify = "left",font=("Arial",18,"bold"))
-            files_to_keep_set = customtkinter.CTkEntry(master = self.bottom_frame_default_path,width=100,height=30,font=("Arial",16), placeholder_text= files_to_keep)
-            button_save2 = customtkinter.CTkButton(master = self.bottom_frame_default_path,width=50,height=30, text = "Uložit", command = lambda: set_files_to_keep(),font=("Arial",18,"bold"))
-            console_files_to_keep=customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=30,text =files_to_keep_console_text,justify = "left",font=("Arial",18))
-            label_files_to_keep.grid(column =0,row=row_index+3,sticky = tk.W,pady =10,padx=10)
-            files_to_keep_set.grid(column =0,row=row_index+4,sticky = tk.W,pady =0,padx=10)
-            button_save2.grid(column =0,row=row_index+4,sticky = tk.W,pady =0,padx=110)
-            console_files_to_keep.grid(column =0,row=row_index+5,sticky = tk.W,pady =0,padx=10)
+            second_option_frame =                customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
+            second_option_frame.                 pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
+            label_files_to_keep =               customtkinter.CTkLabel(master = second_option_frame,height=50,text = "2. Nastavte základní počet ponechaných souborů, vyhodnocených jako starších:",justify = "left",font=("Arial",22,"bold"))
+            files_to_keep_set =                 customtkinter.CTkEntry(master = second_option_frame,width=100,height=50,font=("Arial",20), placeholder_text= files_to_keep)
+            button_save2 =                      customtkinter.CTkButton(master = second_option_frame,width=60,height=50, text = "Uložit", command = lambda: set_files_to_keep(),font=("Arial",22,"bold"))
+            console_files_to_keep=              customtkinter.CTkLabel(master = second_option_frame,height=50,text =files_to_keep_console_text,justify = "left",font=("Arial",22))
+            label_files_to_keep.                grid(column =0,row=row_index+3,sticky = tk.W,pady =10,padx=10)
+            files_to_keep_set.                  grid(column =0,row=row_index+4,sticky = tk.W,pady =0,padx=10)
+            button_save2.                       grid(column =0,row=row_index+4,sticky = tk.W,pady =0,padx=110)
+            console_files_to_keep.              grid(column =0,row=row_index+5,sticky = tk.W,pady =(0,10),padx=10)
             def files_to_keep_enter_btn(e):
                 set_files_to_keep()
                 self.root.focus_set()
             files_to_keep_set.bind("<Return>",files_to_keep_enter_btn)
             
             #widgets na nastaveni zakladniho dne
-            label_set_default_date = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "3. Nastavte základní datum pro vyhodnocení souborů, jako starších:",justify = "left",font=("Arial",18,"bold"))
-            set_day = customtkinter.CTkEntry(master = self.bottom_frame_default_path,width=30,height=30,font=("Arial",16), placeholder_text= cutoff_date[0])
-            sep1 = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,width=10,text = ".",font=("Arial",20))
-            set_month = customtkinter.CTkEntry(master = self.bottom_frame_default_path,width=30,height=30,font=("Arial",16), placeholder_text= cutoff_date[1])
-            sep2 = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,width=10,text = ".",font=("Arial",20))
-            set_year = customtkinter.CTkEntry(master = self.bottom_frame_default_path,width=50,height=30,font=("Arial",16), placeholder_text= cutoff_date[2])
-            button_save_date = customtkinter.CTkButton(master = self.bottom_frame_default_path,width=50,height=30, text = "Uložit", command = lambda: set_default_cutoff_date(),font=("Arial",18,"bold"))
-            insert_button = customtkinter.CTkButton(master = self.bottom_frame_default_path,width=190,height=30, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",18,"bold"))
-            main_console =      customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = str(main_console_text),text_color=str(main_console_text_color),justify = "left",font=("Arial",18))
-            label_set_default_date.grid(column =0,row=row_index+6,sticky = tk.W,pady =10,padx=10)
-            set_day.grid(column =0,row=row_index+7,sticky = tk.W,pady =0,padx=10)
-            sep1.grid(column =0,row=row_index+7,sticky = tk.W,pady =0,padx=40)
-            set_month.grid(column =0,row=row_index+7,sticky = tk.W,pady =0,padx=50)
-            sep2.grid(column =0,row=row_index+7,sticky = tk.W,pady =0,padx=80)
-            set_year.grid(column =0,row=row_index+7,sticky = tk.W,pady =0,padx=90)
-            button_save_date.grid(column =0,row=row_index+7,sticky = tk.W,pady =0,padx=140)
-            insert_button.grid(column =0,row=row_index+8,sticky = tk.W,pady =5,padx=10)
-            main_console.grid(column =0,row=row_index+9,sticky = tk.W,pady =50,padx=10)
+            third_option_frame =                customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
+            third_option_frame.                 pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
+            label_set_default_date =            customtkinter.CTkLabel(master = third_option_frame,height=50,text = "3. Nastavte základní datum pro vyhodnocení souborů, jako starších:",justify = "left",font=("Arial",22,"bold"))
+            set_day =                           customtkinter.CTkEntry(master = third_option_frame,width=60,height=50,font=("Arial",20), placeholder_text= cutoff_date[0])
+            sep1 =                              customtkinter.CTkLabel(master = third_option_frame,height=50,width=10,text = ".",font=("Arial",22))
+            set_month =                         customtkinter.CTkEntry(master = third_option_frame,width=60,height=50,font=("Arial",20), placeholder_text= cutoff_date[1])
+            sep2 =                              customtkinter.CTkLabel(master = third_option_frame,height=50,width=10,text = ".",font=("Arial",22))
+            set_year =                          customtkinter.CTkEntry(master = third_option_frame,width=60,height=50,font=("Arial",20), placeholder_text= cutoff_date[2])
+            button_save_date =                  customtkinter.CTkButton(master = third_option_frame,width=60,height=50, text = "Uložit", command = lambda: set_default_cutoff_date(),font=("Arial",22,"bold"))
+            insert_button =                     customtkinter.CTkButton(master = third_option_frame,width=190,height=50, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",22,"bold"))
+            main_console =                      customtkinter.CTkLabel(master = third_option_frame,height=50,text = str(main_console_text),text_color=str(main_console_text_color),justify = "left",font=("Arial",22))
+            label_set_default_date.             grid(column =0,row=row_index+6,sticky = tk.W,pady =10,padx=10)
+            set_day.                            grid(column =0,row=row_index+7,sticky = tk.W,pady =0,padx=10)
+            sep1.                               grid(column =0,row=row_index+7,sticky = tk.W,pady =0,padx=40)
+            set_month.                          grid(column =0,row=row_index+7,sticky = tk.W,pady =0,padx=50)
+            sep2.                               grid(column =0,row=row_index+7,sticky = tk.W,pady =0,padx=80)
+            set_year.                           grid(column =0,row=row_index+7,sticky = tk.W,pady =0,padx=90)
+            button_save_date.                   grid(column =0,row=row_index+7,sticky = tk.W,pady =0,padx=140)
+            insert_button.                      grid(column =0,row=row_index+8,sticky = tk.W,pady =5,padx=10)
+            main_console.                       grid(column =0,row=row_index+9,sticky = tk.W,pady =(50,10),padx=10)
 
             def new_date_enter_btn(e):
                 set_default_cutoff_date()
@@ -2588,75 +2600,92 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             set_month.bind("<Return>",new_date_enter_btn)
             set_year.bind("<Return>",new_date_enter_btn)
 
-        if self.submenu_option == "set_supported_formats":
+        if submenu_option == "set_supported_formats":
+            self.option_buttons[3].configure(fg_color="#212121")
             #widgets pro nastavovani podporovanych formatu
             supported_formats_deleting = "Aktuálně nastavené podporované formáty pro možnosti mazání: " + str(text_file_data[1])
-            label_supported_formats_deleting = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "1. Nastavte podporované formáty pro možnosti: MAZÁNÍ:",justify = "left",font=("Arial",18,"bold"))
-            formats_deleting_input = customtkinter.CTkEntry(master = self.bottom_frame_default_path,font=("Arial",16),width=100,height=30)
-            button_save4 = customtkinter.CTkButton(master = self.bottom_frame_default_path,width=50,height=30, text = "Uložit", command = lambda: add_format(1),font=("Arial",18,"bold"))
-            button_pop2 = customtkinter.CTkButton(master = self.bottom_frame_default_path,width=70,height=30, text = "Odebrat", command = lambda: pop_format(1),font=("Arial",18,"bold"))
-            console_bottom_frame_4=customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=30,text =supported_formats_deleting,justify = "left",font=("Arial",18))
-            label_supported_formats_deleting.grid(column =0,row=row_index+1,sticky = tk.W,pady =10,padx=10)
-            formats_deleting_input.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
-            button_save4.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=115)
-            button_pop2.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=180)
-            console_bottom_frame_4.grid(column =0,row=row_index+3,sticky = tk.W,pady =0,padx=10)
+            first_option_frame =                customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
+            first_option_frame.                 pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
+            label_supported_formats_deleting =  customtkinter.CTkLabel(master = first_option_frame,height=50,text = "1. Nastavte podporované formáty pro možnosti: MAZÁNÍ:",justify = "left",font=("Arial",22,"bold"))
+            formats_deleting_input =            customtkinter.CTkEntry(master = first_option_frame,height=50,font=("Arial",20),width=200)
+            button_save4 =                      customtkinter.CTkButton(master = first_option_frame,width=50,height=50, text = "Uložit", command = lambda: add_format(1),font=("Arial",22,"bold"))
+            button_pop2 =                       customtkinter.CTkButton(master = first_option_frame,width=70,height=50, text = "Odebrat", command = lambda: pop_format(1),font=("Arial",22,"bold"))
+            console_bottom_frame_4=             customtkinter.CTkLabel(master = first_option_frame,height=50,text =supported_formats_deleting,justify = "left",font=("Arial",22))
+            label_supported_formats_deleting.   grid(column =0,row=row_index+1,sticky = tk.W,pady =10,padx=10)
+            formats_deleting_input.             grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
+            button_save4.                       grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=215)
+            button_pop2.                        grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=290)
+            console_bottom_frame_4.             grid(column =0,row=row_index+3,sticky = tk.W,pady =0,padx=10)
 
             supported_formats_sorting = "Aktuálně nastavené podporované formáty pro možnosti třídění: " + str(text_file_data[0])
-            label3 = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "2. Nastavte podporované formáty pro možnosti: TŘÍDĚNÍ:",justify = "left",font=("Arial",18,"bold"))
-            formats_set = customtkinter.CTkEntry(master = self.bottom_frame_default_path,width=100,height=30,font=("Arial",16))
-            button_save3 = customtkinter.CTkButton(master = self.bottom_frame_default_path,width=50,height=30, text = "Uložit", command = lambda: add_format(0),font=("Arial",18,"bold"))
-            button_pop = customtkinter.CTkButton(master = self.bottom_frame_default_path,width=70,height=30, text = "Odebrat", command = lambda: pop_format(0),font=("Arial",18,"bold"))
-            console_bottom_frame_3=customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=30,text =supported_formats_sorting,justify = "left",font=("Arial",18))
-            main_console =      customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = str(main_console_text),text_color=str(main_console_text_color),justify = "left",font=("Arial",18))
-            label3.grid(column =0,row=row_index+4,sticky = tk.W,pady =10,padx=10)
-            formats_set.grid(column =0,row=row_index+5,sticky = tk.W,pady =0,padx=10)
-            button_save3.grid(column =0,row=row_index+5,sticky = tk.W,pady =0,padx=115)
-            button_pop.grid(column =0,row=row_index+5,sticky = tk.W,pady =0,padx=180)
-            console_bottom_frame_3.grid(column =0,row=row_index+6,sticky = tk.W,pady =0,padx=10)
-            main_console.grid(column =0,row=row_index+7,sticky = tk.W,pady =50,padx=10)
+            second_option_frame =               customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
+            second_option_frame.                pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
+            label3 =                            customtkinter.CTkLabel(master = second_option_frame,height=50,text = "2. Nastavte podporované formáty pro možnosti: TŘÍDĚNÍ:",justify = "left",font=("Arial",22,"bold"))
+            formats_set =                       customtkinter.CTkEntry(master = second_option_frame,width=200,height=50,font=("Arial",20))
+            button_save3 =                      customtkinter.CTkButton(master = second_option_frame,width=50,height=50, text = "Uložit", command = lambda: add_format(0),font=("Arial",22,"bold"))
+            button_pop =                        customtkinter.CTkButton(master = second_option_frame,width=70,height=50, text = "Odebrat", command = lambda: pop_format(0),font=("Arial",22,"bold"))
+            console_bottom_frame_3=             customtkinter.CTkLabel(master = second_option_frame,height=50,text =supported_formats_sorting,justify = "left",font=("Arial",22))
+            main_console =                      customtkinter.CTkLabel(master = second_option_frame,height=50,text = str(main_console_text),text_color=str(main_console_text_color),justify = "left",font=("Arial",22))
+            label3.                             grid(column =0,row=row_index+4,sticky = tk.W,pady =10,padx=10)
+            formats_set.                        grid(column =0,row=row_index+5,sticky = tk.W,pady =0,padx=10)
+            button_save3.                       grid(column =0,row=row_index+5,sticky = tk.W,pady =0,padx=215)
+            button_pop.                         grid(column =0,row=row_index+5,sticky = tk.W,pady =0,padx=290)
+            console_bottom_frame_3.             grid(column =0,row=row_index+6,sticky = tk.W,pady =0,padx=10)
+            main_console.                       grid(column =0,row=row_index+7,sticky = tk.W,pady =(50,10),padx=10)
 
             def add_or_rem_formats(e):
                 self.root.focus_set()
             formats_deleting_input.bind("<Return>",add_or_rem_formats)
             formats_set.bind("<Return>",add_or_rem_formats)
 
-        if self.submenu_option == "set_image_browser_setting":
+        if submenu_option == "set_image_browser_setting":
             #widgets pro nastaveni image browseru
+            self.option_buttons[4].configure(fg_color="#212121")
             self.text_file_data = read_text_file_data()
             text_increment = str(self.text_file_data[11][1]) + " %"
             text_movement = str(self.text_file_data[11][2]) + " px"
             text_image_film = str(self.text_file_data[14]) + " obrázků na každé straně"
-            label_IB1 = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "1. Zvolte způsob přibližování:",justify = "left",font=("Arial",18,"bold"))
-            label_IB2 = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "- Možnost bez posuvníků funguje nejlépe na obrazovce ve windows nastavené, jako HLAVNÍ a v maximalizovaném okně aplikace\n- U možnosti s posuvníky na těchto podmínkách nezáleží",justify = "left",font=("Arial",16,"bold"))
-            checkbox_omron_option = customtkinter.CTkCheckBox(master = self.bottom_frame_default_path, text = "Přibližování/ oddalování ke/ od kurzoru myši (bez posuvníků)",command = lambda: select_zoom_option(),font=("Arial",16))
-            checkbox_slidebar_option = customtkinter.CTkCheckBox(master = self.bottom_frame_default_path, text = "Přibližování/ oddalování do/ od středu obrázku (s posuvníky)",command = lambda: select_zoom_option(),font=("Arial",16))
-            label_IB3 = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "2. Nastavte o kolik procent se navýší přiblížení jedním krokem kolečka myši:",justify = "left",font=("Arial",18,"bold"))
-            zoom_increment_set = customtkinter.CTkSlider(master=self.bottom_frame_default_path,width=300,height=15,from_=5,to=100,number_of_steps= 19,command= update_zoom_increment_slider)
-            label_IB4 = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = text_increment,justify = "left",font=("Arial",16))
-            label_IB5 = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "3. Nastavte velikost kroku při posouvání přibližováním kolečkem myši:",justify = "left",font=("Arial",18,"bold"))
-            zoom_movement_set = customtkinter.CTkSlider(master=self.bottom_frame_default_path,width=300,height=15,from_=50,to=300,number_of_steps= 5,command= update_zoom_movement_slider)
-            label_IB6 = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = text_movement,justify = "left",font=("Arial",16))
-            label_image_film = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "4. Upravte nastavení filmu obrázků:",justify = "left",font=("Arial",18,"bold"))
-            switch_image_film = customtkinter.CTkCheckBox(master = self.bottom_frame_default_path, text = "Zapnuto",command = lambda: on_off_image_film(),font=("Arial",16))
-            num_of_image_film_images_slider = customtkinter.CTkSlider(master=self.bottom_frame_default_path,width=300,height=15,from_=1,to=15,command= change_image_film_number)
-            num_of_image_film_images = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = text_image_film,justify = "left",font=("Arial",16))
-            main_console =      customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = str(main_console_text),text_color=str(main_console_text_color),justify = "left",font=("Arial",18))
-            label_IB1.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
-            label_IB2.grid(column =0,row=row_index+2,sticky = tk.W,pady =10,padx=10)
-            checkbox_omron_option.grid(column =0,row=row_index+3,sticky = tk.W,pady =5,padx=10)
-            checkbox_slidebar_option.grid(column =0,row=row_index+5,sticky = tk.W,pady =5,padx=10)
-            label_IB3.grid(column =0,row=row_index+6,sticky = tk.W,pady =20,padx=10)
-            zoom_increment_set.grid(column =0,row=row_index+7,sticky = tk.W,pady =0,padx=10)
-            label_IB4.grid(column =0,row=row_index+7,sticky = tk.W,pady =0,padx=320)
-            label_IB5.grid(column =0,row=row_index+8,sticky = tk.W,pady =20,padx=10)
-            zoom_movement_set.grid(column =0,row=row_index+9,sticky = tk.W,pady =0,padx=10)
-            label_IB6.grid(column =0,row=row_index+9,sticky = tk.W,pady =0,padx=320)
-            label_image_film.grid(column =0,row=row_index+10,sticky = tk.W,pady =20,padx=10)
-            switch_image_film.grid(column =0,row=row_index+11,sticky = tk.W,pady =0,padx=10)
-            num_of_image_film_images_slider.grid(column =0,row=row_index+12,sticky = tk.W,pady =20,padx=10)
-            num_of_image_film_images.grid(column =0,row=row_index+12,sticky = tk.W,pady =20,padx=320)
-            main_console.grid(column =0,row=row_index+13,sticky = tk.W,pady =50,padx=10)
+            first_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
+            first_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
+            label_IB1 =                 customtkinter.CTkLabel(     master = first_option_frame,height=20,text = "1. Zvolte způsob přibližování:",justify = "left",font=("Arial",22,"bold"))
+            label_IB2 =                 customtkinter.CTkLabel(     master = first_option_frame,height=20,text = "- Možnost bez posuvníků funguje nejlépe na obrazovce ve windows nastavené, jako HLAVNÍ a v maximalizovaném okně aplikace\n- U možnosti s posuvníky na těchto podmínkách nezáleží",justify = "left",font=("Arial",20,"bold"))
+            checkbox_omron_option =     customtkinter.CTkCheckBox(  master = first_option_frame, text = "Přibližování/ oddalování ke/ od kurzoru myši (bez posuvníků)",command = lambda: select_zoom_option(),font=("Arial",20))
+            checkbox_slidebar_option =  customtkinter.CTkCheckBox(  master = first_option_frame, text = "Přibližování/ oddalování do/ od středu obrázku (s posuvníky)",command = lambda: select_zoom_option(),font=("Arial",20))
+
+            second_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
+            second_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
+            label_IB3 =                 customtkinter.CTkLabel(master = second_option_frame,height=20,text = "2. Nastavte o kolik procent se navýší přiblížení jedním krokem kolečka myši:",justify = "left",font=("Arial",22,"bold"))
+            zoom_increment_set =        customtkinter.CTkSlider(master=second_option_frame,width=300,height=15,from_=5,to=100,number_of_steps= 19,command= update_zoom_increment_slider)
+            label_IB4 =                 customtkinter.CTkLabel(master = second_option_frame,height=20,text = text_increment,justify = "left",font=("Arial",20))
+
+            third_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
+            third_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
+            label_IB5 =                 customtkinter.CTkLabel(master = third_option_frame,height=20,text = "3. Nastavte velikost kroku při posouvání přibližováním kolečkem myši:",justify = "left",font=("Arial",22,"bold"))
+            zoom_movement_set =         customtkinter.CTkSlider(master=third_option_frame,width=300,height=15,from_=50,to=300,number_of_steps= 5,command= update_zoom_movement_slider)
+            label_IB6 =                 customtkinter.CTkLabel(master = third_option_frame,height=20,text = text_movement,justify = "left",font=("Arial",20))
+
+            forth_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
+            forth_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
+            label_image_film =          customtkinter.CTkLabel(master = forth_option_frame,height=20,text = "4. Upravte nastavení filmu obrázků:",justify = "left",font=("Arial",22,"bold"))
+            switch_image_film =         customtkinter.CTkCheckBox(master = forth_option_frame, text = "Zapnuto",command = lambda: on_off_image_film(),font=("Arial",20))
+            num_of_image_film_images_slider = customtkinter.CTkSlider(master=forth_option_frame,width=300,height=15,from_=1,to=15,command= change_image_film_number)
+            num_of_image_film_images =  customtkinter.CTkLabel(master = forth_option_frame,height=20,text = text_image_film,justify = "left",font=("Arial",20))
+            main_console =              customtkinter.CTkLabel(master = forth_option_frame,height=20,text = str(main_console_text),text_color=str(main_console_text_color),justify = "left",font=("Arial",22))
+            label_IB1.                  grid(column =0,row=row_index+1,sticky = tk.W,pady =10,padx=10)
+            label_IB2.                  grid(column =0,row=row_index+2,sticky = tk.W,pady =10,padx=10)
+            checkbox_omron_option.      grid(column =0,row=row_index+3,sticky = tk.W,pady =(20,0),padx=10)
+            checkbox_slidebar_option.   grid(column =0,row=row_index+5,sticky = tk.W,pady =(20,10),padx=10)
+            label_IB3.                  grid(column =0,row=row_index+6,sticky = tk.W,pady =10,padx=10)
+            zoom_increment_set.         grid(column =0,row=row_index+7,sticky = tk.W,pady =10,padx=10)
+            label_IB4.                  grid(column =0,row=row_index+7,sticky = tk.W,pady =0,padx=320)
+            label_IB5.                  grid(column =0,row=row_index+8,sticky = tk.W,pady =10,padx=10)
+            zoom_movement_set.          grid(column =0,row=row_index+9,sticky = tk.W,pady =10,padx=10)
+            label_IB6.                  grid(column =0,row=row_index+9,sticky = tk.W,pady =0,padx=320)
+            label_image_film.           grid(column =0,row=row_index+10,sticky = tk.W,pady =10,padx=10)
+            switch_image_film.          grid(column =0,row=row_index+11,sticky = tk.W,pady =0,padx=10)
+            num_of_image_film_images_slider.grid(column =0,row=row_index+12,sticky = tk.W,pady =(20,10),padx=10)
+            num_of_image_film_images.   grid(column =0,row=row_index+12,sticky = tk.W,pady =(20,10),padx=320)
+            main_console.               grid(column =0,row=row_index+13,sticky = tk.W,pady =(50,10),padx=10)
 
             zoom_increment_set.set(self.text_file_data[11][1])
             zoom_movement_set.set(self.text_file_data[11][2])
@@ -2669,7 +2698,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             if self.text_file_data[13] == "ano":
                 switch_image_film.select()  
 
-    def drop_down_chosen_option(self,*args):
+    """def drop_down_chosen_option(self,*args):
         option_chosen = self.drop_down_options.get()
         index_number = self.options_list.index(option_chosen)
 
@@ -2689,7 +2718,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             self.clear_frame(self.bottom_frame_default_path)
             self.submenu_option = "set_image_browser_setting"
 
-        self.setting_widgets(False)
+        self.setting_widgets(False)"""
 
     def creating_advanced_option_widgets(self): # Vytváří veškeré widgets (advance option MAIN)
         #cisteni menu widgets
@@ -2699,21 +2728,37 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 self.list_of_menu_frames[i].grid_forget()
                 self.list_of_menu_frames[i].destroy()
         
-        self.bottom_frame_default_path   = customtkinter.CTkFrame(master=self.root,corner_radius=0)
-        self.top_frame                   = customtkinter.CTkFrame(master=self.root,corner_radius=0)
-        self.top_frame.pack(pady=2.5,padx=5,fill="x",expand=False,side = "top")
-        self.bottom_frame_default_path.pack(pady=2.5,padx=5,fill="both",expand=True,side = "bottom")
+        self.bottom_frame_default_path   = customtkinter.CTkFrame(master=self.root,corner_radius=0,border_width = 0)
+        self.top_frame                   = customtkinter.CTkFrame(master=self.root,corner_radius=0,border_width = 0)
+        self.menu_buttons_frame          = customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=50,border_width = 0)
+        self.top_frame.                 pack(pady=(2.5,0),padx=5,fill="x",expand=False,side = "top")
+        self.menu_buttons_frame.        pack(pady=0,padx=5,fill="x",expand=False,side = "top")
+        self.bottom_frame_default_path. pack(pady=(0,2.5),padx=5,fill="both",expand=True,side = "bottom")
         
-        label0          = customtkinter.CTkLabel(master = self.top_frame,height=20,text = "Nastavte požadované parametry (nastavení bude uloženo i po vypnutí aplikace): ",justify = "left",font=("Arial",20,"bold"))
-        menu_button     = customtkinter.CTkButton(master = self.top_frame, width = 180,height=40, text = "MENU", command = lambda: self.call_menu(),font=("Arial",20,"bold"))
-        label1          = customtkinter.CTkLabel(master = self.top_frame,height=20,text = "Vyberte z možností nastavení: ",justify = "left",font=("Arial",20,"bold"))
-        self.drop_down_options = customtkinter.CTkOptionMenu(master = self.top_frame,width=250,height=40,values=self.options_list,font=("Arial",20,"bold"),command= self.drop_down_chosen_option)
-        menu_button.grid(column =0,row=0,sticky = tk.W,pady =10,padx=10)
-        label1.grid(column =0,row=0,sticky = tk.W,pady =10,padx=300)
-        self.drop_down_options.grid(column =0,row=0,sticky = tk.W,pady =10,padx=600)
-        label0.grid(column =0,row=1,sticky = tk.W,pady =30,padx=10)
+        label0          = customtkinter.CTkLabel(master = self.top_frame,height=20,text = "Nastavte požadované parametry (nastavení bude uloženo i po vypnutí aplikace): ",justify = "left",font=("Arial",22,"bold"))
 
-        self.setting_widgets(False)
+        main_menu_button =  customtkinter.CTkButton(master = self.menu_buttons_frame, width = 200,height=50,text = "MENU",              command =  lambda: self.call_menu(),font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        options0 =          customtkinter.CTkButton(master = self.menu_buttons_frame, width = 200,height=50,text = "Základní nastavení",command =  lambda: self.setting_widgets(submenu_option="default_path"),font=("Arial",20,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
+        options1 =          customtkinter.CTkButton(master = self.menu_buttons_frame, width = 200,height=50,text = "Názvy složek",      command =  lambda: self.setting_widgets(submenu_option="set_folder_names"),font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        options2 =          customtkinter.CTkButton(master = self.menu_buttons_frame, width = 200,height=50,text = "Počáteční parametry",command =  lambda: self.setting_widgets(submenu_option="set_default_parametres"),font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        options3 =          customtkinter.CTkButton(master = self.menu_buttons_frame, width = 200,height=50,text = "Podporované formáty",command =  lambda: self.setting_widgets(submenu_option="set_supported_formats"),font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        options4 =          customtkinter.CTkButton(master = self.menu_buttons_frame, width = 200,height=50,text = "Prohlížeč obrázků",command =  lambda: self.setting_widgets(submenu_option="set_image_browser_setting"),font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+
+        # menu_button     = customtkinter.CTkButton(master = self.menu_buttons_frame, width = 180,height=40, text = "MENU", command = lambda: self.call_menu(),font=("Arial",20,"bold"))
+        # label1          = customtkinter.CTkLabel(master = self.menu_buttons_frame,height=20,text = "Vyberte z možností nastavení: ",justify = "left",font=("Arial",20,"bold"))
+        # self.drop_down_options = customtkinter.CTkOptionMenu(master = self.menu_buttons_frame,width=250,height=40,values=self.options_list,font=("Arial",20,"bold"),command= self.drop_down_chosen_option)
+        label0.             grid(column = 0,row=0,sticky = tk.W,pady =10,padx=10)
+        main_menu_button.   grid(column = 0,row=0,pady = (10,0),padx =0,sticky = tk.W)
+        options0.           grid(column = 0,row=0,pady = (10,0),padx =210,sticky = tk.W)
+        options1.           grid(column = 0,row=0,pady = (10,0),padx =420,sticky = tk.W)
+        options2.           grid(column = 0,row=0,pady = (10,0),padx =630,sticky = tk.W)
+        options3.           grid(column = 0,row=0,pady = (10,0),padx =840,sticky = tk.W)
+        options4.           grid(column = 0,row=0,pady = (10,0),padx =1060,sticky = tk.W)
+        # menu_button.            grid(column =0,row=0,sticky = tk.W,pady =10,padx=10)
+        # label1.                 grid(column =0,row=0,sticky = tk.W,pady =10,padx=300)
+        # self.drop_down_options. grid(column =0,row=0,sticky = tk.W,pady =10,padx=600)
+        self.option_buttons = [options0,options1,options2,options3,options4]
+        self.setting_widgets(submenu_option="default_path")
 
         def maximalize_window(e):
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
