@@ -252,24 +252,29 @@ udelat change log na uvodni obrazovce trimazkonu - hotovo
 ip_manager - oprava chybovych hlasek - hotovo
 ip_manager - nejde stredni obrazovka - hotovo
 pravým tlačítkem kopírovat projekt - hláška, bind - hotovo
-import ip_manageru do trimazkonu - hotovo
+verze 3.7 konečná verze - import do trimazkonu - hotovo
+
+11:12 AM 6/5/2024
+predelat visualizaci u nastaveni na klasicke okno se zalozkami - hotovo
+nejde prehravat obrazky - poto projití všech cerna obrazovka main frame! - hotovo
+brat velikost okna z nastaveni trimazkonu - hotovo
+prodlouzit okno male vertikalni okno s projekty - hotovo
+male tlacitko nastaveni - spusti advanced option v okně - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-_________________________________________________________________________________ip manager_____________________________________________________________________________________________
+
+
+změny se nepropisují - save button
 
 
 
-udelat neco s tim adminem pri spousteni - exeption?
-seřazovat podle abecedy ???
-_________________________________________________________________________________trimazkon_____________________________________________________________________________________________
-predelat visualizaci u pokrocileho nastaveni na klasicke okno se zalozkami
-moznost pinnout horni frame u IB
 
-
-male tlacitko nastaveni vsude...
+ip_manager udelat neco s tim adminem pri spousteni - exeption?
+ip_manager seřazovat podle abecedy ???
 zjistit prepnuti monitoru a upravit podle toho parametry IB
 nacitaci animace na uvodni obrazovce
+návod na trimazkon
 
 
 

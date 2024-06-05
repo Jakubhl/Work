@@ -103,7 +103,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
     Umožňuje měnit nastavení statických IP adres
     """
 
-    def __init__(self,root,callback_function):
+    def __init__(self,root,callback_function,window_mode):
+        self.window_mode = window_mode
         self.callback = callback_function
         self.root = root
         self.rows_taken = 0
@@ -154,26 +155,27 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         
         def_show_disk = worksheet['B' + str(4)].value
         if int(def_show_disk) == 1:
-            self.create_widgets_disk()
+            self.create_widgets_disk(init=True)
         else:
-            self.create_widgets()
+            self.create_widgets(init=True)
 
         def_window_size = worksheet['B' + str(5)].value
-        if int(def_window_size) == 0:
+        # if int(def_window_size) == 0:
+        #     self.root.state('normal')
+        #     self.root.geometry("1200x900")
+        # elif int(def_window_size) == 1:
+        #     self.root.state('zoomed')
+        #     # root.state('zoomed')
+        #     self.root.update()
+        #     # root.update()
+        # else:
+        #     self.root.state('normal')
+        #     self.root.geometry(f"260x1000+{0}+{0}")
+        if def_window_size == 2:
             self.root.state('normal')
-            self.root.geometry("1200x900")
-        elif int(def_window_size) == 1:
-            self.window_mode = 1
-            self.root.state('zoomed')
-            # root.state('zoomed')
-            self.root.update()
-            # root.update()
-        else:
-            self.window_mode = 2
-            self.root.state('normal')
-            self.root.geometry(f"260x500+{0}+{0}")
+            self.root.geometry(f"260x1000+{0}+{0}")
         workbook.close()
-        # self.run_app()
+
         
     def call_menu(self): # Tlačítko menu (konec, návrat do menu)
         """
@@ -1334,7 +1336,12 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.button_switch_favourite_ip. configure(fg_color="#212121")
             self.button_switch_all_ip.       configure(fg_color="black")
 
-    def create_widgets(self,fav_status = None):
+    def create_widgets(self,fav_status = None,init=None):
+        if init:
+            if self.window_mode == "max":
+                self.save_setting_parameter(parameter="change_def_window_size",status=1)
+            else:
+                self.save_setting_parameter(parameter="change_def_window_size",status=0)
         if fav_status:
             self.show_favourite = True
             self.save_setting_parameter(parameter="change_def_ip_window",status=1)
@@ -1424,7 +1431,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             if int(current_width) > 1200:
                 #self.root.after(0, lambda:self.root.state('normal'))
                 self.root.state('normal')
-                self.root.geometry(f"260x500+{0}+{0}")
+                self.root.geometry(f"260x1000+{0}+{0}")
                 # self.root.geometry("210x500")
                 self.save_setting_parameter(parameter="change_def_window_size",status=2)
             elif int(current_width) ==260:
@@ -1444,14 +1451,17 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
         def call_search(e):
             self.make_project_first("search")
-        self.search_input.bind("<Return>",call_search)
-
-        
+        self.search_input.bind("<Return>",call_search)     
 
     def call_make_cells_disk(self):
         self.make_project_cells_disk()
 
-    def create_widgets_disk(self):
+    def create_widgets_disk(self,init=None):
+        if init:
+            if self.window_mode == "max":
+                self.save_setting_parameter(parameter="change_def_window_size",status=1)
+            else:
+                self.save_setting_parameter(parameter="change_def_window_size",status=0)
         self.clear_frame(self.root)
         self.managing_disk = True
         self.save_setting_parameter(parameter="change_def_main_window",status=1)
@@ -1511,7 +1521,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             if int(current_width) > 1200:
                 #self.root.after(0, lambda:self.root.state('normal'))
                 self.root.state('normal')
-                self.root.geometry(f"260x500+{0}+{0}")
+                self.root.geometry(f"260x1000+{0}+{0}")
                 # self.root.geometry("210x500")
                 self.save_setting_parameter(parameter="change_def_window_size",status=2)
             elif int(current_width) ==260:
