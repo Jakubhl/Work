@@ -16,7 +16,7 @@ pyinstaller --noconfirm --onefile --add-data "C:\Users\jakub.hlavacek.local\AppD
 
 udelat vyjimku:
 1)folder:
-exceptions: Add-MpPreference -ExclusionPath "C:\Path\To\Exclude"
+Add-MpPreference -ExclusionPath "C:\Path\To\Exclude"
 
 odebrat vyjimku:
 1)folder

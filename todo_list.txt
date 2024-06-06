@@ -260,13 +260,14 @@ nejde prehravat obrazky - poto projití všech cerna obrazovka main frame! - hot
 brat velikost okna z nastaveni trimazkonu - hotovo
 prodlouzit okno male vertikalni okno s projekty - hotovo
 male tlacitko nastaveni - spusti advanced option v okně - hotovo
+změny se nepropisují z nastavení v okně - save button - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 
-změny se nepropisují - save button
 
+prehledny zpusob tvoreni katalogu - kdyz kamera, tak ma parametr stanice a kontroler - udelat prehledne na projektu 518
 
 
 
