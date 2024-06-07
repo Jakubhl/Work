@@ -262,13 +262,26 @@ prodlouzit okno male vertikalni okno s projekty - hotovo
 male tlacitko nastaveni - spusti advanced option v okně - hotovo
 změny se nepropisují z nastavení v okně - save button - hotovo
 
+8:10 AM 6/7/2024
+možnost nepožadovat přihlašovací jméno a heslo u mountění disků- hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 
 
 prehledny zpusob tvoreni katalogu - kdyz kamera, tak ma parametr stanice a kontroler - udelat prehledne na projektu 518
+- tlacitko exportovat projekt
+- naplnit pole stanic
+- naplnit pole kontrolerů
+1. kontroler - pod nim obdelnik s nazvem stanice
+2. hw - pod nim tlacitko prislusenstvi
 
+
+1. STANICE
+2. KAMERA
+3. OBJEKTIV
+4. PŘÍSLUŠENSTVÍ
+přes python nastavit vba rozklikavaci bunku
 
 
 ip_manager udelat neco s tim adminem pri spousteni - exeption?

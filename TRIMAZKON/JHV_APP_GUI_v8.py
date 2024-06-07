@@ -43,7 +43,7 @@ root=customtkinter.CTk()
 root.geometry("1200x900")
 root.wm_iconbitmap(initial_path+'images/logo_TRIMAZKON.ico')
 #root.title("Zpracování souborů z průmyslových kamer")
-root.title("TRIMAZKON v_3.6.0")
+root.title("TRIMAZKON v_3.6.1")
 #pro pripad vypisovani do konzole z exe:
 # sys.stdout = sys.__stdout__
 # print(initial_path)
@@ -607,7 +607,7 @@ def menu(image_opened = True): # Funkce spouští základní menu při spuštěn
     changle_log_label.  pack(pady = (50,5), padx=20,side="top",anchor="w")
     changle_log.        pack(pady =0,       padx=20,side="top",anchor="w")
 
-    changle_log.insert("current lineend"," Verze 3.4\n")
+    changle_log.insert("current lineend"," Verze 3.4 (3.3.2024)\n")
     changle_log.insert("current lineend",
 """ - velikost písma
  - načítací animace
@@ -615,7 +615,7 @@ def menu(image_opened = True): # Funkce spouští základní menu při spuštěn
  - image browser - jména souborů (zkopírovatelná)
  - chybové hlášky při procházení subfolderů
  - pokročilá nastavení - nová vizualizace + nový způsob nabídky\n""")
-    changle_log.insert("current lineend","\n Verze 3.5\n")
+    changle_log.insert("current lineend","\n Verze 3.5 (22.4.2024)\n")
     changle_log.insert("current lineend",
 """ - film obrázků před a po + bind přepínání kolečkem
  - možnost procházet obrázky ve formátu .ifz
@@ -624,12 +624,16 @@ def menu(image_opened = True): # Funkce spouští základní menu při spuštěn
  - nové možnosti v pokročilých možnostech
  - oprava chyb se soubory s mezerou v názvu
  - možnost nastavit trimazkon, jako výchozí prohlížeč obrázků\n""")
-    changle_log.insert("current lineend","\n Verze 3.6.0\n")
+    changle_log.insert("current lineend","\n Verze 3.6.0 (5.6.2024)\n")
     changle_log.insert("current lineend",
 """ - Nové možnosti změny IP a mountění disků (import ver.3.7)
  - okno s informacemi o aktualizacích v menu
  - nová vizualizace u pokročilých nastavení (okno se záložkami)
  - tlačítka nastavení ve všech oknech programu\n""")
+    changle_log.insert("current lineend","\n Verze 3.6.1 (7.6.2024)\n")
+    changle_log.insert("current lineend",
+""" - Zadávání při vkládání nového síťového disku již nevyžaduje
+jméno a heslo\n""")
  
     def maximalize_window(e):
         # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole

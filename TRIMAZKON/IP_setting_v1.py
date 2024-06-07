@@ -176,7 +176,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.root.geometry(f"260x1000+{0}+{0}")
         workbook.close()
 
-        
     def call_menu(self): # Tlačítko menu (konec, návrat do menu)
         """
         Funkce čistí všechny zaplněné rámečky a funguje, jako tlačítko zpět do hlavního menu trimazkonu
@@ -481,12 +480,12 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         elif ftp_address.replace(" ","") == "":
             add_colored_line(self.console,f"Nezadali jste adresu","red",None,True)
             errors += 1
-        elif username.replace(" ","") == "":
-            add_colored_line(self.console,f"Nezadali jste přihlašovací jméno","red",None,True)
-            errors += 1
-        elif password.replace(" ","") == "":
-            add_colored_line(self.console,f"Nezadali jste přihlašovací heslo","red",None,True)
-            errors += 1
+        # elif username.replace(" ","") == "":
+        #     add_colored_line(self.console,f"Nezadali jste přihlašovací jméno","red",None,True)
+        #     errors += 1
+        # elif password.replace(" ","") == "":
+        #     add_colored_line(self.console,f"Nezadali jste přihlašovací heslo","red",None,True)
+        #     errors += 1
         
         # poznamky nejsou povinne
         if errors ==0:
@@ -1038,7 +1037,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         delete_command = "net use " + Drive_letter + ": /del"
         subprocess.run(delete_command, shell=True)
         # second_command = "net use " + Drive_letter + ": " + ftp_adress + " /user:" + user + " " + password + " /persistent:No"
-        second_command = "net use " + Drive_letter + ": " + ftp_adress + " " + password + " /user:" + user# + " /persistent:No"
+        if user != "" or password != "":
+            second_command = "net use " + Drive_letter + ": " + ftp_adress + " " + password + " /user:" + user# + " /persistent:No"
+        else:
+            second_command = "net use " + Drive_letter + ": " + ftp_adress
         print("calling: ",second_command)
 
         def call_subprocess():
