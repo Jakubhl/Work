@@ -269,19 +269,19 @@ ________________________________________________________________________________
 
 
 
-prehledny zpusob tvoreni katalogu - kdyz kamera, tak ma parametr stanice a kontroler - udelat prehledne na projektu 518
 - tlacitko exportovat projekt
 - naplnit pole stanic
 - naplnit pole kontrolerů
-1. kontroler - pod nim obdelnik s nazvem stanice
-2. hw - pod nim tlacitko prislusenstvi
+vždy jeden řádek mezera...
 
+objekty ve 4 polich
+tier 1 = stanice/ popis inspekce (nn) 01-99 stanic
+tier 2 = kamera/ kontroler, pozn. (01nn) 99 kamer 
+tier 3 = objektiv/ alternativa, pozn. (0101nn) 99 objektivu
+tier 4 = prislusenstvi (svetlo/ výkon, kabel/ délka, typ; drzak) (010101nn) 99 prislusenstvi
 
-1. STANICE
-2. KAMERA
-3. OBJEKTIV
-4. PŘÍSLUŠENSTVÍ
-přes python nastavit vba rozklikavaci bunku
+vertikalni sloupce projekty, kamery, objektivy, prislusenstvi
+
 
 
 ip_manager udelat neco s tim adminem pri spousteni - exeption?
