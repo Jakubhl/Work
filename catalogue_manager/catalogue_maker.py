@@ -11,70 +11,242 @@ root=customtkinter.CTk()
 root.geometry("1200x900")
 root.title("Catalogue maker v1.0")
 
+
 class Catalogue_gui:
     def __init__(self,root):
         self.root = root
-        self.station_count = 1
-        self.camera_count = 2
-        self.widget_count = [[1,1]]
+        self.root.after(0, lambda:self.root.state('zoomed'))
+        # self.optic_count = []
+        # self.camera_count = []
+        self.station_list = []
 
 
-        self.create_widgets_horizontal()
+        self.create_main_widgets()
 
     def clear_frame(self,frame):
         for widget in frame.winfo_children():
             widget.destroy()
 
-    def make_block(self,master_widget,height,width,fg_color,text,side):
-        station_widget =    customtkinter.CTkFrame(master=master_widget,corner_radius=0,fg_color=fg_color,height=height,width =width,border_width= 2,border_color="white")
-        station_widget.     pack(pady = (0,0),padx =0,expand = False,side = side,anchor="w")
-        station_name =      customtkinter.CTkLabel(master = station_widget,text = text,font=("Arial",25,"bold"),height=height-15,width =width-15)
-        station_name.       pack(pady = 5,padx =5,anchor="n",expand=False)
-        return station_widget
+    def switch_widget_info(self,args,widget_tier,widget):
+        station_index = int(widget_tier[:2])
+        if len(widget_tier) == 2: #01-99 stanice
+            if widget._text == str(self.station_list[station_index]["inspection_description"]):
+                widget.configure(text=str(self.station_list[station_index]["name"]))
+            else:
+                widget.configure(text=str(self.station_list[station_index]["inspection_description"]))
+        
+        elif len(widget_tier) == 4: # 0101-9999 kamery
+            camera_index = int(widget_tier[2:])
+            if widget._text == str(self.station_list[station_index]["camera_list"][camera_index]["type"]):
+                details = str(self.station_list[station_index]["camera_list"][camera_index]["controller"]) + "\n"
+                details = details + str(self.station_list[station_index]["camera_list"][camera_index]["description"])
+
+                widget.configure(text=details)
+            else:
+                widget.configure(text=str(self.station_list[station_index]["camera_list"][camera_index]["type"]))
+
+        elif len(widget_tier) == 6: # 010101-999999 optika
+            camera_index = int(widget_tier[2:4])
+            optic_index = int(widget_tier[4:])
+            if widget._text == str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optic_index]["type"]):
+                details = str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optic_index]["alternative"]) + "\n"
+                details = details + str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optic_index]["description"])
+                widget.configure(text=details)
+            else:
+                widget.configure(text=str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optic_index]["type"]))
+
+        elif len(widget_tier) == 8: # 01010101-99999999 prislusenstvi
+            camera_index = int(widget_tier[2:4])
+            optic_index = int(widget_tier[4:6])
+            accessory_index = int(widget_tier[6:])
+            if widget._text == str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optic_index]["accessory_list"][accessory_index]["type"]):
+                details = str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optic_index]["accessory_list"][accessory_index]["dimension"]) + "\n"
+                details = details + str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optic_index]["accessory_list"][accessory_index]["description"])
+                widget.configure(text=details)
+            else:
+                widget.configure(text=str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optic_index]["accessory_list"][accessory_index]["type"]))
+            
+    def make_block(self,master_widget,height,width,fg_color,text,side,dummy_block = False,tier = ""):
+        if dummy_block:
+            dummy_block_widget =    customtkinter.CTkFrame(master=master_widget,corner_radius=0,height=height,width =width,fg_color="#212121")
+            dummy_block_widget.     pack(pady = (0,0),padx =0,expand = False,side = side,anchor="w")
+            return dummy_block
+        else:
+            block_widget =    customtkinter.CTkFrame(master=master_widget,corner_radius=0,fg_color=fg_color,height=height,width =width,border_width= 2,border_color="#636363")
+            block_widget.     pack(pady = (0,0),padx =0,expand = False,side = side,anchor="w")
+            block_name =      customtkinter.CTkLabel(master = block_widget,text = text,font=("Arial",25,"bold"),height=height-15,width =width-15)
+            block_name.       pack(pady = 5,padx =5,anchor="n",expand=False)
+
+            block_widget.bind("<Button-1>",lambda e, widget_tier=tier,widget = block_name: self.switch_widget_info(e, widget_tier,widget))
+            block_name.bind("<Button-1>",lambda e, widget_tier=tier,widget = block_name: self.switch_widget_info(e, widget_tier,widget))
+            return block_widget
     
 
-    def widget_info(self,args,widget_tier,btn):
+    """def widget_info(self,args,widget_tier,btn):
         print(widget_tier)
         station_index = int(widget_tier[:2])
+        print(station_index)
         if len(widget_tier) == 2: #01-99 stanice
             if btn == "add_line":
                 print("nova stanice")
-                self.widget_count.append([1,1])
+                self.station_list.append([[1]]) #pridani stanice, pole = kamera a jednou optikou
                 self.make_project_widgets()
 
             elif btn == "add_object":
                 print("nova kamera")
-                self.widget_count[station_index][0] = self.widget_count[station_index][0] + 1
+                self.station_list[station_index].append([1])
                 self.make_project_widgets()
         
         if len(widget_tier) == 4: #0101-9999 kamery
-            if btn == "add_line":
-                print("nova kamera")
-                self.widget_count[station_index][0] = self.widget_count[station_index][0] + 1
-                self.make_project_widgets()
-
-            elif btn == "add_object":
+            if btn == "add_object":
                 print("nova optika")
-                self.widget_count[station_index][1] = self.widget_count[station_index][1] + 1
+                camera_index = int(widget_tier[2:])
+                print(camera_index,"cmaera index")
+                self.station_list[station_index][camera_index][0] = int(self.station_list[station_index][camera_index][0]) + 1
                 self.make_project_widgets()
 
-        print(self.widget_count)
+        print(self.station_list)
+"""
+    
+    def make_new_object(self,which_one,object_to_edit = None,cam_index = None,optic_index = None):
+        """
+        which_one:
+        - station
+        - camera
+        - optic
+        - accessory
+        """
+        if which_one == "station":
+            # accessory = {
+            #     "type": "typ prislusenstvi",
+            #     "dimension":"rozmery/ velikost",
+            #     "description":"pozn",
+            # }
+            optic = {
+                "type": "typ optiky",
+                "alternative":"tele",
+                "accessory_list": [],
+                "description":"hubou mele",
+            }
+            
+            camera = {
+                "type": "typ kamery",
+                "controller": "kontroler",
+                "optics_list": [optic],
+                "description": "pozn",
+            }
+            station = {
+                "name": "Název stanice",
+                "inspection_description": "blablablabla",
+                "camera_list": [camera],
+            }
 
+            return station
+        
+        elif which_one == "camera":
+            # accessory = {
+            #     "type": "typ prislusenstvi",
+            #     "dimension":"rozmery/ velikost",
+            #     "description":"pozn",
+            # }
+            optic = {
+                "type": "typ optiky",
+                "alternative":"tele",
+                "accessory_list": [],
+                "description":"hubou mele",
+            }
+            camera = {
+                "type": "typ kamery",
+                "controller": "kontroler",
+                "optics_list": [optic],
+                "description": "pozn",
+            }
 
-    def make_block_buttons(self,master_widget,tier):#,btn_add_line:str,btn_add_object:str
-        button_add_line = customtkinter.CTkButton(master = master_widget, width = 25,height=25,text = "+",font=("Arial",15,"bold"),corner_radius=0,fg_color="green")
-        button_add_line.pack(pady = 5, padx = 5,anchor="w",expand=True,side="left")
+            object_to_edit["camera_list"].append(camera)
+            return object_to_edit
+        
+        elif which_one == "optic":
+            # accessory = {
+            #     "type": "typ prislusenstvi",
+            #     "dimension":"rozmery/ velikost",
+            #     "description":"pozn",
+            # }
+            optic = {
+                "type": "typ optiky",
+                "alternative":"tele",
+                "accessory_list": [],
+                "description":"hubou mele",
+            }
 
-        button_add_object = customtkinter.CTkButton(master = master_widget, width = 25,height=25,text = "+",font=("Arial",15,"bold"),corner_radius=0,fg_color="green")
-        button_add_object.pack(pady = 5, padx = 5,anchor="e",expand=True,side="left")
+            object_to_edit["camera_list"][cam_index]["optics_list"].append(optic)
+            return object_to_edit
+        
+        elif which_one == "accessory":
+            accessory = {
+                "type": "typ prislusenstvi",
+                "dimension":"rozmery/ velikost",
+                "description":"pozn",
+            }
 
-        button_add_line.bind("<Button-1>",lambda e, widget_tier=tier, btn = "add_line": self.widget_info(e, widget_tier,btn))
-        button_add_object.bind("<Button-1>",lambda e, widget_tier=tier, btn = "add_object": self.widget_info(e, widget_tier,btn))
+            object_to_edit["camera_list"][cam_index]["optics_list"][optic_index]["accessory_list"].append(accessory)
+            return object_to_edit
+
+    def manage_widgets(self,args,widget_tier,btn):
+        station_index = int(widget_tier[:2])
+        if len(widget_tier) == 2: #01-99 stanice
+            if btn == "add_line": # nova stanice
+                new_station = self.make_new_object("station")
+                self.station_list.append(new_station)
+                self.make_project_widgets()
+
+            elif btn == "add_object": # nova kamera ke stanici 0101-9999 kamery
+                station_with_new_camera = self.make_new_object("camera",object_to_edit = self.station_list[station_index])
+                self.station_list[station_index] = station_with_new_camera
+                self.make_project_widgets()
+        
+        elif len(widget_tier) == 4: # 0101-9999 kamery, nove bude pridano: 010101-999999 optika
+            if btn == "add_object": # nova optika kamery
+                camera_index = int(widget_tier[2:])
+                camera_with_new_optics = self.make_new_object("optic",object_to_edit = self.station_list[station_index],cam_index = camera_index)
+                self.station_list[station_index] = camera_with_new_optics
+                self.make_project_widgets()
+
+        elif len(widget_tier) == 6: # 010101-999999 optika, nove bude pridano: 01010101-99999999 prislusenstvi
+            if btn == "add_object": # nove prislusenstvi ka kamere
+                camera_index = int(widget_tier[2:4])
+                optic_index = int(widget_tier[4:])
+                camera_with_new_accessoryes = self.make_new_object("accessory",object_to_edit = self.station_list[station_index],cam_index = camera_index,optic_index = optic_index)
+                self.station_list[station_index] = camera_with_new_accessoryes
+                self.make_project_widgets()
+
+        # print("STATION_LIST: ",self.station_list)
+    
+
+    def make_block_buttons(self,master_widget,tier:str,station:bool,accessory=False):#,btn_add_line:str,btn_add_object:str
+        button_add_line = customtkinter.CTkButton(master = master_widget, width = 25,height=25,text = "+",font=("",15),corner_radius=0,fg_color="#009933",hover_color="green")
+        if station:
+            button_add_line.pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+        button_edit_object = customtkinter.CTkButton(master = master_widget,text = "🖌",font=("",15),width = 25,height=25,corner_radius=0)
+        button_edit_object.pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+        button_edit_color = customtkinter.CTkButton(master = master_widget,text = "🎨",font=("",15),width = 25,height=25,corner_radius=0)
+        button_edit_color.pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+        button_del_object = customtkinter.CTkButton(master = master_widget, width = 25,height=25,text = "×",font=("",15),corner_radius=0,fg_color="#cc0000",hover_color="red")
+        button_del_object.pack(pady = 5, padx = (5,0),anchor="w",expand=True,side="left")
+        button_add_object = customtkinter.CTkButton(master = master_widget, width = 25,height=25,text = "+",font=("",15),corner_radius=0,fg_color="#009933",hover_color="green")
+        if not accessory:
+            button_add_object.pack(pady = 5, padx = 5,anchor="e",expand=True,side="left")
+
+        if station:
+            button_add_line.bind("<Button-1>",lambda e, widget_tier=tier, btn = "add_line": self.manage_widgets(e, widget_tier,btn))
+        if not accessory:
+            button_add_object.bind("<Button-1>",lambda e, widget_tier=tier, btn = "add_object": self.manage_widgets(e, widget_tier,btn))
+        
+        
 
         master_widget.update()
         # print(master_widget._current_height)
 
-    def create_widgets(self):
+    """def old__create_widgets(self):
         self.clear_frame(self.root)
         menu_cards =            customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=50)
         main_widgets =          customtkinter.CTkFrame(master=self.root,corner_radius=0)
@@ -125,13 +297,23 @@ class Catalogue_gui:
                 self.save_setting_parameter(parameter="change_def_window_size",status=1)
 
         self.root.bind("<f>",lambda e: maximalize_window(e))
-
-    def create_widgets_horizontal(self):
+"""
+    
+    def create_main_widgets(self):
         self.clear_frame(self.root)
-        menu_cards =            customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=50)
-        self.project_tree =     customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
-        menu_cards              .pack(pady=0,padx=5,fill="x",expand=False,side = "top")
-        self.project_tree       .pack(pady=5,padx=5,fill="both",expand=True,side = "top")
+        column_labels =             customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=50)
+        self.project_tree =         customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
+        column_labels               .pack(pady=0,padx=5,fill="x",expand=False,side = "top")
+        self.project_tree           .pack(pady=5,padx=5,fill="both",expand=True,side = "top")
+        stations_column_header =    customtkinter.CTkLabel(master = column_labels,text = "Stanice",font=("Arial",25,"bold"),bg_color="#212121",width=275,height=50)
+        stations_column_header      .pack(pady=(15,0),padx=10,expand=False,side = "left")
+        camera_column_header =      customtkinter.CTkLabel(master = column_labels,text = "Kamera",font=("Arial",25,"bold"),bg_color="#212121",width=275,height=50)
+        camera_column_header        .pack(pady=(15,0),padx=10,expand=False,side = "left")
+        optics_column_header =      customtkinter.CTkLabel(master = column_labels,text = "Objektiv",font=("Arial",25,"bold"),bg_color="#212121",width=275,height=50)
+        optics_column_header        .pack(pady=(15,0),padx=10,expand=False,side = "left")
+        accessory_column_header =   customtkinter.CTkLabel(master = column_labels,text = "Příslušenství",font=("Arial",25,"bold"),bg_color="#212121",width=275,height=50)
+        accessory_column_header     .pack(pady=(15,0),padx=10,expand=False,side = "left")
+        
 
         self.project_column =   customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,border_width=0)
         self.project_column     .pack(pady=0,padx=0,fill="y",expand=False,side = "left")
@@ -139,18 +321,11 @@ class Catalogue_gui:
         self.camera_column      .pack(pady=0,padx=0,fill="y",expand=False,side = "left")
         self.optic_column =     customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,border_width=0)    
         self.optic_column       .pack(pady=0,padx=0,fill="y",expand=False,side = "left")
-        # station_widget = self.make_block(master_widget=self.project_tree,height=70,width=300,fg_color="black",side = "top",text="St 010")
-        # self.make_block_buttons(master_widget=station_widget,tier=1)
-    
-        # self.make_block(master_widget=self.project_tree,height=200,width=300,fg_color="black",side = "top",text="kontola založení")
-        # self.make_block(master_widget=self.project_tree,height=200,width=300,fg_color="black",side = "left",text="kontrola podložení")
-        # self.make_block(master_widget=self.project_tree,height=100,width=300,fg_color="black",side = "top",text="typ kamery\nkontroler")
-        # self.make_block(master_widget=self.project_tree,height=100,width=300,fg_color="black",side = "left",text="typ kamery\nkontroler")
-        # self.make_block(master_widget=self.project_tree,height=50,width=300,fg_color="black",side = "top",text="kabel\n10 m")
-        # self.make_block(master_widget=self.project_tree,height=50,width=300,fg_color="black",side = "left",text="prislusenstvi2")
+        self.accessory_column = customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,border_width=0)    
+        self.accessory_column   .pack(pady=0,padx=0,fill="y",expand=False,side = "left")
+        self.station_list.append(self.make_new_object("station"))
         self.make_project_widgets()
         
-
         def maximalize_window(e):
             self.root.update_idletasks()
             current_width = int(self.root.winfo_width())
@@ -173,38 +348,162 @@ class Catalogue_gui:
 
         self.root.bind("<f>",lambda e: maximalize_window(e))
 
+    """def old_make_project_widgets(self):
+        self.clear_frame(self.project_column)
+        self.clear_frame(self.camera_column)
+        self.clear_frame(self.optic_column)
+        print(self.station_list)
+        for i in range(0,len(self.station_list)):
+            # if station_count < 10 ...
+
+            station_tier =  "0" + str(i) #01-99 
+            camera_count = len(self.station_list[i])
+            station_widget_growth = ((camera_count*100)-100)# + camera_widget_growth
+
+            # rust velikosti widgetu se pocita odzadu
+            all_st_optics_count = 0
+            for items in self.station_list[i]:
+                all_st_optics_count += items[0]
+            station_widget_growth = ((all_st_optics_count*100)-100)# + camera_widget_growth
+
+            station_widget = self.make_block(master_widget=self.project_column,height=70+station_widget_growth,width=300,fg_color="black",side = "top",text=station_tier)
+            self.make_block_buttons(master_widget=station_widget,tier=station_tier,station=True)
+
+            for x in range(0,camera_count):
+                optic_count = self.station_list[i][x][0]
+                camera_widget_growth = ((optic_count*100)-100)
+                camera_tier =  station_tier + "0" + str(x) #0101-9999
+                camera_widget = self.make_block(master_widget=self.camera_column,height=70+camera_widget_growth,width=300,fg_color="black",side = "top",text=camera_tier)
+                self.make_block_buttons(master_widget=camera_widget,tier=camera_tier,station=False)
+
+
+                for y in range(0,optic_count):
+                    optic_tier =  camera_tier + "0" + str(y) #010101-999999
+                    optic_widget = self.make_block(master_widget=self.optic_column,height=70,width=300,fg_color="black",side = "top",text=optic_tier)
+                    self.make_block_buttons(master_widget=optic_widget,tier=optic_tier,station=False)
+
+                    # for z in range(0,optic_count):
+                    #     accessory_tier =  optic_tier + "0" + str(z) #01010101-99999999
+                    #     accessory_widget = self.make_block(master_widget=self.optic_column,height=70,width=300,fg_color="black",side = "top",text=optic_tier)
+                    #     self.make_block_buttons(master_widget=accessory_widget,tier=accessory_tier,station=False)
+"""
+    
+    def check_widget_growth(self,widget:str,station_index,camera_index=None,optics_index=None):
+        """
+        widget:
+        - station
+        - camera
+        - optics
+        """
+        all_st_optics_count = 0
+        all_st_accessory_count = 0
+        if widget == "station":
+            # station_camera_list = self.station_list[station_index]["camera_list"]
+            # camera_count = len(station_camera_list)
+            # station_widget_growth_cam = ((camera_count*100)-100)# + camera_widget_growth
+            
+            for camera in self.station_list[station_index]["camera_list"]:
+                all_st_optics_count += len(camera["optics_list"])
+            station_widget_growth_optics = ((all_st_optics_count*100)-100)
+
+            
+            for camera in self.station_list[station_index]["camera_list"]:
+                for optics in camera["optics_list"]:
+                    all_st_accessory_count += len(optics["accessory_list"])
+            station_widget_growth_accessory = 0
+            if all_st_accessory_count>1:
+                station_widget_growth_accessory = ((all_st_accessory_count*100)-100)
+            
+            # return max(station_widget_growth_cam,station_widget_growth_optics,station_widget_growth_accessory)
+            # return max(station_widget_growth_optics,station_widget_growth_accessory)
+            return station_widget_growth_optics+station_widget_growth_accessory
+
+        elif widget == "camera":
+            all_st_optics_count = len(self.station_list[station_index]["camera_list"][camera_index]["optics_list"])
+            station_widget_growth_optics = ((all_st_optics_count*100)-100)
+
+            for optics in self.station_list[station_index]["camera_list"][camera_index]["optics_list"]:
+                all_st_accessory_count += len(optics["accessory_list"])
+
+            station_widget_growth_accessory = 0
+            if all_st_accessory_count>0:
+                station_widget_growth_accessory = ((all_st_accessory_count*100)-100)
+            
+            # return max(station_widget_growth_optics,station_widget_growth_accessory)
+            return station_widget_growth_optics + station_widget_growth_accessory
+        
+        elif widget == "optics":
+            all_st_accessory_count = len(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"])
+            station_widget_growth_accessory = ((all_st_accessory_count*100)-100)
+            
+            station_widget_growth_accessory = 0
+            if all_st_accessory_count>0:
+                station_widget_growth_accessory = ((all_st_accessory_count*100)-100)
+            
+            return station_widget_growth_accessory
+
     def make_project_widgets(self):
         self.clear_frame(self.project_column)
         self.clear_frame(self.camera_column)
         self.clear_frame(self.optic_column)
+        self.clear_frame(self.accessory_column)
 
+        # creating stations ------------------------------------------------------------------------------------------------------------------------------
+        for i in range(0,len(self.station_list)):
+            station_name = self.station_list[i]["name"]
+            if i < 10:
+                station_tier =  "0" + str(i) #01-99 
+            else:
+                station_tier =  str(i) #01-99
 
+            station_camera_list = self.station_list[i]["camera_list"]
+            camera_count = len(station_camera_list)
 
-        for i in range(0,len(self.widget_count)):
-            # if station_count < 10 ...
-            station_tier =  "0" + str(i) #01-99
-
-            
-
-            optic_count = self.widget_count[i][1]
-            camera_widget_growth = ((optic_count*100)-100)
-
-            camera_count = self.widget_count[i][0]
-            station_widget_growth = ((camera_count*100)-100) + camera_widget_growth
-
-            station_widget = self.make_block(master_widget=self.project_column,height=70+station_widget_growth,width=300,fg_color="black",side = "top",text=station_tier)
-            self.make_block_buttons(master_widget=station_widget,tier=station_tier)
-
+            station_widget_growth = self.check_widget_growth("station",station_index=i)
+            station_widget = self.make_block(master_widget=self.project_column,height=70+station_widget_growth,width=300,fg_color="#111111",side = "top",text=station_name,tier=station_tier)
+            self.make_block_buttons(master_widget=station_widget,tier=station_tier,station=True)
+            # creating cameras ------------------------------------------------------------------------------------------------------------------------------
             for x in range(0,camera_count):
-                camera_tier =  station_tier + "0" + str(x) #0101-9999
-                camera_widget = self.make_block(master_widget=self.camera_column,height=70+camera_widget_growth,width=300,fg_color="black",side = "top",text=camera_tier)
-                self.make_block_buttons(master_widget=camera_widget,tier=camera_tier)
+                camera_type = station_camera_list[x]["type"]
+                station_camera_optic_list = station_camera_list[x]["optics_list"]
+                optic_count = len(station_camera_optic_list)
+                # camera_widget_growth = ((optic_count*100)-100)
+                if x < 10:
+                    camera_tier =  station_tier + "0" + str(x) #0101-9999
+                else:    
+                    camera_tier =  station_tier + str(x) #0101-9999
 
+                camera_widget_growth = self.check_widget_growth("camera",station_index=i,camera_index=x)
+                camera_widget = self.make_block(master_widget=self.camera_column,height=70+camera_widget_growth,width=300,fg_color="#111111",side = "top",text=camera_type,tier = camera_tier)
+                self.make_block_buttons(master_widget=camera_widget,tier=camera_tier,station=False)
+
+                # creating optics ------------------------------------------------------------------------------------------------------------------------------
                 for y in range(0,optic_count):
-                    optic_tier =  camera_tier + "0" + str(y) #010101-999999
-                    camera_widget = self.make_block(master_widget=self.optic_column,height=70,width=300,fg_color="black",side = "top",text=optic_tier)
-                    self.make_block_buttons(master_widget=camera_widget,tier=optic_tier)
+                    optic_type = station_camera_optic_list[y]["type"]
+                    accessory_list = station_camera_optic_list[y]["accessory_list"]
+                    accessory_count = len(accessory_list)
+                    if y < 10:
+                        optic_tier =  camera_tier + "0" + str(y) #010101-999999
+                    else:
+                        optic_tier =  camera_tier + str(y) #010101-999999
 
+                    optic_widget_growth = self.check_widget_growth("optics",station_index=i,camera_index=x,optics_index=y)
+                    optic_widget = self.make_block(master_widget=self.optic_column,height=70+optic_widget_growth,width=300,fg_color="#111111",side = "top",text=optic_type,tier=optic_tier)
+                    self.make_block_buttons(master_widget=optic_widget,tier=optic_tier,station=False)
+
+                    # creating accessories ------------------------------------------------------------------------------------------------------------------------------
+                    for z in range(0,accessory_count):
+                        accessory_type = accessory_list[z]["type"]
+                        if z < 10:
+                            accessory_tier =  optic_tier + "0" + str(z) #01010101-99999999
+                        else:
+                            accessory_tier =  optic_tier + str(z) #01010101-99999999
+
+                        accessory_widget = self.make_block(master_widget=self.accessory_column,height=70,width=300,fg_color="#111111",side = "top",text=accessory_type,tier = accessory_tier)
+                        self.make_block_buttons(master_widget=accessory_widget,tier=accessory_tier,station=False,accessory=True)
+                    if accessory_count == 0:
+                        accessory_widget = self.make_block(master_widget=self.accessory_column,height=100,width=300,fg_color="#111111",side = "top",text="",dummy_block=True)
+        
 class Manage_excel:
     def __init__(self):
         # self.change_vba_script()
@@ -281,7 +580,6 @@ class Manage_excel:
         """
 
         self.update_sheet_vba_code(file_path, sheet_name, new_code=vba_code)
-
 
 
 Catalogue_gui(root)
