@@ -263,10 +263,14 @@ male tlacitko nastaveni - spusti advanced option v okně - hotovo
 změny se nepropisují z nastavení v okně - save button - hotovo
 
 8:10 AM 6/7/2024
-možnost nepožadovat přihlašovací jméno a heslo u mountění disků- hotovo
+možnost nepožadovat přihlašovací jméno a heslo u mountění disků- hotovo - verze trimazkonu 3.6.1
+
+8:46 AM 6/12/2024
+opravit upravy velikosti widgetu v zavislosti na accessories - funguje spravne dokud nepridam k widgetu ktery je vys - hotovo
+udelat delete (potvrzení u celé stanice) - hotovo
+udelat edit - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
-
-
 
 
 - tlacitko exportovat projekt
@@ -275,13 +279,39 @@ ________________________________________________________________________________
 vždy jeden řádek mezera...
 
 objekty ve 4 polich
-tier 1 = stanice/ popis inspekce (nn) 01-99 stanic
-tier 2 = kamera/ kontroler, pozn. (01nn) 99 kamer 
-tier 3 = objektiv/ alternativa, pozn. (0101nn) 99 objektivu
-tier 4 = prislusenstvi (svetlo/ výkon, kabel/ délka, typ; drzak) (010101nn) 99 prislusenstvi
+tier 1 = stanice/ popis inspekce (nn) 01-99 stanic STATIONS
+tier 2 = kamera/ kontroler, pozn. (01nn) 99 kamer CAMERAS
+tier 3 = objektiv/ alternativa, pozn. (0101nn) 99 objektivu OPTICS
+tier 4 = prislusenstvi (svetlo/ výkon, kabel/ délka, typ; drzak) (010101nn) 99 prislusenstvi ACCESSORIES - jeden objektiv muze mit treba dve svetla
+camera = {
+    "type": "",
+    "controller": "",
+    "optics_list": "",
+    "description": "",
+}
+optic = {
+    "type": "",
+    "alternative":"",
+    "accessory_list": "",
+    "description":"",
+}
+accessory = {
+    "type": "",
+    "dimension":"",
+    "description":"",
+}
 
-vertikalni sloupce projekty, kamery, objektivy, prislusenstvi
+station = {
+        "name": "",
+        "inspection_description": "",
+        "camera_list": "",
+    }
 
+
+
+kdyz se prida nova stanice vytrigovat zadavani vsech parametru
+
+pridat jeste jeden sloupec
 
 
 ip_manager udelat neco s tim adminem pri spousteni - exeption?
