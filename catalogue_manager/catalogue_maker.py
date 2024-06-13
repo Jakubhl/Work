@@ -1,10 +1,15 @@
 import customtkinter
 import tkinter as tk
 import openpyxl
+from openpyxl import Workbook
+from openpyxl.styles import Alignment
+from openpyxl.styles import Font
 from openpyxl import load_workbook
+# from openpyxl import Workbook
 import xlwings as xw
-from openpyxl.worksheet.copier import WorksheetCopy
+import string
 from PIL import Image
+import win32com.client
 
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
@@ -112,7 +117,7 @@ class Catalogue_gui:
             }
             station = {
                 "name": "Název stanice",
-                "inspection_description": "",
+                "inspection_description": "- popis inspekce",
                 "camera_list": [camera],
             }
 
@@ -621,26 +626,44 @@ class Save_excel:
     def __init__(self,station_list):
         # self.change_vba_script()
         self.station_list = station_list
-        self.excel_file_path = "example.xlsx"
+        self.excel_file_name = "example18.xlsm"
+        self.excel_rows_used = 0
+        self.used_columns = ["A","B","C","D"]
+        self.excel_column_width=50
         self.main() 
 
-    def merge_cells(self,sheet_name:str,cell_range:str):
+    def make_header(self):
+        wb = openpyxl.Workbook() #vytvorit novy excel, prepsat...
+        ws = wb.active
+        ws["A1"] = "Stanice"
+        ws["B1"] = "Kamera"
+        ws["C1"] = "Optika"
+        ws["D1"] = "Příslušenství"
+
+        wb.save(filename=self.excel_file_name)
+        wb.close()
+
+    def merge_cells(self,merge_list:str):
         """
         cell range format: A1:A2
         """
-        # wb = load_workbook(filename=self.excel_file_path, read_only=False, keep_vba=True)
-        wb = load_workbook(filename=self.excel_file_path)
-        ws = wb[sheet_name]
-        ws.merge_cells(cell_range)
-        wb.save(filename=self.excel_file_path)
+        wb = load_workbook(filename=self.excel_file_name, read_only=False, keep_vba=True)
+        # wb = load_workbook(filename=self.excel_file_name)
+        ws = wb.active
+        for merge in merge_list:
+            ws.merge_cells(merge)
+        wb.save(filename=self.excel_file_name)
         wb.close()
 
-    def update_sheet_vba_code(self,file_path, sheet_name, new_code):
+    def update_sheet_vba_code(self,new_code):
         app = xw.App(visible=False)
-        wb = app.books.open(file_path)
+        wb = app.books.open("example19.xlsm")
         vb_project = wb.api.VBProject
-        sheet = wb.sheets[sheet_name]
-        code_module = vb_project.VBComponents(sheet.name).CodeModule
+        vb_project.VBComponents.Add(1) # musi se pridat prazdny modul...
+        # sheet = wb.sheets["Sheet1"]
+        # sheet = wb.sheets.active
+        # code_module = vb_project.VBComponents(sheet.name).CodeModule
+        code_module = vb_project.VBComponents("ThisWorkbook").CodeModule
         code_module.DeleteLines(1, code_module.CountOfLines)
         code_module.AddFromString(new_code)
         wb.save()
@@ -676,9 +699,13 @@ class Save_excel:
             station_accessory_count = len(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"])
             self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["row_count"] = station_accessory_count
 
-
     def get_cells_to_merge(self):
-        last_row = 1
+        # zaciname na druhem radku vzhledem k hlavicce v excelu:
+        start_row = 3
+        last_row = start_row
+        last_row_cam = start_row
+        last_row_optics = start_row
+        last_row_accessory = start_row
         rows_to_merge = []
         for stations in self.station_list:
             station_index = self.station_list.index(stations)
@@ -689,71 +716,193 @@ class Save_excel:
             else:
                 self.station_list[station_index]["excel_position"] = "A"+str(last_row)
                 last_row = last_row + 1
-        
-        #     print(self.station_list[station_index]["excel_position"])
-        # print(rows_to_merge)
+
+            for cameras in stations["camera_list"]:
+                camera_index = self.station_list[station_index]["camera_list"].index(cameras)
+                if cameras["row_count"] > 1:
+                    self.station_list[station_index]["camera_list"][camera_index]["excel_position"] = "B"+str(last_row_cam)
+                    rows_to_merge.append("B" + str(last_row_cam) + ":B" + str(last_row_cam + int(cameras["row_count"]) - 1))
+                    last_row_cam = last_row_cam + (cameras["row_count"])
+                else:
+                    self.station_list[station_index]["camera_list"][camera_index]["excel_position"] = "B"+str(last_row_cam)
+                    last_row_cam = last_row_cam + 1
+                
+                for optics in cameras["optics_list"]:
+                    optics_index = self.station_list[station_index]["camera_list"][camera_index]["optics_list"].index(optics)
+                    if optics["row_count"] > 1:
+                        self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["excel_position"] = "C"+str(last_row_optics)
+                        rows_to_merge.append("C" + str(last_row_optics) + ":C" + str(last_row_optics + int(optics["row_count"]) - 1))
+                        last_row_optics = last_row_optics + (optics["row_count"])
+                    else:
+                        self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["excel_position"] = "C"+str(last_row_optics)
+                        last_row_optics = last_row_optics + 1
+                    
+                    for accessory in optics["accessory_list"]:
+                        accessory_index = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"].index(accessory)
+                        self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["excel_position"] = "D"+str(last_row_accessory)
+                        last_row_accessory = last_row_accessory + 1
+                    if len(optics["accessory_list"]) == 0: #dummy block
+                        last_row_accessory += 1
+
+            #radek mezera mezi kazdou stanici
+            last_row+=1
+            last_row_cam+=1
+            last_row_optics+=1
+            last_row_accessory+=1
+
+        self.excel_rows_used = last_row_accessory
         return rows_to_merge
 
-
     def change_vba_script(self):
-        # Create a new Excel workbook and select the active sheet
+        station_vba_code_range = """"""
+        alphabet = string.ascii_uppercase
+        i = 0
+        for stations in self.station_list:
+            cell_with_toggle = stations["excel_position"]
+            column = "AA" + alphabet[i:i+1] #maximum 26 stanic... dalo by se upravit na 26*26
+            stations["hidden_values"] = column+str(1)
+            station_vba_code_range_row = f"ToggleCell Range(\"Sheet!{cell_with_toggle}\"), \"{column + str(1)}\", \"{column + str(2)}\", \"{column + str(3)}\", Cancel, Target"
+            station_vba_code_range += "\n            "+station_vba_code_range_row
+            i+=1
+        vba_code = f"""
+        Private Sub Workbook_SheetBeforeRightClick(ByVal Sh As Object, ByVal Target As Range, Cancel As Boolean)
+            {station_vba_code_range}
+        End Sub
 
-        # Define the VBA code to be added
-        sheet_name="Sheet1"
-        file_path="formular2.xlsm"
-        vba_code = """
-        Private Sub Worksheet_BeforeRightClick(ByVal Target As Range, Cancel As Boolean)
-            ' Define the cell you chraplavý kašel want to toggle
-            Dim targetCell As Range
-            Set targetCell = Me.Range("A1") ' Change "A1" to the cell reference you want to toggle
-
+        Private Sub ToggleCell(ByVal targetCell As Range, ByVal text1Ref As String, ByVal text2Ref As String, ByVal toggleStatusRef As String, ByRef Cancel As Boolean, ByVal clickedCell As Range)
             ' Read text values from hidden worksheet
             Dim text1 As String
             Dim text2 As String
-            text1 = Worksheets("HiddenSheet").Range("AAA1").Value
-            text2 = Worksheets("HiddenSheet").Range("AAA2").Value
+            text1 = Worksheets("HiddenSheet").Range(text1Ref).Value
+            text2 = Worksheets("HiddenSheet").Range(text2Ref).Value
 
             ' Read toggle status from hidden worksheet
             Dim toggle_status As Integer
-            toggle_status = Worksheets("HiddenSheet").Range("AAA3").Value
+            toggle_status = Worksheets("HiddenSheet").Range(toggleStatusRef).Value
 
             ' Check if the right-clicked cell is the target cell
-            If Not Intersect(Target, targetCell) Is Nothing Then
+            If Not Intersect(clickedCell, targetCell) Is Nothing Then
                 ' Toggle the cell value
                 If toggle_status = 1 Then
-                    Worksheets("HiddenSheet").Range("AAA1").Value = targetCell.Value
+                    Worksheets("HiddenSheet").Range(text1Ref).Value = targetCell.Value
                     targetCell.Value = text2
                     toggle_status = 0
                 Else
-                    Worksheets("HiddenSheet").Range("AAA2").Value = targetCell.Value
+                    Worksheets("HiddenSheet").Range(text2Ref).Value = targetCell.Value
                     targetCell.Value = text1
                     toggle_status = 1
                 End If
 
                 ' Update toggle status on hidden worksheet
-                Worksheets("HiddenSheet").Range("AAA3").Value = toggle_status
+                Worksheets("HiddenSheet").Range(toggleStatusRef).Value = toggle_status
                 ' Cancel the default right-click menu
                 Cancel = True
             End If
         End Sub
+
         """
 
-        self.update_sheet_vba_code(file_path, sheet_name, new_code=vba_code)
+        self.update_sheet_vba_code(new_code=vba_code)
+        # print(vba_code)
 
-    def fill_values(self,sheet_name):
-        # wb = load_workbook(filename=self.excel_file_path, read_only=False, keep_vba=True)
-        wb = load_workbook(filename=self.excel_file_path)
-        ws = wb[sheet_name]
+    def format_cells(self,ws):
+        header_height = 30
+        bold_font = Font(bold=True)
+
+        for columns in self.used_columns:
+            ws.row_dimensions[1].height = header_height
+
+            for i in range(1,self.excel_rows_used+1):
+                ws.column_dimensions[columns].width = self.excel_column_width
+                ws[columns + str(i)].alignment = Alignment(horizontal = "center", vertical = "center")
+                ws[columns + str(i)].font = bold_font
+
+    def fill_values(self):
+        wb = load_workbook(filename=self.excel_file_name, read_only=False, keep_vba=True)
+        # wb = load_workbook(filename=self.excel_file_name)
+        # ws = wb[sheet_name]
+        ws = wb.active 
+        for stations in self.station_list:
+            station_index = self.station_list.index(stations)
+            excel_cell = self.station_list[station_index]["excel_position"]
+            ws[excel_cell] = self.station_list[station_index]["name"]
+
+            for cameras in stations["camera_list"]:
+                camera_index = self.station_list[station_index]["camera_list"].index(cameras)
+                excel_cell = self.station_list[station_index]["camera_list"][camera_index]["excel_position"]
+                ws[excel_cell] = self.station_list[station_index]["camera_list"][camera_index]["type"]
+                
+                for optics in cameras["optics_list"]:
+                    optics_index = self.station_list[station_index]["camera_list"][camera_index]["optics_list"].index(optics)
+                    excel_cell = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["excel_position"]
+                    ws[excel_cell] = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"]
+
+                    for accessory in optics["accessory_list"]:
+                        accessory_index = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"].index(accessory)
+                        excel_cell = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["excel_position"]
+                        ws[excel_cell] = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["type"]
         
-        
-        wb.save(filename=self.excel_file_path)
+        self.format_cells(ws)
+        wb.save(filename=self.excel_file_name)
         wb.close()
 
+    def fill_hidden_sheet_values(self):
+        """
+        Provede vytvoření skrytého listu, kam ukládá toggle hodnoty a aktuální stav přepnutí\n
+        Rozdělení:
+        - Vždy tři hodnoty
+            - toggle první hodnota (název/ typ)
+            - toggle druhá hodnota (doplňující informace)
+            - stav togglu (přepnutí 0-1)
+        - stanice: AA(A-Z)n
+        - kamery: BB(A-Z)n
+        - optika: CC(A-Z)n
+        - příslušenství: DD(A-Z)n
+        """
+        wb = load_workbook(filename=self.excel_file_name, read_only=False, keep_vba=True)
+        # wb = load_workbook(filename=self.excel_file_name)
+        # ws = wb[sheet_name]
+        ws = wb.create_sheet("HiddenSheet")
+        ws.sheet_state = 'hidden'
+
+        for stations in self.station_list:
+            excel_cell = stations["hidden_values"]
+            ws[excel_cell] = stations["inspection_description"]
+
+            # for cameras in stations["camera_list"]:
+            #     excel_cell = cameras["hidden_values"]
+            #     ws[excel_cell] = self.station_list[station_index]["camera_list"][camera_index]["type"]
+                
+            #     for optics in cameras["optics_list"]:
+            #         optics_index = self.station_list[station_index]["camera_list"][camera_index]["optics_list"].index(optics)
+            #         excel_cell = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["excel_position"]
+            #         ws[excel_cell] = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"]
+
+            #         for accessory in optics["accessory_list"]:
+            #             accessory_index = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"].index(accessory)
+            #             excel_cell = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["excel_position"]
+            #             ws[excel_cell] = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["type"]
+        
+        # self.format_cells(ws)
+        wb.save(filename=self.excel_file_name)
+        wb.close()
+
+
     def main(self):
-        rows_to_merge = self.get_cells_to_merge()
-        for rows in rows_to_merge:
-            self.merge_cells(sheet_name="List1",cell_range=rows)
-Catalogue_gui(root)
-# Manage_excel()
+        # rows_to_merge = self.get_cells_to_merge()
+        # print(rows_to_merge)
+        # self.make_header()
+        # self.merge_cells(merge_list=rows_to_merge)
+        # self.fill_values()
+        # self.change_vba_script()
+        # #provedeno až po change_vba_script kvůli načtení pozic hidden buněk...
+        # self.fill_hidden_sheet_values()
+        # self.make_header()
+        self.update_sheet_vba_code("""dddddddddafdsdfadfafdadf""")
+
+        print("exportováno")
+
+# Catalogue_gui(root)
+Save_excel(station_list=[])
 
 root.mainloop()

@@ -270,13 +270,32 @@ opravit upravy velikosti widgetu v zavislosti na accessories - funguje spravne d
 udelat delete (potvrzení u celé stanice) - hotovo
 udelat edit - hotovo
 
+9:59 AM 6/13/2024
+prislusenstvi se vypisuje hned pod sebe - nebere v potaz dummy block - hotovo
+prepis hodnot do excelu: vystredit - hotovo
+prepis hodnot do excelu: udelat sirsi sloupce - hotovo
+udelat hlavicku v exportovanem souboru - hotovo
+udelat tučně hlavní parametr před rozklikem - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
-- tlacitko exportovat projekt
-- naplnit pole stanic
-- naplnit pole kontrolerů
-vždy jeden řádek mezera...
+vždy jeden řádek mezera... prazdny radek mezi stanicemi zacernit
+
+do option menu pridat prazdnout moznost - nic nezvolit (u alternativy...)
+
+při kliku na export - dotazovaci okno, pod jakym nazvem excel ulozit - .xlms needitovatelne (kontrola stejneho nazvu, EXPLORER?)
+
+přidat dummy bloky, kdyz se maze cela optika nebo cela kamera
+
+
+
+kdyz se prida nova stanice vytrigovat zadavani vsech parametru (neaktualizovat po kazde zmene... stanice - zadej vse, kamery zadej kamery a zbytek atd...)
+
+pridat jeste jeden sloupec
+když žádná poznámka neumožnit přepnutí...
+
+
 
 objekty ve 4 polich
 tier 1 = stanice/ popis inspekce (nn) 01-99 stanic STATIONS
@@ -309,9 +328,6 @@ station = {
 
 
 
-kdyz se prida nova stanice vytrigovat zadavani vsech parametru
-
-pridat jeste jeden sloupec
 
 
 ip_manager udelat neco s tim adminem pri spousteni - exeption?
