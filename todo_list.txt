@@ -277,12 +277,16 @@ prepis hodnot do excelu: udelat sirsi sloupce - hotovo
 udelat hlavicku v exportovanem souboru - hotovo
 udelat tučně hlavní parametr před rozklikem - hotovo
 
+11:51 AM 6/14/2024
+opravit filling hidden sheetu, dodat name a defaultni toggle status - hotovo
+podchitit valueerror pri otevirani otevreneho excelu - permission denied - hotovo
+mazat temp excel soubor - hotovo
+do option menu pridat prazdnout moznost - nic nezvolit (u alternativy...) - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 vždy jeden řádek mezera... prazdny radek mezi stanicemi zacernit
 
-do option menu pridat prazdnout moznost - nic nezvolit (u alternativy...)
 
 při kliku na export - dotazovaci okno, pod jakym nazvem excel ulozit - .xlms needitovatelne (kontrola stejneho nazvu, EXPLORER?)
 
@@ -293,9 +297,10 @@ přidat dummy bloky, kdyz se maze cela optika nebo cela kamera
 kdyz se prida nova stanice vytrigovat zadavani vsech parametru (neaktualizovat po kazde zmene... stanice - zadej vse, kamery zadej kamery a zbytek atd...)
 
 pridat jeste jeden sloupec
-když žádná poznámka neumožnit přepnutí...
 
 
+
+aktualizace pouze pro editovanou stanici
 
 objekty ve 4 polich
 tier 1 = stanice/ popis inspekce (nn) 01-99 stanic STATIONS
@@ -329,12 +334,16 @@ station = {
 
 
 
+TRIMAZKON - neprepisuje se informace o staticke ip adrese po zmene... opravit
+male pismo v konzoli ip manageru
 
-ip_manager udelat neco s tim adminem pri spousteni - exeption?
+
 ip_manager seřazovat podle abecedy ???
 zjistit prepnuti monitoru a upravit podle toho parametry IB
 nacitaci animace na uvodni obrazovce
 návod na trimazkon
+
+logo jhv v ip manageru a u catalogue makeru
 
 
 

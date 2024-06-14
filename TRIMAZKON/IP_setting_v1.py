@@ -759,6 +759,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         try:
             subprocess.run(["powershell.exe", "-Command",powershell_command],check=True)
             add_colored_line(self.main_console,f"IPv4 adresa u {interface_name} byla přenastavena na: {ip}","green",None,True)
+            self.option_change("")
         except subprocess.CalledProcessError as e:
             add_colored_line(self.main_console,f"Chyba, aplikace musí být spuštěna, jako administrátor. (případně, nemáte tuto adresu již uloženou u jiného připojení?)","red",None,True)
 
@@ -1101,7 +1102,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             #pamatovat si naposledy zvoleny zpusob pripojeni:
             self.save_setting_parameter(parameter="change_def_conn_option",status=int(self.default_connection_option))
             self.get_current_ip_list()
-            if  self.static_label2.winfo_exists():
+            if self.static_label2.winfo_exists():
                 self.static_label2.configure(text=self.current_address_list[self.default_connection_option])
             
         # ziskat data o aktualnim pripojeni

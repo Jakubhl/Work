@@ -1,34 +1,90 @@
 import customtkinter
 import tkinter as tk
-import openpyxl
 from openpyxl import Workbook
 from openpyxl.styles import Alignment
-from openpyxl.styles import Font
+from openpyxl.styles import Font, PatternFill
 from openpyxl import load_workbook
-# from openpyxl import Workbook
 import xlwings as xw
 import string
 from PIL import Image
-import win32com.client
+import os
+
 
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 root=customtkinter.CTk()
 root.geometry("1200x900")
 root.title("Catalogue maker v1.0")
-
+# root.state('zoomed')
 class Catalogue_gui:
     def __init__(self,root):
         self.root = root
-        self.root.after(0, lambda:self.root.state('zoomed'))
+        self.root.state('zoomed')
+        root.state('zoomed')
+        self.root.update()
         self.station_list = []
-        self.camera_type_database = ["kamera1","kamera2","kamera3"]
-        self.controller_database = ["kontoler1","kontoler2","kontoler3"]
-        self.optics_database = ["optika1","optika2","optika3"]
-        self.accessory_database = ["svetlo","kabel","drzak"]
+        self.sharepoint_database_path = "Sharepoint_databaze.xlsx"
+
+        input_data = self.read_database()
+        # self.controller_database = ["kontoler1","kontoler2","kontoler3"]
+        self.controller_database = input_data[0]
+        # self.camera_type_database = ["kamera1","kamera2","kamera3"]
+        self.camera_type_database = input_data[1]
+        # self.optics_database = ["optika1","optika2","optika3"]
+        self.optics_database = input_data[2]
+        self.optics_alternative_database = input_data[2]
+        self.optics_alternative_database.insert(0,"") # možnost nemít žádnout alternativu...
+        # self.accessory_database = ["svetlo","kabel","drzak"]
+        self.accessory_database = input_data[3]
         self.favourite_colors = [""]
 
         self.create_main_widgets()
+
+    def focused_entry_widget(self):
+        currently_focused = str(self.root.focus_get())
+        if ".!ctkentry" in currently_focused:
+            return True
+        else:
+            return False
+
+    def read_database(self):
+        """
+        - 1. controller_database
+        - 2. camera_database
+        - 3. optics_database
+        - 4. accessory_database
+        """
+        wb = load_workbook(filename=self.sharepoint_database_path)
+        controller_database = []
+        ws = wb["Kontrolery"]
+        column_index=1
+        for row in ws.iter_rows(min_row=2,min_col=column_index, max_col=column_index,values_only=True):
+            if row[0] is not None or str(row[0]) != "None": 
+                controller_database.append(str(row[0]))
+
+        camera_database = []
+        ws = wb["Kamery"]
+        column_index=1
+        for row in ws.iter_rows(min_row=2,min_col=column_index, max_col=column_index,values_only=True):
+            if row[0] is not None or str(row[0]) != "None": 
+                camera_database.append(str(row[0]))
+        
+        optics_database = []
+        ws = wb["Optika"]
+        column_index=1
+        for row in ws.iter_rows(min_row=2,min_col=column_index, max_col=column_index,values_only=True):
+            if row[0] is not None or str(row[0]) != "None": 
+                optics_database.append(str(row[0]))
+        
+        accessory_database = []
+        ws = wb["Přislušenství"]
+        column_index=1
+        for row in ws.iter_rows(min_row=2,min_col=column_index, max_col=column_index,values_only=True):
+            if row[0] is not None or str(row[0]) != "None":
+                accessory_database.append(str(row[0]))
+
+        wb.close()
+        return [controller_database, camera_database, optics_database, accessory_database]
 
     def clear_frame(self,frame):
         for widget in frame.winfo_children():
@@ -344,7 +400,7 @@ class Catalogue_gui:
             optic_type =                customtkinter.CTkLabel(master = child_root,text = "Typ objektivu:",font=("Arial",22,"bold"))
             optic_type_entry =          customtkinter.CTkOptionMenu(master = child_root,font=("Arial",22),width=300,height=50,values=self.optics_database,corner_radius=0)
             alternative_type =          customtkinter.CTkLabel(master = child_root,text = "Alternativa:",font=("Arial",22,"bold"))
-            alternative_entry =         customtkinter.CTkOptionMenu(master = child_root,font=("Arial",22),width=300,height=50,values=self.optics_database,corner_radius=0)
+            alternative_entry =         customtkinter.CTkOptionMenu(master = child_root,font=("Arial",22),width=300,height=50,values=self.optics_alternative_database,corner_radius=0)
             note_label =                customtkinter.CTkLabel(master = child_root,text = "Poznámky:",font=("Arial",22,"bold"))
             notes_input =               customtkinter.CTkTextbox(master = child_root,font=("Arial",22),width=300,height=200)
             button_save =               customtkinter.CTkButton(master = child_root,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,
@@ -360,8 +416,9 @@ class Catalogue_gui:
             # initial prefill:
             if str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"]) in self.optics_database:
                 optic_type_entry.set(str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"]))
-            if str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"]) in self.optics_database:
-                alternative_entry.set(str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"]))
+            # if str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"]) in self.optics_alternative_database:
+            #     alternative_entry.set(str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"]))
+            alternative_entry.set("")
             notes_input.insert("0.0",str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"]))
             child_root.mainloop()
 
@@ -499,20 +556,14 @@ class Catalogue_gui:
             if self.focused_entry_widget(): # pokud nabindovane pismeno neni vepisovano do entry widgetu
                 return
             if int(current_width) > 1200:
-                #self.root.after(0, lambda:self.root.state('normal'))
                 self.root.state('normal')
-                self.root.geometry(f"260x500+{0}+{0}")
-                # self.root.geometry("210x500")
-                self.save_setting_parameter(parameter="change_def_window_size",status=2)
-            elif int(current_width) ==260:
                 self.root.geometry("1200x900")
-                self.save_setting_parameter(parameter="change_def_window_size",status=0)
             else:
                 #self.root.after(0, lambda:self.root.state('zoomed'))
                 self.root.state('zoomed')
-                self.save_setting_parameter(parameter="change_def_window_size",status=1)
 
         self.root.bind("<f>",lambda e: maximalize_window(e))
+        self.root.mainloop()
     
     def check_widget_growth(self,widget:str,station_index,camera_index=None,optics_index=None):
         """
@@ -624,51 +675,69 @@ class Catalogue_gui:
         
 class Save_excel:
     def __init__(self,station_list):
-        # self.change_vba_script()
         self.station_list = station_list
-        self.excel_file_name = "example18.xlsm"
+        self.values_start_row = 4
+        self.excel_file_name = "Formulář.xlsm"
+        self.temp_excel_file_name = self.excel_file_name[:-5] + "_temp.xlsm"
         self.excel_rows_used = 0
         self.used_columns = ["A","B","C","D"]
         self.excel_column_width=50
         self.main() 
 
     def make_header(self):
-        wb = openpyxl.Workbook() #vytvorit novy excel, prepsat...
-        ws = wb.active
-        ws["A1"] = "Stanice"
-        ws["B1"] = "Kamera"
-        ws["C1"] = "Optika"
-        ws["D1"] = "Příslušenství"
+        wb = Workbook() #vytvorit novy excel, prepsat...
+        ws = wb["Sheet"]
+        ws["A3"] = "Stanice"
+        ws["B3"] = "Kamera"
+        ws["C3"] = "Optika"
+        ws["D3"] = "Příslušenství"
+        # top header
+        ws["A1"] = "JHV"
+        ws["B1"] = """
+        katalogue
+        projekt5555"""
 
-        wb.save(filename=self.excel_file_name)
+        if os.path.exists(self.temp_excel_file_name):
+            os.remove(self.temp_excel_file_name)
+        wb.save(filename=self.temp_excel_file_name)
+        wb2 = load_workbook(filename=self.temp_excel_file_name, keep_vba=True)
+        wb2.save(self.temp_excel_file_name)
         wb.close()
+        wb2.close()
 
     def merge_cells(self,merge_list:str):
         """
         cell range format: A1:A2
         """
-        wb = load_workbook(filename=self.excel_file_name, read_only=False, keep_vba=True)
+        wb = load_workbook(filename=self.temp_excel_file_name, read_only=False, keep_vba=True)
         # wb = load_workbook(filename=self.excel_file_name)
         ws = wb.active
         for merge in merge_list:
             ws.merge_cells(merge)
-        wb.save(filename=self.excel_file_name)
+        wb.save(filename=self.temp_excel_file_name)
         wb.close()
 
     def update_sheet_vba_code(self,new_code):
+        unsuccessfull = False
         app = xw.App(visible=False)
-        wb = app.books.open("example19.xlsm")
+        wb = app.books.open(self.temp_excel_file_name)
         vb_project = wb.api.VBProject
-        vb_project.VBComponents.Add(1) # musi se pridat prazdny modul...
-        # sheet = wb.sheets["Sheet1"]
-        # sheet = wb.sheets.active
-        # code_module = vb_project.VBComponents(sheet.name).CodeModule
+        # vb_project.VBComponents.Add(1) # musi se pridat prazdny modul...
         code_module = vb_project.VBComponents("ThisWorkbook").CodeModule
         code_module.DeleteLines(1, code_module.CountOfLines)
         code_module.AddFromString(new_code)
-        wb.save()
+        try:
+            wb.save(self.excel_file_name)
+        except Exception:
+            unsuccessfull = True
         wb.close()
         app.quit()
+
+        if os.path.exists(self.temp_excel_file_name): # nutná operace (vyuzivat temp soubor) kvůli zapisování vba
+            os.remove(self.temp_excel_file_name)
+        
+        if unsuccessfull:
+            return False
 
     def check_row_count(self,widget,station_index,camera_index=None,optics_index = None):
         """
@@ -700,12 +769,10 @@ class Save_excel:
             self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["row_count"] = station_accessory_count
 
     def get_cells_to_merge(self):
-        # zaciname na druhem radku vzhledem k hlavicce v excelu:
-        start_row = 3
-        last_row = start_row
-        last_row_cam = start_row
-        last_row_optics = start_row
-        last_row_accessory = start_row
+        last_row = self.values_start_row
+        last_row_cam = self.values_start_row
+        last_row_optics = self.values_start_row
+        last_row_accessory = self.values_start_row
         rows_to_merge = []
         for stations in self.station_list:
             station_index = self.station_list.index(stations)
@@ -754,19 +821,50 @@ class Save_excel:
         return rows_to_merge
 
     def change_vba_script(self):
-        station_vba_code_range = """"""
+        """
+        Slouží pro přidávání rozsahu hodnot, uložených v hidden sheetu a alokování k určité buňce
+        """
+        vba_code_range = """"""
         alphabet = string.ascii_uppercase
         i = 0
+        ii = 0
+        iii = 0
+        iiii = 0
         for stations in self.station_list:
             cell_with_toggle = stations["excel_position"]
             column = "AA" + alphabet[i:i+1] #maximum 26 stanic... dalo by se upravit na 26*26
-            stations["hidden_values"] = column+str(1)
+            stations["hidden_values"] = column # pridame jen informaci o nazvu sloupce
             station_vba_code_range_row = f"ToggleCell Range(\"Sheet!{cell_with_toggle}\"), \"{column + str(1)}\", \"{column + str(2)}\", \"{column + str(3)}\", Cancel, Target"
-            station_vba_code_range += "\n            "+station_vba_code_range_row
+            vba_code_range += "\n            "+station_vba_code_range_row
             i+=1
+            
+            for cameras in stations["camera_list"]:
+                cell_with_toggle = cameras["excel_position"]
+                column = "BB" + alphabet[ii:ii+1]
+                cameras["hidden_values"] = column # pridame jen informaci o nazvu sloupce
+                camera_vba_code_range_row = f"ToggleCell Range(\"Sheet!{cell_with_toggle}\"), \"{column + str(1)}\", \"{column + str(2)}\", \"{column + str(3)}\", Cancel, Target"
+                vba_code_range += "\n            "+camera_vba_code_range_row
+                ii+=1
+
+                for optics in cameras["optics_list"]:
+                    cell_with_toggle = optics["excel_position"]
+                    column = "CC" + alphabet[iii:iii+1] 
+                    optics["hidden_values"] = column # pridame jen informaci o nazvu sloupce
+                    optics_vba_code_range_row = f"ToggleCell Range(\"Sheet!{cell_with_toggle}\"), \"{column + str(1)}\", \"{column + str(2)}\", \"{column + str(3)}\", Cancel, Target"
+                    vba_code_range += "\n            "+optics_vba_code_range_row
+                    iii+=1
+
+                    for accessory in optics["accessory_list"]:
+                        cell_with_toggle = accessory["excel_position"]
+                        column = "DD" + alphabet[iiii:iiii+1] 
+                        accessory["hidden_values"] = column # pridame jen informaci o nazvu sloupce
+                        accessory_vba_code_range_row = f"ToggleCell Range(\"Sheet!{cell_with_toggle}\"), \"{column + str(1)}\", \"{column + str(2)}\", \"{column + str(3)}\", Cancel, Target"
+                        vba_code_range += "\n            "+accessory_vba_code_range_row
+                        iiii+=1
+
         vba_code = f"""
         Private Sub Workbook_SheetBeforeRightClick(ByVal Sh As Object, ByVal Target As Range, Cancel As Boolean)
-            {station_vba_code_range}
+            {vba_code_range}
         End Sub
 
         Private Sub ToggleCell(ByVal targetCell As Range, ByVal text1Ref As String, ByVal text2Ref As String, ByVal toggleStatusRef As String, ByRef Cancel As Boolean, ByVal clickedCell As Range)
@@ -801,49 +899,51 @@ class Save_excel:
         End Sub
 
         """
-
-        self.update_sheet_vba_code(new_code=vba_code)
-        # print(vba_code)
+        return vba_code
 
     def format_cells(self,ws):
         header_height = 30
-        bold_font = Font(bold=True)
+        bold_font = Font(bold=True,size=20,color="ffffff")
+        regular_font = Font(bold=False,size=12)
 
         for columns in self.used_columns:
             ws.row_dimensions[1].height = header_height
 
             for i in range(1,self.excel_rows_used+1):
                 ws.column_dimensions[columns].width = self.excel_column_width
-                ws[columns + str(i)].alignment = Alignment(horizontal = "center", vertical = "center")
-                ws[columns + str(i)].font = bold_font
+                cell = ws[columns + str(i)]
+                cell.alignment = Alignment(horizontal = "center", vertical = "center")
+
+                if i == 3:
+                    header_fill = PatternFill(start_color="636363", end_color="636363", fill_type="solid")
+                    cell.font = bold_font
+                    cell.fill = header_fill
+                else:
+                    cell.font = regular_font
 
     def fill_values(self):
-        wb = load_workbook(filename=self.excel_file_name, read_only=False, keep_vba=True)
+        wb = load_workbook(filename=self.temp_excel_file_name, read_only=False, keep_vba=True)
         # wb = load_workbook(filename=self.excel_file_name)
         # ws = wb[sheet_name]
         ws = wb.active 
         for stations in self.station_list:
-            station_index = self.station_list.index(stations)
-            excel_cell = self.station_list[station_index]["excel_position"]
-            ws[excel_cell] = self.station_list[station_index]["name"]
+            excel_cell = stations["excel_position"]
+            ws[excel_cell] = stations["name"]
 
             for cameras in stations["camera_list"]:
-                camera_index = self.station_list[station_index]["camera_list"].index(cameras)
-                excel_cell = self.station_list[station_index]["camera_list"][camera_index]["excel_position"]
-                ws[excel_cell] = self.station_list[station_index]["camera_list"][camera_index]["type"]
+                excel_cell = cameras["excel_position"]
+                ws[excel_cell] = cameras["type"]
                 
                 for optics in cameras["optics_list"]:
-                    optics_index = self.station_list[station_index]["camera_list"][camera_index]["optics_list"].index(optics)
-                    excel_cell = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["excel_position"]
-                    ws[excel_cell] = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"]
+                    excel_cell = optics["excel_position"]
+                    ws[excel_cell] = optics["type"]
 
                     for accessory in optics["accessory_list"]:
-                        accessory_index = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"].index(accessory)
-                        excel_cell = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["excel_position"]
-                        ws[excel_cell] = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["type"]
+                        excel_cell = accessory["excel_position"]
+                        ws[excel_cell] = accessory["type"]
         
         self.format_cells(ws)
-        wb.save(filename=self.excel_file_name)
+        wb.save(filename=self.temp_excel_file_name)
         wb.close()
 
     def fill_hidden_sheet_values(self):
@@ -859,50 +959,57 @@ class Save_excel:
         - optika: CC(A-Z)n
         - příslušenství: DD(A-Z)n
         """
-        wb = load_workbook(filename=self.excel_file_name, read_only=False, keep_vba=True)
+        wb = load_workbook(filename=self.temp_excel_file_name, read_only=False, keep_vba=True)
         # wb = load_workbook(filename=self.excel_file_name)
-        # ws = wb[sheet_name]
         ws = wb.create_sheet("HiddenSheet")
         ws.sheet_state = 'hidden'
 
         for stations in self.station_list:
             excel_cell = stations["hidden_values"]
-            ws[excel_cell] = stations["inspection_description"]
+            ws[excel_cell + str(1)] = stations["name"]
+            ws[excel_cell + str(2)] = stations["inspection_description"]
+            ws[excel_cell + str(3)] = 1 # toggle status... default: 1
 
-            # for cameras in stations["camera_list"]:
-            #     excel_cell = cameras["hidden_values"]
-            #     ws[excel_cell] = self.station_list[station_index]["camera_list"][camera_index]["type"]
+            for cameras in stations["camera_list"]:
+                excel_cell = cameras["hidden_values"]
+                ws[excel_cell + str(1)] = cameras["type"]
+                detail_info = "Kontroler: " + str(cameras["controller"]) + "\n" + str(cameras["description"])
+                ws[excel_cell + str(2)] = detail_info
+                ws[excel_cell + str(3)] = 1
                 
-            #     for optics in cameras["optics_list"]:
-            #         optics_index = self.station_list[station_index]["camera_list"][camera_index]["optics_list"].index(optics)
-            #         excel_cell = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["excel_position"]
-            #         ws[excel_cell] = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"]
+                for optics in cameras["optics_list"]:
+                    excel_cell = optics["hidden_values"]
+                    ws[excel_cell + str(1)] = optics["type"]
+                    detail_info = "Alternativa: " + str(optics["alternative"]) + "\n" + str(optics["description"])
+                    ws[excel_cell + str(2)] = detail_info
+                    ws[excel_cell + str(3)] = 1
 
-            #         for accessory in optics["accessory_list"]:
-            #             accessory_index = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"].index(accessory)
-            #             excel_cell = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["excel_position"]
-            #             ws[excel_cell] = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["type"]
-        
-        # self.format_cells(ws)
-        wb.save(filename=self.excel_file_name)
+                    for accessory in optics["accessory_list"]:
+                        excel_cell = accessory["hidden_values"]
+                        ws[excel_cell + str(1)] = accessory["type"]
+                        ws[excel_cell + str(2)] = accessory["description"]
+                        ws[excel_cell + str(3)] = 1
+
+        wb.save(filename=self.temp_excel_file_name)
         wb.close()
 
-
     def main(self):
-        # rows_to_merge = self.get_cells_to_merge()
-        # print(rows_to_merge)
-        # self.make_header()
-        # self.merge_cells(merge_list=rows_to_merge)
-        # self.fill_values()
-        # self.change_vba_script()
-        # #provedeno až po change_vba_script kvůli načtení pozic hidden buněk...
-        # self.fill_hidden_sheet_values()
-        # self.make_header()
-        self.update_sheet_vba_code("""dddddddddafdsdfadfafdadf""")
+        rows_to_merge = self.get_cells_to_merge()
+        self.make_header()
+        # grafika header:
+        rows_to_merge.append("A1:A2")
+        rows_to_merge.append("B1:D2")
+        self.merge_cells(merge_list=rows_to_merge)
+        self.fill_values()
+        new_vba_code = self.change_vba_script()
+        self.fill_hidden_sheet_values()
+        attempt = self.update_sheet_vba_code(new_code=new_vba_code)
+        if attempt == False:
+            print(f"Nejprve prosím zavřete soubor {self.excel_file_name}")
+        else:
+            print("exportováno")
 
-        print("exportováno")
-
-# Catalogue_gui(root)
-Save_excel(station_list=[])
+Catalogue_gui(root)
+# Save_excel(station_list=[])
 
 root.mainloop()

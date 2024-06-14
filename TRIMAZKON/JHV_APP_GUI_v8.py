@@ -561,7 +561,7 @@ def menu(image_opened = True): # Funkce spouští základní menu při spuštěn
     
     frame_with_buttons_right = customtkinter.CTkFrame(master=root,corner_radius=0)#,fg_color="black")
     frame_with_buttons = customtkinter.CTkFrame(master=root,corner_radius=0)#,fg_color="black")
-    frame_with_logo.pack(pady=0,padx=5,fill="both",expand=False,side = "top")
+    frame_with_logo.pack(pady=0,padx=0,fill="both",expand=False,side = "top")
     image_logo.pack()
     frame_with_buttons_right.pack(pady=0,padx=0,fill="both",expand=True,side = "right")
     frame_with_buttons.pack(pady=0,padx=0,fill="both",expand=True,side = "left")
@@ -2129,7 +2129,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         frame_with_logo =   customtkinter.CTkFrame(master=self.root,corner_radius=0)
         logo =              customtkinter.CTkImage(Image.open(initial_path+"images/logo.png"),size=(1200, 100))
         image_logo =        customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
-        frame_with_logo.    pack(pady=0,padx=5,fill="both",expand=False,side = "top")
+        frame_with_logo.    pack(pady=0,padx=0,fill="both",expand=False,side = "top")
         image_logo.         pack()
         if self.spec_location == "image_browser":
             Image_browser(self.root,[frame_with_logo])
