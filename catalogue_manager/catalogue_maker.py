@@ -518,7 +518,6 @@ class Catalogue_gui:
         self.clear_frame(self.root)
         main_header =               customtkinter.CTkFrame(master=self.root,corner_radius=0,height=100)
         main_header                 .pack(pady=0,padx=5,fill="x",expand=False,side = "top")
-
         # logo =                      customtkinter.CTkImage(Image.open(initial_path+"images/logo.png"),size=(1200, 100))
         # image_logo =                customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
         export_button =             customtkinter.CTkButton(master = main_header,text = "Exportovat .xlsm",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,
