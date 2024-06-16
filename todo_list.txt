@@ -291,27 +291,27 @@ TRIMAZKON - neprepisuje se informace o staticke ip adrese po zmene... opravit - 
 Trimazkon - aby k exe nebylo potreba tolik files... - hotovo
 Trimazkon - forcenout vynuceni admin prav - hotovo
 bindnout F5 na refresh u IB a u disků (Obnovit command) - hotovo
+Trimazkon - problikavaji okna shell a cmd - hotovo
+log scroll nakonec... - hotovo
+male pismo v konzoli ip manageru - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
-Trimazkon - problikavaji okna shell a cmd
-Trimazkon - chyba, kdyz je ve slozce s mezerou v nazvu
-log scroll nakonec...
+aktualizace pouze pro editovanou stanici - nedalat vzdy vsechny widgety - nestacilo by update idletasks?
+- nedelat buttony u vsech widgets, ale nakliknout, poté upravit
 
 vždy jeden řádek mezera... prazdny radek mezi stanicemi zacernit
-
 
 při kliku na export - dotazovaci okno, pod jakym nazvem excel ulozit - .xlms needitovatelne (kontrola stejneho nazvu, EXPLORER?)
 
 přidat dummy bloky, kdyz se maze cela optika nebo cela kamera
 
-
-
 kdyz se prida nova stanice vytrigovat zadavani vsech parametru (neaktualizovat po kazde zmene... stanice - zadej vse, kamery zadej kamery a zbytek atd...)
 
 pridat jeste jeden sloupec
 
-aktualizace pouze pro editovanou stanici - nedalat vzdy vsechny widgety - nestacilo by update idletasks?
+
 
 camera = {
     "type": "",
@@ -339,7 +339,6 @@ station = {
 
 
 
-male pismo v konzoli ip manageru
 
 návod na trimazkon
 ip_manager seřazovat podle abecedy ???
