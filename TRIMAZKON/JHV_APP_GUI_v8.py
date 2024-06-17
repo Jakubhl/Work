@@ -42,8 +42,6 @@ customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 root=customtkinter.CTk()
 root.geometry("1200x900")
-# root.wm_iconbitmap(initial_path+'images/logo_TRIMAZKON.ico')
-#root.title("Zpracování souborů z průmyslových kamer")
 root.title("TRIMAZKON v_3.6.1")
 #pro pripad vypisovani do konzole z exe:
 # sys.stdout = sys.__stdout__
@@ -55,16 +53,8 @@ def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
-root.wm_iconbitmap(resource_path('images/logo_TRIMAZKON.ico'))
-
-# def is_admin():
-#     try:
-#         return ctypes.windll.shell32.IsUserAnAdmin()
-#     except:
-#         return False
-# if not is_admin():
-#     ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
-#     sys.exit()
+app_icon = 'images/logo_TRIMAZKON.ico'
+root.wm_iconbitmap(resource_path(app_icon))
 
 def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
     """
@@ -2813,7 +2803,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             current_root.geometry(f"1250x900+{x+200}+{y+200}")
             current_root.title("Pokročilá nastavení")
             # current_root.wm_iconbitmap(initial_path+'images/logo_TRIMAZKON.ico')
-            current_root.wm_iconbitmap(resource_path('images/logo_TRIMAZKON.ico'))
+            current_root.wm_iconbitmap(resource_path(app_icon))
 
         else:
             #cisteni menu widgets

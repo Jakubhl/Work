@@ -7,14 +7,17 @@ import socket
 import threading
 import time
 import os
+import time
 
-def call_subprocess():
-    time.sleep(5)
+def make_sure_ip_changed():
+    def call_subprocess():
+        time.sleep(5)
+        print("what about now")
         
-run_background = threading.Thread(target=call_subprocess,)
-run_background.start()
+    run_background = threading.Thread(target=call_subprocess,)
+    run_background.start()
 
-print("ahaa")
-    
+    return True
 
-print("jo")
+make_sure_ip_changed()
+print("hurra")

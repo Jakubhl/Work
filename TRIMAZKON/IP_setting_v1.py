@@ -10,6 +10,8 @@ import psutil
 import socket
 import win32api
 import win32file
+import win32wnet
+import win32net
 from PIL import Image
 import sys
 
@@ -58,6 +60,7 @@ def check_network_drive_status(drive_path):
     try:
         # Attempt to access a file or directory on the network drive
         # drive_path = drive_letter + "\\"
+        print("drive_path",drive_path)
         drive_path = drive_path[0:3]
         def call_subprocess():
             global checking_done
@@ -87,8 +90,10 @@ def check_network_drive_status(drive_path):
     except OSError:
         return False
 
+
 def list_mapped_disks(whole_format=None):
     drives = win32api.GetLogicalDriveStrings()
+    print("drives",drives)
     drives = drives.split('\000')[:-1]
     remote_drives = []
     for drive in drives:
@@ -97,8 +102,33 @@ def list_mapped_disks(whole_format=None):
                 remote_drives.append(drive)
             else:
                 remote_drives.append(drive[0:1])
-
     return remote_drives
+    
+    # try:
+    #     result = subprocess.run('net use', shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    #     # Decode the output and split by lines
+    #     output_lines = result.stdout.decode().splitlines()
+    #     mapped_drives = []
+        
+    #     # Iterate through the output lines
+    #     for line in output_lines:
+    #         # Status       Local     Remote                    Network
+    #         # -------------------------------------------------------------------------------
+    #         # OK           T:        \\192.168.14.245\Data\Kamery
+
+    #         # Status může nabývat hodnot Unavailable, Disconnected, OK
+    #         # Zapisujeme Disconnected a OK
+            
+    #         if line.startswith('OK') or 'Disconnected' in line:
+    #             drive_letter = line.split()[1]
+    #             mapped_drives.append(drive_letter[0:1])
+        
+    #     print("mapped_drives: ", mapped_drives)
+    #     return mapped_drives
+    
+    # except subprocess.CalledProcessError as e:
+    #     print(f"Error occurred: {e.stderr.decode()}")
+    #     return []
 
 class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
     """
@@ -110,6 +140,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.window_mode = window_mode
         self.callback = callback_function
         self.root = root
+        self.app_icon = 'images/logo_TRIMAZKON.ico'
         self.rows_taken = 0
         self.all_rows = []
         self.project_list = []
@@ -612,7 +643,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         y = self.root.winfo_rooty()
         child_root.geometry(f"520x750+{x+50}+{y+80}")
         # child_root.wm_iconbitmap(self.initial_path+'images/logo_TRIMAZKON.ico')
-        child_root.wm_iconbitmap(resource_path('images/logo_TRIMAZKON.ico'))
+        child_root.wm_iconbitmap(resource_path(self.app_icon))
         # child_root.geometry("520x750")
         if edit:
             child_root.title("Editovat projekt: "+self.last_project_name)
@@ -689,7 +720,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         y = self.root.winfo_rooty()
         child_root.geometry(f"520x800+{x+50}+{y+100}")
         # child_root.wm_iconbitmap(self.initial_path+'images/logo_TRIMAZKON.ico')
-        child_root.wm_iconbitmap(resource_path('images/logo_TRIMAZKON.ico'))
+        child_root.wm_iconbitmap(resource_path(self.app_icon))
         # child_root.geometry("520x800")
         if edit == None:
             child_root.title("Nový projekt")
@@ -754,6 +785,27 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         else:
             return False
 
+    def make_sure_ip_changed(self,interface_name,ip):
+        interface_index = self.connection_option_list.index(interface_name)
+        def call_subprocess():
+            if ip in self.current_address_list:
+                add_colored_line(self.main_console,f"Chyba, adresa je již používána pro jiný interface","red",None,True)
+                return
+            win_change_ip_time = 7
+            for i in range(0,win_change_ip_time):
+                add_colored_line(self.main_console,f"Čekám až windows provede změny: {7-i} s...","white",None,True)
+                self.option_change("",silent=True)
+                time.sleep(1)
+
+            self.option_change("",silent=True)
+            if ip == self.current_address_list[interface_index]:
+                add_colored_line(self.main_console,f"IPv4 adresa u {interface_name} byla přenastavena na: {ip}","green",None,True)
+            else:
+                add_colored_line(self.main_console,f"Chyba, neplatná adresa nebo daný inteface na tomto zařízení neexistuje","red",None,True)
+
+        run_background = threading.Thread(target=call_subprocess,)
+        run_background.start()
+
     def change_computer_ip(self,button_row):
         #button_row je id stisknuteho tlacitka... =0 od vrchu
         ip = str(self.all_rows[button_row][1])
@@ -761,38 +813,83 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         # powershell command na zjisteni network adapter name> Get-NetAdapter | Select-Object -Property InterfaceAlias, Linkspeed, Status
         interface_name = str(self.drop_down_options.get())
         powershell_command = f"netsh interface ip set address \"{interface_name}\" static " + ip + " " + mask
+        """try:
+            elevated_command = f'powershell.exe -Command "Start-Process powershell -Verb RunAs -ArgumentList \'{powershell_command}\'"'
+            
+            # Execute the command
+            process = subprocess.Popen(elevated_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,creationflags=subprocess.CREATE_NO_WINDOW, shell=True)
+            stdout, stderr = process.communicate()
+            
+            stdout_str = stdout.decode('utf-8')
+            stderr_str = stderr.decode('utf-8')
+            
+            if stderr_str:
+                print(f"Error occurred: {stderr_str}")
+            else:
+                print(f"Command executed successfully:\n{stdout_str}")
+            
+        except Exception as e:
+            print(f"Exception occurred: {str(e)}")"""
+        
         try:
-            # subprocess.run(["powershell.exe", "-Command",powershell_command],check=True)
-            process = subprocess.Popen(['powershell.exe', '-Command', powershell_command],
+            # Construct the netsh command
+            netsh_command = f"netsh interface ip set address \"{interface_name}\" static {ip} {mask}"
+            
+            # Construct the PowerShell command to run netsh with elevation
+            # powershell_command = f'Start-Process powershell -Verb RunAs -ArgumentList \'-Command "{netsh_command}"\' -PassThru'
+            powershell_command = [
+                'powershell.exe',
+                '-Command', f'Start-Process powershell -Verb RunAs -ArgumentList \'-Command "{netsh_command}"\' -WindowStyle Hidden -PassThru'
+            ]
+            # Execute the PowerShell command
+            process = subprocess.Popen(powershell_command,
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE,
                                         creationflags=subprocess.CREATE_NO_WINDOW)
-            stdout, stderr =process.communicate()
+            
+            stdout, stderr = process.communicate()
             stdout_str = stdout.decode('utf-8')
             stderr_str = stderr.decode('utf-8')
-            # if "Run as administrator" in str(stdout_str):
-            #     raise subprocess.CalledProcessError(1, powershell_command, stdout_str)
-            # if "syntax is incorrect" in str(stdout_str):
-            if len(str(stdout_str)) > 7:
-                raise subprocess.CalledProcessError(1, powershell_command, stdout_str)
+            print(str(stderr_str),str(stdout_str))
+
             if stderr_str:
-                raise subprocess.CalledProcessError(1, powershell_command, stderr_str)
-            
-            add_colored_line(self.main_console,f"IPv4 adresa u {interface_name} byla přenastavena na: {ip}","green",None,True)
-            # self.option_change("",silent=True)
+                print(f"Error occurred: {stderr_str}")
+            else:
+                print(f"Command executed successfully:\n{stdout_str}")
+
+            self.option_change("",silent=True)
             if self.static_label2.winfo_exists():
                 self.static_label2.configure(text=ip)
-
-        except subprocess.CalledProcessError as e:
-            if "Run as administrator" in str(stdout_str):
-                add_colored_line(self.main_console,f"Chyba, tato funkce musí být spuštěna s administrátorskými právy","red",None,True)
-            elif "Invalid address" in str(stdout_str):
-                add_colored_line(self.main_console,f"Chyba, neplatná IP adresa","red",None,True)
-            else:
-                add_colored_line(self.main_console,f"Chyba, Nemáte tuto adresu již nastavenou pro jiný interface? (nebo daný interface na tomto zařízení neexistuje)","red",None,True)
         except Exception as e:
-            # Handle any other exceptions that may occur
-            add_colored_line(self.main_console, f"Nastala neočekávaná chyba: {e}", "red", None, True)
+            print(f"Exception occurred: {str(e)}")
+
+        self.make_sure_ip_changed(interface_name,ip)
+
+            
+        
+
+
+            # print(str(stderr_str))
+            # if len(str(stdout_str)) > 7:
+            #     raise subprocess.CalledProcessError(1, powershell_command, stdout_str)
+            # if stderr_str:
+            #     raise subprocess.CalledProcessError(1, powershell_command, stderr_str)
+            
+            # add_colored_line(self.main_console,f"IPv4 adresa u {interface_name} byla přenastavena na: {ip}","green",None,True)
+            # # self.option_change("",silent=True)
+            # if self.static_label2.winfo_exists():
+            #     self.static_label2.configure(text=ip)
+
+        # except subprocess.CalledProcessError as e:
+        #     if "Run as administrator" in str(stdout_str):
+        #         add_colored_line(self.main_console,f"Chyba, tato funkce musí být spuštěna s administrátorskými právy","red",None,True)
+        #     elif "Invalid address" in str(stdout_str):
+        #         add_colored_line(self.main_console,f"Chyba, neplatná IP adresa","red",None,True)
+        #     else:
+        #         add_colored_line(self.main_console,f"Chyba, Nemáte tuto adresu již nastavenou pro jiný interface? (nebo daný interface na tomto zařízení neexistuje)","red",None,True)
+        # except Exception as e:
+        #     # Handle any other exceptions that may occur
+        #     add_colored_line(self.main_console, f"Nastala neočekávaná chyba: {e}", "red", None, True)
 
     def check_given_input(self):
         given_data = self.search_input.get()
@@ -872,7 +969,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             # note_window.geometry("520x500")
             note_window.geometry(f"+{x+500}+{y+200}")
             # note_window.wm_iconbitmap(self.initial_path+'images/logo_TRIMAZKON.ico')
-            note_window.wm_iconbitmap(resource_path('images/logo_TRIMAZKON.ico'))
+            note_window.wm_iconbitmap(resource_path(self.app_icon))
             
             note_window.title(f"Poznámky k projektu: {project_name}")
             notes = customtkinter.CTkTextbox(master = note_window,font=("Arial",20),width=520,height=500)
@@ -884,6 +981,11 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             note_window.mainloop()
 
     def make_project_cells(self,no_read = None):
+        def on_enter(e,interface,widget):
+            widget.configure(text = interface)    
+        def on_leave(e,ip,widget):
+            widget.configure(text = ip)
+
         if no_read == None:
             self.read_excel_data()
         # padx_list = [10,190,390,390,650]
@@ -934,6 +1036,13 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                         parameter =  customtkinter.CTkLabel(master = project_frame,text = self.all_rows[y][x],font=("Arial",20,"bold"),justify='left')
                         parameter.grid(column = 0,row=0,pady = 10,padx =10,sticky=tk.W)
                         parameter.bind("<Button-1>",lambda e, widget_id = y: self.clicked_on_project(e, widget_id))
+                        if x == 1: #frame s ip adresou
+                            ip_addr = self.all_rows[y][x]
+                            if ip_addr in self.current_address_list:
+                                project_frame.configure(fg_color = "green")
+                                project_frame.bind("<Enter>",lambda e, interface = self.connection_option_list[self.current_address_list.index(ip_addr)], widget = parameter: on_enter(e,interface,widget))
+                                project_frame.bind("<Leave>",lambda e, ip = ip_addr, widget = parameter: on_leave(e,ip,widget))
+
 
                         if x==3: #frame s poznamkami...
                             project_frame.configure(width=750)
@@ -1023,8 +1132,11 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         if len(str(self.DL_manual_entry.get())) > 0:
             drive_letter = str(self.DL_manual_entry.get())
         
+        # for users in list_mapped_disks()[1]:
+        #     self.disconnect_drive_as_user(drive_letter,users)
+
         delete_command = "net use " + drive_letter +": /del"
-        subprocess.run(delete_command, shell=True)
+        subprocess.run(delete_command, shell=True, cwd="C:/Windows/System32")
 
         self.refresh_explorer()
 
@@ -1038,7 +1150,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         y = self.root.winfo_rooty()
         child_root.geometry(f"+{x+50}+{y+100}")
         # child_root.wm_iconbitmap(self.initial_path+'images/logo_TRIMAZKON.ico')
-        child_root.wm_iconbitmap(resource_path('images/logo_TRIMAZKON.ico'))
+        child_root.wm_iconbitmap(resource_path(self.app_icon))
         # child_root.geometry("520x200")
         child_root.title("Odpojování síťového disku")
         
@@ -1055,6 +1167,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         label =                     customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Vyberte disk nebo vyhledejte manuálně: ",font=("Arial",20,"bold"))
         self.drive_letter_input =   customtkinter.CTkOptionMenu(master = child_root,font=("Arial",20),width=200,height=30,values=found_drive_letters,corner_radius=0)
         self.DL_manual_entry =      customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0,placeholder_text="manuálně")
+        # del_button =                customtkinter.CTkButton(master = child_root, width = 200,height=30,text = "Odpojit", command = lambda: self.delete_disk(child_root),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
         del_button =                customtkinter.CTkButton(master = child_root, width = 200,height=30,text = "Odpojit", command = lambda: self.delete_disk(child_root),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
         label.                      grid(column = 0,row=0,pady = 5,padx =10,sticky = tk.W)
         self.drive_letter_input.    grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
@@ -1087,7 +1200,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             print("STDOUT:", stdout)
             print("STDERR:", stderr)
             print("Return Code:", self.connection_status)"""
-            self.connection_status = subprocess.call(second_command,shell=True,text=True)
+            self.connection_status = subprocess.call(second_command,shell=True,text=True, cwd="C:/Windows/System32")
   
         run_background = threading.Thread(target=call_subprocess,)
         run_background.start()
@@ -1210,29 +1323,30 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         else:
             add_colored_line(self.main_console,"Projekt nenalezen","red",None,True)
 
-    def get_current_ip_address(self,interface_name):
-        # Get network interfaces and their addresses
-        addresses = psutil.net_if_addrs()
-        # Check if the specified interface exists
-        if interface_name in addresses:
-            addr_count = 0
-            for addr in addresses[interface_name]:
-                # prvni AF_INET je pridelena automaticky, druha je privatni, nastavena DHCP
-                if addr.family == socket.AF_INET:  # IPv4 address
-                    if addr_count == 1:
-                        return addr.address
-                    addr_count +=1
-            if addr_count == 1:
-                print(addr.family,addr.address)
-                return "Nenalezeno"
-        else:
-            return "Nenalezeno"
-
     def get_current_ip_list(self):
+        def get_current_ip_address(interface_name):
+        # Get network interfaces and their addresses
+            addresses = psutil.net_if_addrs()
+            # Check if the specified interface exists
+            if interface_name in addresses:
+                addr_count = 0
+                for addr in addresses[interface_name]:
+                    # prvni AF_INET je pridelena automaticky, druha je privatni, nastavena DHCP
+                    if addr.family == socket.AF_INET:  # IPv4 address
+                        # print(addr.family)
+                        if addr_count == 1:
+                            return addr.address
+                        addr_count +=1
+                if addr_count == 1:
+                    # print(addr.family,addr.address)
+                    return "Nenalezeno"
+            else:
+                return "Nenalezeno"
         self.current_address_list = []
         for items in self.connection_option_list:
-            found_address = self.get_current_ip_address(items)
+            found_address = get_current_ip_address(items)
             self.current_address_list.append(found_address)
+        print(self.current_address_list)
     
     def manage_interfaces(self,given_input,operation = None):
         index =0
@@ -1292,7 +1406,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         y = self.root.winfo_rooty()
         child_root.geometry(f"+{x+50}+{y+100}")
         # child_root.wm_iconbitmap(self.initial_path+'images/logo_TRIMAZKON.ico')
-        child_root.wm_iconbitmap(resource_path('images/logo_TRIMAZKON.ico'))
+        child_root.wm_iconbitmap(resource_path(self.app_icon))
         # child_root.geometry("520x200")
         child_root.title("Nastavení možností připojení (interface list)")
 
@@ -1615,6 +1729,5 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.call_make_cells_disk()
         self.root.mainloop()
 
-    
 # IP_assignment(root)
 # root.mainloop()

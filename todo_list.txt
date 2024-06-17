@@ -295,7 +295,17 @@ Trimazkon - problikavaji okna shell a cmd - hotovo
 log scroll nakonec... - hotovo
 male pismo v konzoli ip manageru - hotovo
 
+1:42 PM 6/17/2024
+podbarvit zabrane ip adresy - hotovo
+kdyz je trimazkon spusteny, jako admin - nelze mapovat disky - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
+
+
+rovnou vlezt do nove namapovaneho disku
+poznamky prevest na hover-roleta
+overovat prenastavenou ip adresu po par sekunach v subprocesu - hotovo
+menu - prvni tri moznosti sloucit do správa obrázků/ souborů
 
 
 aktualizace pouze pro editovanou stanici - nedalat vzdy vsechny widgety - nestacilo by update idletasks?
