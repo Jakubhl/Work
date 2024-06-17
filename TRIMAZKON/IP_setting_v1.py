@@ -810,7 +810,36 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         run_background.start()
 
     def change_computer_ip(self,button_row):
-        #button_row je id stisknuteho tlacitka... =0 od vrchu
+        def connected_interface(interface,ip,mask):
+            try:
+                # Construct the netsh command
+                netsh_command = f"netsh interface ip set address \"{interface}\" static {ip} {mask}"
+                powershell_command = [
+                    'powershell.exe',
+                    '-Command', f'Start-Process powershell -Verb RunAs -ArgumentList \'-Command "{netsh_command}"\' -WindowStyle Hidden -PassThru'
+                ]
+                process = subprocess.Popen(powershell_command,
+                                            stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE,
+                                            creationflags=subprocess.CREATE_NO_WINDOW)
+                
+                stdout, stderr = process.communicate()
+                stdout_str = stdout.decode('utf-8')
+                stderr_str = stderr.decode('utf-8')
+                if stderr_str:
+                    print(f"Error occurred: {stderr_str}")
+                else:
+                    print(f"Command executed successfully:\n{stdout_str}")
+
+                # self.option_change("",silent=True)
+                # if self.static_label2.winfo_exists():
+                #     self.static_label2.configure(text=ip)
+            except Exception as e:
+                print(f"Exception occurred: {str(e)}")
+
+
+            self.make_sure_ip_changed(interface_name,ip,"")
+        """#button_row je id stisknuteho tlacitka... =0 od vrchu
         ip = str(self.all_rows[button_row][1])
         mask = str(self.all_rows[button_row][2])
         # powershell command na zjisteni network adapter name> Get-NetAdapter | Select-Object -Property InterfaceAlias, Linkspeed, Status
@@ -846,7 +875,48 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             'netsh', 'interface', 'ip', 'set', 'address',
             interface_name, 'static', ip, mask
         ]
-        self.make_sure_ip_changed(interface_name,ip,command_to_run)
+        self.make_sure_ip_changed(interface_name,ip,command_to_run)"""
+        ip = str(self.all_rows[button_row][1])
+        mask = str(self.all_rows[button_row][2])
+        # powershell command na zjisteni network adapter name> Get-NetAdapter | Select-Object -Property InterfaceAlias, Linkspeed, Status
+        interface_name = str(self.drop_down_options.get())
+        powershell_command = f"netsh interface ip set address \"{interface_name}\" static " + ip + " " + mask
+        # subprocess.run(["powershell.exe", "-Command", "Start-Process", "powershell.exe", "-Verb", "RunAs", "-ArgumentList", f"'-Command {powershell_command}'"])
+        try:
+            # subprocess.run(["powershell.exe", "-Command",powershell_command],check=True)
+            process = subprocess.Popen(['powershell.exe', '-Command', powershell_command],
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
+                                        creationflags=subprocess.CREATE_NO_WINDOW)
+            stdout, stderr =process.communicate()
+            stdout_str = stdout.decode('utf-8')
+            stderr_str = stderr.decode('utf-8')
+            # if "Run as administrator" in str(stdout_str):
+            #     raise subprocess.CalledProcessError(1, powershell_command, stdout_str)
+            # if "syntax is incorrect" in str(stdout_str):
+            if len(str(stdout_str)) > 7:
+                raise subprocess.CalledProcessError(1, powershell_command, stdout_str)
+            if stderr_str:
+                raise subprocess.CalledProcessError(1, powershell_command, stderr_str)
+
+            add_colored_line(self.main_console,f"IPv4 adresa u {interface_name} byla přenastavena na: {ip}","green",None,True)
+            # self.option_change("",silent=True)
+            # if self.static_label2.winfo_exists():
+            #     self.static_label2.configure(text=ip)
+            self.make_sure_ip_changed(interface_name,ip,"")
+
+        except subprocess.CalledProcessError as e:
+            if "Run as administrator" in str(stdout_str):
+                add_colored_line(self.main_console,f"Chyba, tato funkce musí být spuštěna s administrátorskými právy","red",None,True)
+                connected_interface(interface_name,ip,mask)
+                
+            elif "Invalid address" in str(stdout_str):
+                add_colored_line(self.main_console,f"Chyba, neplatná IP adresa","red",None,True)
+            else:
+                add_colored_line(self.main_console,f"Chyba, Nemáte tuto adresu již nastavenou pro jiný interface? (nebo daný interface na tomto zařízení neexistuje)","red",None,True)
+        except Exception as e:
+            # Handle any other exceptions that may occur
+            add_colored_line(self.main_console, f"Nastala neočekávaná chyba: {e}", "red", None, True)
 
     def check_given_input(self):
         given_data = self.search_input.get()

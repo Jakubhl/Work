@@ -607,18 +607,18 @@ def menu(image_opened = True): # Funkce spouští základní menu při spuštěn
  - okno s informacemi o aktualizacích v menu
  - nová vizualizace u pokročilých nastavení (okno se záložkami)
  - tlačítka nastavení ve všech oknech programu\n""")
-    changle_log.insert("current lineend","\n Verze 3.6.1 (15.6.2024)\n")
+    changle_log.insert("current lineend","\n Verze 3.6.1 (17.6.2024)\n")
     changle_log.insert("current lineend",
 """ - Zadávání při vkládání nového síťového disku již nevyžaduje
    jméno a heslo
  - Ošetření spouštění IP setting s otevřeným excelem se
    vstupními daty
- - Opraveno čtení statických IP adres (četlo se vždy, pro daný
+ - Opraveno čtení statických IP adres (četla se vždy, pro daný
    inteface, automaticky nastavená místo privátní adresy)
  - Aplikace již k sobě nevyžaduje přikládat složku images
- - Automatické požádání o admin práva v ip setting
  - Bind klávesy F5 pro reset (refresh)
- - Nové, přesné chybové hlášky + nepřekrývají okna cmd a pws\n""")
+ - Nové, přesné chybové hlášky + nepřekrývají okna cmd a pws
+ - Vizualizace již přiřazených ip adres\n""")
     changle_log.see(tk.END)
     
     def maximalize_window(e):
@@ -4413,14 +4413,14 @@ class IP_manager: # Umožňuje nastavit možnosti třídění souborů
             current_window_size = "min"
 
         # Vyžádání admin práv: nefunkční ve vscode
-        def is_admin():
-            try:
-                return ctypes.windll.shell32.IsUserAnAdmin()
-            except:
-                return False
-        if not is_admin():
-            ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
-            sys.exit()
+        # def is_admin():
+        #     try:
+        #         return ctypes.windll.shell32.IsUserAnAdmin()
+        #     except:
+        #         return False
+        # if not is_admin():
+        #     ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+        #     sys.exit()
         
         self.ip_assignment_prg = IP_setting.IP_assignment(self.root,self.callback,current_window_size,initial_path)
         
