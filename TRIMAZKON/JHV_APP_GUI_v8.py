@@ -4413,14 +4413,14 @@ class IP_manager: # Umožňuje nastavit možnosti třídění souborů
             current_window_size = "min"
 
         # Vyžádání admin práv: nefunkční ve vscode
-        # def is_admin():
-        #     try:
-        #         return ctypes.windll.shell32.IsUserAnAdmin()
-        #     except:
-        #         return False
-        # if not is_admin():
-        #     ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
-        #     sys.exit()
+        def is_admin():
+            try:
+                return ctypes.windll.shell32.IsUserAnAdmin()
+            except:
+                return False
+        if not is_admin():
+            ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+            sys.exit()
         
         self.ip_assignment_prg = IP_setting.IP_assignment(self.root,self.callback,current_window_size,initial_path)
         

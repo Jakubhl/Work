@@ -14,6 +14,7 @@ import win32wnet
 import win32net
 from PIL import Image
 import sys
+import ctypes
 
 def path_check(path_raw,only_repair = None):
     path=path_raw
@@ -785,7 +786,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         else:
             return False
 
-    def make_sure_ip_changed(self,interface_name,ip):
+    def make_sure_ip_changed(self,interface_name,ip,command):
         interface_index = self.connection_option_list.index(interface_name)
         def call_subprocess():
             if ip in self.current_address_list:
@@ -800,8 +801,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.option_change("",silent=True)
             if ip == self.current_address_list[interface_index]:
                 add_colored_line(self.main_console,f"IPv4 adresa u {interface_name} byla přenastavena na: {ip}","green",None,True)
+                self.make_project_cells(no_read=True)
             else:
                 add_colored_line(self.main_console,f"Chyba, neplatná adresa nebo daný inteface na tomto zařízení neexistuje","red",None,True)
+
 
         run_background = threading.Thread(target=call_subprocess,)
         run_background.start()
@@ -812,36 +815,13 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         mask = str(self.all_rows[button_row][2])
         # powershell command na zjisteni network adapter name> Get-NetAdapter | Select-Object -Property InterfaceAlias, Linkspeed, Status
         interface_name = str(self.drop_down_options.get())
-        powershell_command = f"netsh interface ip set address \"{interface_name}\" static " + ip + " " + mask
-        """try:
-            elevated_command = f'powershell.exe -Command "Start-Process powershell -Verb RunAs -ArgumentList \'{powershell_command}\'"'
-            
-            # Execute the command
-            process = subprocess.Popen(elevated_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,creationflags=subprocess.CREATE_NO_WINDOW, shell=True)
-            stdout, stderr = process.communicate()
-            
-            stdout_str = stdout.decode('utf-8')
-            stderr_str = stderr.decode('utf-8')
-            
-            if stderr_str:
-                print(f"Error occurred: {stderr_str}")
-            else:
-                print(f"Command executed successfully:\n{stdout_str}")
-            
-        except Exception as e:
-            print(f"Exception occurred: {str(e)}")"""
-        
         try:
             # Construct the netsh command
             netsh_command = f"netsh interface ip set address \"{interface_name}\" static {ip} {mask}"
-            
-            # Construct the PowerShell command to run netsh with elevation
-            # powershell_command = f'Start-Process powershell -Verb RunAs -ArgumentList \'-Command "{netsh_command}"\' -PassThru'
             powershell_command = [
                 'powershell.exe',
                 '-Command', f'Start-Process powershell -Verb RunAs -ArgumentList \'-Command "{netsh_command}"\' -WindowStyle Hidden -PassThru'
             ]
-            # Execute the PowerShell command
             process = subprocess.Popen(powershell_command,
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE,
@@ -850,46 +830,23 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             stdout, stderr = process.communicate()
             stdout_str = stdout.decode('utf-8')
             stderr_str = stderr.decode('utf-8')
-            print(str(stderr_str),str(stdout_str))
-
             if stderr_str:
                 print(f"Error occurred: {stderr_str}")
             else:
                 print(f"Command executed successfully:\n{stdout_str}")
 
-            self.option_change("",silent=True)
-            if self.static_label2.winfo_exists():
-                self.static_label2.configure(text=ip)
+            # self.option_change("",silent=True)
+            # if self.static_label2.winfo_exists():
+            #     self.static_label2.configure(text=ip)
         except Exception as e:
             print(f"Exception occurred: {str(e)}")
 
-        self.make_sure_ip_changed(interface_name,ip)
 
-            
-        
-
-
-            # print(str(stderr_str))
-            # if len(str(stdout_str)) > 7:
-            #     raise subprocess.CalledProcessError(1, powershell_command, stdout_str)
-            # if stderr_str:
-            #     raise subprocess.CalledProcessError(1, powershell_command, stderr_str)
-            
-            # add_colored_line(self.main_console,f"IPv4 adresa u {interface_name} byla přenastavena na: {ip}","green",None,True)
-            # # self.option_change("",silent=True)
-            # if self.static_label2.winfo_exists():
-            #     self.static_label2.configure(text=ip)
-
-        # except subprocess.CalledProcessError as e:
-        #     if "Run as administrator" in str(stdout_str):
-        #         add_colored_line(self.main_console,f"Chyba, tato funkce musí být spuštěna s administrátorskými právy","red",None,True)
-        #     elif "Invalid address" in str(stdout_str):
-        #         add_colored_line(self.main_console,f"Chyba, neplatná IP adresa","red",None,True)
-        #     else:
-        #         add_colored_line(self.main_console,f"Chyba, Nemáte tuto adresu již nastavenou pro jiný interface? (nebo daný interface na tomto zařízení neexistuje)","red",None,True)
-        # except Exception as e:
-        #     # Handle any other exceptions that may occur
-        #     add_colored_line(self.main_console, f"Nastala neočekávaná chyba: {e}", "red", None, True)
+        command_to_run = [
+            'netsh', 'interface', 'ip', 'set', 'address',
+            interface_name, 'static', ip, mask
+        ]
+        self.make_sure_ip_changed(interface_name,ip,command_to_run)
 
     def check_given_input(self):
         given_data = self.search_input.get()
@@ -1333,7 +1290,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 for addr in addresses[interface_name]:
                     # prvni AF_INET je pridelena automaticky, druha je privatni, nastavena DHCP
                     if addr.family == socket.AF_INET:  # IPv4 address
-                        # print(addr.family)
                         if addr_count == 1:
                             return addr.address
                         addr_count +=1
