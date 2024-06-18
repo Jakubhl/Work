@@ -307,6 +307,8 @@ rovnou vlezt do nove namapovaneho disku - hotovo
 kdyz otevrena složka s diskem podchytit chybovou hláškou - hotovo
 otocit kolecko na pricitani obrazku - hotovo
 cist inerfaces - hotovo
+shodit okno manage interfaces - hotovo
+
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -315,9 +317,6 @@ ________________________________________________________________________________
 
 poznamky prevest na hover-roleta
 menu - prvni tri moznosti sloucit do správa obrázků/ souborů
-
--dat zaskrtavatka - cist interface z excelu, cist z netsh, cist s replace commandem u dekodovani
-
 
 
 

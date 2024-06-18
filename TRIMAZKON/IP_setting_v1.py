@@ -1,5 +1,4 @@
 import customtkinter
-import CTkMessagebox
 import tkinter as tk
 from openpyxl import load_workbook
 import subprocess
@@ -14,7 +13,6 @@ import win32file
 from PIL import Image
 import sys
 import ctypes
-import queue
 
 def path_check(path_raw,only_repair = None):
     path=path_raw
@@ -121,6 +119,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.app_path = os.getcwd()
         self.app_path = path_check(self.app_path,True)
         self.excel_file_path = self.app_path + "saved_addresses_2.xlsx"
+        # print(self.excel_file_path)
         self.last_project_name = ""
         self.last_project_ip = ""
         self.last_project_mask = ""
@@ -171,11 +170,11 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 self.root.geometry(f"260x1000+{0}+{0}")
 
             workbook.close()
-        except Exception:
+        except Exception as e:
             self.connection_option_list = ["data nenalezena"]
             self.show_favourite = False
             self.create_widgets(init=True,excel_load_error=True)
-            print(f"Nejdřív zavřete soubor {self.excel_file_path}")
+            print(f"Nejdřív zavřete soubor {self.excel_file_path} Chyba: {e}")
 
     def call_menu(self): # Tlačítko menu (konec, návrat do menu)
         """
@@ -1361,9 +1360,14 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                         if addr_count == 1:
                             return addr.address
                         addr_count +=1
+                        remembered_addr = addr
                 if addr_count == 1:
                     # print(addr.family,addr.address)
-                    return "Nenalezeno"
+                    # return "Nenalezeno"
+                    if "AddressFamily.AF_INET:" in str(remembered_addr):
+                        return remembered_addr.address
+                    else:
+                        return "Nenalezeno"
             else:
                 return "Nenalezeno"
         self.current_address_list = []
@@ -1371,7 +1375,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             found_address = get_current_ip_address(items)
             self.current_address_list.append(found_address)
     
-    def manage_interfaces(self,given_input,operation = None):
+    def manage_interfaces(self,given_input,window,operation = None):
         index =0
         changes_were_made = False
         if operation == "add_new":
@@ -1410,8 +1414,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 if items != "":
                     excel_string_of_options = excel_string_of_options + str(items) + ","
 
-
             self.save_setting_parameter(parameter="new_conn_options",status=excel_string_of_options)
+            self.close_window(window)
         
         # zvoleni noveho interfacu
         self.drop_down_options.configure(values = self.connection_option_list)
@@ -1436,8 +1440,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         label =             customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Vyberte nebo vyhledejte manuálně: ",font=("Arial",20,"bold"))
         self.interface_input = customtkinter.CTkOptionMenu(master = child_root,font=("Arial",20),width=200,height=30,values=self.connection_option_list,corner_radius=0)
         manual_entry_interface = customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0,placeholder_text="manuálně")
-        add_button =        customtkinter.CTkButton(master = child_root, width = 150,height=30,text = "Přidat", command = lambda: self.manage_interfaces(given_input=manual_entry_interface.get(),operation="add_new"),font=("Arial",20,"bold"),corner_radius=0,fg_color="green")
-        del_button =        customtkinter.CTkButton(master = child_root, width = 150,height=30,text = "Smazat", command = lambda: self.manage_interfaces(given_input=manual_entry_interface.get(),operation="remove"),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
+        add_button =        customtkinter.CTkButton(master = child_root, width = 150,height=30,text = "Přidat", command = lambda: self.manage_interfaces(given_input=manual_entry_interface.get(),operation="add_new",window = child_root),font=("Arial",20,"bold"),corner_radius=0,fg_color="green")
+        del_button =        customtkinter.CTkButton(master = child_root, width = 150,height=30,text = "Smazat", command = lambda: self.manage_interfaces(given_input=manual_entry_interface.get(),operation="remove", window = child_root),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
         self.console =      tk.Text(child_root, wrap="none", height=0, width=40,background="black",font=("Arial",14),state=tk.DISABLED)
         
         label.              grid(column = 0,row=0,pady = 5,padx =10,sticky = tk.W)
@@ -1571,7 +1575,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.button_switch_all_ip.       configure(fg_color="#212121")
 
         connect_label =         customtkinter.CTkLabel(master = main_widgets, width = 100,height=40,text = "Připojení: ",font=("Arial",20,"bold"))
-        self.drop_down_options = customtkinter.CTkOptionMenu(master = main_widgets,width=200,height=40,values=self.connection_option_list,font=("Arial",20,"bold"),corner_radius=0,command=  self.option_change)
+        self.drop_down_options = customtkinter.CTkOptionMenu(master = main_widgets,width=200,height=40,font=("Arial",20,"bold"),corner_radius=0,command=  self.option_change)
         # "⚙️", "⚒", "🔧", "🔩"
         button_settings =       customtkinter.CTkButton(master = main_widgets, width = 40,height=40,text="⚒",command =  lambda: self.connection_option_setting_menu(),font=("",22),corner_radius=0)
         static_label =          customtkinter.CTkLabel(master = main_widgets, height=40,text = "Static:",font=("Arial",20,"bold"))
@@ -1615,6 +1619,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         # aktualizace hodnot nabídky
         if self.default_connection_option < len(self.connection_option_list):
             # nastavení naposledy zvoleného interfacu
+            self.drop_down_options.set(self.connection_option_list[self.default_connection_option])
+        else:
+            self.default_connection_option = 0
+            self.save_setting_parameter(parameter="change_def_conn_option",status=0)
             self.drop_down_options.set(self.connection_option_list[self.default_connection_option])
 
         if not excel_load_error:

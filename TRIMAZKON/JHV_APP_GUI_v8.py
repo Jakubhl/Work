@@ -42,7 +42,7 @@ customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 root=customtkinter.CTk()
 root.geometry("1200x900")
-root.title("TRIMAZKON v_3.6.1")
+root.title("TRIMAZKON v_3.6.2")
 #pro pripad vypisovani do konzole z exe:
 # sys.stdout = sys.__stdout__
 # print(initial_path)
@@ -620,6 +620,13 @@ def menu(image_opened = True): # Funkce spouští základní menu při spuštěn
  - Nové, přesné chybové hlášky + nepřekrývají okna cmd a pws
  - Vizualizace již přiřazených ip adres
  - Automatické plnění interfaců\n""")
+    changle_log.insert("current lineend","\n Verze 3.6.2 (19.6.2024)\n")
+    changle_log.insert("current lineend",
+""" - Oprava chyb s aut. plněním interfaců
+ - dotaz o admin práva, když je vyžadováno
+ - chybová hláška při mazání používaného síť. disku
+ - po namapování otevře explorer v novém disku
+ - zobrazování připojených interfaců\n""")
     changle_log.see(tk.END)
     
     def maximalize_window(e):
