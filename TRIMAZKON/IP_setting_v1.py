@@ -1,4 +1,5 @@
 import customtkinter
+import CTkMessagebox
 import tkinter as tk
 from openpyxl import load_workbook
 import subprocess
@@ -10,11 +11,10 @@ import psutil
 import socket
 import win32api
 import win32file
-import win32wnet
-import win32net
 from PIL import Image
 import sys
 import ctypes
+import queue
 
 def path_check(path_raw,only_repair = None):
     path=path_raw
@@ -61,7 +61,7 @@ def check_network_drive_status(drive_path):
     try:
         # Attempt to access a file or directory on the network drive
         # drive_path = drive_letter + "\\"
-        print("drive_path",drive_path)
+        # print("drive_path",drive_path)
         drive_path = drive_path[0:3]
         def call_subprocess():
             global checking_done
@@ -91,7 +91,6 @@ def check_network_drive_status(drive_path):
     except OSError:
         return False
 
-
 def list_mapped_disks(whole_format=None):
     drives = win32api.GetLogicalDriveStrings()
     print("drives",drives)
@@ -104,32 +103,6 @@ def list_mapped_disks(whole_format=None):
             else:
                 remote_drives.append(drive[0:1])
     return remote_drives
-    
-    # try:
-    #     result = subprocess.run('net use', shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    #     # Decode the output and split by lines
-    #     output_lines = result.stdout.decode().splitlines()
-    #     mapped_drives = []
-        
-    #     # Iterate through the output lines
-    #     for line in output_lines:
-    #         # Status       Local     Remote                    Network
-    #         # -------------------------------------------------------------------------------
-    #         # OK           T:        \\192.168.14.245\Data\Kamery
-
-    #         # Status může nabývat hodnot Unavailable, Disconnected, OK
-    #         # Zapisujeme Disconnected a OK
-            
-    #         if line.startswith('OK') or 'Disconnected' in line:
-    #             drive_letter = line.split()[1]
-    #             mapped_drives.append(drive_letter[0:1])
-        
-    #     print("mapped_drives: ", mapped_drives)
-    #     return mapped_drives
-    
-    # except subprocess.CalledProcessError as e:
-    #     print(f"Error occurred: {e.stderr.decode()}")
-    #     return []
 
 class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
     """
@@ -148,14 +121,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.app_path = os.getcwd()
         self.app_path = path_check(self.app_path,True)
         self.excel_file_path = self.app_path + "saved_addresses_2.xlsx"
-        #default:
-        self.connection_option_list = ["Ethernet",
-                             "Ethernet 1",
-                             "Ethernet 2",
-                             "Ethernet 3",
-                             "Ethernet 4",
-                             "Ethernet 5",
-                             "Wi-Fi"]
         self.last_project_name = ""
         self.last_project_ip = ""
         self.last_project_mask = ""
@@ -170,6 +135,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.make_project_favourite = False
         self.favourite_list = []
         self.default_connection_option = 0
+        self.connection_option_list = []
         try:
             workbook = load_workbook(self.excel_file_path)
             worksheet = workbook["Settings"]
@@ -180,12 +146,12 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             saved_def_con_option = worksheet['B' + str(1)].value
             self.default_connection_option = int(saved_def_con_option)
 
-            self.connection_option_list = []
-            all_options = worksheet['B' + str(2)].value
-            all_options = str(all_options).split(",")
-            for i in range (0,len(all_options)):
-                if all_options[i] != "":
-                    self.connection_option_list.append(all_options[i])
+            # self.connection_option_list = []
+            # all_options = worksheet['B' + str(2)].value
+            # all_options = str(all_options).split(",")
+            # for i in range (0,len(all_options)):
+            #     if all_options[i] != "":
+            #         self.connection_option_list.append(all_options[i])
 
             def_show_favourite = worksheet['B' + str(3)].value
             if int(def_show_favourite) == 1:
@@ -203,6 +169,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             if def_window_size == 2:
                 self.root.state('normal')
                 self.root.geometry(f"260x1000+{0}+{0}")
+
             workbook.close()
         except Exception:
             self.connection_option_list = ["data nenalezena"]
@@ -224,6 +191,51 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
     def close_window(self,window):
         window.update_idletasks()
         window.destroy()
+
+    def fill_interfaces(self):
+        """
+        Vrátí:
+        - seznam interfaců [0]
+        - seznam připojených interfaců [1]
+        """
+        process = subprocess.Popen("netsh interface show interface",
+                                                    stdout=subprocess.PIPE,
+                                                    stderr=subprocess.PIPE,
+                                                    creationflags=subprocess.CREATE_NO_WINDOW)
+        stdout, stderr = process.communicate()
+        try:
+            stdout_str = stdout.decode('utf-8')
+            data = str(stdout_str)
+        except UnicodeDecodeError:
+            try:
+                stdout_str = stdout.decode('cp1250')
+                data = str(stdout_str)
+            except UnicodeDecodeError:
+                data = str(stdout)
+            
+        print("netsh data: ", data)
+        lines = data.strip().splitlines()
+        interfaces = []
+        interface_statuses =[]
+        # Process each line starting from the second line
+        for line in lines[2:]:  # Skip the first two lines (headers and separator)
+            # Split the line based on spaces
+            values = line.split()
+            if len(values) >= 4:  # Ensure there are enough columns
+                # Combine the last columns into Interface Name, handle spaces in the name
+                interface_name = ' '.join(values[3:])
+                interface_statuses.append(values[1])
+                interfaces.append(interface_name)
+
+        print(interfaces)
+        print("status: ", interface_statuses)
+        connected_interfaces =[]
+        for items in interface_statuses:
+            if items != "Odpojen" and items != "Odpojeno" and items != "Disconnected":
+                connected_interfaces.append(interfaces[interface_statuses.index(items)])
+        print("online: ", connected_interfaces)
+        
+        return [interfaces,connected_interfaces]
 
     def read_excel_data(self):
         if self.show_favourite:
@@ -273,12 +285,13 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         saved_def_con_option = worksheet['B' + str(1)].value
         self.default_connection_option = int(saved_def_con_option)
         # seznam interfaců
-        self.connection_option_list = []
-        all_options = worksheet['B' + str(2)].value
-        all_options = str(all_options).split(",")
-        for i in range (0,len(all_options)):
-            if all_options[i] != "":
-                self.connection_option_list.append(all_options[i])
+        # self.fill_interfaces()
+        # self.connection_option_list = []
+        # all_options = worksheet['B' + str(2)].value
+        # all_options = str(all_options).split(",")
+        # for i in range (0,len(all_options)):
+        #     if all_options[i] != "":
+        #         self.connection_option_list.append(all_options[i])
                      
     def save_excel_data(self,project_name,IP_adress,mask,notes,only_edit = None,force_row_to_print=None,fav_status = None):
         workbook = load_workbook(self.excel_file_path)
@@ -406,7 +419,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 self.read_excel_data()
                 # nejprve popnu stary projekt, s povodnim jmenem
                 # poté insertnu pozměněný
-                print(self.all_rows,"the favourite projects")
                 the_id_to_pop = self.project_list.index(self.last_project_name)
                 self.all_rows.pop(the_id_to_pop)
                 self.all_rows.insert(0,selected_project)
@@ -552,7 +564,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         for i in range(0,len(self.project_list)):
             if self.project_list[i] == wanted_project and len(str(self.project_list[i])) == len(str(wanted_project)) and project_found == False:
                 row_index = self.project_list.index(wanted_project)
-                print(self.favourite_list[row_index],"  ",self.all_rows[row_index],self.show_favourite)
                 worksheet.delete_rows(len(self.all_rows)-row_index)
                 project_found = True
                 #pokud ma status oblibenosti, tak vymazat i z oblibenych:
@@ -787,6 +798,34 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             return False
 
     def make_sure_ip_changed(self,interface_name,ip,command):
+        def close_prompt(child_root):
+            self.close_window(child_root)
+        def run_as_admin(child_root):
+            # Vyžádání admin práv: nefunkční ve vscode
+            self.close_window(child_root)
+            def is_admin():
+                try:
+                    return ctypes.windll.shell32.IsUserAnAdmin()
+                except:
+                    return False
+            if not is_admin():
+                ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+                sys.exit()
+        def open_app_as_admin_prompt():
+            child_root=customtkinter.CTk()
+            x = self.root.winfo_rootx()
+            y = self.root.winfo_rooty()
+            child_root.geometry(f"620x150+{x+300}+{y+300}")  
+            child_root.title("Upozornění")
+            child_root.wm_iconbitmap(resource_path(self.app_icon))
+            proceed_label = customtkinter.CTkLabel(master = child_root,text = "Přejete si znovu spustit aplikaci, jako administrátor?",font=("Arial",25))
+            button_yes =    customtkinter.CTkButton(master = child_root,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: run_as_admin(child_root))
+            button_no =     customtkinter.CTkButton(master = child_root,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+            proceed_label   .pack(pady=(15,0),padx=10,anchor="w",expand=False,side = "top")
+            button_no       .pack(pady = 5, padx = 10,anchor="w",expand=False,side="right")
+            button_yes      .pack(pady = 5, padx = 10,anchor="w",expand=False,side="right")
+            child_root.mainloop()
+
         interface_index = self.connection_option_list.index(interface_name)
         def call_subprocess():
             if ip in self.current_address_list:
@@ -794,7 +833,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 return
             win_change_ip_time = 7
             for i in range(0,win_change_ip_time):
-                add_colored_line(self.main_console,f"Čekám až windows provede změny: {7-i} s...","white",None,True)
+                add_colored_line(self.main_console,f"Čekám, až windows provede změny: {7-i} s...","white",None,True)
                 self.option_change("",silent=True)
                 time.sleep(1)
 
@@ -803,8 +842,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 add_colored_line(self.main_console,f"IPv4 adresa u {interface_name} byla přenastavena na: {ip}","green",None,True)
                 self.make_project_cells(no_read=True)
             else:
-                add_colored_line(self.main_console,f"Chyba, neplatná adresa nebo daný inteface na tomto zařízení neexistuje","red",None,True)
-
+                add_colored_line(self.main_console,f"Chyba, neplatná adresa nebo daný inteface odpojen od tohoto zařízení (pro nastavování odpojených interfaců spusťtě aplikaci jako administrátor)","red",None,True)
+                open_app_as_admin_prompt()
 
         run_background = threading.Thread(target=call_subprocess,)
         run_background.start()
@@ -831,59 +870,18 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 else:
                     print(f"Command executed successfully:\n{stdout_str}")
 
-                # self.option_change("",silent=True)
-                # if self.static_label2.winfo_exists():
-                #     self.static_label2.configure(text=ip)
             except Exception as e:
                 print(f"Exception occurred: {str(e)}")
 
 
             self.make_sure_ip_changed(interface_name,ip,"")
-        """#button_row je id stisknuteho tlacitka... =0 od vrchu
-        ip = str(self.all_rows[button_row][1])
-        mask = str(self.all_rows[button_row][2])
-        # powershell command na zjisteni network adapter name> Get-NetAdapter | Select-Object -Property InterfaceAlias, Linkspeed, Status
-        interface_name = str(self.drop_down_options.get())
-        try:
-            # Construct the netsh command
-            netsh_command = f"netsh interface ip set address \"{interface_name}\" static {ip} {mask}"
-            powershell_command = [
-                'powershell.exe',
-                '-Command', f'Start-Process powershell -Verb RunAs -ArgumentList \'-Command "{netsh_command}"\' -WindowStyle Hidden -PassThru'
-            ]
-            process = subprocess.Popen(powershell_command,
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE,
-                                        creationflags=subprocess.CREATE_NO_WINDOW)
-            
-            stdout, stderr = process.communicate()
-            stdout_str = stdout.decode('utf-8')
-            stderr_str = stderr.decode('utf-8')
-            if stderr_str:
-                print(f"Error occurred: {stderr_str}")
-            else:
-                print(f"Command executed successfully:\n{stdout_str}")
-
-            # self.option_change("",silent=True)
-            # if self.static_label2.winfo_exists():
-            #     self.static_label2.configure(text=ip)
-        except Exception as e:
-            print(f"Exception occurred: {str(e)}")
-
-
-        command_to_run = [
-            'netsh', 'interface', 'ip', 'set', 'address',
-            interface_name, 'static', ip, mask
-        ]
-        self.make_sure_ip_changed(interface_name,ip,command_to_run)"""
+        
         ip = str(self.all_rows[button_row][1])
         mask = str(self.all_rows[button_row][2])
         # powershell command na zjisteni network adapter name> Get-NetAdapter | Select-Object -Property InterfaceAlias, Linkspeed, Status
         interface_name = str(self.drop_down_options.get())
         powershell_command = f"netsh interface ip set address \"{interface_name}\" static " + ip + " " + mask
-        # subprocess.run(["powershell.exe", "-Command", "Start-Process", "powershell.exe", "-Verb", "RunAs", "-ArgumentList", f"'-Command {powershell_command}'"])
         try:
-            # subprocess.run(["powershell.exe", "-Command",powershell_command],check=True)
             process = subprocess.Popen(['powershell.exe', '-Command', powershell_command],
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE,
@@ -891,18 +889,14 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             stdout, stderr =process.communicate()
             stdout_str = stdout.decode('utf-8')
             stderr_str = stderr.decode('utf-8')
-            # if "Run as administrator" in str(stdout_str):
-            #     raise subprocess.CalledProcessError(1, powershell_command, stdout_str)
-            # if "syntax is incorrect" in str(stdout_str):
+            print(f"VÝSTUP Z IP SETTING: {str(stdout_str)}")
+
             if len(str(stdout_str)) > 7:
                 raise subprocess.CalledProcessError(1, powershell_command, stdout_str)
             if stderr_str:
                 raise subprocess.CalledProcessError(1, powershell_command, stderr_str)
 
-            add_colored_line(self.main_console,f"IPv4 adresa u {interface_name} byla přenastavena na: {ip}","green",None,True)
-            # self.option_change("",silent=True)
-            # if self.static_label2.winfo_exists():
-            #     self.static_label2.configure(text=ip)
+            # add_colored_line(self.main_console,f"IPv4 adresa u {interface_name} byla přenastavena na: {ip}","green",None,True)
             self.make_sure_ip_changed(interface_name,ip,"")
 
         except subprocess.CalledProcessError as e:
@@ -982,8 +976,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
     def show_only_notes(self,e,widget_id,disk = None):
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
-        print(self.root.winfo_rootx(),self.root.winfo_rooty())
-        print(self.all_rows[widget_id])
         if disk:
             project_note = self.disk_all_rows[widget_id][5]
             project_name = self.disk_all_rows[widget_id][0]
@@ -1083,7 +1075,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         padx_list = [10,190,240,0,0,640]
         self.clear_frame(self.project_tree)
         mapped_disks = list_mapped_disks(whole_format = True)
-        print(mapped_disks)
         column1 =  customtkinter.CTkLabel(master = self.project_tree, width = 20,height=30,text = "Projekt: ",font=("Arial",20,"bold"))
         column2 =  customtkinter.CTkLabel(master = self.project_tree, width = 20,height=30,text = "ftp adresa: ",font=("Arial",20,"bold"))
         column3 =  customtkinter.CTkLabel(master = self.project_tree, width = 20,height=30,text = "Poznámky: ",font=("Arial",20,"bold"))
@@ -1111,7 +1102,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                             for i in range(0,len(mapped_disks)):
                                 if mapped_disks[i][0:1] == self.disk_all_rows[y][x]:
                                     drive_status = check_network_drive_status(mapped_disks[i])
-                                    print(drive_status)
                                     if drive_status == True:
                                         project_frame.configure(fg_color = "green")
                                     else:
@@ -1159,23 +1149,23 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         if len(str(self.DL_manual_entry.get())) > 0:
             drive_letter = str(self.DL_manual_entry.get())
         
-        # for users in list_mapped_disks()[1]:
-        #     self.disconnect_drive_as_user(drive_letter,users)
-
         delete_command = "net use " + drive_letter +": /del"
-        subprocess.run(delete_command, shell=True, cwd="C:/Windows/System32")
-
-        self.refresh_explorer()
-
-        add_colored_line(self.main_console,f"Disky s označením {drive_letter} byly odpojeny","orange",None,True)
-        self.make_project_cells_disk(no_read=True)
-        self.close_window(child_root)
+        process = subprocess.Popen(delete_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8')
+        stdout, stderr= process.communicate()
+        if "Is it OK to continue disconnecting and force them closed?" in stdout:
+            add_colored_line(self.main_console,f"Disk je právě používán, nejprve jej zavřete","red",None,True)
+            self.close_window(child_root)
+        else:
+            self.refresh_explorer()
+            add_colored_line(self.main_console,f"Disky s označením {drive_letter} byly odpojeny","orange",None,True)
+            self.make_project_cells_disk(no_read=True) #refresh
+            self.close_window(child_root)
 
     def delete_disk_option_menu(self):
         child_root=customtkinter.CTk()
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
-        child_root.geometry(f"+{x+50}+{y+100}")
+        child_root.geometry(f"+{x+250}+{y+200}")
         # child_root.wm_iconbitmap(self.initial_path+'images/logo_TRIMAZKON.ico')
         child_root.wm_iconbitmap(resource_path(self.app_icon))
         # child_root.geometry("520x200")
@@ -1227,7 +1217,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             print("STDOUT:", stdout)
             print("STDERR:", stderr)
             print("Return Code:", self.connection_status)"""
-            self.connection_status = subprocess.call(second_command,shell=True,text=True, cwd="C:/Windows/System32")
+            self.connection_status = subprocess.call(second_command,shell=True,text=True)
   
         run_background = threading.Thread(target=call_subprocess,)
         run_background.start()
@@ -1243,6 +1233,13 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
              add_colored_line(self.main_console,f"Disk úspěšně připojen","green",None,True)
              self.refresh_explorer()
              self.make_project_cells_disk(no_read=True)
+             def open_explorer(path):
+                if os.path.exists(path):
+                    os.startfile(path)
+                else:
+                    print(f"The path {path} does not exist.")
+
+             open_explorer(Drive_letter + ":\\")
         else:
              add_colored_line(self.main_console,f"Připojení selhalo (ixon? musí být zvolena alespoň 1 složka na disku...)","red",None,True)
 
@@ -1298,7 +1295,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         if result == True:
             #zmena poradi
             project = self.all_rows[self.last_project_id]
-            print(self.favourite_list)
             favourite_status = self.favourite_list[self.last_project_id]
             self.all_rows.pop(self.last_project_id)
             self.all_rows.insert(0,project)
@@ -1357,7 +1353,9 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             # Check if the specified interface exists
             if interface_name in addresses:
                 addr_count = 0
+                print(f"Adresy interfacu: {interface_name}")
                 for addr in addresses[interface_name]:
+                    print(f"{addr}")
                     # prvni AF_INET je pridelena automaticky, druha je privatni, nastavena DHCP
                     if addr.family == socket.AF_INET:  # IPv4 address
                         if addr_count == 1:
@@ -1372,7 +1370,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         for items in self.connection_option_list:
             found_address = get_current_ip_address(items)
             self.current_address_list.append(found_address)
-        print(self.current_address_list)
     
     def manage_interfaces(self,given_input,operation = None):
         index =0
@@ -1579,18 +1576,15 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         button_settings =       customtkinter.CTkButton(master = main_widgets, width = 40,height=40,text="⚒",command =  lambda: self.connection_option_setting_menu(),font=("",22),corner_radius=0)
         static_label =          customtkinter.CTkLabel(master = main_widgets, height=40,text = "Static:",font=("Arial",20,"bold"))
         self.static_label2 =    customtkinter.CTkLabel(master = main_widgets, height=40,text = "",font=("Arial",22,"bold"),bg_color="black")
-        self.main_console = tk.Text(main_widgets, wrap="none", height=0, width=180,background="black",font=("Arial",22),state=tk.DISABLED)
+        online_label =          customtkinter.CTkLabel(master = main_widgets, height=40,text = "Online: ",font=("Arial",22,"bold"))
+        online_list =           customtkinter.CTkLabel(master = main_widgets, height=40,text = "",font=("Arial",22,"bold"))
 
-        # main_menu_button.                grid(column = 0,row=0,pady = (10,0),padx =0,sticky = tk.W)
-        # self.button_switch_all_ip.       grid(column = 0,row=0,pady = (10,0),padx =210,sticky = tk.W)
-        # self.button_switch_favourite_ip. grid(column = 0,row=0,pady = (10,0),padx =420,sticky = tk.W)
-        # button_switch_disk.              grid(column = 0,row=0,pady = (10,0),padx =630,sticky = tk.W)
+        self.main_console = tk.Text(main_widgets, wrap="none", height=0, width=180,background="black",font=("Arial",22),state=tk.DISABLED)
         main_menu_button.               pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
         self.button_switch_all_ip.      pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
         self.button_switch_favourite_ip.pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
         button_switch_disk.             pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
         image_logo.                     pack(pady = 0,padx =(15,0),anchor = "e",side = "right",ipadx = 20,ipady = 10,expand=False)
-
         project_label.          grid(column = 0,row=0,pady = 5,padx =0,sticky = tk.W)
         self.search_input.      grid(column = 0,row=0,pady = 5,padx =90,sticky = tk.W)
         button_search.          grid(column = 0,row=0,pady = 5,padx =255,sticky = tk.W)
@@ -1603,10 +1597,26 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         button_settings.        grid(column = 0,row=1,pady = 0,padx =315,sticky = tk.W)
         static_label.           grid(column = 0,row=1,pady = 0,padx =365,sticky = tk.W)
         self.static_label2.     grid(column = 0,row=1,pady = 0,padx =430,sticky = tk.W,ipadx = 10,ipady = 2)
+        online_label.           grid(column = 0,row=1,pady = 0,padx =620,sticky = tk.W)
+        online_list.           grid(column = 0,row=1,pady = 0,padx =700,sticky = tk.W)
+
         
         self.main_console.grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
+        # naplnění pole s interfaces
+        interfaces_data = self.fill_interfaces()
+        self.connection_option_list = interfaces_data[0]
+        self.drop_down_options.configure(values = self.connection_option_list)
+        online_list_text = ""
+        if len(interfaces_data[1]) > 0:
+            for data in interfaces_data[1]:
+                online_list_text = online_list_text + str(data) +", "
+            online_list_text = online_list_text[:-2]
+            online_list.configure(text=online_list_text)
+        # aktualizace hodnot nabídky
+        if self.default_connection_option < len(self.connection_option_list):
+            # nastavení naposledy zvoleného interfacu
+            self.drop_down_options.set(self.connection_option_list[self.default_connection_option])
 
-        self.drop_down_options.set(self.connection_option_list[self.default_connection_option])        
         if not excel_load_error:
             self.option_change("")
             self.make_project_cells()
@@ -1614,6 +1624,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.static_label2.configure(text=self.current_address_list[self.default_connection_option])
         else:
             add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_path}","red",None,True)
+
 
         def maximalize_window(e):
             self.root.update_idletasks()
@@ -1647,6 +1658,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.search_input.bind("<Return>",call_search)
         self.root.mainloop()
 
+
     def call_make_cells_disk(self):
         self.make_project_cells_disk()
 
@@ -1669,13 +1681,11 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         image_logo.             pack(pady=5,padx=15,expand=True,side = "right",anchor="e")
         main_widgets.           pack(pady=0,padx=5,fill="x",expand=False,side = "top")
         self.project_tree.      pack(pady=5,padx=5,fill="both",expand=True,side = "top")
-        # project_tree.grid(column = 0,row=0,pady = 5,padx =10,sticky = tk.W)
 
         main_menu_button =              customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "MENU",command =  lambda: self.call_menu(),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
         button_switch_all_ip =          customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "IP - všechny",command =  lambda: self.create_widgets(fav_status=False),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
         button_switch_favourite_ip =    customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "IP - oblíbené",command =  lambda: self.create_widgets(fav_status=True),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
         button_switch_disk =            customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "Síťové disky",command =  lambda: self.create_widgets_disk(),font=("Arial",25,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
-
         project_label =         customtkinter.CTkLabel(master = main_widgets, width = 100,height=40,text = "Projekt: ",font=("Arial",20,"bold"))
         self.search_input =     customtkinter.CTkEntry(master = main_widgets,font=("Arial",20),width=160,height=40,placeholder_text="Název projektu",corner_radius=0)
         button_search =         customtkinter.CTkButton(master = main_widgets, width = 150,height=40,text = "Vyhledat",command =  lambda: self.make_project_first_disk("search"),font=("Arial",20,"bold"),corner_radius=0)
@@ -1684,15 +1694,11 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         button_edit =           customtkinter.CTkButton(master = main_widgets, width = 160,height=40,text = "Editovat projekt",command =  lambda: self.edit_project(),font=("Arial",20,"bold"),corner_radius=0)
         button_make_first =     customtkinter.CTkButton(master = main_widgets, width = 250,height=40,text = "Přesunout na začátek",command =  lambda: self.make_project_first_disk(),font=("Arial",20,"bold"),corner_radius=0)
         refresh =               customtkinter.CTkButton(master = main_widgets, width = 100,height=40,text = "Obnovit",command =  lambda: self.refresh_explorer(refresh_disk=True),font=("Arial",20,"bold"),corner_radius=0)
-
         # button_change_window = customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Měnit IP adresu",command =  lambda: self.create_widgets(),font=("Arial",20,"bold"),corner_radius=0,fg_color="green")
-        delete_disk          = customtkinter.CTkButton(master = main_widgets, width = 250,height=40,text = "Odpojit síťový disk",command =  lambda: self.delete_disk_option_menu(),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
-        self.main_console = tk.Text(main_widgets, wrap="none", height=0, width=180,background="black",font=("Arial",22),state=tk.DISABLED)
+        delete_disk          =  customtkinter.CTkButton(master = main_widgets, width = 250,height=40,text = "Odpojit síťový disk",command =  lambda: self.delete_disk_option_menu(),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
+        as_admin_label =        customtkinter.CTkLabel(master = main_widgets,text = "",font=("Arial",20,"bold"))
+        self.main_console =     tk.Text(main_widgets, wrap="none", height=0, width=180,background="black",font=("Arial",22),state=tk.DISABLED)
 
-        # main_menu_button.           grid(column = 0,row=0,pady = (10,0),padx =0,sticky = tk.W)
-        # button_switch_all_ip.       grid(column = 0,row=0,pady = (10,0),padx =210,sticky = tk.W)
-        # button_switch_favourite_ip. grid(column = 0,row=0,pady = (10,0),padx =420,sticky = tk.W)
-        # button_switch_disk.         grid(column = 0,row=0,pady = (10,0),padx =630,sticky = tk.W)
         main_menu_button.          pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
         button_switch_all_ip.      pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
         button_switch_favourite_ip.pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
@@ -1707,11 +1713,19 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         button_make_first.  grid(column = 0,row=0,pady = 5,padx =885,sticky = tk.W)
         refresh.            grid(column = 0,row=0,pady = 5,padx =1140,sticky = tk.W)
         delete_disk.        grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
+        as_admin_label.     grid(column = 0,row=1,pady = 5,padx =270,sticky = tk.W)
         # button_change_window.grid(column = 0,row=1,pady = 5,padx =140,sticky = tk.W)
-        
         self.main_console.grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
         self.option_change("",only_console=True)
         
+        def is_admin():
+            try:
+                return ctypes.windll.shell32.IsUserAnAdmin()
+            except:
+                return False
+            
+        if is_admin():
+            as_admin_label.configure(text = "Aplikace je spuštěna, jako administrátor (mapovat disky lze pouze na uživatelském účtu)",text_color = "orange")
 
         def maximalize_window(e):
             self.root.update_idletasks()

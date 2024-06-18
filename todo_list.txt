@@ -300,13 +300,25 @@ podbarvit zabrane ip adresy - hotovo
 kdyz je trimazkon spusteny, jako admin - nelze mapovat disky - hotovo
 overovat prenastavenou ip adresu po par sekunach v subprocesu - hotovo
 
+7:35 AM 6/18/2024
+kontrolovat zda je interface připojený - hotovo
+upozorneni, jako admin u disků - hotovo
+rovnou vlezt do nove namapovaneho disku - hotovo
+kdyz otevrena složka s diskem podchytit chybovou hláškou - hotovo
+otocit kolecko na pricitani obrazku - hotovo
+cist inerfaces - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
-rovnou vlezt do nove namapovaneho disku
+
+
 poznamky prevest na hover-roleta
 menu - prvni tri moznosti sloucit do správa obrázků/ souborů
-kontrolovat zda je interface připojený
+
+-dat zaskrtavatka - cist interface z excelu, cist z netsh, cist s replace commandem u dekodovani
+
+
 
 
 aktualizace pouze pro editovanou stanici - nedalat vzdy vsechny widgety - nestacilo by update idletasks?
@@ -323,6 +335,15 @@ kdyz se prida nova stanice vytrigovat zadavani vsech parametru (neaktualizovat p
 pridat jeste jeden sloupec
 
 
+
+Admin State    State          Type             Interface Name
+-------------------------------------------------------------------------
+Enabled        Disconnected   Dedicated        Ethernet 2
+Disabled       Disconnected   Dedicated        Ethernet 3
+Enabled        Disconnected   Dedicated        Ethernet 5
+Enabled        Connected      Dedicated        Wi-Fi
+Enabled        Disconnected   Dedicated        Ethernet 4
+Enabled        Disconnected   Dedicated        Ethernet
 
 camera = {
     "type": "",
