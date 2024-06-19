@@ -116,9 +116,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.rows_taken = 0
         self.all_rows = []
         self.project_list = []
-        self.app_path = os.getcwd()
-        self.app_path = path_check(self.app_path,True)
-        self.excel_file_path = self.app_path + "saved_addresses_2.xlsx"
+        # self.app_path = os.getcwd()
+        # self.app_path = path_check(self.app_path,True)
+        # self.excel_file_path = self.app_path + "saved_addresses_2.xlsx"
+        self.excel_file_path = initial_path + "saved_addresses_2.xlsx"
         # print(self.excel_file_path)
         self.last_project_name = ""
         self.last_project_ip = ""
@@ -231,7 +232,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         connected_interfaces =[]
         for items in interface_statuses:
             if items != "Odpojen" and items != "Odpojeno" and items != "Disconnected":
-                connected_interfaces.append(interfaces[interface_statuses.index(items)])
+                if interfaces[interface_statuses.index(items)] not in connected_interfaces:
+                    connected_interfaces.append(interfaces[interface_statuses.index(items)])
         print("online: ", connected_interfaces)
         
         return [interfaces,connected_interfaces]
@@ -827,7 +829,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
         interface_index = self.connection_option_list.index(interface_name)
         def call_subprocess():
-            if ip in self.current_address_list:
+            if ip == self.current_address_list[interface_index]:
+                add_colored_line(self.main_console,f"Pro interface {interface_name} je již tato adresa ({ip}) nastavena","orange",None,True)
+                return
+            elif ip in self.current_address_list:
                 add_colored_line(self.main_console,f"Chyba, adresa je již používána pro jiný interface","red",None,True)
                 return
             win_change_ip_time = 7
@@ -999,10 +1004,12 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             note_window.mainloop()
 
     def make_project_cells(self,no_read = None):
-        def on_enter(e,interface,widget):
-            widget.configure(text = interface)    
-        def on_leave(e,ip,widget):
-            widget.configure(text = ip)
+        def on_enter(e,new_text,widget):
+            widget.configure(text = new_text)    
+        def on_leave(e,new_text,widget):
+            widget.configure(text = new_text)
+        def expand_frame(e,new_height,widget):
+            widget.configure(height = new_height)
 
         if no_read == None:
             self.read_excel_data()
@@ -1060,20 +1067,44 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                                 project_frame.configure(fg_color = "green")
                                 project_frame.bind("<Enter>",lambda e, interface = self.connection_option_list[self.current_address_list.index(ip_addr)], widget = parameter: on_enter(e,interface,widget))
                                 project_frame.bind("<Leave>",lambda e, ip = ip_addr, widget = parameter: on_leave(e,ip,widget))
-
+                                parameter.bind("<Enter>",lambda e, interface = self.connection_option_list[self.current_address_list.index(ip_addr)], widget = parameter: on_enter(e,interface,widget))
+                                parameter.bind("<Leave>",lambda e, ip = ip_addr, widget = parameter: on_leave(e,ip,widget))
 
                         if x==3: #frame s poznamkami...
-                            project_frame.configure(width=750)
+                            project_frame.configure(width=1000)
+                            if "\n" in self.all_rows[y][x]:
+                                notes_rows = self.all_rows[y][x].split("\n")
+                                first_row = notes_rows[0]
+                                parameter.configure(text =first_row) #vepsat pouze prvni radek
+                                expanded_dim = len(notes_rows) * 30
+                                normal_dim = 50
+                                project_frame.bind("<Enter>",lambda e, new_dim = expanded_dim, widget = project_frame: expand_frame(e,new_dim,widget))
+                                project_frame.bind("<Enter>",lambda e, all_rows = self.all_rows[y][x], widget = parameter: on_leave(e,all_rows,widget))
+                                parameter.bind("<Enter>",lambda e, new_dim = expanded_dim, widget = project_frame: expand_frame(e,new_dim,widget))
+                                parameter.bind("<Enter>",lambda e, all_rows = self.all_rows[y][x], widget = parameter: on_leave(e,all_rows,widget))
+                                project_frame.bind("<Leave>",lambda e, new_dim = normal_dim, widget = project_frame: expand_frame(e,new_dim,widget))
+                                project_frame.bind("<Leave>",lambda e, first_row = first_row, widget = parameter: on_enter(e,first_row,widget))
+                                parameter.bind("<Leave>",lambda e, new_dim = normal_dim, widget = project_frame: expand_frame(e,new_dim,widget))
+                                parameter.bind("<Leave>",lambda e, first_row = first_row, widget = parameter: on_enter(e,first_row,widget))
+
                             # pravým klikem zobrazit poznámky
-                            project_frame.bind("<Button-3>",lambda e, widget_id = y: self.show_only_notes(e, widget_id))
-                            parameter.bind("<Button-3>",lambda e, widget_id = y: self.show_only_notes(e, widget_id))
+                            # project_frame.bind("<Button-3>",lambda e, widget_id = y: self.show_only_notes(e, widget_id))
+                            # parameter.bind("<Button-3>",lambda e, widget_id = y: self.show_only_notes(e, widget_id))
     
-    def make_project_cells_disk(self,no_read = None):
+    def make_project_cells_disk(self,no_read = None,disk_statuses = False):
+        def on_enter(e,new_text,widget):
+            widget.configure(text = new_text)    
+        def on_leave(e,new_text,widget):
+            widget.configure(text = new_text)
+        def expand_frame(e,new_height,widget):
+            widget.configure(height = new_height)
+
         if no_read == None:
             self.read_excel_data()
         padx_list = [10,190,240,0,0,640]
         self.clear_frame(self.project_tree)
-        mapped_disks = list_mapped_disks(whole_format = True)
+        if disk_statuses:
+            mapped_disks = list_mapped_disks(whole_format = True)
         column1 =  customtkinter.CTkLabel(master = self.project_tree, width = 20,height=30,text = "Projekt: ",font=("Arial",20,"bold"))
         column2 =  customtkinter.CTkLabel(master = self.project_tree, width = 20,height=30,text = "ftp adresa: ",font=("Arial",20,"bold"))
         column3 =  customtkinter.CTkLabel(master = self.project_tree, width = 20,height=30,text = "Poznámky: ",font=("Arial",20,"bold"))
@@ -1098,13 +1129,14 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                         project_frame =  customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,fg_color="black",border_width=2,height=50,width=400)
                         if x == 1: #frame s písmenem disku
                             project_frame.configure(width=50)
-                            for i in range(0,len(mapped_disks)):
-                                if mapped_disks[i][0:1] == self.disk_all_rows[y][x]:
-                                    drive_status = check_network_drive_status(mapped_disks[i])
-                                    if drive_status == True:
-                                        project_frame.configure(fg_color = "green")
-                                    else:
-                                        project_frame.configure(fg_color = "red")
+                            if disk_statuses:
+                                for i in range(0,len(mapped_disks)):
+                                    if mapped_disks[i][0:1] == self.disk_all_rows[y][x]:
+                                        drive_status = check_network_drive_status(mapped_disks[i])
+                                        if drive_status == True:
+                                            project_frame.configure(fg_color = "green")
+                                        else:
+                                            project_frame.configure(fg_color = "red")
 
                         project_frame.grid(row=y+1,column=0,padx=padx_list[x],sticky=tk.W)
                         project_frame.grid_propagate(0)
@@ -1115,10 +1147,24 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                         parameter.bind("<Button-1>",lambda e, widget_id = y: self.clicked_on_project(e, widget_id))
 
                         if x==5: #frame s poznamkami...
-                            project_frame.configure(width=750)
-                            # pravým klikem zobrazit poznámky
-                            project_frame.bind("<Button-3>",lambda e, widget_id = y: self.show_only_notes(e, widget_id,disk=True))
-                            parameter.bind("<Button-3>",lambda e, widget_id = y: self.show_only_notes(e, widget_id,disk=True))
+                            project_frame.configure(width=1000)
+                            if "\n" in self.disk_all_rows[y][x]:
+                                notes_rows = self.disk_all_rows[y][x].split("\n")
+                                first_row = notes_rows[0]
+                                parameter.configure(text =first_row) #vepsat pouze prvni radek
+                                expanded_dim = len(notes_rows) * 30
+                                normal_dim = 50
+                                project_frame.bind("<Enter>",lambda e, new_dim = expanded_dim, widget = project_frame: expand_frame(e,new_dim,widget))
+                                project_frame.bind("<Enter>",lambda e, all_rows = self.disk_all_rows[y][x], widget = parameter: on_leave(e,all_rows,widget))
+                                parameter.bind("<Enter>",lambda e, new_dim = expanded_dim, widget = project_frame: expand_frame(e,new_dim,widget))
+                                parameter.bind("<Enter>",lambda e, all_rows = self.disk_all_rows[y][x], widget = parameter: on_leave(e,all_rows,widget))
+                                project_frame.bind("<Leave>",lambda e, new_dim = normal_dim, widget = project_frame: expand_frame(e,new_dim,widget))
+                                project_frame.bind("<Leave>",lambda e, first_row = first_row, widget = parameter: on_enter(e,first_row,widget))
+                                parameter.bind("<Leave>",lambda e, new_dim = normal_dim, widget = project_frame: expand_frame(e,new_dim,widget))
+                                parameter.bind("<Leave>",lambda e, first_row = first_row, widget = parameter: on_enter(e,first_row,widget))
+                            # # pravým klikem zobrazit poznámky
+                            # project_frame.bind("<Button-3>",lambda e, widget_id = y: self.show_only_notes(e, widget_id,disk=True))
+                            # parameter.bind("<Button-3>",lambda e, widget_id = y: self.show_only_notes(e, widget_id,disk=True))
 
     def edit_project(self):
         result = self.check_given_input()
@@ -1141,7 +1187,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         refresh_explorer="start explorer.exe"
         subprocess.run(refresh_explorer, shell=True)
         if refresh_disk:
-            self.make_project_cells_disk()
+            self.make_project_cells_disk(disk_statuses=True)
 
     def delete_disk(self,child_root):
         drive_letter = str(self.drive_letter_input.get())
@@ -1269,8 +1315,18 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         return ipv4_addresses
 
     def option_change(self,args,only_console = False,silent = False):
+        """
+        Volá get_current_ip_list(), aktualizuje současně nastavené adresy
+        - only console: vypíše do konzole aktuální připojení
+        - silent: nevypisuje do konzole
+        """
         if not only_console:
-            self.default_connection_option = self.connection_option_list.index(self.drop_down_options.get())
+            try:
+                self.default_connection_option = self.connection_option_list.index(self.drop_down_options.get())
+            except ValueError as e:
+                print(f"Error: {e}")
+                self.default_connection_option = 0
+
             #pamatovat si naposledy zvoleny zpusob pripojeni:
             self.save_setting_parameter(parameter="change_def_conn_option",status=int(self.default_connection_option))
             self.get_current_ip_list()
@@ -1282,6 +1338,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             message = ""
             for items in current_connection:
                 message = message + items + " "
+            if message == "":
+                message = "nenalezeno"
             add_colored_line(self.main_console,f"Současné připojení: {message}","white",None,True)
 
     def make_project_first(self,purpouse=None):
@@ -1374,84 +1432,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         for items in self.connection_option_list:
             found_address = get_current_ip_address(items)
             self.current_address_list.append(found_address)
-    
-    def manage_interfaces(self,given_input,window,operation = None):
-        index =0
-        changes_were_made = False
-        if operation == "add_new":
-            if given_input.replace(" ","") != "":
-                self.connection_option_list.insert(0,given_input)
-                add_colored_line(self.console,f"Přidán nový interface: {given_input}","green",None,True)
-                changes_were_made = True
-            else:
-                add_colored_line(self.console,"Vložte název","red",None,True)
-        
-        elif operation == "remove":
-            if given_input.replace(" ","") != "":
-                try:
-                    index = self.connection_option_list.index(given_input)
-                    self.connection_option_list.pop(index)
-                    add_colored_line(self.console,f"Interface: {given_input} smazán","orange",None,True)
-                    changes_were_made = True
-                except ValueError:
-                    add_colored_line(self.console,"Interface nenalezen","red",None,True)
-                
-            elif self.interface_input.get() != "":
-                given_input = self.interface_input.get()
-                index = self.connection_option_list.index(given_input)
-                self.connection_option_list.pop(index)
-                add_colored_line(self.console,f"Interface: {given_input} smazán","orange",None,True)
-                changes_were_made = True
-            else:
-                add_colored_line(self.console,"Vyberte interface","red",None,True)
-
-        # ulozeni zmen
-        if changes_were_made == True:
-            self.default_connection_option = 0
-            excel_string_of_options = ""
-            self.save_setting_parameter(parameter="change_def_conn_option",status=int(self.default_connection_option))
-            for items in self.connection_option_list:
-                if items != "":
-                    excel_string_of_options = excel_string_of_options + str(items) + ","
-
-            self.save_setting_parameter(parameter="new_conn_options",status=excel_string_of_options)
-            self.close_window(window)
-        
-        # zvoleni noveho interfacu
-        self.drop_down_options.configure(values = self.connection_option_list)
-        self.drop_down_options.set(self.connection_option_list[self.default_connection_option])
-        self.interface_input.configure(values = self.connection_option_list)
-        self.interface_input.set(self.connection_option_list[self.default_connection_option])
-        # self.close_window(child_root)
-
-        self.option_change("")
-
-    def connection_option_setting_menu(self):
-        self.read_excel_data()
-        child_root=customtkinter.CTk()
-        x = self.root.winfo_rootx()
-        y = self.root.winfo_rooty()
-        child_root.geometry(f"+{x+50}+{y+100}")
-        # child_root.wm_iconbitmap(self.initial_path+'images/logo_TRIMAZKON.ico')
-        child_root.wm_iconbitmap(resource_path(self.app_icon))
-        # child_root.geometry("520x200")
-        child_root.title("Nastavení možností připojení (interface list)")
-
-        label =             customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Vyberte nebo vyhledejte manuálně: ",font=("Arial",20,"bold"))
-        self.interface_input = customtkinter.CTkOptionMenu(master = child_root,font=("Arial",20),width=200,height=30,values=self.connection_option_list,corner_radius=0)
-        manual_entry_interface = customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0,placeholder_text="manuálně")
-        add_button =        customtkinter.CTkButton(master = child_root, width = 150,height=30,text = "Přidat", command = lambda: self.manage_interfaces(given_input=manual_entry_interface.get(),operation="add_new",window = child_root),font=("Arial",20,"bold"),corner_radius=0,fg_color="green")
-        del_button =        customtkinter.CTkButton(master = child_root, width = 150,height=30,text = "Smazat", command = lambda: self.manage_interfaces(given_input=manual_entry_interface.get(),operation="remove", window = child_root),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
-        self.console =      tk.Text(child_root, wrap="none", height=0, width=40,background="black",font=("Arial",14),state=tk.DISABLED)
-        
-        label.              grid(column = 0,row=0,pady = 5,padx =10,sticky = tk.W)
-        self.interface_input.grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
-        manual_entry_interface.grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
-        add_button.         grid(column = 0,row=3,pady = 5,padx =10,sticky = tk.W)
-        del_button.         grid(column = 0,row=3,pady = 5,padx =170,sticky = tk.W)
-        self.console.       grid(column = 0,row=4,pady = 5,padx =10,sticky = tk.W)
-        
-        child_root.mainloop()
 
     def save_setting_parameter(self,parameter,status):
         """
@@ -1525,6 +1505,20 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.button_switch_favourite_ip. configure(fg_color="#212121")
             self.button_switch_all_ip.       configure(fg_color="black")
 
+    def refresh_interfaces(self,all = False):
+        interfaces_data = self.fill_interfaces()
+        self.connection_option_list = interfaces_data[0]
+        self.drop_down_options.configure(values = self.connection_option_list)
+        online_list_text = ""
+        if len(interfaces_data[1]) > 0:
+            for data in interfaces_data[1]:
+                online_list_text = online_list_text + str(data) +", "
+            online_list_text = online_list_text[:-2] # odebrat čárku s mezerou
+
+        self.online_list.configure(text=online_list_text)
+        if all:
+            self.option_change("")
+
     def create_widgets(self,fav_status = None,init=None,excel_load_error = False):
         if not excel_load_error:
             if init:
@@ -1577,11 +1571,11 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         connect_label =         customtkinter.CTkLabel(master = main_widgets, width = 100,height=40,text = "Připojení: ",font=("Arial",20,"bold"))
         self.drop_down_options = customtkinter.CTkOptionMenu(master = main_widgets,width=200,height=40,font=("Arial",20,"bold"),corner_radius=0,command=  self.option_change)
         # "⚙️", "⚒", "🔧", "🔩"
-        button_settings =       customtkinter.CTkButton(master = main_widgets, width = 40,height=40,text="⚒",command =  lambda: self.connection_option_setting_menu(),font=("",22),corner_radius=0)
+        button_settings =       customtkinter.CTkButton(master = main_widgets, width = 40,height=40,text="⚒",command =  lambda: self.refresh_interfaces(all=True),font=("",22),corner_radius=0) #refresh interface statusů
         static_label =          customtkinter.CTkLabel(master = main_widgets, height=40,text = "Static:",font=("Arial",20,"bold"))
         self.static_label2 =    customtkinter.CTkLabel(master = main_widgets, height=40,text = "",font=("Arial",22,"bold"),bg_color="black")
         online_label =          customtkinter.CTkLabel(master = main_widgets, height=40,text = "Online: ",font=("Arial",22,"bold"))
-        online_list =           customtkinter.CTkLabel(master = main_widgets, height=40,text = "",font=("Arial",22,"bold"))
+        self.online_list =           customtkinter.CTkLabel(master = main_widgets, height=40,text = "",font=("Arial",22,"bold"))
 
         self.main_console = tk.Text(main_widgets, wrap="none", height=0, width=180,background="black",font=("Arial",22),state=tk.DISABLED)
         main_menu_button.               pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
@@ -1602,20 +1596,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         static_label.           grid(column = 0,row=1,pady = 0,padx =365,sticky = tk.W)
         self.static_label2.     grid(column = 0,row=1,pady = 0,padx =430,sticky = tk.W,ipadx = 10,ipady = 2)
         online_label.           grid(column = 0,row=1,pady = 0,padx =620,sticky = tk.W)
-        online_list.           grid(column = 0,row=1,pady = 0,padx =700,sticky = tk.W)
+        self.online_list.           grid(column = 0,row=1,pady = 0,padx =700,sticky = tk.W)
 
-        
         self.main_console.grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
-        # naplnění pole s interfaces
-        interfaces_data = self.fill_interfaces()
-        self.connection_option_list = interfaces_data[0]
-        self.drop_down_options.configure(values = self.connection_option_list)
-        online_list_text = ""
-        if len(interfaces_data[1]) > 0:
-            for data in interfaces_data[1]:
-                online_list_text = online_list_text + str(data) +", "
-            online_list_text = online_list_text[:-2]
-            online_list.configure(text=online_list_text)
+        self.refresh_interfaces()
         # aktualizace hodnot nabídky
         if self.default_connection_option < len(self.connection_option_list):
             # nastavení naposledy zvoleného interfacu
@@ -1666,7 +1650,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.search_input.bind("<Return>",call_search)
         self.root.mainloop()
 
-
     def call_make_cells_disk(self):
         self.make_project_cells_disk()
 
@@ -1701,9 +1684,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         button_remove =         customtkinter.CTkButton(master = main_widgets, width = 150,height=40,text = "Smazat projekt", command =  lambda: self.delete_project_disk(),font=("Arial",20,"bold"),corner_radius=0)
         button_edit =           customtkinter.CTkButton(master = main_widgets, width = 160,height=40,text = "Editovat projekt",command =  lambda: self.edit_project(),font=("Arial",20,"bold"),corner_radius=0)
         button_make_first =     customtkinter.CTkButton(master = main_widgets, width = 250,height=40,text = "Přesunout na začátek",command =  lambda: self.make_project_first_disk(),font=("Arial",20,"bold"),corner_radius=0)
-        refresh =               customtkinter.CTkButton(master = main_widgets, width = 100,height=40,text = "Obnovit",command =  lambda: self.refresh_explorer(refresh_disk=True),font=("Arial",20,"bold"),corner_radius=0)
-        # button_change_window = customtkinter.CTkButton(master = main_widgets, width = 100,height=30,text = "Měnit IP adresu",command =  lambda: self.create_widgets(),font=("Arial",20,"bold"),corner_radius=0,fg_color="green")
-        delete_disk          =  customtkinter.CTkButton(master = main_widgets, width = 250,height=40,text = "Odpojit síťový disk",command =  lambda: self.delete_disk_option_menu(),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
+        delete_disk =           customtkinter.CTkButton(master = main_widgets, width = 250,height=40,text = "Odpojit síťový disk",command =  lambda: self.delete_disk_option_menu(),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
+        reset =                 customtkinter.CTkButton(master = main_widgets, width = 200,height=40,text = "Reset exploreru",command =  lambda: self.refresh_explorer(refresh_disk=True),font=("Arial",20,"bold"),corner_radius=0)
+        refresh =               customtkinter.CTkButton(master = main_widgets, width = 200,height=40,text = "Refresh statusů",command =  lambda: self.make_project_cells_disk(disk_statuses=True),font=("Arial",20,"bold"),corner_radius=0)
+        
         as_admin_label =        customtkinter.CTkLabel(master = main_widgets,text = "",font=("Arial",20,"bold"))
         self.main_console =     tk.Text(main_widgets, wrap="none", height=0, width=180,background="black",font=("Arial",22),state=tk.DISABLED)
 
@@ -1719,10 +1703,11 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         button_remove.      grid(column = 0,row=0,pady = 5,padx =565,sticky = tk.W)
         button_edit.        grid(column = 0,row=0,pady = 5,padx =720,sticky = tk.W)
         button_make_first.  grid(column = 0,row=0,pady = 5,padx =885,sticky = tk.W)
-        refresh.            grid(column = 0,row=0,pady = 5,padx =1140,sticky = tk.W)
         delete_disk.        grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
-        as_admin_label.     grid(column = 0,row=1,pady = 5,padx =270,sticky = tk.W)
-        # button_change_window.grid(column = 0,row=1,pady = 5,padx =140,sticky = tk.W)
+        reset.              grid(column = 0,row=1,pady = 5,padx =265,sticky = tk.W)
+        refresh.            grid(column = 0,row=1,pady = 5,padx =470,sticky = tk.W)
+
+        as_admin_label.     grid(column = 0,row=1,pady = 5,padx =675,sticky = tk.W)
         self.main_console.grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
         self.option_change("",only_console=True)
         
@@ -1733,7 +1718,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 return False
             
         if is_admin():
-            as_admin_label.configure(text = "Aplikace je spuštěna, jako administrátor (mapovat disky lze pouze na uživatelském účtu)",text_color = "orange")
+            as_admin_label.configure(text = "Aplikace je spuštěna, jako administrátor\n(mapovat disky lze pouze na uživatelském účtu)",text_color = "orange")
 
         def maximalize_window(e):
             self.root.update_idletasks()

@@ -17,11 +17,12 @@ pyinstaller --noconfirm --onefile --add-data "C:\Users\jakub.hlavacek.local\AppD
 udelat vyjimku:
 1)folder:
 Add-MpPreference -ExclusionPath "C:\Path\To\Exclude"
-
 odebrat vyjimku:
 1)folder
 Remove-MpPreference -ExclusionPath "C:\Path\To\Excluded\Folder"
-
 seznam vyjimek:
-
 (Get-MpPreference).ExclusionPath
+
+clear historie prohlizecu:
+del /f /q %APPDATA%\Microsoft\Windows\Recent\AutomaticDestinations\*
+del /f /q %APPDATA%\Microsoft\Windows\Recent\CustomDestinations\*

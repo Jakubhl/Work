@@ -38,7 +38,6 @@ if len(sys.argv) > 1: #spousteni pres cmd
     for i in range(0,len(initial_path_splitted)-2):
         initial_path += str(initial_path_splitted[i])+"/"
 
-
 #pro pripad vypisovani do konzole z exe:
 # sys.stdout = sys.__stdout__
 # print(initial_path)
@@ -54,7 +53,7 @@ customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 root=customtkinter.CTk()
 root.geometry("1200x900")
-root.title("TRIMAZKON v_3.6.2")
+root.title("TRIMAZKON v_3.7.0")
 root.wm_iconbitmap(resource_path(app_icon))
 
 def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
@@ -519,36 +518,38 @@ class main_menu:
     def __init__(self,root):
         self.root = root
         self.data_read_in_txt = read_text_file_data()
-        # self.menu(image_opened)
     
-    def call_sorting_option(self,list_of_menu_frames):
+    def clear_frames(self):
+        for frames in self.list_of_menu_frames:
+            frames.pack_forget()
+            frames.grid_forget()
+            frames.destroy()
+    
+    def call_sorting_option(self):
+        self.clear_frames()
         self.root.unbind("<f>")
-        Sorting_option(self.root,list_of_menu_frames)
+        Sorting_option(self.root)
 
-    def call_deleting_option(self,list_of_menu_frames):
+    def call_view_option(self,path_given = None,selected_image = ""):
+        self.clear_frames()
         self.root.unbind("<f>")
-        Deleting_option(self.root,list_of_menu_frames)
+        Image_browser(self.root,path_given,selected_image)
 
-    def call_convert_option(self,list_of_menu_frames):
+    def call_ip_manager(self):
+        self.clear_frames()
         self.root.unbind("<f>")
-        Converting_option(self.root,list_of_menu_frames)
+        IP_manager(self.root)
 
-    def call_view_option(self,list_of_menu_frames,path_given = None,selected_image = ""):
+    def call_advanced_option(self):
+        self.clear_frames()
         self.root.unbind("<f>")
-        Image_browser(self.root,list_of_menu_frames,path_given,selected_image)
-
-    def call_ip_manager(self,list_of_menu_frames):
-        self.root.unbind("<f>")
-        IP_manager(self.root,list_of_menu_frames)
-
-    def call_advanced_option(self,list_of_menu_frames):
-        self.root.unbind("<f>")
-        Advanced_option(self.root,list_of_menu_frames)
+        Advanced_option(self.root)
 
     def fill_changelog(self,change_log):
         change_log.insert("current lineend"," Verze 3.4 (3.3.2024)\n")
         change_log.insert("current lineend",
-    """ - velikost písma
+    """ 
+    - velikost písma
     - načítací animace
     - nové konzole (převedeno na thread "real time")
     - image browser - jména souborů (zkopírovatelná)
@@ -556,7 +557,8 @@ class main_menu:
     - pokročilá nastavení - nová vizualizace + nový způsob nabídky\n""")
         change_log.insert("current lineend","\n Verze 3.5 (22.4.2024)\n")
         change_log.insert("current lineend",
-    """ - film obrázků před a po + bind přepínání kolečkem
+    """ 
+    - film obrázků před a po + bind přepínání kolečkem
     - možnost procházet obrázky ve formátu .ifz
     - třídění podle ID - úprava popisu
     - oprava zoomování obrázku
@@ -565,13 +567,15 @@ class main_menu:
     - možnost nastavit trimazkon, jako výchozí prohlížeč obrázků\n""")
         change_log.insert("current lineend","\n Verze 3.6.0 (5.6.2024)\n")
         change_log.insert("current lineend",
-    """ - Nové možnosti změny IP a mountění disků (import ver.3.7)
+    """ 
+    - Nové možnosti změny IP a mountění disků (import ver.3.7)
     - okno s informacemi o aktualizacích v menu
     - nová vizualizace u pokročilých nastavení (okno se záložkami)
     - tlačítka nastavení ve všech oknech programu\n""")
         change_log.insert("current lineend","\n Verze 3.6.1 (17.6.2024)\n")
         change_log.insert("current lineend",
-    """ - Zadávání při vkládání nového síťového disku již nevyžaduje
+    """ 
+    - Zadávání při vkládání nového síťového disku již nevyžaduje
     jméno a heslo
     - Ošetření spouštění IP setting s otevřeným excelem se
     vstupními daty
@@ -581,9 +585,26 @@ class main_menu:
     - Bind klávesy F5 pro reset (refresh)
     - Nové, přesné chybové hlášky + nepřekrývají okna cmd a pws
     - Vizualizace již přiřazených ip adres\n""")
+        change_log.insert("current lineend","\n Verze 3.6.2 (19.6.2024)\n")
+        change_log.insert("current lineend",
+    """ 
+    - Oprava chyb s aut. plněním interfaců
+    - dotaz o admin práva, když je vyžadováno
+    - chybová hláška při mazání používaného síť. disku
+    - po namapování otevře explorer v novém disku
+    - zobrazování připojených interfaců\n""")
+        change_log.insert("current lineend","\n Verze 3.7.0 (20.6.2024)\n")
+        change_log.insert("current lineend",
+    """ 
+    - Plně funkční nastavování ip adres a mounting disků
+    - nová vizualizace hlavního menu
+    - rozklik poznámek převeden na hover
+    - odebrány možnosti přídávání/ odebírání interfaců
+    - možnost refresh online připojení
+    - refresh disků na tlačítko\n""")
         change_log.see(tk.END)
 
-    def menu(self,image_opened=True): # Funkce spouští základní menu při spuštění aplikace (MAIN)
+    def menu(self,initial=False): # Funkce spouští základní menu při spuštění aplikace (MAIN)
         """
         Funkce spouští základní menu při spuštění aplikace (MAIN)
 
@@ -609,25 +630,15 @@ class main_menu:
         frame_with_buttons.pack(pady=0,padx=0,fill="both",expand=True,side = "left")
         
         IB_as_def_browser_path = None
-        list_of_menu_frames = [frame_with_buttons,frame_with_logo,frame_with_buttons_right]
+        self.list_of_menu_frames = [frame_with_buttons,frame_with_logo,frame_with_buttons_right]
         
-        
-        # sorting_button  = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Třídit soubory", command = lambda: call_sorting_option(list_of_menu_frames),font=("Arial",25,"bold"))
-        # deleting_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Mazat soubory", command = lambda: call_deleting_option(list_of_menu_frames),font=("Arial",25,"bold"))
-        # convert_button  = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Konvertovat soubory", command = lambda: call_convert_option(list_of_menu_frames),font=("Arial",25,"bold"))
-
-        manage_images   = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Správa souborů/ obrázků", command = lambda: self.call_sorting_option(list_of_menu_frames),font=("Arial",25,"bold"))
-        viewer_button   = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Procházet obrázky", command = lambda: self.call_view_option(list_of_menu_frames),font=("Arial",25,"bold"))
-        ip_setting_button = customtkinter.CTkButton(master= frame_with_buttons, width= 400,height=100, text = "Měnit IP/ připojit disky", command = lambda: self.call_ip_manager(list_of_menu_frames),font=("Arial",25,"bold"))
-        advanced_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Pokročilá nastavení", command = lambda: self.call_advanced_option(list_of_menu_frames),font=("Arial",25,"bold"))
-        # change_log = tk.Text(frame_with_buttons_right, wrap="none", height=25, width=40,background="black",borderwidth=2,font=("Arial",20),state=tk.DISABLED)
+        manage_images   = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Správa souborů/ obrázků", command = lambda: self.call_sorting_option(),font=("Arial",25,"bold"))
+        viewer_button   = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Procházet obrázky", command = lambda: self.call_view_option(),font=("Arial",25,"bold"))
+        ip_setting_button = customtkinter.CTkButton(master= frame_with_buttons, width= 400,height=100, text = "Měnit IP/ připojit disky", command = lambda: self.call_ip_manager(),font=("Arial",25,"bold"))
+        advanced_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Pokročilá nastavení", command = lambda: self.call_advanced_option(),font=("Arial",25,"bold"))
         change_log_label = customtkinter.CTkLabel(master=frame_with_buttons_right, width= 600,height=50,font=("Arial",24,"bold"),text="Seznam posledně provedených změn: ")
         change_log = customtkinter.CTkTextbox(master=frame_with_buttons_right, width= 600,height=550,fg_color="#212121",font=("Arial",20),border_color="#636363",border_width=3,corner_radius=0)
-
         manage_images.     pack(pady =(105,10), padx=20,side="top",anchor="e")
-        # sorting_button.     pack(pady =(50,10), padx=20,side="top",anchor="e")
-        # deleting_button.    pack(pady =0,       padx=20,side="top",anchor="e")
-        # convert_button.     pack(pady =10,      padx=20,side="top",anchor="e")
         viewer_button.      pack(pady =0,       padx=20,side="top",anchor="e")
         ip_setting_button.  pack(pady = 10,     padx=20,side="top",anchor="e")
         advanced_button.    pack(pady =0,       padx=20,side="top",anchor="e")
@@ -650,15 +661,11 @@ class main_menu:
                 # self.root.state('zoomed')
             self.root.update()
         self.root.bind("<f>",maximalize_window)
-
-        #pripad pouzivani image browseru TRIMAZKON, jako vychozi prohlizec pro windows
-        #uprava u verze 3.6.1, kde se nove dotazujeme na admin prava
-        if len(sys.argv) > 1 and image_opened == False:
-            # print(sys.argv)
+        # initial promenna aby se to nespoustelo porad do kola pri navratu do menu
+        if len(sys.argv) > 1 and initial == True:
             raw_path = str(sys.argv[1])
             if sys.argv[0] == sys.argv[1]:
-                # pokud se totiž rovnají (cesta, kde se aplikace nachází a cesta, odkud aplikace volá), znamená to, že se pouze žádá o admin práva do ip settig
-                self.call_ip_manager(list_of_menu_frames)
+                self.call_ip_manager()
             else: 
                 # pokud se nerovnají jedná se nejspíše o volání základního prohlížeče obrázků
                 IB_as_def_browser_path=path_check(raw_path,True)
@@ -666,12 +673,12 @@ class main_menu:
                 IB_as_def_browser_path = ""
                 for i in range(0,len(IB_as_def_browser_path_splitted)-2):
                     IB_as_def_browser_path += IB_as_def_browser_path_splitted[i]+"/"
-                image_opened = True
+                root.update()
                 self.root.update()
                 selected_image = IB_as_def_browser_path_splitted[len(IB_as_def_browser_path_splitted)-2]
-                self.call_view_option(list_of_menu_frames,IB_as_def_browser_path,selected_image)
+                self.call_view_option(IB_as_def_browser_path,selected_image)
 
-        self.root.mainloop()   
+        self.root.mainloop()
 
 class Image_browser: # Umožňuje procházet obrázky a přitom například vybrané přesouvat do jiné složky
     """
@@ -680,9 +687,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
     - umožňuje: měnit rychlost přehrávání, přiblížení, otočení obrázku
     - reaguje na klávesové zkratky
     """
-    def __init__(self,root,list_of_menu_frames,IB_as_def_browser_path = None,selected_image = ""):
+    def __init__(self,root,IB_as_def_browser_path = None,selected_image = ""):
         self.root = root
-        self.list_of_menu_frames = list_of_menu_frames
+        # self.list_of_menu_frames = list_of_menu_frames
         self.IB_as_def_browser_path = IB_as_def_browser_path
         self.all_images = []
         self.increment_of_image = 0
@@ -1649,10 +1656,10 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
 
     def create_widgets(self): # Vytvoření veškerých widgets (MAIN image browseru)
         #cisteni menu widgets
-        for frames in self.list_of_menu_frames: 
-            frames.pack_forget()
-            frames.grid_forget()
-            frames.destroy()
+        # for frames in self.list_of_menu_frames: 
+        #     frames.pack_forget()
+        #     frames.grid_forget()
+        #     frames.destroy()
         
         self.frame_with_path =          customtkinter.CTkFrame(master=self.root,height = 200,corner_radius=0)
         self.background_frame =         customtkinter.CTkFrame(master=self.root,corner_radius=0)
@@ -1684,7 +1691,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         manual_path  =                  customtkinter.CTkButton(master = self.frame_with_path, width = 90,height=30,text = "Otevřít", command = lambda: self.start(self.path_set.get()),font=("Arial",16,"bold"))
         tree         =                  customtkinter.CTkButton(master = self.frame_with_path, width = 120,height=30,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",16,"bold"))
         button_save_path =              customtkinter.CTkButton(master = self.frame_with_path,width=100,height=30, text = "Uložit cestu", command = lambda: save_path(self.console,self.path_set.get()),font=("Arial",16,"bold"))        
-        button_open_setting =           customtkinter.CTkButton(master = self.frame_with_path,width=30,height=30, text = "⚙️", command = lambda: Advanced_option(self.root,[],windowed=True,spec_location="image_browser"),font=("",16))
+        button_open_setting =           customtkinter.CTkButton(master = self.frame_with_path,width=30,height=30, text = "⚙️", command = lambda: Advanced_option(self.root,windowed=True,spec_location="image_browser"),font=("",16))
 
         self.name_or_path =             customtkinter.CTkCheckBox(master = self.frame_with_path,font=("Arial",16), text = "Název/cesta",command= lambda: self.refresh_console_setting())
         self.console =                  tk.Text(self.frame_with_path, wrap="none", height=0, width=180,background="black",font=("Arial",14),state=tk.DISABLED)
@@ -2074,10 +2081,10 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
     """
     Umožňuje nastavit základní parametry, které ukládá do textového souboru
     """
-    def __init__(self,root,list_of_menu_frames,windowed=None,spec_location=None):
+    def __init__(self,root,windowed=None,spec_location=None):
         self.spec_location = spec_location
         self.windowed = windowed
-        self.list_of_menu_frames = list_of_menu_frames
+        # self.list_of_menu_frames = list_of_menu_frames
         self.root = root
         self.unbind_list = []
         self.drop_down_prefix_dir_names_list = []
@@ -2104,7 +2111,6 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         """
         self.list_of_frames = [self.top_frame,
                                self.bottom_frame_default_path,
-                               self.list_of_menu_frames[1],
                                self.menu_buttons_frame]
         for frames in self.list_of_frames:
             frames.pack_forget()
@@ -2139,20 +2145,14 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
 
     def refresh_main_window(self):
         self.clear_frame(self.root)
-        frame_with_logo =   customtkinter.CTkFrame(master=self.root,corner_radius=0)
-        # logo =              customtkinter.CTkImage(Image.open(initial_path+"images/logo.png"),size=(1200, 100))
-        logo =              customtkinter.CTkImage(Image.open(resource_path("images/logo.png")),size=(1200, 100))
-        image_logo =        customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
-        frame_with_logo.    pack(pady=0,padx=0,fill="both",expand=False,side = "top")
-        image_logo.         pack()
         if self.spec_location == "image_browser":
-            Image_browser(self.root,[frame_with_logo])
+            Image_browser(self.root)
         elif self.spec_location == "converting_option":
-            Converting_option(self.root,[None,frame_with_logo])
+            Converting_option(self.root)
         elif self.spec_location == "deleting_option":
-            Deleting_option(self.root,[None,frame_with_logo])
+            Deleting_option(self.root)
         elif self.spec_location == "sorting_option":
-            Sorting_option(self.root,[None,frame_with_logo])
+            Sorting_option(self.root)
 
     def setting_widgets(self,exception=False,main_console_text = None,main_console_text_color = None,submenu_option = None): # samotné možnosti úprav parametrů uložených v textové souboru
         """
@@ -2819,14 +2819,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             current_root.title("Pokročilá nastavení")
             # current_root.wm_iconbitmap(initial_path+'images/logo_TRIMAZKON.ico')
             current_root.wm_iconbitmap(resource_path(app_icon))
-
         else:
-            #cisteni menu widgets
-            for i in range(0,len(self.list_of_menu_frames)):
-                if i != 1 and self.list_of_menu_frames[i] != None:
-                    self.list_of_menu_frames[i].pack_forget()
-                    self.list_of_menu_frames[i].grid_forget()
-                    self.list_of_menu_frames[i].destroy()
             current_root = self.root
         self.bottom_frame_default_path   = customtkinter.CTkFrame(master=current_root,corner_radius=0,border_width = 0)
         self.top_frame                   = customtkinter.CTkFrame(master=current_root,corner_radius=0,border_width = 0)
@@ -2836,7 +2829,6 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         self.bottom_frame_default_path. pack(pady=(0,2.5),padx=5,fill="both",expand=True,side = "bottom")
         
         label0          = customtkinter.CTkLabel(master = self.top_frame,height=20,text = "Nastavte požadované parametry (nastavení bude uloženo i po vypnutí aplikace): ",justify = "left",font=("Arial",22,"bold"))
-
         main_menu_button =  customtkinter.CTkButton(master = self.menu_buttons_frame, width = 200,height=50,text = "MENU",                  command =  lambda: self.call_menu(),font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
         options0 =          customtkinter.CTkButton(master = self.menu_buttons_frame, width = 200,height=50,text = "Základní nastavení",    command =  lambda: self.setting_widgets(submenu_option="default_path"),font=("Arial",20,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
         options1 =          customtkinter.CTkButton(master = self.menu_buttons_frame, width = 200,height=50,text = "Názvy složek",          command =  lambda: self.setting_widgets(submenu_option="set_folder_names"),font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
@@ -2891,9 +2883,9 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
 
     -Spouští přes příkazový řádek command, který je vykonáván v externí aplikaci s dll knihovnami
     """
-    def __init__(self,root,list_of_menu_frames):
+    def __init__(self,root):
         self.root = root
-        self.list_of_menu_frames = list_of_menu_frames
+        # self.list_of_menu_frames = list_of_menu_frames
         text_file_data = read_text_file_data()
         list_of_folder_names = text_file_data[9]
         self.bmp_folder_name = list_of_folder_names[3]
@@ -2901,18 +2893,26 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         self.temp_path_for_explorer = None
         self.create_convert_option_widgets()
     
-    def call_menu(self): # Tlačítko menu (konec, návrat do menu)
+    def call_extern_function(self,list_of_frames,function:str): # Tlačítko menu (konec, návrat do menu)
         """
-        Funkce čistí všechny zaplněné rámečky a funguje, jako tlačítko zpět do menu
+        Funkce čistí všechny zaplněné rámečky a funguje, jako tlačítko zpět do menu\n
+        function:
+        - menu
+        - sorting
+        - deleting
+        - (converting)
         """
-        list_of_frames = [self.frame_path_input,self.bottom_frame1,self.bottom_frame2,self.list_of_menu_frames[1]]
         for frames in list_of_frames:
             frames.pack_forget()
             frames.grid_forget()
             frames.destroy()
 
-        self.root.unbind("<f>")
-        menu.menu()
+        if function == "menu":
+            menu.menu()
+        elif function == "sorting":
+            Sorting_option(self.root)
+        elif function == "deleting":
+            Deleting_option(self.root)
 
     def convert_files(self,path): # zde se volá externí script
         selected_format = "bmp"
@@ -3027,32 +3027,46 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         self.label.configure(text=f"Konvertované soubory budou vytvořeny uvnitř separátní složky: \"{self.jpg_folder_name}\"\nPodporované formáty: .ifz\nObsahuje-li .ifz soubor více obrázků, budou uloženy v následující syntaxi:\nxxx_0.bmp, xxx_1.bmp ...")
 
     def create_convert_option_widgets(self):  # Vytváří veškeré widgets (convert option MAIN)
-        #cisteni menu widgets
-        for i in range(0,len(self.list_of_menu_frames)):
-            if i != 1 and self.list_of_menu_frames[i] != None:
-                self.list_of_menu_frames[i].pack_forget()
-                self.list_of_menu_frames[i].grid_forget()
-                self.list_of_menu_frames[i].destroy()
-
         #definice ramcu
+        frame_with_logo =       customtkinter.CTkFrame(master=self.root,corner_radius=0)
+        logo =                  customtkinter.CTkImage(Image.open(resource_path("images/logo.png")),size=(1200, 100))
+        image_logo =            customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
+        frame_with_logo.        pack(pady=0,padx=0,fill="both",expand=False,side = "top")
+        image_logo.pack()
+        frame_with_cards =      customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=100)
         self.frame_path_input = customtkinter.CTkFrame(master=self.root,corner_radius=0)
         self.bottom_frame2 =    customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
         self.bottom_frame1 =    customtkinter.CTkFrame(master=self.root,height = 80,corner_radius=0)
+        frame_with_cards.       pack(pady=0,padx=0,fill="both",expand=False,side = "top")
         self.frame_path_input.  pack(pady=5,padx=5,fill="both",expand=False,side = "top")
         self.bottom_frame2.     pack(pady=5,padx=5,fill="both",expand=True,side = "bottom")
         self.bottom_frame1.     pack(pady=0,padx=5,fill="x",expand=False,side = "bottom")
+
+        list_of_frames = [self.frame_path_input,self.bottom_frame1,self.bottom_frame2,frame_with_cards,frame_with_logo]
+        shift_const = 250
+        menu_button =       customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "MENU",                  command =  lambda: self.call_extern_function(list_of_frames,function="menu"),
+                                                    font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        sorting_button =    customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Třídění souborů",      command =  lambda: self.call_extern_function(list_of_frames,function="sorting"),
+                                                    font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        deleting_button =   customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Mazání souborů",        command =  lambda: self.call_extern_function(list_of_frames,function="deleting"),
+                                                    font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        converting_button = customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Konvertování souborů",
+                                                    font=("Arial",20,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
+        menu_button.        grid(column = 0,row=0,pady = (10,0),padx =260-shift_const,sticky = tk.W)
+        sorting_button.     grid(column = 0,row=0,pady = (10,0),padx =520-shift_const,sticky = tk.W)
+        deleting_button.    grid(column = 0,row=0,pady = (10,0),padx =780-shift_const,sticky = tk.W)
+        converting_button.  grid(column = 0,row=0,pady = (10,0),padx =1040-shift_const,sticky = tk.W)
 
         self.checkbox_bmp =     customtkinter.CTkCheckBox(master = self.bottom_frame1, text = "Konvertovat do formátu .bmp",command=self.selected_bmp,font=("Arial",16,"bold"))
         self.checkbox_jpg =     customtkinter.CTkCheckBox(master = self.bottom_frame1, text = "Konvertovat do formátu .jpg",command=self.selected_jpg,font=("Arial",16,"bold"))
         self.checkbox_bmp.      pack(pady =10,padx=10,anchor ="w")
         self.checkbox_jpg.      pack(pady =10,padx=10,anchor ="w")
-
-        menu_button  =          customtkinter.CTkButton(master = self.frame_path_input, width = 180, text = "MENU", command = lambda: self.call_menu(),font=("Arial",20,"bold"))
-        self.path_set =         customtkinter.CTkEntry(master = self.frame_path_input,font=("Arial",16),placeholder_text="Zadejte cestu k souborům určeným ke konvertování (kde se soubory přímo nacházejí)")
+        # menu_button  =          customtkinter.CTkButton(master = self.frame_path_input, width = 180, text = "MENU", command = lambda: self.call_menu(),font=("Arial",20,"bold"))
+        self.path_set =         customtkinter.CTkEntry(master = self.frame_path_input,font=("Arial",18),placeholder_text="Zadejte cestu k souborům určeným ke konvertování (kde se soubory přímo nacházejí)")
         tree         =          customtkinter.CTkButton(master = self.frame_path_input, width = 180,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"))
-        button_open_setting =   customtkinter.CTkButton(master = self.frame_path_input,width=30,height=30, text = "⚙️", command = lambda: Advanced_option(self.root,[],windowed=True,spec_location="converting_option"),font=("Arial",16))
-        menu_button.            pack(pady = 12,padx = 10,anchor ="w",side="left")
-        self.path_set.          pack(pady = 12,padx = 0, anchor ="w",side="left",fill="both",expand=True)
+        button_open_setting =   customtkinter.CTkButton(master = self.frame_path_input,width=30,height=30, text = "⚙️", command = lambda: Advanced_option(self.root,windowed=True,spec_location="converting_option"),font=("Arial",16))
+        # menu_button.            pack(pady = 12,padx = 10,anchor ="w",side="left")
+        self.path_set.          pack(pady = 12,padx = (10,0), anchor ="w",side="left",fill="both",expand=True)
         tree.                   pack(pady = 12,padx = 10,anchor ="w",side="left")
         button_open_setting.    pack(pady = 12,padx = (0,10),anchor ="w",side="left")
 
@@ -3105,10 +3119,10 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
     -umožňuje procházet více subsložek
     
     """
-    def __init__(self,root,list_of_menu_frames):
+    def __init__(self,root):
         text_file_data = read_text_file_data()
         self.root = root
-        self.list_of_menu_frames = list_of_menu_frames
+        # self.list_of_menu_frames = list_of_menu_frames
         self.more_dirs = False
         self.unbind_list = []
         self.supported_formats_deleting = text_file_data[0]
@@ -3122,11 +3136,16 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
 
         self.create_deleting_option_widgets()
  
-    def call_menu(self): # Tlačítko menu (konec, návrat do menu)
+    def call_extern_function(self,list_of_frames,function:str): # Tlačítko menu (konec, návrat do menu)
         """
-        Funkce čistí všechny zaplněné rámečky a funguje, jako tlačítko zpět do menu
+        Funkce čistí všechny zaplněné rámečky a funguje, jako tlačítko zpět do menu\n
+        function:
+        - menu
+        - sorting
+        - (deleting)
+        - converting
         """
-        list_of_frames = [self.frame_path_input,self.bottom_frame1,self.bottom_frame2,self.frame_right,self.frame_with_checkboxes,self.list_of_menu_frames[1]]
+        
         for frames in list_of_frames:
             frames.pack_forget()
             frames.grid_forget()
@@ -3134,8 +3153,13 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         
         for binds in self.unbind_list:
             self.root.unbind(binds)
-        #self.path_set.unbind("<Return>")
-        menu.menu()
+
+        if function == "menu":
+            menu.menu()
+        elif function == "sorting":
+            Sorting_option(self.root)
+        elif function == "converting":
+            Converting_option(self.root)
 
     def start(self):# Ověřování cesty, init, spuštění
         """
@@ -3657,37 +3681,52 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             self.info2.configure(text = "")
 
     def create_deleting_option_widgets(self):  # Vytváří veškeré widgets (delete option MAIN)
-        #cisteni menu widgets
-        for i in range(0,len(self.list_of_menu_frames)):
-            if i != 1 and self.list_of_menu_frames[i] != None:
-                self.list_of_menu_frames[i].pack_forget()
-                self.list_of_menu_frames[i].grid_forget()
-                self.list_of_menu_frames[i].destroy()
-
         #definice ramcu
+        frame_with_logo =       customtkinter.CTkFrame(master=self.root,corner_radius=0)
+        logo =                  customtkinter.CTkImage(Image.open(resource_path("images/logo.png")),size=(1200, 100))
+        image_logo =            customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
+        frame_with_logo.        pack(pady=0,padx=0,fill="both",expand=False,side = "top")
+        image_logo.pack()
+        frame_with_cards =      customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=100)
         self.frame_path_input = customtkinter.CTkFrame(master=self.root,corner_radius=0)
         self.bottom_frame2 =    customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
         self.bottom_frame1 =    customtkinter.CTkFrame(master=self.root,height = 80,corner_radius=0)
         checkbox_frame =        customtkinter.CTkFrame(master=self.root,width=400,height = 150,corner_radius=0)
         self.frame_right =      customtkinter.CTkFrame(master=self.root,corner_radius=0,height = 150)
+        frame_with_cards.       pack(pady=0,padx=0,fill="x",expand=False,side = "top")
         self.frame_path_input.  pack(pady=5,padx=5,fill="both",expand=False,side = "top")
         self.bottom_frame2.     pack(pady=0,padx=5,fill="both",expand=True,side = "bottom")
         self.bottom_frame1.     pack(pady=5,padx=5,fill="x",expand=False,side = "bottom")
         checkbox_frame.         pack(pady=0,padx=5,fill="y",expand=False,side="left")
         self.frame_right.       pack(pady=0,padx=0,fill="both",expand=True,side="right")
+        self.frame_with_checkboxes = checkbox_frame
+        list_of_frames = [self.frame_path_input,self.bottom_frame1,self.bottom_frame2,self.frame_right,self.frame_with_checkboxes,frame_with_cards,frame_with_logo]
+
+        shift_const = 250
+        menu_button =       customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "MENU",                  command =  lambda: self.call_extern_function(list_of_frames,function="menu"),
+                                                    font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        sorting_button =    customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Třídění souborů",      command =  lambda: self.call_extern_function(list_of_frames,function="sorting"),
+                                                    font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        deleting_button =   customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Mazání souborů",
+                                                    font=("Arial",20,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
+        converting_button = customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Konvertování souborů",  command =  lambda: self.call_extern_function(list_of_frames,function="converting"),
+                                                    font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        menu_button.        grid(column = 0,row=0,pady = (10,0),padx =260-shift_const,sticky = tk.W)
+        sorting_button.     grid(column = 0,row=0,pady = (10,0),padx =520-shift_const,sticky = tk.W)
+        deleting_button.    grid(column = 0,row=0,pady = (10,0),padx =780-shift_const,sticky = tk.W)
+        converting_button.  grid(column = 0,row=0,pady = (10,0),padx =1040-shift_const,sticky = tk.W)
         
-        menu_button =           customtkinter.CTkButton(master = self.frame_path_input, width = 180, text = "MENU", command = lambda: self.call_menu(),font=("Arial",20,"bold"))
-        self.path_set    =      customtkinter.CTkEntry(master = self.frame_path_input,font=("Arial",16),placeholder_text="Zadejte cestu k souborům z kamery (kde se přímo nacházejí soubory nebo datumové složky)")
+        # menu_button =           customtkinter.CTkButton(master = self.frame_path_input, width = 180, text = "MENU", command = lambda: self.call_menu(),font=("Arial",20,"bold"))
+        self.path_set    =      customtkinter.CTkEntry(master = self.frame_path_input,font=("Arial",18),placeholder_text="Zadejte cestu k souborům z kamery (kde se přímo nacházejí soubory nebo datumové složky)")
         tree        =           customtkinter.CTkButton(master = self.frame_path_input, width = 180,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"))
         button_save_path =      customtkinter.CTkButton(master = self.frame_path_input,width=50,text = "Uložit cestu", command = lambda: save_path(self.console,self.path_set.get()),font=("Arial",20,"bold"))
-        button_open_setting =   customtkinter.CTkButton(master = self.frame_path_input,width=30,height=30, text = "⚙️", command = lambda: Advanced_option(self.root,[],windowed=True,spec_location="deleting_option"),font=("Arial",16))
-        menu_button.            pack(pady =12,padx=10,anchor ="w",side = "left")
-        self.path_set.          pack(pady = 12,padx =0,anchor ="w",side = "left",fill="both",expand=True)
+        button_open_setting =   customtkinter.CTkButton(master = self.frame_path_input,width=30,height=30, text = "⚙️", command = lambda: Advanced_option(self.root,windowed=True,spec_location="deleting_option"),font=("Arial",16))
+        # menu_button.            pack(pady =12,padx=10,anchor ="w",side = "left")
+        self.path_set.          pack(pady = 12,padx =(10,0),anchor ="w",side = "left",fill="both",expand=True)
         tree.                   pack(pady = 12,padx =10,anchor ="w",side = "left")
         button_save_path.       pack(pady = 12,padx =0,anchor ="w",side = "left")
         button_open_setting.    pack(pady = 12,padx =10,anchor = "w",side = "left")
 
-        self.frame_with_checkboxes = checkbox_frame
         self.checkbox  =        customtkinter.CTkCheckBox(master = self.frame_with_checkboxes,font=("Arial",16), text = "Mazání souborů starších než: určité datum",command = lambda: self.selected(True))
         self.checkbox2 =        customtkinter.CTkCheckBox(master = self.frame_with_checkboxes,font=("Arial",16), text = "Redukce novějších, mazání souborů starších než: určité datum",command = lambda: self.selected2(True))
         self.checkbox3 =        customtkinter.CTkCheckBox(master = self.frame_with_checkboxes,font=("Arial",16), text = "Mazání adresářů s názvem ve formátu určitého datumu",command = lambda: self.selected3(True))
@@ -3753,9 +3792,9 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
     -umožňuje operace s ID daného obrázku\n
     -umožňuje hledání chybějících ID v řadě za sebou (na lince několik palet s výrobkem)
     """
-    def __init__(self,root,list_of_menu_frames):
+    def __init__(self,root):
         self.root = root
-        self.list_of_menu_frames = list_of_menu_frames
+        # self.list_of_menu_frames = list_of_menu_frames
         self.aut_detect_num_of_pallets = True
         self.by_which_ID_num = ""   
         self.more_dirs = False
@@ -3802,8 +3841,6 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
                     path = check
                     #self.console.configure(text ="Provádím nastavenou možnost třídění v cestě: "+str(path),text_color="white")
                     add_colored_line(self.console,"- Provádím nastavenou možnost třídění v cestě: "+str(path)+"\n","orange")
-
-                    #add_colored_line(self.console,"- Sloníku neboj, PRACUJU! :-) !" + "\n","#E75480",("Arial",30,"bold"))
 
                     self.console.update_idletasks()
                     self.root.update_idletasks()
@@ -4253,12 +4290,15 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
                 self.name_example.configure(
                     text = f"Nakopíruje nalezené dvojice souborů do složky s názvem PAIRS\n(např. obsluha vloží dvakrát stejnou paletu po sobě před kameru)\n2023_04_13-07_11_09_xxxx_=> 0020 <=_&Cam2Img.Height.bmp\n(funkce postupuje podle časové známky v názvu souboru, kdy byly soubory pořízeny)\n(Podporované formáty:{self.supported_formats_sorting})")
     
-    def call_menu(self): # Tlačítko menu (konec, návrat do menu)
+    def call_extern_function(self,list_of_frames,function:str): # Tlačítko menu (konec, návrat do menu)
         """
-        Funkce čistí všechny zaplněné rámečky a funguje, jako tlačítko zpět do menu
+        Funkce čistí všechny zaplněné rámečky a funguje, jako tlačítko zpět do menu\n
+        function:
+        - menu
+        - (sorting)
+        - deleting
+        - converting
         """
-        list_of_frames = [self.frame2,self.frame3,self.frame4,self.frame5,self.frame6,self.list_of_menu_frames[1]]
-
         for frames in list_of_frames:
             frames.pack_forget()
             frames.grid_forget()
@@ -4267,9 +4307,13 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         for binds in self.unbind_list:
             self.root.unbind(binds)
 
-        #self.path_set.unbind("<Return>")
-        menu.menu()
-    
+        if function == "menu":
+            menu.menu()
+        elif function == "deleting":
+            Deleting_option(self.root)
+        elif function == "converting":
+            Converting_option(self.root)
+
     def call_browseDirectories(self): # Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
         Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
@@ -4290,18 +4334,19 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             add_colored_line(self.console,str(output[0]),"red")
 
     def create_sorting_option_widgets(self):  # Vytváří veškeré widgets (sorting option MAIN)
-        # cisteni menu widgets:
-        for i in range(0,len(self.list_of_menu_frames)):
-            if i != 1 and self.list_of_menu_frames[i] != None:
-                self.list_of_menu_frames[i].pack_forget()
-                self.list_of_menu_frames[i].grid_forget()
-                self.list_of_menu_frames[i].destroy()
         # nastaveni framu
-        self.frame2 =   customtkinter.CTkFrame(master=self.root,corner_radius=0)
+        frame_with_logo =       customtkinter.CTkFrame(master=self.root,corner_radius=0)
+        logo =                  customtkinter.CTkImage(Image.open(resource_path("images/logo.png")),size=(1200, 100))
+        image_logo =            customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
+        frame_with_logo.        pack(pady=0,padx=0,fill="both",expand=False,side = "top")
+        image_logo.pack()
+        frame_with_cards = customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=100)
+        frame2 =        customtkinter.CTkFrame(master=self.root,corner_radius=0)
         self.frame5 =   customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
         self.frame3 =   customtkinter.CTkFrame(master=self.root,corner_radius=0,width=400,height = 290)
         self.frame4 =   customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
-        self.frame2.    pack(pady=0,padx=5,fill="both",expand=False,side = "top")
+        frame_with_cards.pack(pady=0,padx=0,fill="x",expand=False,side = "top")
+        frame2.         pack(pady=5,padx=5,fill="both",expand=False,side = "top")
         self.frame5.    pack(pady=0,padx=5,fill="both",expand=True,side = "bottom")
         self.frame3.    pack(pady=5,padx=5,fill="both",expand=False,side="left")
         self.frame4.    pack(pady=5,padx=5,fill="both",expand=True,side="right")
@@ -4310,17 +4355,31 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.width_of_frame6 = 370
         self.frame6 =   customtkinter.CTkFrame(master=self.root,corner_radius=0,width=self.width_of_frame6 ,height=self.height_of_frame6)
         self.frame6.    pack(pady=5,padx=0,fill="both",expand=False,side = "bottom")
+        list_of_frames = [frame2,self.frame3,self.frame4,self.frame5,self.frame6,frame_with_cards,frame_with_logo]
+        shift_const = 250
+        menu_button =       customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "MENU",                  command =  lambda: self.call_extern_function(list_of_frames,function="menu"),
+                                                    font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        sorting_button =    customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Třídění souborů",
+                                                    font=("Arial",20,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
+        deleting_button =   customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Mazání souborů",        command =  lambda: self.call_extern_function(list_of_frames,function="deleting"),
+                                                    font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        converting_button = customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Konvertování souborů",  command =  lambda: self.call_extern_function(list_of_frames,function="converting"),
+                                                    font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        menu_button.        grid(column = 0,row=0,pady = (10,0),padx =260-shift_const,sticky = tk.W)
+        sorting_button.     grid(column = 0,row=0,pady = (10,0),padx =520-shift_const,sticky = tk.W)
+        deleting_button.    grid(column = 0,row=0,pady = (10,0),padx =780-shift_const,sticky = tk.W)
+        converting_button.  grid(column = 0,row=0,pady = (10,0),padx =1040-shift_const,sticky = tk.W)
 
-        menu_button =   customtkinter.CTkButton(master = self.frame2, width = 180, text = "MENU", command = lambda: self.call_menu(),font=("Arial",20,"bold"))
-        self.path_set = customtkinter.CTkEntry(master = self.frame2,font=("Arial",16),placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)")
-        tree =          customtkinter.CTkButton(master = self.frame2, width = 180,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"))
-        button_save_path = customtkinter.CTkButton(master = self.frame2,width=50,text = "Uložit cestu", command = lambda: save_path(self.console,self.path_set.get()),font=("Arial",20,"bold"))
-        button_open_setting = customtkinter.CTkButton(master = self.frame2,width=30,height=30, text = "⚙️", command = lambda: Advanced_option(self.root,[],windowed=True,spec_location="sorting_option"),font=("Arial",16))
-        menu_button.    pack(pady =5,padx=10,anchor ="w",side="left")
-        self.path_set.  pack(pady = 5,padx =0,anchor ="w",side="left",fill="both",expand=True)
-        tree.           pack(pady = 5,padx =10,anchor ="w",side="left")
-        button_save_path.pack(pady = 5,padx =0,anchor ="w",side="left")
-        button_open_setting.pack(pady = 5,padx =10,anchor ="w",side="left")
+        # menu_button =   customtkinter.CTkButton(master =frame2, width = 180, text = "MENU", command = lambda: self.call_menu(),font=("Arial",20,"bold"))
+        self.path_set = customtkinter.CTkEntry(master = frame2,font=("Arial",18),placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)")
+        tree =          customtkinter.CTkButton(master = frame2, width = 180,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"))
+        button_save_path = customtkinter.CTkButton(master = frame2,width=50,text = "Uložit cestu", command = lambda: save_path(self.console,self.path_set.get()),font=("Arial",20,"bold"))
+        button_open_setting = customtkinter.CTkButton(master = frame2,width=30,height=30, text = "⚙️", command = lambda: Advanced_option(self.root,windowed=True,spec_location="sorting_option"),font=("Arial",16))
+        # menu_button.    pack(pady =5,padx=10,anchor ="w",side="left")
+        self.path_set.  pack(pady = 12,padx =(10,0),anchor ="w",side="left",fill="both",expand=True)
+        tree.           pack(pady = 12,padx =10,anchor ="w",side="left")
+        button_save_path.pack(pady = 12,padx =0,anchor ="w",side="left")
+        button_open_setting.pack(pady = 12,padx =10,anchor ="w",side="left")
 
         self.checkbox =  customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Třídit podle typů souborů",command = self.selected)
         self.checkbox2 = customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Třídit podle čísla funkce (ID)",command = self.selected2)
@@ -4332,7 +4391,6 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.checkbox3. pack(pady =12,padx=10,anchor ="w")
         self.checkbox4. pack(pady =12,padx=10,anchor ="w")
         self.checkbox5. pack(pady =12,padx=10,anchor ="w")
-
         self.one_subfolder = customtkinter.CTkCheckBox(master = self.frame4,font=("Arial",16), text = "Projít 1 subsložku?",command = self.one_subfolder_checked)
         self.checkbox6   = customtkinter.CTkCheckBox(master = self.frame4,font=("Arial",16), text = "Projít 2 subsložky?",command = self.two_subfolders_checked)
         self.checkbox_safe_mode = customtkinter.CTkCheckBox(master = self.frame4,font=("Arial",16), text = "Rozbalit poslední složky?",command = self.safe_mode_checked)
@@ -4344,7 +4402,6 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.checkbox6. pack(pady =10,padx=10,anchor="w",side=tk.LEFT)
         self.checkbox_safe_mode.pack(pady =10,padx=10,anchor="w",side=tk.LEFT)
         self.checkbox_safe_mode.select()
-
         self.images =       customtkinter.CTkLabel(master = self.frame5,text = "")
         self.name_example = customtkinter.CTkLabel(master = self.frame5,text = "",font=("Arial",18,"bold"))
         button =            customtkinter.CTkButton(master = self.frame5, text = "SPUSTIT", command = self.start,font=("Arial",20,"bold"))
@@ -4406,21 +4463,14 @@ class IP_manager: # Umožňuje nastavit možnosti třídění souborů
     - poskytuje informaci o namountěných offline síťových discích\n
     - vše je ošetřeno timeoutem\n
     """
-    def __init__(self,root,list_of_menu_frames):
+    def __init__(self,root):
         self.root = root
-        self.list_of_menu_frames = list_of_menu_frames
         self.create_IP_manager_widgets()
 
     def callback(self):
         menu.menu()
 
     def create_IP_manager_widgets(self):
-        #cisteni menu widgets
-        for i in range(0,len(self.list_of_menu_frames)):
-            if i != 1 and self.list_of_menu_frames[i] != None:
-                self.list_of_menu_frames[i].pack_forget()
-                self.list_of_menu_frames[i].grid_forget()
-                self.list_of_menu_frames[i].destroy()
         
         if root.wm_state() == "zoomed":
             current_window_size = "max"
@@ -4429,6 +4479,5 @@ class IP_manager: # Umožňuje nastavit možnosti třídění souborů
         
         self.ip_assignment_prg = IP_setting.IP_assignment(self.root,self.callback,current_window_size,initial_path)
         
-# menu(image_opened = False)
 menu = main_menu(root)
-menu.menu()
+menu.menu(initial=True)

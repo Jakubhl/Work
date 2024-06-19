@@ -309,14 +309,19 @@ otocit kolecko na pricitani obrazku - hotovo
 cist inerfaces - hotovo
 shodit okno manage interfaces - hotovo
 
+10:06 AM 6/19/2024
+menu - prvni tri moznosti sloucit do správa obrázků/ souborů - hotovo
+poznamky prevest na hover-roleta - hotovo
+online vypis nekolik opakovani stejneho interface - hotovo
+upravit chybovou hlasku kdyz se meni adresa u toho sameho interface - je nekde pouzita... - hotovo
+odebrat okno pridat/ubrat interface misto nej na samem tlacitku refresh databaze interfacu - hotovo
+disk - mit tlacitko zjistit statusy - nenacitat vzdy automaticky - hotovo
+diakritika u interfaces... - chyba neni u mě ale u netsh commandu
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 
-
-poznamky prevest na hover-roleta
-menu - prvni tri moznosti sloucit do správa obrázků/ souborů
 
 
 
