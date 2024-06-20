@@ -317,16 +317,25 @@ upravit chybovou hlasku kdyz se meni adresa u toho sameho interface - je nekde p
 odebrat okno pridat/ubrat interface misto nej na samem tlacitku refresh databaze interfacu - hotovo
 disk - mit tlacitko zjistit statusy - nenacitat vzdy automaticky - hotovo
 diakritika u interfaces... - chyba neni u mě ale u netsh commandu
+kdyz otevru trimazkon pres systemovou cestu - neotevre addresses - hotovo
+
+10:33 AM 6/20/2024
+- nedelat buttony u vsech widgets, ale nakliknout, poté upravit - hotovo
+stanice - kdyz nova i edit, tak vsech paremetru - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
+když několik kamer - překlikávat mezi kamerama, vlevo navigační menu v editu (šipky)
+když navigátor přeteče - dotaz zda přidat nový...
 
 
+kamera má 5 objektivů - přepínat mezi nimi
 
+klik mimo childroot window - aby ho killnul
 
 aktualizace pouze pro editovanou stanici - nedalat vzdy vsechny widgety - nestacilo by update idletasks?
-- nedelat buttony u vsech widgets, ale nakliknout, poté upravit
+
 
 vždy jeden řádek mezera... prazdny radek mezi stanicemi zacernit
 
@@ -338,7 +347,7 @@ kdyz se prida nova stanice vytrigovat zadavani vsech parametru (neaktualizovat p
 
 pridat jeste jeden sloupec
 
-
+Koumu: admin práva, online aut. aktualizace
 
 Admin State    State          Type             Interface Name
 -------------------------------------------------------------------------
