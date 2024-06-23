@@ -323,11 +323,19 @@ kdyz otevru trimazkon pres systemovou cestu - neotevre addresses - hotovo
 - nedelat buttony u vsech widgets, ale nakliknout, poté upravit - hotovo
 stanice - kdyz nova i edit, tak vsech paremetru - hotovo
 
+3:52 PM 6/23/2024
+udelat moznost editovat poznamky přímo - hotovo
+ukladat do excelu editovane poznamky - jen pokud josou změny - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
+
+
+
 
 
 když několik kamer - překlikávat mezi kamerama, vlevo navigační menu v editu (šipky)
 když navigátor přeteče - dotaz zda přidat nový...
+
 
 
 kamera má 5 objektivů - přepínat mezi nimi

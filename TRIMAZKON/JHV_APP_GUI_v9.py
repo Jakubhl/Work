@@ -53,7 +53,7 @@ customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 root=customtkinter.CTk()
 root.geometry("1200x900")
-root.title("TRIMAZKON v_3.7.0")
+root.title("TRIMAZKON v_3.7.1")
 root.wm_iconbitmap(resource_path(app_icon))
 
 def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
@@ -602,6 +602,12 @@ class main_menu:
     - odebrány možnosti přídávání/ odebírání interfaců
     - možnost refresh online připojení
     - refresh disků na tlačítko\n""")
+        change_log.insert("current lineend","\n Verze 3.7.1 (xx.6.2024)\n")
+        change_log.insert("current lineend",
+    """ 
+    - Nově lze poznámky v ip setting upravovat přímo 
+    - Možnosti nastavení základního chování u disků
+    - Změny v excelu: list-Setting, buňka-B6 = 1 nebo 0\n""")
         change_log.see(tk.END)
 
     def menu(self,initial=False): # Funkce spouští základní menu při spuštění aplikace (MAIN)
