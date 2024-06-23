@@ -171,7 +171,6 @@ class Catalogue_gui:
         elif len(widget_tier) == 8: # 01010101-99999999 prislusenstvi
             self.edit_device.configure(text="Editovat příslušenství")
 
-
     def make_block(self,master_widget,height,width,fg_color,text,side,dummy_block = False,tier = ""):
         if dummy_block:
             dummy_block_widget =    customtkinter.CTkFrame(master=master_widget,corner_radius=0,height=height,width =width,fg_color="#212121")
@@ -556,22 +555,22 @@ class Catalogue_gui:
         def save_changes(no_window_shut = False):
             if object == "station" or all_parameters:
                 self.station_list[station_index]["name"] = new_name.get()
-                self.station_list[station_index]["inspection_description"] = new_description.get("0.0", "end")
+                self.station_list[station_index]["inspection_description"] = new_description.get("1.0", tk.END)
 
             if object == "camera" or all_parameters:
                 self.station_list[station_index]["camera_list"][camera_index]["type"] = camera_type_entry.get()
                 self.station_list[station_index]["camera_list"][camera_index]["controller"] = controller_entry.get()
-                self.station_list[station_index]["camera_list"][camera_index]["description"] = notes_input.get("0.0", "end")
+                self.station_list[station_index]["camera_list"][camera_index]["description"] = notes_input.get("1.0", tk.END)
                 
             if object == "optics" or "camera" or all_parameters:
                 self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"] = optic_type_entry.get()
                 self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"] = alternative_entry.get()
-                self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"] = notes_input2.get("0.0", "end")
+                self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"] = notes_input2.get("1.0", tk.END)
 
             if object == "accessory" or "camera" or "optics" or all_parameters:
                 try:
                     self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["type"] = hw_type_entry.get()
-                    self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["description"] = notes_input3.get("0.0", "end")
+                    self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["description"] = notes_input3.get("1.0", tk.END)
                 except IndexError:
                     if hw_type_entry.get() != "" :
                         new_accessory = {
@@ -588,6 +587,12 @@ class Catalogue_gui:
 
         def next_station():
             nonlocal station_index
+            nonlocal camera_index
+            nonlocal optics_index
+            nonlocal accessory_index
+            camera_index = 0
+            optics_index = 0
+            accessory_index = 0
             station_index += 1
             if station_index < len(self.station_list):
                 station_index -= 1
@@ -600,6 +605,12 @@ class Catalogue_gui:
             
         def previous_station():
             nonlocal station_index
+            nonlocal camera_index
+            nonlocal optics_index
+            nonlocal accessory_index
+            camera_index = 0
+            optics_index = 0
+            accessory_index = 0
             station_index -= 1
             if station_index > -1:
                 station_index += 1
@@ -680,14 +691,32 @@ class Catalogue_gui:
 
         # initial prefill - station:
         def intial_prefill():
+            def filter_text_input(text):
+                """
+                - removes extra new empty lines
+                """
+                legit_rows = []
+                legit_notes = ""
+                rows = text.split("\n")
+                for i in range(0,len(rows)):
+                    if rows[i].replace(" ","") != "":
+                        legit_rows.append(rows[i])
+
+                for i in range(0,len(legit_rows)): 
+                    if i == len(legit_rows)-1:
+                        legit_notes = legit_notes + legit_rows[i]
+                    else:
+                        legit_notes = legit_notes + legit_rows[i]+ "\n"
+                return legit_notes
+
             nonlocal station_index
             nonlocal camera_index
             nonlocal optics_index
             nonlocal accessory_index
             new_name.delete(0,300)
             new_name.insert(0,str(self.station_list[station_index]["name"]))
-            new_description.delete("0.0","300.0")
-            new_description.insert("0.0",str(self.station_list[station_index]["inspection_description"]))
+            new_description.delete("1.0",tk.END)
+            new_description.insert("1.0",filter_text_input(str(self.station_list[station_index]["inspection_description"])))
             # initial prefill - camera:
             try:
                 if str(self.station_list[station_index]["camera_list"][camera_index]["type"]) in self.camera_type_database:
@@ -695,16 +724,16 @@ class Catalogue_gui:
                 if str(self.station_list[station_index]["camera_list"][camera_index]["controller"]) in self.controller_database:
                     controller_entry.set(str(self.station_list[station_index]["camera_list"][camera_index]["controller"]))
                 
-                notes_input.delete("0.0","300.0")
-                notes_input.insert("0.0",str(self.station_list[station_index]["camera_list"][camera_index]["description"]))
+                notes_input.delete("1.0",tk.END)
+                notes_input.insert("1.0",filter_text_input(str(self.station_list[station_index]["camera_list"][camera_index]["description"])))
             except TypeError:
                 camera_index = 0
                 if str(self.station_list[station_index]["camera_list"][camera_index]["type"]) in self.camera_type_database:
                     camera_type_entry.set(str(self.station_list[station_index]["camera_list"][camera_index]["type"]))
                 if str(self.station_list[station_index]["camera_list"][camera_index]["controller"]) in self.controller_database:
                     controller_entry.set(str(self.station_list[station_index]["camera_list"][camera_index]["controller"]))
-                notes_input.delete("0.0","300.0")
-                notes_input.insert("0.0",str(self.station_list[station_index]["camera_list"][camera_index]["description"]))
+                notes_input.delete("1.0",tk.END)
+                notes_input.insert("1.0",filter_text_input(str(self.station_list[station_index]["camera_list"][camera_index]["description"])))
 
             # initial prefill - optics:
             try:
@@ -714,8 +743,8 @@ class Catalogue_gui:
                     alternative_entry.set(str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"]))
                 else:
                     alternative_entry.set("")
-                notes_input2.delete("0.0","300.0")
-                notes_input2.insert("0.0",str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"]))
+                notes_input2.delete("1.0",tk.END)
+                notes_input2.insert("1.0",filter_text_input(str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"])))
             except TypeError:
                 optics_index = 0
                 if str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"]) in self.optics_database:
@@ -724,27 +753,35 @@ class Catalogue_gui:
                     alternative_entry.set(str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"]))
                 else:
                     alternative_entry.set("")
-                notes_input2.delete("0.0","300.0")
-                notes_input2.insert("0.0",str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"]))
+                notes_input2.delete("1.0",tk.END)
+                notes_input2.insert("1.0",filter_text_input(str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"])))
 
             # initial prefill - accessory:
-            try:
-                if str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["type"]) in self.accessory_database:
-                    hw_type_entry.set(str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["type"]))
-                notes_input3.delete("0.0","300.0")
-                notes_input3.insert("0.0",str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["description"]))
-            except TypeError:
+            if len(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"]) > 0:
                 try:
-                    accessory_index = 0
-                    if str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["type"]) in self.accessory_database:   
+                    if str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["type"]) in self.accessory_database:
                         hw_type_entry.set(str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["type"]))
-                    notes_input3.delete("0.0","300.0")
-                    notes_input3.insert("0.0",str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["description"]))
+                    else:
+                        hw_type_entry.set("")
+                    notes_input3.delete("1.0",tk.END)
+                    notes_input3.insert("1.0",filter_text_input(str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["description"])))
+                except TypeError:
+                    try:
+                        print("222")
+                        accessory_index = 0
+                        if str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["type"]) in self.accessory_database:   
+                            hw_type_entry.set(str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["type"]))
+                        else:
+                            hw_type_entry.set("")
+                        notes_input3.delete("1.0",tk.END)
+                        notes_input3.insert("1.0",filter_text_input(str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["description"])))
+                    except IndexError: #případ, že není accessory
+                        pass
                 except IndexError: #případ, že není accessory
-                    pass
-            except IndexError: #případ, že není accessory
-                    pass
-
+                        pass
+            else:
+                hw_type_entry.set("")
+                notes_input3.delete("1.0",tk.END)
         intial_prefill()
         button_frame =  customtkinter.CTkFrame(master = child_root,corner_radius=0)
         button_frame    .pack(pady = 0, padx = 0,fill="x",anchor="n",expand=True,side="bottom")
@@ -780,7 +817,9 @@ class Catalogue_gui:
             accessory_frame .pack(pady = 0, padx = 0,fill="y",anchor="n",expand=True,side="left")
 
         button_save =   customtkinter.CTkButton(master = button_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: save_changes())
-        button_save     .pack(pady = 10, padx = 10,anchor="e",expand=True,side="right")
+        button_exit =   customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: child_root.destroy())
+        button_save     .pack(pady = 10, padx = 10,anchor="e",expand=False,side="right")
+        button_exit     .pack(pady = 10, padx = 10,anchor="e",expand=True,side="right")
 
         # child_root.transient(root)
         child_root.grab_set()

@@ -326,7 +326,7 @@ stanice - kdyz nova i edit, tak vsech paremetru - hotovo
 3:52 PM 6/23/2024
 udelat moznost editovat poznamky přímo - hotovo
 ukladat do excelu editovane poznamky - jen pokud josou změny - hotovo
-
+příslušenství se zapíše i k další stanici - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -336,7 +336,7 @@ ________________________________________________________________________________
 když několik kamer - překlikávat mezi kamerama, vlevo navigační menu v editu (šipky)
 když navigátor přeteče - dotaz zda přidat nový...
 
-
+leave na vsechny entry - odebrat focus
 
 kamera má 5 objektivů - přepínat mezi nimi
 
