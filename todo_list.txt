@@ -327,68 +327,40 @@ stanice - kdyz nova i edit, tak vsech paremetru - hotovo
 udelat moznost editovat poznamky přímo - hotovo
 ukladat do excelu editovane poznamky - jen pokud josou změny - hotovo
 příslušenství se zapíše i k další stanici - hotovo
+
+9:54 AM 6/24/2024
+leave na vsechny entry - odebrat focus - hotovo
+přidat mazání bloků - hotovo
+přidat dummy bloky, kdyz se maze cela optika nebo cela kamera - hotovo
+kdyz chybi kamera nebo optika o nastane posun o radek - hotovo
+vždy jeden řádek mezera... prazdny radek mezi stanicemi zacernit - hotovo
+kdyz se prida nova stanice vytrigovat zadavani vsech parametru (neaktualizovat po kazde zmene... stanice - zadej vse, kamery zadej kamery a zbytek atd...) - hotovo
+při kliku na export - dotazovaci okno, pod jakym nazvem excel ulozit - .xlms needitovatelne (kontrola stejneho nazvu) - hotovo
+klik mimo childroot window - aby ho killnul - bind button-1 na root - při destroy unbind - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
-
-
 
 
 
 když několik kamer - překlikávat mezi kamerama, vlevo navigační menu v editu (šipky)
 když navigátor přeteče - dotaz zda přidat nový...
 
-leave na vsechny entry - odebrat focus
+přidat info o pozici k navigátoru mezi stanicemi/ kamerami/ optikou...
 
-kamera má 5 objektivů - přepínat mezi nimi
-
-klik mimo childroot window - aby ho killnul
-
-aktualizace pouze pro editovanou stanici - nedalat vzdy vsechny widgety - nestacilo by update idletasks?
+když edituju věci navíc mimo stanici, nepropíšou se změny
 
 
-vždy jeden řádek mezera... prazdny radek mezi stanicemi zacernit
 
-při kliku na export - dotazovaci okno, pod jakym nazvem excel ulozit - .xlms needitovatelne (kontrola stejneho nazvu, EXPLORER?)
 
-přidat dummy bloky, kdyz se maze cela optika nebo cela kamera
+přidat explorer pro určení kam uložit...
 
-kdyz se prida nova stanice vytrigovat zadavani vsech parametru (neaktualizovat po kazde zmene... stanice - zadej vse, kamery zadej kamery a zbytek atd...)
 
 pridat jeste jeden sloupec
 
-Koumu: admin práva, online aut. aktualizace
 
-Admin State    State          Type             Interface Name
--------------------------------------------------------------------------
-Enabled        Disconnected   Dedicated        Ethernet 2
-Disabled       Disconnected   Dedicated        Ethernet 3
-Enabled        Disconnected   Dedicated        Ethernet 5
-Enabled        Connected      Dedicated        Wi-Fi
-Enabled        Disconnected   Dedicated        Ethernet 4
-Enabled        Disconnected   Dedicated        Ethernet
 
-camera = {
-    "type": "",
-    "controller": "",
-    "optics_list": "",
-    "description": "",
-}
-optic = {
-    "type": "",
-    "alternative":"",
-    "accessory_list": "",
-    "description":"",
-}
-accessory = {
-    "type": "",
-    "dimension":"",
-    "description":"",
-}
+Koumu: admin práva, online auto aktualizace nové verze
 
-station = {
-        "name": "",
-        "inspection_description": "",
-        "camera_list": "",
-    }
 
 
 

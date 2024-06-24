@@ -602,7 +602,7 @@ class main_menu:
     - odebrány možnosti přídávání/ odebírání interfaců
     - možnost refresh online připojení
     - refresh disků na tlačítko\n""")
-        change_log.insert("current lineend","\n Verze 3.7.1 (xx.6.2024)\n")
+        change_log.insert("current lineend","\n Verze 3.7.1 (24.6.2024)\n")
         change_log.insert("current lineend",
     """ 
     - Nově lze poznámky v ip setting upravovat přímo 
