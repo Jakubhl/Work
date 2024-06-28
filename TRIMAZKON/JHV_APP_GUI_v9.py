@@ -607,7 +607,7 @@ class main_menu:
     """ 
     - Nově lze poznámky v ip setting upravovat přímo 
     - Možnosti nastavení základního chování u disků
-    - Změny v excelu: list-Setting, buňka-B6 = 1 nebo 0\n""")
+    - Změny v excelu: list-Setting, buňka-B6 (automaticky se zapíše)\n""")
         change_log.see(tk.END)
 
     def menu(self,initial=False): # Funkce spouští základní menu při spuštění aplikace (MAIN)
@@ -638,9 +638,9 @@ class main_menu:
         IB_as_def_browser_path = None
         self.list_of_menu_frames = [frame_with_buttons,frame_with_logo,frame_with_buttons_right]
         
-        manage_images   = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Správa souborů/ obrázků", command = lambda: self.call_sorting_option(),font=("Arial",25,"bold"))
-        viewer_button   = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Procházet obrázky", command = lambda: self.call_view_option(),font=("Arial",25,"bold"))
-        ip_setting_button = customtkinter.CTkButton(master= frame_with_buttons, width= 400,height=100, text = "Měnit IP/ připojit disky", command = lambda: self.call_ip_manager(),font=("Arial",25,"bold"))
+        manage_images   = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Obrázky (správa)", command = lambda: self.call_sorting_option(),font=("Arial",25,"bold"))
+        viewer_button   = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Prohlížeč obrázků", command = lambda: self.call_view_option(),font=("Arial",25,"bold"))
+        ip_setting_button = customtkinter.CTkButton(master= frame_with_buttons, width= 400,height=100, text = "IP setting", command = lambda: self.call_ip_manager(),font=("Arial",25,"bold"))
         advanced_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Pokročilá nastavení", command = lambda: self.call_advanced_option(),font=("Arial",25,"bold"))
         change_log_label = customtkinter.CTkLabel(master=frame_with_buttons_right, width= 600,height=50,font=("Arial",24,"bold"),text="Seznam posledně provedených změn: ")
         change_log = customtkinter.CTkTextbox(master=frame_with_buttons_right, width= 600,height=550,fg_color="#212121",font=("Arial",20),border_color="#636363",border_width=3,corner_radius=0)

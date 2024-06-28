@@ -338,32 +338,29 @@ kdyz se prida nova stanice vytrigovat zadavani vsech parametru (neaktualizovat p
 při kliku na export - dotazovaci okno, pod jakym nazvem excel ulozit - .xlms needitovatelne (kontrola stejneho nazvu) - hotovo
 klik mimo childroot window - aby ho killnul - bind button-1 na root - při destroy unbind - hotovo
 
-_________________________________________________________________________________todo:_____________________________________________________________________________________________
+9:36 AM 6/26/2024
+když edituju věci navíc mimo stanici, nepropíšou se změny - hotovo
+kdyz zrusit spusteni, jako admin spadne? - opraveno
+predelavka na popen aby nevyskakovalo okno - hotovo
+automaticky vlozit parametr do excelu když None... - hotovo
+automaticke vyplnovani noveho parametru v excelu - hotovo
 
+_________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 když několik kamer - překlikávat mezi kamerama, vlevo navigační menu v editu (šipky)
 když navigátor přeteče - dotaz zda přidat nový...
-
 přidat info o pozici k navigátoru mezi stanicemi/ kamerami/ optikou...
-
-když edituju věci navíc mimo stanici, nepropíšou se změny
-
-
-
-
-přidat explorer pro určení kam uložit...
-
-
+přidat explorer pro určení kam uložit... (tři tečky)
 pridat jeste jeden sloupec
+
+
+ip setting duplikovana jmena nerozpozna
+kdyz jsou stejne disk letters - oba sviti pripojeno
 
 
 
 Koumu: admin práva, online auto aktualizace nové verze
-
-
-
-
 
 návod na trimazkon
 ip_manager seřazovat podle abecedy ???

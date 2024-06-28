@@ -1,0 +1,1 @@
+netsh interface ip set address "Ethernet 4" static 192.168.18.241 255.255.255.0

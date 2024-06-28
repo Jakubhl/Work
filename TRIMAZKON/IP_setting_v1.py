@@ -14,9 +14,15 @@ from PIL import Image
 import sys
 import ctypes
 
+customtkinter.set_appearance_mode("dark")
+customtkinter.set_default_color_theme("dark-blue")
+root=customtkinter.CTk()
+root.geometry("1200x900")
+root.title("ip_setting - testing")
+
 def path_check(path_raw,only_repair = None):
     path=path_raw
-    backslash = "\ "
+    backslash = "\\"
     if backslash[0] in path:
         newPath = path.replace(backslash[0], '/')
         path = newPath
@@ -137,6 +143,20 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.default_connection_option = 0
         self.connection_option_list = []
         self.default_disk_status_behav = 0
+        def call_main(what:str):
+            try:
+                if what == "disk":
+                    self.create_widgets_disk(init=True)
+                else:
+                    self.create_widgets(init=True)
+            except Exception as e:
+                add_colored_line(self.main_console,f"Neočekávaná chyba: {e}","red",None,True)
+
+        def insert_new_excel_param(wb,ws):
+            ws['B' + str(6)] = 0
+            ws["A" + str(6)] = "aktualizovat statusy disku (default)"
+            wb.save(self.excel_file_path)
+
         try:
             workbook = load_workbook(self.excel_file_path)
             worksheet = workbook["Settings"]
@@ -162,16 +182,21 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             
             def_show_disk = worksheet['B' + str(4)].value
             if int(def_show_disk) == 1:
-                self.create_widgets_disk(init=True)
+                call_main("disk")
             else:
-                self.create_widgets(init=True)
+                call_main("ip")
 
             def_window_size = worksheet['B' + str(5)].value
             if def_window_size == 2:
                 self.root.state('normal')
                 self.root.geometry(f"260x1000+{0}+{0}")
-
-            self.default_disk_status_behav = int(worksheet['B' + str(6)].value)
+            
+            value_check = worksheet['B' + str(6)].value
+            if value_check is None:
+                insert_new_excel_param(workbook,worksheet)
+            else:
+                self.default_disk_status_behav = int(worksheet['B' + str(6)].value)
+            
             workbook.close()
         except Exception as e:
             self.connection_option_list = ["data nenalezena"]
@@ -289,14 +314,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.default_connection_option = int(saved_def_con_option)
 
         self.default_disk_status_behav = int(worksheet['B' + str(6)].value)
-        # seznam interfaců
-        # self.fill_interfaces()
-        # self.connection_option_list = []
-        # all_options = worksheet['B' + str(2)].value
-        # all_options = str(all_options).split(",")
-        # for i in range (0,len(all_options)):
-        #     if all_options[i] != "":
-        #         self.connection_option_list.append(all_options[i])
         workbook.close()
                      
     def save_excel_data(self,project_name,IP_adress,mask,notes,only_edit = None,force_row_to_print=None,fav_status = None):
@@ -804,11 +821,9 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             return False
 
     def make_sure_ip_changed(self,interface_name,ip,command):
-        def close_prompt(child_root):
-            self.close_window(child_root)
-        def run_as_admin(child_root):
+        
+        def run_as_admin():
             # Vyžádání admin práv: nefunkční ve vscode
-            self.close_window(child_root)
             def is_admin():
                 try:
                     return ctypes.windll.shell32.IsUserAnAdmin()
@@ -818,6 +833,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
                 sys.exit()
         def open_app_as_admin_prompt():
+            def close_prompt(child_root):
+                child_root.destroy()
             child_root=customtkinter.CTk()
             x = self.root.winfo_rootx()
             y = self.root.winfo_rooty()
@@ -833,6 +850,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             child_root.mainloop()
 
         interface_index = self.connection_option_list.index(interface_name)
+
+        def call_admin_prompt():
+            open_app_as_admin_prompt()
+
         def call_subprocess():
             if ip == self.current_address_list[interface_index]:
                 add_colored_line(self.main_console,f"Pro interface {interface_name} je již tato adresa ({ip}) nastavena","orange",None,True)
@@ -852,8 +873,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 self.make_project_cells(no_read=True)
             else:
                 add_colored_line(self.main_console,f"Chyba, neplatná adresa nebo daný inteface odpojen od tohoto zařízení (pro nastavování odpojených interfaců spusťtě aplikaci jako administrátor)","red",None,True)
-                open_app_as_admin_prompt()
-
+                call_admin_prompt()
         run_background = threading.Thread(target=call_subprocess,)
         run_background.start()
 
@@ -881,7 +901,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
             except Exception as e:
                 print(f"Exception occurred: {str(e)}")
-
 
             self.make_sure_ip_changed(interface_name,ip,"")
         
@@ -1424,14 +1443,27 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
              add_colored_line(self.main_console,f"Připojení selhalo (ixon? musí být zvolena alespoň 1 složka na disku...)","red",None,True)
 
     def get_ipv4_addresses(self):
-        # Run the ipconfig command
-        result = subprocess.run(['ipconfig'], capture_output=True, text=True)
+        # result = subprocess.run(['ipconfig'], capture_output=True, text=True)
+        process = subprocess.Popen("ipconfig",
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    creationflags=subprocess.CREATE_NO_WINDOW)
+        stdout, stderr = process.communicate()
+        result2 = "" 
+        try:
+            stdout_str = stdout.decode('cp1250')
+            # stderr_str = stderr.decode('utf-8')
+            result2 = str(stdout_str)
+            
+        except Exception as e:
+            print("chyba ",e)
+
         # Regular expression to match the IPv4 address
         ipv4_pattern = re.compile(r'IPv4 Address[.\s]*: ([\d.]+)')
-        # Dictionary to store interface names and their IPv4 addresses
         ipv4_addresses = []
-        # Split the output by lines
-        lines = result.stdout.splitlines()
+        # lines = process.stdout.splitlines()
+        lines = result2.splitlines()
+        print(lines)
         current_interface = None
         # Iterate over each line to find interface names and IPv4 addresses
         for line in lines:
@@ -1445,8 +1477,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     if match and current_interface:
                         ipv4_addresses.append(current_interface)
                         ipv4_addresses.append(match.group(1))
-                        #ipv4_addresses[current_interface] = match.group(1)
-        
         return ipv4_addresses
 
     def option_change(self,args,only_console = False,silent = False):
@@ -1931,5 +1961,5 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.call_make_cells_disk()
         self.root.mainloop()
 
-# IP_assignment(root)
-# root.mainloop()
+IP_assignment(root,"","max",str(os.getcwd())+"\\")
+root.mainloop()
