@@ -345,17 +345,32 @@ predelavka na popen aby nevyskakovalo okno - hotovo
 automaticky vlozit parametr do excelu když None... - hotovo
 automaticke vyplnovani noveho parametru v excelu - hotovo
 
+11:41 AM 6/28/2024
+ip setting duplikovana jmena nerozpozna - opraveno
+nefunguje seznam online interfaces - hotovo
+přidat DHCP - hotovo
+stejne jmeno při přidávání nového projektu zlobí - hotovo
+poznamky moznost editovatelne/ needitovatelne - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
+
 když několik kamer - překlikávat mezi kamerama, vlevo navigační menu v editu (šipky)
-když navigátor přeteče - dotaz zda přidat nový...
+když navigátor přeteče - dotaz zda přidat nový... -plusko a barva tlacitka
 přidat info o pozici k navigátoru mezi stanicemi/ kamerami/ optikou...
 přidat explorer pro určení kam uložit... (tři tečky)
 pridat jeste jeden sloupec
+dodelat moznosti pridat ip adresu, jmeno, heslo pod kontroler
+enterem se přepínat na další zadávání
+predvyplnit poznamky z sharepoint databaze - první klik na entry - vybrat celý text
 
 
-ip setting duplikovana jmena nerozpozna
+udělat soubor.py s databazí textů pro changelog a texty, co se zobrazují
+
+odebrat sloniky
+
+
 kdyz jsou stejne disk letters - oba sviti pripojeno
 
 

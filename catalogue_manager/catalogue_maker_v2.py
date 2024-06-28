@@ -727,16 +727,16 @@ class Catalogue_gui:
         note_label                  .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
         notes_input3                .pack(pady = 5, padx = 10,expand=True,side="top")
 
-        new_name.bind("<Leave>",lambda e: child_root.focus_set())
-        new_name.bind("<Enter>",lambda e: new_name.focus_set())
-        new_description.bind("<Leave>",lambda e: child_root.focus_set())
-        new_description.bind("<Enter>",lambda e: new_description.focus_set())
-        notes_input.bind("<Leave>",lambda e: child_root.focus_set())
-        notes_input.bind("<Enter>",lambda e: notes_input.focus_set())
-        notes_input2.bind("<Leave>",lambda e: child_root.focus_set())
-        notes_input2.bind("<Enter>",lambda e: notes_input2.focus_set())
-        notes_input3.bind("<Leave>",lambda e: child_root.focus_set())
-        notes_input3.bind("<Enter>",lambda e: notes_input3.focus_set())
+        # new_name.bind("<Leave>",lambda e: child_root.focus_set())
+        # new_name.bind("<Enter>",lambda e: new_name.focus_set())
+        # new_description.bind("<Leave>",lambda e: child_root.focus_set())
+        # new_description.bind("<Enter>",lambda e: new_description.focus_set())
+        # notes_input.bind("<Leave>",lambda e: child_root.focus_set())
+        # notes_input.bind("<Enter>",lambda e: notes_input.focus_set())
+        # notes_input2.bind("<Leave>",lambda e: child_root.focus_set())
+        # notes_input2.bind("<Enter>",lambda e: notes_input2.focus_set())
+        # notes_input3.bind("<Leave>",lambda e: child_root.focus_set())
+        # notes_input3.bind("<Enter>",lambda e: notes_input3.focus_set())
         # initial prefill - station:
         def intial_prefill():
             def filter_text_input(text):
