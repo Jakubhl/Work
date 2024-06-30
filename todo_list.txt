@@ -352,6 +352,12 @@ přidat DHCP - hotovo
 stejne jmeno při přidávání nového projektu zlobí - hotovo
 poznamky moznost editovatelne/ needitovatelne - hotovo
 
+9:38 PM 6/29/2024
+odebrat sloniky - hotovo
+předčasně zjistit přenastvení ip - hotovo
+opravit neaktualizovaná současná připojení (podbarvení ip adresy) - hotovo
+
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -359,22 +365,21 @@ ________________________________________________________________________________
 když několik kamer - překlikávat mezi kamerama, vlevo navigační menu v editu (šipky)
 když navigátor přeteče - dotaz zda přidat nový... -plusko a barva tlacitka
 přidat info o pozici k navigátoru mezi stanicemi/ kamerami/ optikou...
+
 přidat explorer pro určení kam uložit... (tři tečky)
+
+
 pridat jeste jeden sloupec
 dodelat moznosti pridat ip adresu, jmeno, heslo pod kontroler
 enterem se přepínat na další zadávání
 predvyplnit poznamky z sharepoint databaze - první klik na entry - vybrat celý text
 
 
-udělat soubor.py s databazí textů pro changelog a texty, co se zobrazují
-
-odebrat sloniky
+nelze bez povoleni v nastaveni ukladat makra
 
 
+udělat soubor.py s databazí textů pro changelog a texty, co se zobrazují po spuštění tutorial modu - na Enter každého tlačítka zobrazit vysvětlující okno
 kdyz jsou stejne disk letters - oba sviti pripojeno
-
-
-
 Koumu: admin práva, online auto aktualizace nové verze
 
 návod na trimazkon

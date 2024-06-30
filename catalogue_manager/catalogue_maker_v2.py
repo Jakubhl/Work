@@ -77,6 +77,7 @@ class Catalogue_gui:
         self.accessory_database.insert(0,"")
         self.favourite_colors = [""]
         self.format_list = ["xlsm","xlsx"]
+        self.current_block_id = "00"
 
         self.create_main_widgets()
 
@@ -179,8 +180,7 @@ class Catalogue_gui:
         - Vkládá widget tier do vyhledávače
         - mění názvy tlačítek v závislosti na nakliknutém zařízení
         """
-        self.search_input.delete("0","300")
-        self.search_input.insert("0",widget_tier)
+        self.current_block_id = str(widget_tier)
         if len(widget_tier) == 2: #01-99 stanice
             self.new_device.configure(text="Nová kamera")
             self.edit_device.configure(text="Editovat stanici")
@@ -196,7 +196,6 @@ class Catalogue_gui:
         elif len(widget_tier) == 8: # 01010101-99999999 prislusenstvi
             self.edit_device.configure(text="Editovat příslušenství")
             self.del_device.configure(text = "Odebrat příslušenství")
-
 
     def make_block(self,master_widget,height,width,fg_color,text,side,dummy_block = False,tier = ""):
         if dummy_block:
@@ -905,7 +904,7 @@ class Catalogue_gui:
         #refresh
         self.make_project_widgets()
 
-    def make_block_buttons(self,master_widget,tier:str,station:bool,accessory=False):#,btn_add_line:str,btn_add_object:str
+    """def make_block_buttons(self,master_widget,tier:str,station:bool,accessory=False):#,btn_add_line:str,btn_add_object:str
         button_add_line = customtkinter.CTkButton(master = master_widget, width = 25,height=25,text = "+",font=("",15),corner_radius=0,fg_color="#009933",hover_color="green")
         if station:
             button_add_line.pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
@@ -928,7 +927,7 @@ class Catalogue_gui:
         button_edit_object.bind("<Button-1>",lambda e, widget_tier=tier: self.edit_object(e, widget_tier))
 
         master_widget.update()
-        print(master_widget._current_height)
+        print(master_widget._current_height)"""
 
     def export_option_window(self):
         child_root=customtkinter.CTk()
@@ -983,14 +982,14 @@ class Catalogue_gui:
         export_name_frame = customtkinter.CTkFrame(master = export_frame,corner_radius=0)
         export_name =       customtkinter.CTkEntry(master = export_name_frame,font=("Arial",20),width=780,height=50,corner_radius=0)
         format_entry =      customtkinter.CTkOptionMenu(master = export_name_frame,font=("Arial",22),dropdown_font=("Arial",22),width=200,height=50,values=self.format_list,corner_radius=0)
-        export_name         .pack(pady = 5, padx = 10,anchor="w",expand=False,side="left")
-        format_entry        .pack(pady = 5, padx = 10,anchor="w",expand=False,side="left")
+        export_name         .pack(pady = 5, padx = 10,anchor="w",fill="x",expand=True,side="left")
+        format_entry        .pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
         export_label2 =      customtkinter.CTkLabel(master = export_frame,text = "Zadejte cestu, kam soubor uložit:",font=("Arial",22,"bold"))
         export_path_frame = customtkinter.CTkFrame(master = export_frame,corner_radius=0)
         export_path =       customtkinter.CTkEntry(master = export_path_frame,font=("Arial",20),width=780,height=50,corner_radius=0)
-        explorer_btn =      customtkinter.CTkButton(master = export_path_frame,text = "EXPLORER",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0)
-        export_path         .pack(pady = 5, padx = 10,anchor="w",expand=False,side="left")
-        explorer_btn        .pack(pady = 5, padx = 10,anchor="w",expand=False,side="left")
+        explorer_btn =      customtkinter.CTkButton(master = export_path_frame,text = "...",font=("Arial",22,"bold"),width = 50,height=50,corner_radius=0)
+        export_path         .pack(pady = 5, padx = 10,anchor="w",fill="x",expand=True,side="left")
+        explorer_btn        .pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
         console =           tk.Text(export_frame, wrap="none", height=0, width=180,background="black",font=("Arial",22),state=tk.DISABLED)
 
         button_save =       customtkinter.CTkButton(master = export_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: call_save_file(child_root))
@@ -1019,15 +1018,14 @@ class Catalogue_gui:
     def create_main_widgets(self):
         def call_manage_widgets(button):
             widget_tier = ""
-            widget_tier = self.search_input.get()
+            widget_tier = self.current_block_id
             if button == "add_line":
                 if widget_tier != "":
                     if len(widget_tier) > 2: # pokud je nakliknuteho neco jiného než stanice - přidej novou pod poslední
                         next_st_widget_tier = len(self.station_list)
                         if next_st_widget_tier < 10:
                             next_st_widget_tier = "0" + str(next_st_widget_tier)
-                        self.search_input.delete("0","300")
-                        self.search_input.insert("0",str(next_st_widget_tier))
+                        self.current_block_id = str(next_st_widget_tier)
                         self.manage_widgets("",str(next_st_widget_tier),btn=button)
                         return
 
@@ -1042,7 +1040,7 @@ class Catalogue_gui:
         
         def call_edit_object():
             widget_tier = ""
-            widget_tier = self.search_input.get()
+            widget_tier = self.current_block_id
             if widget_tier != "":
                 self.edit_object("",widget_tier)
             else:
@@ -1050,7 +1048,7 @@ class Catalogue_gui:
 
         def call_delete_object():
             widget_tier = ""
-            widget_tier = self.search_input.get()
+            widget_tier = self.current_block_id
             if widget_tier != "":
                 self.delete_block("",widget_tier)
             else:
@@ -1058,32 +1056,40 @@ class Catalogue_gui:
 
         self.clear_frame(self.root)
         main_header =               customtkinter.CTkFrame(master=self.root,corner_radius=0,height=100)
+        main_header                 .pack(pady=0,padx=5,expand=False,fill="x",side = "top",ipady = 10,ipadx = 10,anchor="w")
         console_frame=              customtkinter.CTkFrame(master=self.root,corner_radius=0,height=50)
+        image_frame =               customtkinter.CTkFrame(master=main_header,corner_radius=0,height=100,fg_color="#212121")
+        image_frame                 .pack(pady=0,padx=0,expand=False,side = "right",anchor="e",ipady = 10,ipadx = 10)
         logo =                      customtkinter.CTkImage(PILImage.open("images/jhv_logo.png"),size=(300, 100))
-        image_logo =                customtkinter.CTkLabel(master = main_header,text = "",image =logo,bg_color="#212121")
-        main_header                 .pack(pady=0,padx=5,fill="x",expand=False,side = "top",ipady = 10,ipadx = 10)
-        console_frame               .pack(pady=0,padx=5,fill="x",expand=False,side = "top",ipady = 10,ipadx = 10)
-        image_logo                  .pack(pady=5,padx=15,expand=True,side = "right",anchor="e")
+        image_logo =                customtkinter.CTkLabel(master = image_frame,text = "",image =logo,bg_color="#212121")
+        image_logo                  .pack(pady=0,padx=0,expand=True)
 
-        self.search_input =         customtkinter.CTkEntry(master = main_header,font=("Arial",20),width=250,height=50,placeholder_text="Zvolený blok",corner_radius=0)
-        new_station =               customtkinter.CTkButton(master = main_header,text = "Nová stanice",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_manage_widgets("add_line"))
-        self.new_device =           customtkinter.CTkButton(master = main_header,text = "Nová kamera",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_manage_widgets("add_object"))
-        self.edit_device =          customtkinter.CTkButton(master = main_header,text = "Editovat stanici",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_edit_object())
-        self.del_device =           customtkinter.CTkButton(master = main_header,text = "Odebrat stanici",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_delete_object())
-        export_button =             customtkinter.CTkButton(master = main_header,text = "Exportovat .xlsm",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,
-                                                            command=lambda:self.export_option_window())
-        self.project_name_input =   customtkinter.CTkEntry(master = main_header,font=("Arial",20),width=250,height=50,placeholder_text="Název projektu",corner_radius=0)
+        main_header_row1 =          customtkinter.CTkFrame(master=main_header,corner_radius=0,height=100,fg_color="#212121")
+        main_header_row2 =          customtkinter.CTkFrame(master=main_header,corner_radius=0,height=100,fg_color="#212121")
+        main_header_row1            .pack(pady=(10,0),padx=0,expand=True,fill="x",side = "top",anchor="w")
+        main_header_row2            .pack(pady=(5,0),padx=0,expand=True,fill="x",side = "top",anchor="w")
+        console_frame               .pack(pady=0,padx=0,fill="x",expand=False,side = "top")
 
-        self.main_console =         tk.Text(console_frame, wrap="none", height=0, width=180,background="black",font=("Arial",22),state=tk.DISABLED)
-        self.search_input           .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
+        # self.search_input =         customtkinter.CTkEntry(master = main_header,font=("Arial",20),width=250,height=50,placeholder_text="Zvolený blok",corner_radius=0)
+        self.project_name_input =   customtkinter.CTkEntry(master = main_header_row1,font=("Arial",20),width=250,height=50,placeholder_text="Název projektu",corner_radius=0)
+        new_station =               customtkinter.CTkButton(master = main_header_row1,text = "Nová stanice",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_manage_widgets("add_line"))
+        self.new_device =           customtkinter.CTkButton(master = main_header_row1,text = "Nová kamera",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_manage_widgets("add_object"))
+        self.edit_device =          customtkinter.CTkButton(master = main_header_row1,text = "Editovat stanici",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_edit_object())
+        self.del_device =           customtkinter.CTkButton(master = main_header_row1,text = "Odebrat stanici",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_delete_object())
+
+
+        # self.search_input           .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
+        self.project_name_input     .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         new_station                 .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         self.new_device             .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         self.edit_device            .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         self.del_device             .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
+
+        export_button =             customtkinter.CTkButton(master = main_header_row2,text = "Exportovat",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command=lambda:self.export_option_window())
         export_button               .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
-        self.project_name_input     .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
-        self.main_console           .pack(pady = 0, padx = (10,0),anchor="w",expand=True,side="bottom")
-        self.search_input.insert("0","00")
+        self.main_console =         tk.Text(console_frame, wrap="none", height=0, width=180,background="black",font=("Arial",22),state=tk.DISABLED)
+        self.main_console           .pack(pady = 10, padx = (10,0),anchor="w",expand=True,side="bottom")
+        # self.search_input.insert("0","00")
 
         column_labels =             customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=50)
         self.project_tree =         customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
@@ -1115,9 +1121,9 @@ class Catalogue_gui:
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
             if self.focused_entry_widget(): # pokud nabindovane pismeno neni vepisovano do entry widgetu
                 return
-            if int(current_width) > 1200:
+            if int(current_width) > 1600:
                 self.root.state('normal')
-                self.root.geometry("1200x900")
+                self.root.geometry("1600x900")
             else:
                 #self.root.after(0, lambda:self.root.state('zoomed'))
                 self.root.state('zoomed')
@@ -1294,26 +1300,31 @@ class Save_excel:
         wb.close()
 
     def update_sheet_vba_code(self,new_code):
-        unsuccessfull = False
-        app = xw.App(visible=False)
-        wb = app.books.open(self.temp_excel_file_name)
-        vb_project = wb.api.VBProject
-        # vb_project.VBComponents.Add(1) # musi se pridat prazdny modul...
-        code_module = vb_project.VBComponents("ThisWorkbook").CodeModule
-        code_module.DeleteLines(1, code_module.CountOfLines)
-        code_module.AddFromString(new_code)
         try:
-            wb.save(self.excel_file_name)
-        except Exception:
-            unsuccessfull = True
-        wb.close()
-        app.quit()
+            unsuccessfull = False
+            app = xw.App(visible=False)
+            wb = app.books.open(self.temp_excel_file_name)
+            vb_project = wb.api.VBProject
+            # vb_project.VBComponents.Add(1) # musi se pridat prazdny modul...
+            code_module = vb_project.VBComponents("ThisWorkbook").CodeModule
+            code_module.DeleteLines(1, code_module.CountOfLines)
+            code_module.AddFromString(new_code)
+            try:
+                wb.save(self.excel_file_name)
+            except Exception:
+                unsuccessfull = True
+            wb.close()
+            app.quit()
 
-        if os.path.exists(self.temp_excel_file_name): # nutná operace (vyuzivat temp soubor) kvůli zapisování vba
-            os.remove(self.temp_excel_file_name)
-        
-        if unsuccessfull:
-            return False
+            if os.path.exists(self.temp_excel_file_name): # nutná operace (vyuzivat temp soubor) kvůli zapisování vba
+                os.remove(self.temp_excel_file_name)
+            
+            if unsuccessfull:
+                return False
+        except Exception as e:
+            print("chyba: ",e)
+            return "rights_error"
+
 
     def check_row_count(self,widget,station_index,camera_index=None,optics_index = None):
         """
@@ -1516,7 +1527,7 @@ class Save_excel:
             for i in range(3,self.excel_rows_used+1):
                 ws.column_dimensions[columns].width = self.excel_column_width
                 cell = ws[columns + str(i)]
-                cell.alignment = Alignment(horizontal = "center", vertical = "center")
+                cell.alignment = Alignment(horizontal = "left", vertical = "center")
                 cell.border = thin_border
 
                 if i == 3:
@@ -1630,6 +1641,8 @@ class Save_excel:
             attempt = self.update_sheet_vba_code(new_code=new_vba_code)
             if attempt == False:
                 add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}","red",None,True)
+            elif attempt == "rights_error":
+                add_colored_line(self.main_console,f"Nemáte nastavená potřebná práva v excelu pro Visual Basic","red",None,True)
             else:
                 add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
                 os.startfile(self.excel_file_name)

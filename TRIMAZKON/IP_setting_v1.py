@@ -125,7 +125,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         # self.app_path = os.getcwd()
         # self.app_path = path_check(self.app_path,True)
         # self.excel_file_path = self.app_path + "saved_addresses_2.xlsx"
-        self.excel_file_path = initial_path + "saved_addresses_xxx.xlsx"
+        self.excel_file_path = initial_path + "saved_addresses_2.xlsx"
         # print(self.excel_file_path)
         self.last_project_name = ""
         self.last_project_ip = ""
@@ -227,10 +227,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
     def clear_frame(self,frame):
         for widget in frame.winfo_children():
             widget.destroy()
-
-    def close_window(self,window):
-        window.update_idletasks()
-        window.destroy()
 
     def fill_interfaces(self):
         """
@@ -887,6 +883,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             for i in range(0,win_change_ip_time):
                 add_colored_line(self.main_console,f"Čekám, až windows provede změny: {7-i} s...","white",None,True)
                 self.option_change("",silent=True)
+                if ip == self.current_address_list[interface_index]: # někdy dříve než 7 sekund...
+                    break
                 time.sleep(1)
 
             self.option_change("",silent=True)
@@ -902,6 +900,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
     def change_to_DHCP(self):
         interface = str(self.drop_down_options.get())
         if interface != None or interface != "":
+            interface_index = self.connection_option_list.index(interface)
+            previous_addr = self.current_address_list[interface_index]
             try:
                 # Construct the netsh command
                 netsh_command = f"netsh interface ipv4 set address name=\"{interface}\" source=dhcp"
@@ -924,7 +924,14 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     print(f"Command executed successfully:\n{stdout_str}")                
                 
                 add_colored_line(self.main_console,f"IPv4 adresa interfacu: {interface} úspěšně přenastavena na DHCP (automatickou)","green",None,True)
+                time.sleep(0.5)
                 self.option_change("",silent=True)
+                new_addr = self.current_address_list[interface_index]
+                print("previous addr: ",previous_addr)
+                print("current addr: ",new_addr)
+                if new_addr == previous_addr:
+                    add_colored_line(self.main_console,f"Chyba, u {interface} se nepodařilo změnit ip adresu (pro nastavování odpojených interfaců spusťtě aplikaci jako administrátor)","red",None,True)
+
                 self.make_project_cells(no_read=True)
 
             except Exception as e:
@@ -1084,11 +1091,20 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             note_window.mainloop()
 
     def make_project_cells(self,no_read = None):
-        def on_enter(e,new_text,widget):
-            widget.configure(text = new_text)   
+        def on_enter(e,interface,widget):
+            widget.configure(text = interface)   
 
-        def on_leave(e,new_text,widget):
-            widget.configure(text = new_text)
+        def on_leave(e,ip,widget,frame):
+            widget.configure(text = ip)
+            if ip not in self.current_address_list:
+                unbind_connected_ip(widget,frame)
+
+        def unbind_connected_ip(widget,frame):
+            widget.unbind("<Enter>")
+            frame.unbind("<Enter>")
+            widget.unbind("<Leave>")
+            frame.unbind("<Leave>")
+            frame.configure(fg_color = None)
 
         def filter_text_input(text):
             legit_rows = []
@@ -1165,7 +1181,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         if no_read == None:
             self.read_excel_data()
         # padx_list = [10,190,390,390,650]
-        padx_list = [60,240,440,440,700]
+        # padx_list = [60,240,440,440,700]
+        padx_list = [10,190,390,390,650]
         self.clear_frame(self.project_tree)
         column1 =  customtkinter.CTkLabel(master = self.project_tree, width = 20,height=30,text = "Projekt: ",font=("Arial",20,"bold"))
         column2 =  customtkinter.CTkLabel(master = self.project_tree, width = 20,height=30,text = "IPv4 adresa: ",font=("Arial",20,"bold"))
@@ -1181,15 +1198,15 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             project_frame.grid(row=y+1,column=0,padx=10,sticky=tk.W)
             project_frame.grid_propagate(0)
             
-            is_favourite = self.is_project_favourite(y)
-            if is_favourite:
-                filled_hearth =  customtkinter.CTkLabel(master = project_frame, width = 45,height=45,text = "🐘",font=("Arial",35),text_color="pink")
-                filled_hearth.grid(column = 0,row=0,pady = 2,padx =2)
-                filled_hearth.bind("<Button-1>",lambda e, widget_id = y: self.clicked_on_project(e, widget_id,"favourite"))
-            else:
-                unfilled_hearth =  customtkinter.CTkLabel(master = project_frame, width =45,height=45,text = "♡",font=("Arial",40),text_color="red")
-                unfilled_hearth.grid(column = 0,row=0,pady = 2,padx =2)
-                unfilled_hearth.bind("<Button-1>",lambda e, widget_id = y: self.clicked_on_project(e, widget_id,"no_favourite"))
+            # is_favourite = self.is_project_favourite(y)
+            # if is_favourite:
+            #     filled_hearth =  customtkinter.CTkLabel(master = project_frame, width = 45,height=45,text = "🐘",font=("Arial",35),text_color="pink")
+            #     filled_hearth.grid(column = 0,row=0,pady = 2,padx =2)
+            #     filled_hearth.bind("<Button-1>",lambda e, widget_id = y: self.clicked_on_project(e, widget_id,"favourite"))
+            # else:
+            #     unfilled_hearth =  customtkinter.CTkLabel(master = project_frame, width =45,height=45,text = "♡",font=("Arial",40),text_color="red")
+            #     unfilled_hearth.grid(column = 0,row=0,pady = 2,padx =2)
+            #     unfilled_hearth.bind("<Button-1>",lambda e, widget_id = y: self.clicked_on_project(e, widget_id,"no_favourite"))
             
             for x in range(0,len(self.all_rows[y])):
                 if x != 2: #nevypisujeme masku
@@ -1199,7 +1216,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                         project_frame.grid_propagate(0)
                         # binding the click on widget
                         project_frame.bind("<Button-1>",lambda e, widget_id = y: self.clicked_on_project(e, widget_id))
-                        button =  customtkinter.CTkButton(master = project_frame,width = 160,text = self.all_rows[y][x], command = lambda widget_id = y: self.change_computer_ip(widget_id),font=("Arial",20,"bold"),corner_radius=0)
+                        button =  customtkinter.CTkButton(master = project_frame,width = 160,text = self.all_rows[y][x],font=("Arial",20,"bold"),corner_radius=0, command = lambda widget_id = y: self.change_computer_ip(widget_id))
                         button.grid(column = 0,row=0,pady = 10,padx =10)
                         # zkopírovat pravým klikem na button
                         button.bind("<Button-3>",lambda e, widget_id = y: self.clicked_on_project(e, widget_id))
@@ -1216,10 +1233,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                         ip_addr = self.all_rows[y][x]
                         if ip_addr in self.current_address_list:
                             project_frame.configure(fg_color = "green")
-                            project_frame.bind("<Enter>",lambda e, interface = self.connection_option_list[self.current_address_list.index(ip_addr)], widget = parameter: on_enter(e,interface,widget))
-                            project_frame.bind("<Leave>",lambda e, ip = ip_addr, widget = parameter: on_leave(e,ip,widget))
-                            parameter.bind("<Enter>",lambda e, interface = self.connection_option_list[self.current_address_list.index(ip_addr)], widget = parameter: on_enter(e,interface,widget))
-                            parameter.bind("<Leave>",lambda e, ip = ip_addr, widget = parameter: on_leave(e,ip,widget))
+                            project_frame.  bind("<Enter>",lambda e, interface = self.connection_option_list[self.current_address_list.index(ip_addr)], widget = parameter: on_enter(e,interface,widget))
+                            project_frame.  bind("<Leave>",lambda e, ip = ip_addr, widget = parameter,frame = project_frame: on_leave(e,ip,widget,frame))
+                            parameter.      bind("<Enter>",lambda e, interface = self.connection_option_list[self.current_address_list.index(ip_addr)], widget = parameter: on_enter(e,interface,widget))
+                            parameter.      bind("<Leave>",lambda e, ip = ip_addr, widget = parameter,frame = project_frame: on_leave(e,ip,widget,frame))
                     elif x == 3:#frame s poznamkami...
                         notes_frame =  customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,fg_color="black",border_width=2,height=50,width=200)
                         notes_frame.grid(row=y+1,column=0,padx=padx_list[x],sticky=tk.W)
@@ -1561,7 +1578,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
     def option_change(self,args,only_console = False,silent = False):
         """
-        Volá get_current_ip_list(), aktualizuje současně nastavené adresy
+        Volá get_current_ip_list(), aktualizuje současně nastavené adresy (self.current_address_list)
         - only console: vypíše do konzole aktuální připojení
         - silent: nevypisuje do konzole
         """
@@ -1802,25 +1819,38 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         child_root=customtkinter.CTk()
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
-        child_root.geometry(f"530x270+{x+350}+{y+180}")
+        if ip_window:
+            child_root.geometry(f"580x185+{x+350}+{y+180}")
+        else:
+            child_root.geometry(f"580x300+{x+350}+{y+180}")
+
         child_root.wm_iconbitmap(resource_path(self.app_icon))
         child_root.title("Nastavení")
         main_frame =    customtkinter.CTkFrame(master=child_root,corner_radius=0)
-        main_frame.     pack(expand=True,fill="both",side="left")
         label =         customtkinter.CTkLabel(master = main_frame, width = 100,height=40,text = "Chování poznámek (editovatelné/ needitovatelné)",font=("Arial",20,"bold"))
         checkbox =      customtkinter.CTkCheckBox(master = main_frame, text = "Přímo zapisovat a ukládat do poznámek na úvodní obrazovce",font=("Arial",16,"bold"),command=lambda: save_new_behav_notes())
-        label2 =        customtkinter.CTkLabel(master = main_frame, width = 100,height=40,text = "Chování při vstupu do menu \"Síťové disky\"",font=("Arial",20,"bold"))
-        checkbox2 =     customtkinter.CTkCheckBox(master = main_frame, text = "Při spuštění aktualizovat statusy disků",font=("Arial",16,"bold"),command=lambda: save_new_behav_disk())
-        button_close =  customtkinter.CTkButton(master = main_frame, width = 150,height=40,text = "Zavřít",command =  lambda: child_root.destroy(),font=("Arial",20,"bold"),corner_radius=0)
-        if ip_window:
-            label.      pack(pady = 10,padx=10,side="top",anchor = "w")
-            checkbox.   pack(pady = 10,padx=10,side="top",anchor = "w")
-        else:
-            label.      pack(pady = 10,padx=10,side="top",anchor = "w")
-            checkbox.   pack(pady = 10,padx=10,side="top",anchor = "w")
-            label2.     pack(pady = 10,padx=10,side="top",anchor = "w")
-            checkbox2.  pack(pady = 10,padx=10,side="top",anchor = "w")
+        label.          pack(pady = 10,padx=10,side="top",anchor = "w")
+        checkbox.       pack(pady = 10,padx=10,side="top",anchor = "w")
+
+        main_frame2 =   customtkinter.CTkFrame(master=child_root,corner_radius=0)
+        label2 =        customtkinter.CTkLabel(master = main_frame2, width = 100,height=40,text = "Chování při vstupu do menu \"Síťové disky\"",font=("Arial",20,"bold"))
+        checkbox2 =     customtkinter.CTkCheckBox(master = main_frame2, text = "Při spuštění aktualizovat statusy disků",font=("Arial",16,"bold"),command=lambda: save_new_behav_disk())
+        label2.         pack(pady = 10,padx=10,side="top",anchor = "w")
+        checkbox2.      pack(pady = 10,padx=10,side="top",anchor = "w")
+        
+        close_frame =   customtkinter.CTkFrame(master=child_root,corner_radius=0)
+        button_close =  customtkinter.CTkButton(master = close_frame, width = 150,height=40,text = "Zavřít",command = child_root.destroy,font=("Arial",20,"bold"),corner_radius=0)
         button_close.   pack(pady = 10,padx=10,side="bottom",anchor = "e")
+
+        if ip_window:
+            main_frame.     pack(padx = 10,pady = (10,0),expand=True,fill="x",side="top")
+            close_frame.    pack(padx = 10,pady = 5,expand=True,fill="x",side="top")
+            
+        else:
+            main_frame.     pack(padx = 10,pady = (10,0),expand=True,fill="x",side="top")
+            main_frame2.    pack(padx = 10,pady = (5,0),expand=True,fill="x",side="top")
+            close_frame.    pack(padx = 10,pady = 5,expand=True,fill="x",side="top")
+
 
         if self.default_note_behav == 1:
             checkbox.select()
