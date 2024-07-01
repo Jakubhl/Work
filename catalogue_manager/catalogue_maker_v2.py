@@ -960,13 +960,13 @@ class Catalogue_gui:
                     click_count += 1
                     add_colored_line(console,f"Cesta již obsahuje soubor se stejným názvem, při druhém kliknutí na \"Uložit\" bude přepsán","orange",None,True)
                     if click_count > 1 and previous_path == excel_path_with_name: # když podruhé a nebyla změněna cesta
-                        Save_excel(station_list = self.station_list,project_name = self.project_name_input.get(),console=self.main_console,excel_name=excel_path_with_name)
+                        Save_excel(self.root,station_list = self.station_list,project_name = self.project_name_input.get(),console=self.main_console,excel_name=excel_path_with_name)
                         close_window(child_root)
                     elif click_count > 1 and previous_path != excel_path_with_name:
                         click_count =1
                     previous_path = excel_path_with_name
                 else: 
-                    Save_excel(station_list = self.station_list,project_name = self.project_name_input.get(),console=self.main_console,excel_name=excel_path_with_name)
+                    Save_excel(self.root,station_list = self.station_list,project_name = self.project_name_input.get(),console=self.main_console,excel_name=excel_path_with_name)
                     close_window(child_root)
             else:
                 add_colored_line(console,"Zadaná cesta pro uložení je neplatná","red",None,True)
@@ -1251,7 +1251,8 @@ class Catalogue_gui:
                         dummy_acc = self.make_block(master_widget=self.accessory_column,height=default_height-5,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
         
 class Save_excel:
-    def __init__(self,station_list,project_name,console,excel_name):
+    def __init__(self,root,station_list,project_name,console,excel_name):
+        self.root = root
         self.main_console = console
         self.project_name = project_name
         self.station_list = station_list
@@ -1280,7 +1281,10 @@ class Save_excel:
         
 
         if os.path.exists(self.temp_excel_file_name):
-            os.remove(self.temp_excel_file_name)
+            try:
+                os.remove(self.temp_excel_file_name)
+            except Exception as e:
+                print(e)
         wb.save(filename=self.temp_excel_file_name)
         wb2 = load_workbook(filename=self.temp_excel_file_name, keep_vba=True)
         wb2.save(self.temp_excel_file_name)
@@ -1324,7 +1328,6 @@ class Save_excel:
         except Exception as e:
             print("chyba: ",e)
             return "rights_error"
-
 
     def check_row_count(self,widget,station_index,camera_index=None,optics_index = None):
         """
@@ -1625,12 +1628,28 @@ class Save_excel:
         wb.save(filename=self.temp_excel_file_name)
         wb.close()
 
+    def open_trust_setting_manual(self):
+        child_root=customtkinter.CTk()
+        x = self.root.winfo_rootx()
+        y = self.root.winfo_rooty()
+        #1824x805
+        child_root.geometry(f"912x402+{x+80}+{y+80}")
+        child_root.title("Manual")
+
+        manual_frame =  customtkinter.CTkFrame(master=child_root,corner_radius=0,height=100,fg_color="#212121")
+        manual_frame    .pack(pady=0,padx=0,expand=False,side = "right",anchor="e",ipady = 10,ipadx = 10)
+        manual =        customtkinter.CTkImage(PILImage.open("images/excel_manual.png"),size=(912,402))
+        manual_label =  customtkinter.CTkLabel(master = manual_frame,text = "",image =manual,bg_color="#212121")
+        manual_label    .pack(pady=0,padx=0,expand=True)
+
+        child_root.mainloop()
 
     def main(self):
         if ".xlsm" in self.excel_file_name:
             rows_to_merge = self.get_cells_to_merge()
             self.make_header()
             # grafika header:
+            self.open_trust_setting_manual()
             rows_to_merge.append("A1:A2")
             rows_to_merge.append("B1:D1")
             rows_to_merge.append("B2:D2")
@@ -1642,7 +1661,8 @@ class Save_excel:
             if attempt == False:
                 add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}","red",None,True)
             elif attempt == "rights_error":
-                add_colored_line(self.main_console,f"Nemáte nastavená potřebná práva v excelu pro Visual Basic","red",None,True)
+                add_colored_line(self.main_console,f"Nemáte nastavená potřebná práva v excelu pro makra (VBA)","red",None,True)
+                self.open_trust_setting_manual()
             else:
                 add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
                 os.startfile(self.excel_file_name)

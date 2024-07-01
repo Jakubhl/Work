@@ -13,12 +13,13 @@ import win32file
 from PIL import Image
 import sys
 import ctypes
+import winreg
 
-customtkinter.set_appearance_mode("dark")
-customtkinter.set_default_color_theme("dark-blue")
-root=customtkinter.CTk()
-root.geometry("1200x900")
-root.title("ip_setting - testing")
+# customtkinter.set_appearance_mode("dark")
+# customtkinter.set_default_color_theme("dark-blue")
+# root=customtkinter.CTk()
+# root.geometry("1200x900")
+# root.title("ip_setting - testing")
 
 def path_check(path_raw,only_repair = None):
     path=path_raw
@@ -60,22 +61,26 @@ def add_colored_line(text_widget, text, color,font=None,delete_line = None):
     text_widget.configure(state=tk.DISABLED)
     
 def check_network_drive_status(drive_path):
-    global checking_done
     checking_done = False
+    status = False
     try:
         # Attempt to access a file or directory on the network drive
         # drive_path = drive_letter + "\\"
         # print("drive_path",drive_path)
         drive_path = drive_path[0:3]
         def call_subprocess():
-            global checking_done
+            nonlocal checking_done
+            nonlocal status
+            print(drive_path)
             if os.path.exists(drive_path):
                 os.listdir(drive_path)
                 checking_done = True
-                return True
+                status = True
+                return
             else:
                 checking_done = True
-                return False
+                status = False
+                return
             
         run_background = threading.Thread(target=call_subprocess,)
         run_background.start()
@@ -86,26 +91,47 @@ def check_network_drive_status(drive_path):
             if time.time() - time_start > 1:
                 print("terminated due to runtime error")
                 return False
-            
+        
+        
         run_background.join()
-        return True
+        if status == True:
+            return True
+        else:
+            return False
+        # return True
 
     except FileNotFoundError:
         return False
     except OSError:
         return False
 
+# def list_mapped_disks(whole_format=None):
+#     drives = win32api.GetLogicalDriveStrings()
+#     print("drives",drives)
+#     drives = drives.split('\000')[:-1]
+#     remote_drives = []
+#     for drive in drives:
+#         if win32file.GetDriveType(drive) == win32file.DRIVE_REMOTE:
+#             if whole_format:
+#                 remote_drives.append(drive)
+#             else:
+#                 remote_drives.append(drive[0:1])
+#     return remote_drives
+
 def list_mapped_disks(whole_format=None):
-    drives = win32api.GetLogicalDriveStrings()
-    print("drives",drives)
-    drives = drives.split('\000')[:-1]
     remote_drives = []
-    for drive in drives:
-        if win32file.GetDriveType(drive) == win32file.DRIVE_REMOTE:
+    try:
+        reg_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'Network')
+        for i in range(0, winreg.QueryInfoKey(reg_key)[0]):
+            drive_letter = winreg.EnumKey(reg_key, i)
             if whole_format:
-                remote_drives.append(drive)
+                remote_drives.append(drive_letter + ':')
             else:
-                remote_drives.append(drive[0:1])
+                remote_drives.append(drive_letter)
+        winreg.CloseKey(reg_key)
+    except Exception as e:
+        print("Exception occurred: ", e)
+    print(remote_drives)
     return remote_drives
 
 class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
@@ -898,6 +924,25 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         run_background.start()
 
     def change_to_DHCP(self):
+        def delay_the_refresh():
+            nonlocal previous_addr
+            nonlocal interface_index
+            new_addr = self.current_address_list[interface_index]
+            i = 0
+            while new_addr == previous_addr:
+                time.sleep(1)
+                self.option_change("",silent=True)
+                new_addr = self.current_address_list[interface_index]
+                print("current addr: ",new_addr)
+                i+=1
+                if i >4:
+                    add_colored_line(self.main_console,f"Chyba, u {interface} se nepodařilo změnit ip adresu (pro nastavování odpojených interfaců spusťtě aplikaci jako administrátor)","red",None,True)
+                    break
+
+        def call_thread():
+            run_background = threading.Thread(target=delay_the_refresh,)
+            run_background.start()
+
         interface = str(self.drop_down_options.get())
         if interface != None or interface != "":
             interface_index = self.connection_option_list.index(interface)
@@ -924,15 +969,14 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     print(f"Command executed successfully:\n{stdout_str}")                
                 
                 add_colored_line(self.main_console,f"IPv4 adresa interfacu: {interface} úspěšně přenastavena na DHCP (automatickou)","green",None,True)
-                time.sleep(0.5)
-                self.option_change("",silent=True)
-                new_addr = self.current_address_list[interface_index]
+                
+                call_thread()
                 print("previous addr: ",previous_addr)
-                print("current addr: ",new_addr)
-                if new_addr == previous_addr:
-                    add_colored_line(self.main_console,f"Chyba, u {interface} se nepodařilo změnit ip adresu (pro nastavování odpojených interfaců spusťtě aplikaci jako administrátor)","red",None,True)
+                # print("current addr: ",new_addr)
+                # if new_addr == previous_addr:
+                #     add_colored_line(self.main_console,f"Chyba, u {interface} se nepodařilo změnit ip adresu (pro nastavování odpojených interfaců spusťtě aplikaci jako administrátor)","red",None,True)
 
-                self.make_project_cells(no_read=True)
+                # self.make_project_cells(no_read=True)
 
             except Exception as e:
                 print(f"Exception occurred: {str(e)}")
@@ -1502,7 +1546,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         subprocess.run(delete_command, shell=True)
         # second_command = "net use " + Drive_letter + ": " + ftp_adress + " /user:" + user + " " + password + " /persistent:No"
         if user != "" or password != "":
-            second_command = "net use " + Drive_letter + ": " + ftp_adress + " " + password + " /user:" + user# + " /persistent:No"
+            second_command = "net use " + Drive_letter + ": " + ftp_adress + " " + password + " /user:" + user + " /persistent:yes"
         else:
             second_command = "net use " + Drive_letter + ": " + ftp_adress
         print("calling: ",second_command)
@@ -2108,5 +2152,5 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.call_make_cells_disk()
         self.root.mainloop()
 
-IP_assignment(root,"","max",str(os.getcwd())+"\\")
-root.mainloop()
+# IP_assignment(root,"","max",str(os.getcwd())+"\\")
+# root.mainloop()

@@ -53,7 +53,7 @@ customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 root=customtkinter.CTk()
 root.geometry("1200x900")
-root.title("TRIMAZKON v_3.7.1")
+root.title("TRIMAZKON v_3.7.2")
 root.wm_iconbitmap(resource_path(app_icon))
 
 def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
@@ -608,6 +608,20 @@ class main_menu:
     - Nově lze poznámky v ip setting upravovat přímo 
     - Možnosti nastavení základního chování u disků
     - Změny v excelu: list-Setting, buňka-B6 (automaticky se zapíše)\n""")
+        change_log.insert("current lineend","\n Verze 3.7.2 (1.7.2024)\n")
+        change_log.insert("current lineend",
+    """ 
+    - Oprava padání aplikace při přechodu na admina
+    - Vyskakovací okno cmd odstaněno (při změně ip)
+    - Oprava duplikovaných jmen
+    - Oprava vypisování seznamu online interfaců
+    - Nově lze pro daný interface nastavit DHCP
+    - Možnost volby u poznámek - editovatelné/ needitovatelné
+    - Předčasné zjištění úspěšné změny ip adresy
+    - Sloníci odebráni
+    - Oprava aktualizace současně nastavených adres
+    - Namapované disky persistentní (zůstanou po restartu)
+    - Oprava kontroly připojených disků\n""")
         change_log.see(tk.END)
 
     def menu(self,initial=False): # Funkce spouští základní menu při spuštění aplikace (MAIN)
@@ -641,7 +655,7 @@ class main_menu:
         manage_images   = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Obrázky (správa)", command = lambda: self.call_sorting_option(),font=("Arial",25,"bold"))
         viewer_button   = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Prohlížeč obrázků", command = lambda: self.call_view_option(),font=("Arial",25,"bold"))
         ip_setting_button = customtkinter.CTkButton(master= frame_with_buttons, width= 400,height=100, text = "IP setting", command = lambda: self.call_ip_manager(),font=("Arial",25,"bold"))
-        advanced_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Pokročilá nastavení", command = lambda: self.call_advanced_option(),font=("Arial",25,"bold"))
+        advanced_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Nastavení", command = lambda: self.call_advanced_option(),font=("Arial",25,"bold"))
         change_log_label = customtkinter.CTkLabel(master=frame_with_buttons_right, width= 600,height=50,font=("Arial",24,"bold"),text="Seznam posledně provedených změn: ")
         change_log = customtkinter.CTkTextbox(master=frame_with_buttons_right, width= 600,height=550,fg_color="#212121",font=("Arial",20),border_color="#636363",border_width=3,corner_radius=0)
         manage_images.     pack(pady =(105,10), padx=20,side="top",anchor="e")
