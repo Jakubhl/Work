@@ -622,6 +622,11 @@ class main_menu:
     - Oprava aktualizace současně nastavených adres
     - Namapované disky persistentní (zůstanou po restartu)
     - Oprava kontroly připojených disků\n""")
+        change_log.insert("current lineend","\n Verze 3.7.3 (xx.7.2024)\n")
+        change_log.insert("current lineend",
+    """ 
+    - Ošetření nastavování DHCP chyb. hláškami
+    - Možnost v nastavení u ip_setting změnit způsob mapování disků\n""")
         change_log.see(tk.END)
 
     def menu(self,initial=False): # Funkce spouští základní menu při spuštění aplikace (MAIN)

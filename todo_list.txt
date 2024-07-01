@@ -359,8 +359,10 @@ opravit neaktualizovaná současná připojení (podbarvení ip adresy) - hotovo
 
 9:32 AM 7/1/2024
 TRIMAZKON - release verze 3.7.2
-
-
+dhcp refresh az po delayi - hotovo
+zjistit, že je dhcp a vše podle toho upravit- hotovo
+Přidat možnost zvolit si jestli disk namapovat persistentní - hotovo
+nelze bez povoleni v nastaveni ukladat makra - ošetřeno vyskakovacím manuálem k jejich povolení v excelu
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -372,22 +374,18 @@ přidat info o pozici k navigátoru mezi stanicemi/ kamerami/ optikou...
 přidat explorer pro určení kam uložit... (tři tečky)
 
 
-pridat jeste jeden sloupec
 dodelat moznosti pridat ip adresu, jmeno, heslo pod kontroler
 enterem se přepínat na další zadávání
-predvyplnit poznamky z sharepoint databaze - první klik na entry - vybrat celý text
-
-nelze bez povoleni v nastaveni ukladat makra
+předvyplnit poznámky z sharepoint databáze - první klik na entry - vybrat celý text
 
 
 
-Přidat možnost zvolit si jestli disk namapovat persistentní
-dhcp refresh az po delayi
 
 
 Excel a txt přesunout do appdata - Temp
 udělat soubor.py s databazí textů pro changelog a texty, co se zobrazují po spuštění tutorial modu - na Enter každého tlačítka zobrazit vysvětlující okno
 kdyz jsou stejne disk letters - oba sviti pripojeno
+
 Koumu: admin práva, online auto aktualizace nové verze
 
 návod na trimazkon

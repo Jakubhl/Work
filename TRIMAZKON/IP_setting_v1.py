@@ -170,6 +170,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.connection_option_list = []
         self.default_disk_status_behav = 0
         self.default_note_behav = 0
+        self.mapping_condition = 0
         def call_main(what:str):
             try:
                 if what == "disk":
@@ -184,6 +185,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             param:
             - (disk_behav) default chování načítání obrazovky s disky
             - (notes_behav) default chování poznámek
+            - (mapping_cond) disk persistent - yes/ no
             """
             if param == "disk_behav":
                 ws['B' + str(6)] = 0
@@ -192,6 +194,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             elif param == "notes_behav":
                 ws['B' + str(7)] = 0
                 ws['A' + str(7)] = "editovatelné(1)/ needitovatelné(0) poznámky (default)"
+                wb.save(self.excel_file_path)
+            elif param == "mapping_cond":
+                ws['B' + str(8)] = 0
+                ws['A' + str(8)] = "disk persistentní - yes(1)/ no(0)"
                 wb.save(self.excel_file_path)
 
             print('inserting new parameter to excel')
@@ -229,6 +235,12 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             else:
                 self.default_note_behav = int(worksheet['B' + str(7)].value)
 
+            value_check = worksheet['B' + str(8)].value
+            if value_check is None or str(value_check) == "":
+                insert_new_excel_param(workbook,worksheet,param="mapping_cond")
+            else:
+                self.mapping_condition = int(worksheet['B' + str(8)].value)
+
             def_show_disk = worksheet['B' + str(4)].value
             workbook.close()
 
@@ -252,7 +264,11 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
     def clear_frame(self,frame):
         for widget in frame.winfo_children():
-            widget.destroy()
+            if widget.winfo_exists():
+                widget.pack_forget()
+                widget.grid_forget()
+                widget.place_forget()
+                widget.destroy()
 
     def fill_interfaces(self):
         """
@@ -864,8 +880,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         else:
             return False
 
-    def make_sure_ip_changed(self,interface_name,ip,command):
-        
+    def make_sure_ip_changed(self,interface_name,ip):
         def run_as_admin():
             # Vyžádání admin práv: nefunkční ve vscode
             def is_admin():
@@ -899,90 +914,119 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             open_app_as_admin_prompt()
 
         def call_subprocess():
-            if ip == self.current_address_list[interface_index]:
-                add_colored_line(self.main_console,f"Pro interface {interface_name} je již tato adresa ({ip}) nastavena","orange",None,True)
-                return
-            elif ip in self.current_address_list:
-                add_colored_line(self.main_console,f"Chyba, adresa je již používána pro jiný interface","red",None,True)
-                return
-            win_change_ip_time = 7
-            for i in range(0,win_change_ip_time):
-                add_colored_line(self.main_console,f"Čekám, až windows provede změny: {7-i} s...","white",None,True)
-                self.option_change("",silent=True)
-                if ip == self.current_address_list[interface_index]: # někdy dříve než 7 sekund...
-                    break
-                time.sleep(1)
+            try:
 
-            self.option_change("",silent=True)
-            if ip == self.current_address_list[interface_index]:
-                add_colored_line(self.main_console,f"IPv4 adresa u {interface_name} byla přenastavena na: {ip}","green",None,True)
-                self.make_project_cells(no_read=True)
-            else:
-                add_colored_line(self.main_console,f"Chyba, neplatná adresa nebo daný inteface odpojen od tohoto zařízení (pro nastavování odpojených interfaců spusťtě aplikaci jako administrátor)","red",None,True)
-                call_admin_prompt()
+                if ip == self.current_address_list[interface_index]:
+                    add_colored_line(self.main_console,f"Pro interface {interface_name} je již tato adresa ({ip}) nastavena","orange",None,True)
+                    return
+                elif ip in self.current_address_list:
+                    add_colored_line(self.main_console,f"Chyba, adresa je již používána pro jiný interface","red",None,True)
+                    return
+                win_change_ip_time = 7
+                for i in range(0,win_change_ip_time):
+                    add_colored_line(self.main_console,f"Čekám, až windows provede změny: {7-i} s...","white",None,True)
+                    self.option_change("",silent=True)
+                    if ip == self.current_address_list[interface_index]: # někdy dříve než 7 sekund...
+                        break
+                    time.sleep(1)
+
+                self.option_change("",silent=True)
+                if ip == self.current_address_list[interface_index]:
+                    add_colored_line(self.main_console,f"IPv4 adresa u {interface_name} byla přenastavena na: {ip}","green",None,True)
+                    self.make_project_cells(no_read=True)
+                else:
+                    add_colored_line(self.main_console,f"Chyba, neplatná adresa nebo daný inteface odpojen od tohoto zařízení (pro nastavování odpojených interfaců spusťtě aplikaci jako administrátor)","red",None,True)
+                    call_admin_prompt()
+            except Exception:
+                pass
         run_background = threading.Thread(target=call_subprocess,)
         run_background.start()
+
+    def check_DHCP(self,interface):
+        process = subprocess.Popen(f'netsh interface ip show config name="{interface}"',
+                                                    stdout=subprocess.PIPE,
+                                                    stderr=subprocess.PIPE,
+                                                    creationflags=subprocess.CREATE_NO_WINDOW)
+        stdout, stderr = process.communicate()
+        try:
+            stdout_str = stdout.decode('utf-8')
+            output_data = str(stdout_str)
+        except UnicodeDecodeError:
+            try:
+                stdout_str = stdout.decode('cp1250')
+                output_data = str(stdout_str)
+            except UnicodeDecodeError:
+                output_data = str(stdout)
+
+        output_data_lines = output_data.split("\n")
+        for lines in output_data_lines:
+            if "DHCP enabled" in lines and "Yes" in lines:
+                print(f"{interface} DHCP: yes")
+                return True
+        print(f"{interface} DHCP: no")
 
     def change_to_DHCP(self):
         def delay_the_refresh():
             nonlocal previous_addr
             nonlocal interface_index
+            nonlocal interface
             new_addr = self.current_address_list[interface_index]
             i = 0
-            while new_addr == previous_addr:
+            while new_addr == previous_addr or new_addr == None:
+                add_colored_line(self.main_console,f"Čekám, až windows provede změny: {5-i} s...","white",None,True)
                 time.sleep(1)
                 self.option_change("",silent=True)
                 new_addr = self.current_address_list[interface_index]
                 print("current addr: ",new_addr)
                 i+=1
-                if i >4:
+                if i > 4:
                     add_colored_line(self.main_console,f"Chyba, u {interface} se nepodařilo změnit ip adresu (pro nastavování odpojených interfaců spusťtě aplikaci jako administrátor)","red",None,True)
-                    break
-
-        def call_thread():
-            run_background = threading.Thread(target=delay_the_refresh,)
-            run_background.start()
-
+                    return
+            
+            add_colored_line(self.main_console,f"IPv4 adresa interfacu: {interface} úspěšně přenastavena na DHCP (automatickou)","green",None,True)
+            self.make_project_cells(no_read=True)
+            
         interface = str(self.drop_down_options.get())
-        if interface != None or interface != "":
-            interface_index = self.connection_option_list.index(interface)
-            previous_addr = self.current_address_list[interface_index]
-            try:
-                # Construct the netsh command
-                netsh_command = f"netsh interface ipv4 set address name=\"{interface}\" source=dhcp"
-                print(f"calling: {netsh_command}")
-                powershell_command = [
-                    'powershell.exe',
-                    '-Command', f'Start-Process powershell -Verb RunAs -ArgumentList \'-Command "{netsh_command}"\' -WindowStyle Hidden -PassThru'
-                ]
-                process = subprocess.Popen(powershell_command,
-                                            stdout=subprocess.PIPE,
-                                            stderr=subprocess.PIPE,
-                                            creationflags=subprocess.CREATE_NO_WINDOW)
-                
-                stdout, stderr = process.communicate()
-                stdout_str = stdout.decode('utf-8')
-                stderr_str = stderr.decode('utf-8')
-                if stderr_str:
-                    print(f"Error occurred: {stderr_str}")
-                else:
-                    print(f"Command executed successfully:\n{stdout_str}")                
-                
-                add_colored_line(self.main_console,f"IPv4 adresa interfacu: {interface} úspěšně přenastavena na DHCP (automatickou)","green",None,True)
-                
-                call_thread()
+        if not self.check_DHCP(interface):
+            if interface != None or interface != "":
+                interface_index = self.connection_option_list.index(interface)
+                previous_addr = self.current_address_list[interface_index]
                 print("previous addr: ",previous_addr)
-                # print("current addr: ",new_addr)
-                # if new_addr == previous_addr:
-                #     add_colored_line(self.main_console,f"Chyba, u {interface} se nepodařilo změnit ip adresu (pro nastavování odpojených interfaců spusťtě aplikaci jako administrátor)","red",None,True)
+                try:
+                    # Construct the netsh command
+                    netsh_command = f"netsh interface ipv4 set address name=\"{interface}\" source=dhcp"
+                    print(f"calling: {netsh_command}")
+                    powershell_command = [
+                        'powershell.exe',
+                        '-Command', f'Start-Process powershell -Verb RunAs -ArgumentList \'-Command "{netsh_command}"\' -WindowStyle Hidden -PassThru'
+                    ]
+                    process = subprocess.Popen(powershell_command,
+                                                stdout=subprocess.PIPE,
+                                                stderr=subprocess.PIPE,
+                                                creationflags=subprocess.CREATE_NO_WINDOW)
+                    
+                    stdout, stderr = process.communicate()
+                    stdout_str = stdout.decode('utf-8')
+                    stderr_str = stderr.decode('utf-8')
+                    if stderr_str:
+                        print(f"Error occurred: {stderr_str}")
+                    else:
+                        print(f"Command executed successfully:\n{stdout_str}")                
+                    
+                    run_background = threading.Thread(target=delay_the_refresh,)
+                    run_background.start()
 
-                # self.make_project_cells(no_read=True)
-
-            except Exception as e:
-                print(f"Exception occurred: {str(e)}")
-
+                except Exception as e:
+                    print(f"Exception occurred: {str(e)}")
+            else:
+                add_colored_line(self.main_console,"Nebyl zvolen žádný interface","red",None,True)
         else:
-            add_colored_line(self.main_console,"Nebyl zvolen žádný interface","red",None,True)
+            connected_interfaces = self.refresh_interfaces()
+            if interface in connected_interfaces:
+                add_colored_line(self.main_console,f"{interface} má již nastavenou DHCP","orange",None,True)
+            else:
+                add_colored_line(self.main_console,f"Chyba, {interface} je odpojen od tohoto zařízení (pro nastavování odpojených interfaců spusťtě aplikaci jako administrátor)","red",None,True)
+
 
     def change_computer_ip(self,button_row):
         def connected_interface(interface,ip,mask):
@@ -1009,7 +1053,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             except Exception as e:
                 print(f"Exception occurred: {str(e)}")
 
-            self.make_sure_ip_changed(interface_name,ip,"")
+            self.make_sure_ip_changed(interface_name,ip)
         
         ip = str(self.all_rows[button_row][1])
         mask = str(self.all_rows[button_row][2])
@@ -1032,7 +1076,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 raise subprocess.CalledProcessError(1, powershell_command, stderr_str)
 
             # add_colored_line(self.main_console,f"IPv4 adresa u {interface_name} byla přenastavena na: {ip}","green",None,True)
-            self.make_sure_ip_changed(interface_name,ip,"")
+            self.make_sure_ip_changed(interface_name,ip)
 
         except subprocess.CalledProcessError as e:
             if "Run as administrator" in str(stdout_str):
@@ -1282,7 +1326,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                             parameter.      bind("<Enter>",lambda e, interface = self.connection_option_list[self.current_address_list.index(ip_addr)], widget = parameter: on_enter(e,interface,widget))
                             parameter.      bind("<Leave>",lambda e, ip = ip_addr, widget = parameter,frame = project_frame: on_leave(e,ip,widget,frame))
                     elif x == 3:#frame s poznamkami...
-                        notes_frame =  customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,fg_color="black",border_width=2,height=50,width=200)
+                        notes_frame =  customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,fg_color="black",border_width=2,height=50,width=2200)
                         notes_frame.grid(row=y+1,column=0,padx=padx_list[x],sticky=tk.W)
                         notes_frame.grid_propagate(0)
                         # binding the click on widget
@@ -1307,6 +1351,9 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                         if self.default_note_behav == 0:
                             notes.configure(state = "disabled")
 
+        self.project_tree.update()
+        self.project_tree.update_idletasks()
+    
     def make_project_cells_disk(self,no_read = None,disk_statuses = False):
         def filter_text_input(text):
             legit_rows = []
@@ -1545,10 +1592,15 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         delete_command = "net use " + Drive_letter + ": /del"
         subprocess.run(delete_command, shell=True)
         # second_command = "net use " + Drive_letter + ": " + ftp_adress + " /user:" + user + " " + password + " /persistent:No"
-        if user != "" or password != "":
-            second_command = "net use " + Drive_letter + ": " + ftp_adress + " " + password + " /user:" + user + " /persistent:yes"
+        if self.mapping_condition == 1:
+            persistant_status = " /persistent:yes"
         else:
-            second_command = "net use " + Drive_letter + ": " + ftp_adress
+            persistant_status =  " /persistent:no"
+
+        if user != "" or password != "":
+            second_command = "net use " + Drive_letter + ": " + ftp_adress + " " + password + " /user:" + user + persistant_status
+        else:
+            second_command = "net use " + Drive_letter + ": " + ftp_adress + persistant_status
         print("calling: ",second_command)
 
         def call_subprocess():
@@ -1767,6 +1819,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             row = 6
         elif parameter == "change_def_notes_behav":
             row = 7
+        elif parameter == "change_mapping_cond":
+            row = 8
         worksheet['B' + str(row)] = status
         workbook.save(filename=self.excel_file_path)
         workbook.close()
@@ -1818,6 +1872,9 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.button_switch_all_ip.       configure(fg_color="black")
 
     def refresh_interfaces(self,all = False):
+        """
+        - All parametr refreshne i statusy ip adres
+        """
         interfaces_data = self.fill_interfaces()
         self.connection_option_list = interfaces_data[0]
         self.drop_down_options.configure(values = self.connection_option_list)
@@ -1830,6 +1887,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.online_list.configure(text=online_list_text)
         if all:
             self.option_change("")
+
+        return interfaces_data[1]
 
     def setting_window(self,ip_window = False):
         def save_new_behav_disk():
@@ -1860,47 +1919,65 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     self.make_project_cells_disk()
                 self.save_setting_parameter(parameter="change_def_notes_behav",status=1)
 
+        def save_new_disk_map_cond():
+            nonlocal checkbox3
+            if int(checkbox3.get()) == 0:
+                self.mapping_condition = 0
+                self.save_setting_parameter(parameter="change_mapping_cond",status=0)
+            elif int(checkbox3.get()) == 1:
+                self.mapping_condition = 1
+                self.save_setting_parameter(parameter="change_mapping_cond",status=1)
+
         child_root=customtkinter.CTk()
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
         if ip_window:
             child_root.geometry(f"580x185+{x+350}+{y+180}")
         else:
-            child_root.geometry(f"580x300+{x+350}+{y+180}")
+            child_root.geometry(f"580x400+{x+350}+{y+180}")
 
         child_root.wm_iconbitmap(resource_path(self.app_icon))
         child_root.title("Nastavení")
         main_frame =    customtkinter.CTkFrame(master=child_root,corner_radius=0)
-        label =         customtkinter.CTkLabel(master = main_frame, width = 100,height=40,text = "Chování poznámek (editovatelné/ needitovatelné)",font=("Arial",20,"bold"))
+        label =         customtkinter.CTkLabel(master = main_frame, width = 100,height=40,text = "- Chování poznámek (editovatelné/ needitovatelné)",font=("Arial",20,"bold"))
         checkbox =      customtkinter.CTkCheckBox(master = main_frame, text = "Přímo zapisovat a ukládat do poznámek na úvodní obrazovce",font=("Arial",16,"bold"),command=lambda: save_new_behav_notes())
         label.          pack(pady = 10,padx=10,side="top",anchor = "w")
         checkbox.       pack(pady = 10,padx=10,side="top",anchor = "w")
 
         main_frame2 =   customtkinter.CTkFrame(master=child_root,corner_radius=0)
-        label2 =        customtkinter.CTkLabel(master = main_frame2, width = 100,height=40,text = "Chování při vstupu do menu \"Síťové disky\"",font=("Arial",20,"bold"))
+        label2 =        customtkinter.CTkLabel(master = main_frame2, width = 100,height=40,text = "- Chování při vstupu do menu \"Síťové disky\"",font=("Arial",20,"bold"))
         checkbox2 =     customtkinter.CTkCheckBox(master = main_frame2, text = "Při spuštění aktualizovat statusy disků",font=("Arial",16,"bold"),command=lambda: save_new_behav_disk())
         label2.         pack(pady = 10,padx=10,side="top",anchor = "w")
         checkbox2.      pack(pady = 10,padx=10,side="top",anchor = "w")
+
+        main_frame3 =   customtkinter.CTkFrame(master=child_root,corner_radius=0)
+        label3 =        customtkinter.CTkLabel(master = main_frame3, width = 100,height=40,text = "- Nastavení mapování disků",font=("Arial",20,"bold"))
+        checkbox3 =     customtkinter.CTkCheckBox(master = main_frame3, text = "Automaticky připojovat po restartu PC",font=("Arial",16,"bold"),command=lambda: save_new_disk_map_cond())
+        label3.         pack(pady = 10,padx=10,side="top",anchor = "w")
+        checkbox3.      pack(pady = 10,padx=10,side="top",anchor = "w")
         
         close_frame =   customtkinter.CTkFrame(master=child_root,corner_radius=0)
         button_close =  customtkinter.CTkButton(master = close_frame, width = 150,height=40,text = "Zavřít",command = child_root.destroy,font=("Arial",20,"bold"),corner_radius=0)
         button_close.   pack(pady = 10,padx=10,side="bottom",anchor = "e")
 
         if ip_window:
-            main_frame.     pack(padx = 10,pady = (10,0),expand=True,fill="x",side="top")
-            close_frame.    pack(padx = 10,pady = 5,expand=True,fill="x",side="top")
+            main_frame.     pack(padx = 10,pady = (10,0),expand=False,fill="x",side="top")
+            close_frame.    pack(padx = 10,pady = 0,expand=False,fill="x",side="top")
             
-        else:
-            main_frame.     pack(padx = 10,pady = (10,0),expand=True,fill="x",side="top")
-            main_frame2.    pack(padx = 10,pady = (5,0),expand=True,fill="x",side="top")
-            close_frame.    pack(padx = 10,pady = 5,expand=True,fill="x",side="top")
-
+        else: #disk window...
+            main_frame.     pack(padx = 10,pady = (10,0),expand=False,fill="x",side="top")
+            main_frame2.    pack(padx = 10,pady = (5,0),expand=False,fill="x",side="top")
+            main_frame3.    pack(padx = 10,pady = (5,0),expand=False,fill="x",side="top")
+            close_frame.    pack(padx = 10,pady = 0,expand=False,fill="x",side="top")
 
         if self.default_note_behav == 1:
             checkbox.select()
         
         if self.default_disk_status_behav == 1 and ip_window == False:
             checkbox2.select()
+
+        if self.mapping_condition == 1 and ip_window == False:
+            checkbox3.select()
 
         child_root.mainloop()
 

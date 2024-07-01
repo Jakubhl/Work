@@ -53,6 +53,32 @@ def path_check(path_raw,only_repair = None):
     else:
         return path
 
+class ToplevelWindow:
+    def __init__(self,root,called_window):
+        self.root = root
+        self.window = customtkinter.CTkToplevel()
+        self.x = self.root.winfo_rootx()
+        self.y = self.root.winfo_rooty()
+        if called_window == "trust_setting_window":
+            self.excel_manual_window()
+
+    def excel_manual_window(self):
+        #1824x805
+        # self.window.geometry(f"912x402+{self.x+100}+{self.y+100}")
+        self.window.geometry(f"1200x580+{self.x+100}+{self.y+200}")
+        self.window.title("Manual")
+
+        manual_frame =  customtkinter.CTkFrame(master=self.window,corner_radius=0,height=100,fg_color="#212121")
+        manual_frame    .pack(pady=0,padx=0,expand=False,side = "right",anchor="e",ipady = 10,ipadx = 10)
+        manual =        customtkinter.CTkImage(PILImage.open("images/excel_manual.png"),size=(1200,520))
+        manual_label =  customtkinter.CTkLabel(master = manual_frame,text = "",image =manual,bg_color="#212121")
+        manual_label    .pack(pady=0,padx=0,expand=True)
+        button_exit =   customtkinter.CTkButton(master = manual_frame,text = "Zavřít",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: self.window.destroy())
+        button_exit     .pack(pady=10,padx=10,expand=True,side = "bottom",anchor = "e")
+
+        self.window.grab_set()
+        self.window.focus_force()
+
 class Catalogue_gui:
     def __init__(self,root):
         self.root = root
@@ -78,6 +104,7 @@ class Catalogue_gui:
         self.favourite_colors = [""]
         self.format_list = ["xlsm","xlsx"]
         self.current_block_id = "00"
+        self.toplevel_window = None
 
         self.create_main_widgets()
 
@@ -1014,6 +1041,7 @@ class Catalogue_gui:
 
         self.root.bind("<Button-1>",lambda e: close_window(child_root))
         child_root.mainloop()
+    
 
     def create_main_widgets(self):
         def call_manage_widgets(button):
@@ -1114,6 +1142,8 @@ class Catalogue_gui:
         self.accessory_column   .pack(pady=0,padx=0,fill="y",expand=False,side = "left")
         self.station_list.append(self.make_new_object("station"))
         self.make_project_widgets()
+
+        
         
         def maximalize_window(e):
             self.root.update_idletasks()
@@ -1279,18 +1309,19 @@ class Save_excel:
         ws.add_image(image,"A1")
 
         
-
-        if os.path.exists(self.temp_excel_file_name):
-            try:
+        try:
+            if os.path.exists(self.temp_excel_file_name):
                 os.remove(self.temp_excel_file_name)
-            except Exception as e:
-                print(e)
-        wb.save(filename=self.temp_excel_file_name)
-        wb2 = load_workbook(filename=self.temp_excel_file_name, keep_vba=True)
-        wb2.save(self.temp_excel_file_name)
-        wb.close()
-        wb2.close()
-
+            
+            wb.save(filename=self.temp_excel_file_name)
+            wb2 = load_workbook(filename=self.temp_excel_file_name, keep_vba=True)
+            wb2.save(self.temp_excel_file_name)
+            wb.close()
+            wb2.close()
+        except Exception:
+            wb.close()
+            return False
+        return True
     def merge_cells(self,merge_list:str):
         """
         cell range format: A1:A2
@@ -1326,7 +1357,7 @@ class Save_excel:
             if unsuccessfull:
                 return False
         except Exception as e:
-            print("chyba: ",e)
+            print("chyba: nejsou povolena práva na makra")
             return "rights_error"
 
     def check_row_count(self,widget,station_index,camera_index=None,optics_index = None):
@@ -1647,25 +1678,25 @@ class Save_excel:
     def main(self):
         if ".xlsm" in self.excel_file_name:
             rows_to_merge = self.get_cells_to_merge()
-            self.make_header()
-            # grafika header:
-            self.open_trust_setting_manual()
-            rows_to_merge.append("A1:A2")
-            rows_to_merge.append("B1:D1")
-            rows_to_merge.append("B2:D2")
-            self.merge_cells(merge_list=rows_to_merge)
-            self.fill_values()
-            new_vba_code = self.change_vba_script()
-            self.fill_hidden_sheet_values()
-            attempt = self.update_sheet_vba_code(new_code=new_vba_code)
-            if attempt == False:
-                add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}","red",None,True)
-            elif attempt == "rights_error":
-                add_colored_line(self.main_console,f"Nemáte nastavená potřebná práva v excelu pro makra (VBA)","red",None,True)
-                self.open_trust_setting_manual()
-            else:
-                add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
-                os.startfile(self.excel_file_name)
+            load_status = self.make_header()
+            if load_status:
+                # grafika header:
+                rows_to_merge.append("A1:A2")
+                rows_to_merge.append("B1:D1")
+                rows_to_merge.append("B2:D2")
+                self.merge_cells(merge_list=rows_to_merge)
+                self.fill_values()
+                new_vba_code = self.change_vba_script()
+                self.fill_hidden_sheet_values()
+                attempt = self.update_sheet_vba_code(new_code=new_vba_code)
+                if attempt == False:
+                    add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}","red",None,True)
+                elif attempt == "rights_error":
+                    add_colored_line(self.main_console,f"Nemáte nastavená potřebná práva v excelu pro makra (VBA)","red",None,True)
+                    ToplevelWindow(root,"trust_setting_window") 
+                else:
+                    add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
+                    os.startfile(self.excel_file_name)
         else:
             add_colored_line(self.main_console,f"Na této příponě ještě usilovně pracujeme","red",None,True)
 
