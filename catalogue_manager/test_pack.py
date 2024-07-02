@@ -38,6 +38,11 @@ class ToplevelWindow(customtkinter.CTkToplevel):
 
         self.label = customtkinter.CTkLabel(self, text="ToplevelWindow")
         self.label.pack(padx=20, pady=20)
+        block_widget =    customtkinter.CTkFrame(master=self,corner_radius=0,height=200,width =400,border_width= 2,border_color="#636363")
+        block_widget.     pack(pady = (0,0),padx =0,expand = False,side = "top",anchor="w")
+        block_name =      customtkinter.CTkLabel(master = block_widget,text = "ToplevelWindow",font=("Arial",25,"bold"),width=block_widget.cget("width") - 10,height=block_widget.cget("height") - 10,anchor="w")
+        block_name.       pack(pady = 5,padx =5)
+
 
 class App(customtkinter.CTk):
     def __init__(self, *args, **kwargs):

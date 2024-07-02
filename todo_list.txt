@@ -363,6 +363,15 @@ dhcp refresh az po delayi - hotovo
 zjistit, že je dhcp a vše podle toho upravit- hotovo
 Přidat možnost zvolit si jestli disk namapovat persistentní - hotovo
 nelze bez povoleni v nastaveni ukladat makra - ošetřeno vyskakovacím manuálem k jejich povolení v excelu
+
+7:56 AM 7/2/2024
+přidat explorer pro určení kam uložit... (tři tečky) - hotovo
+úprava fontu při přepínání informací na dlaždicích - hotovo
+dodelat moznosti pridat ip adresu, jmeno, heslo pod kontroler do poznamek (poznamky posunout o ty řádky) - hotovo
+pamatovat si navolené kontrolery a přepínat mezi nima - hotovo
+předvyplnit poznámky z sharepoint databáze - zaškrtávací možnost import poznámek - hotovo
+stripovat příliš dlouhé řádky do dlaždic - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -371,27 +380,20 @@ když několik kamer - překlikávat mezi kamerama, vlevo navigační menu v edi
 když navigátor přeteče - dotaz zda přidat nový... -plusko a barva tlacitka
 přidat info o pozici k navigátoru mezi stanicemi/ kamerami/ optikou...
 
-přidat explorer pro určení kam uložit... (tři tečky)
 
 
-dodelat moznosti pridat ip adresu, jmeno, heslo pod kontroler
 enterem se přepínat na další zadávání
-předvyplnit poznámky z sharepoint databáze - první klik na entry - vybrat celý text
+
+TRIMAZKON - po aplikování změn ze setting killnout okno
 
 
+??? Excel a txt přesunout do appdata - Temp
+??? udělat soubor.py s databazí textů pro changelog a texty, co se zobrazují po spuštění tutorial modu - na Enter každého tlačítka zobrazit vysvětlující okno
 
+??? Koumu: admin práva, online auto aktualizace nové verze
 
+??? návod na trimazkon
 
-Excel a txt přesunout do appdata - Temp
-udělat soubor.py s databazí textů pro changelog a texty, co se zobrazují po spuštění tutorial modu - na Enter každého tlačítka zobrazit vysvětlující okno
-kdyz jsou stejne disk letters - oba sviti pripojeno
-
-Koumu: admin práva, online auto aktualizace nové verze
-
-návod na trimazkon
-ip_manager seřazovat podle abecedy ???
-zjistit prepnuti monitoru a upravit podle toho parametry IB
-nacitaci animace na uvodni obrazovce
 
 
 

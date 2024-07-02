@@ -1027,7 +1027,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             else:
                 add_colored_line(self.main_console,f"Chyba, {interface} je odpojen od tohoto zařízení (pro nastavování odpojených interfaců spusťtě aplikaci jako administrátor)","red",None,True)
 
-
     def change_computer_ip(self,button_row):
         def connected_interface(interface,ip,mask):
             try:
