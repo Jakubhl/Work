@@ -1,0 +1,1 @@
+pyinstaller --noconfirm --onefile -w --console --icon=images\logo_TRIMAZKON.ico --add-data images\jhv_logo.png;images --add-data images\jhv_logo2.png;images --add-data "C:\Users\jakub.hlavacek.local\AppData\Local\Programs\Python\Python312\Lib\site-packages\customtkinter;customtkinter/" --name catalogue_maker catalogue_maker_v2.py

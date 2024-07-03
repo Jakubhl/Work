@@ -372,6 +372,10 @@ pamatovat si navolené kontrolery a přepínat mezi nima - hotovo
 předvyplnit poznámky z sharepoint databáze - zaškrtávací možnost import poznámek - hotovo
 stripovat příliš dlouhé řádky do dlaždic - hotovo
 
+8:28 AM 7/3/2024
+export - info o kontroleru - ulozit do objektu - hotovo
+xls format export - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -382,7 +386,11 @@ přidat info o pozici k navigátoru mezi stanicemi/ kamerami/ optikou...
 
 
 
-enterem se přepínat na další zadávání
+
+přepínací tlačítko omron/ keyence
+
+na kameru navázat info o kabelu
+
 
 TRIMAZKON - po aplikování změn ze setting killnout okno
 
