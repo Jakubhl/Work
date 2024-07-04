@@ -53,14 +53,14 @@ class database:
                 if response.status_code == 200:
                     with open(self.file_name, "wb") as local_file:
                         local_file.write(response.content)
-                    self.output = f"Databáze komponentů byla úspěšně synchronizována s jhvengcz.sharepoint.com"
-                    print(f"Databáze komponentů byla úspěšně synchronizována s jhvengcz.sharepoint.com")
+                    self.output = f"Databáze komponentů byla úspěšně stažena z jhvengcz.sharepoint.com"
+                    print(f"Databáze komponentů byla úspěšně stažena z jhvengcz.sharepoint.com")
                 else:
-                    self.output = f"Databázi komponentů se nepodařilo synchronizovat: {response.status_code} - {response.text}"
-                    print(f"Databázi komponentů se nepodařilo synchronizovat: {response.status_code} - {response.text}")
+                    self.output = f"Nepodařilo se stáhnout aktuální verzi databáze komponentů z jhvengcz.sharepoint.com: {response.status_code} - {response.text}"
+                    print(f"Nepodařilo se stáhnout aktuální verzi databáze komponentů z jhvengcz.sharepoint.com: {response.status_code} - {response.text}")
             else:
-                self.output = "Chyba ověření aplikace na sharepoint"
-                print("Chyba ověření aplikace na sharepoint")
+                self.output = "Chyba ověření aplikace na sharepoint (Není stažena aktuální verze databáze komponentů)"
+                print("Chyba ověření aplikace na sharepoint (Není stažena aktuální verze databáze komponentů)")
         except Exception as e:
             self.output = str(e)
 

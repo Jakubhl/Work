@@ -375,6 +375,9 @@ stripovat příliš dlouhé řádky do dlaždic - hotovo
 8:28 AM 7/3/2024
 export - info o kontroleru - ulozit do objektu - hotovo
 xls format export - hotovo
+přepínací tlačítko omron/ keyence - hotovo
+vyřešit příliš mnoho hodnot ve scroll menu - hotovo
+přidat prázdné možnosti - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -387,9 +390,16 @@ přidat info o pozici k navigátoru mezi stanicemi/ kamerami/ optikou...
 
 
 
-přepínací tlačítko omron/ keyence
+
 
 na kameru navázat info o kabelu
+
+podbarvit kontrolery - legenda barev
+legenda barev kontroleru i do základní vizualizace
+
+odsazení textu v exportovaném excelu
+
+focus oken při zadávání kontroleru
 
 
 TRIMAZKON - po aplikování změn ze setting killnout okno

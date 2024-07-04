@@ -5,11 +5,11 @@ import time
 import customtkinter as ctk
 from tkinter import Menu
 
-def on_mouse_wheel(event):
-    if event.delta > 0:
-        option_menu._dropdown_menu.yposition(0)
-    else:
-        option_menu._dropdown_menu.yposition(10)
+# def on_mouse_wheel(event):
+#     if event.delta > 0:
+#         option_menu._dropdown_menu.yposition(0)
+#     else:
+#         option_menu._dropdown_menu.yposition(10)
 
 # Create the main window
 # root = ctk.CTk()
@@ -34,5 +34,3 @@ def on_mouse_wheel(event):
 # # Run the main loop
 # root.mainloop()
 
-aa = "A5"
-print(aa.replace("A","B"))
