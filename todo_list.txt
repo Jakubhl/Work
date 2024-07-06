@@ -378,7 +378,20 @@ xls format export - hotovo
 přepínací tlačítko omron/ keyence - hotovo
 vyřešit příliš mnoho hodnot ve scroll menu - hotovo
 přidat prázdné možnosti - hotovo
+na kameru navázat info o kabelu - hotovo
+podbarvit kontrolery - legenda barev - hotovo
+legenda barev kontroleru i do základní vizualizace - hotovo
+focus oken při zadávání kontroleru - hotovo
 
+5:31 PM 7/6/2024
+nakliknuty widget - zvýraznit rámeček - hotovo
+do detailu přidat kabel... - hotovo
+nevoli se pri editu kabel a poznamky u kamery - hotovo
+zakomponovat barvu kontroleru do informací - hotovo
+nabízet u noveho kontroleru automaticky dalsi barvu v poradi - hotovo
+posledni radek u exportu neformatovat - hotovo
+legenda kontroleru do exportu - hotovo
+wrapovani textu u exportu - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -387,23 +400,11 @@ když několik kamer - překlikávat mezi kamerama, vlevo navigační menu v edi
 když navigátor přeteče - dotaz zda přidat nový... -plusko a barva tlacitka
 přidat info o pozici k navigátoru mezi stanicemi/ kamerami/ optikou...
 
+Možnost uložit / načíst projekt
 
-
-
-
-
-na kameru navázat info o kabelu
-
-podbarvit kontrolery - legenda barev
-legenda barev kontroleru i do základní vizualizace
-
-odsazení textu v exportovaném excelu
-
-focus oken při zadávání kontroleru
 
 
 TRIMAZKON - po aplikování změn ze setting killnout okno
-
 
 ??? Excel a txt přesunout do appdata - Temp
 ??? udělat soubor.py s databazí textů pro changelog a texty, co se zobrazují po spuštění tutorial modu - na Enter každého tlačítka zobrazit vysvětlující okno
