@@ -1,21 +1,81 @@
 import customtkinter
 
-child_root=customtkinter.CTk()
-# x = self.root.winfo_rootx()
-# y = self.root.winfo_rooty()
-child_root.geometry(f"350x520")  
-child_root.title("Editování optiky: ")
-block_frame =               customtkinter.CTkFrame(master=child_root,fg_color="#181818",height=50,width=200,border_width= 2,corner_radius=0)
-controller_name_label =     customtkinter.CTkLabel(master=block_frame,text = "FFFFFFF",height=50,width=200,font=("Arial",22,"bold"),fg_color="green")
-block_frame.                pack(fill = "both")
+import xml.etree.ElementTree as ET
 
-controller_name_label.      pack(pady=5,padx = 5)
+# Example data
+stations = [{'name': 'Název stanice', 'inspection_description': '- popis inspekce\n', 'camera_list': "[{'type': '', 'controller': '', 'controller_color': '', 'controller_info': '', 'cable': '', 'optics_list': [{'type': '', 'alternative': '', 'accessory_list': [], 'description': '\\n', 'row_count': 0}], 'description': '\\n', 'row_count': 1}]"}, {'name': 'Název stanicedd', 'inspection_description': '- popis inspekcedd\n', 'camera_list': "[{'type': '', 'controller': 'Kontroler 1  (FH-2050)', 'controller_color': '#1E90FF', 'controller_info': '', 'cable': '', 'optics_list': [{'type': '3Z4S-LE SV-1614H', 'alternative': '3Z4S-LE SV-1614H', 'accessory_list': [{'type': 'HDD', 'dimension': '', 'description': 'dddd\\n'}], 'description': '\\n', 'row_count': 1}], 'description': '\\n', 'row_count': 1}]"}]
+# print(stations[0]["camera_list"])
 
 
-child_root.mainloop()
-import customtkinter
+camera_list = stations[0]["camera_list"]
+camera_list = camera_list.split(",")
+# print(camera_list)
 
-# class ToplevelWindow(customtkinter.CTkToplevel):
+new_camera=[]
+new_optics = []
+new_accessory = []
+optic_array = False
+accessory_array = False
+for items in camera_list:
+    print(items)
+    if "optics_list" in items:
+        optic_array = True
+    if "accessory_list" in items:
+        accessory_array = True
+
+    if optic_array and not accessory_array:
+        if "optics_list" in items:
+            items += ":"
+            new_optics.append(items)
+        
+    elif accessory_array:
+        new_accessory.append(items)
+    else:
+        new_camera.append(items)
+# print("")
+# print(new_camera)
+# print(new_optics)
+# print(new_accessory)
+
+def filer_array(array):
+    output = []
+    for items in array:
+        items_splitted = items.split(":")
+        forbidden_keys = ["\'","{","}","[","]"," "]
+        for objects in items_splitted:
+            for keys in forbidden_keys:
+                objects = objects.replace(keys,"")
+
+            output.append(objects)
+    return output
+
+def make_object(array):
+    array = filer_array(array)
+    tag_array = []
+    value_array = []
+    for i in range(0,len(array)):
+        if i % 2 == 0:
+            tag_array.append(array[i])
+        else:
+            value_array.append(array[i])
+    print("tag",tag_array)
+    print("val",value_array)
+
+    new_object = {}
+    for i in range(0,len(tag_array)):
+        new_object[tag_array[i]] = value_array[i]
+
+    print(new_object)
+
+
+new_optics = stations[0]["camera_list"].split("[")[1]
+make_object(new_camera)
+make_object(new_optics)
+# make_object(new_accessory)
+
+# new_obj = 
+
+# class ToplevelWindow(customtkinter.CTkToplevel):'
 #     def __init__(self, *args, **kwargs):
 #         super().__init__(*args, **kwargs)
 #         self.geometry("400x300")

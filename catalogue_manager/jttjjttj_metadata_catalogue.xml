@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8'?>
+<metadata><controllers><controller><type>FH-5051-10</type><name>Kontroler 1 </name><color>#1E90FF</color><ip>IP adresa: 192.168.000.000fgdf</ip><username>Jméno: gdgd</username><password>Heslo: gdgdgd</password></controller></controllers><station_list><station><name>Název stanice</name><inspection_description>- popis inspekce
+</inspection_description><camera_list><camera><type>None</type><controller>None</controller><controller_color>None</controller_color><controller_info>None</controller_info><cable>None</cable><optics_list><optic><type>None</type><alternative>None</alternative><accessory_list /><description>
+</description><row_count>0</row_count><excel_position>C4</excel_position><hidden_values>CCA</hidden_values></optic></optics_list><description>
+</description><row_count>1</row_count><excel_position>B4</excel_position><hidden_values>BBA</hidden_values></camera></camera_list><row_count>1</row_count><excel_position>A4</excel_position><hidden_values>AAA</hidden_values></station><station><name>Název stanice</name><inspection_description>- popis inspekce
+</inspection_description><camera_list><camera><type>None</type><controller>None</controller><controller_color>None</controller_color><controller_info>None</controller_info><cable>None</cable><optics_list><optic><type /><alternative /><accessory_list /><description>
+</description><row_count>0</row_count><excel_position>C6</excel_position><hidden_values>CCB</hidden_values></optic></optics_list><description>
+</description><row_count>1</row_count><excel_position>B6</excel_position><hidden_values>BBB</hidden_values></camera></camera_list><row_count>1</row_count><excel_position>A6</excel_position><hidden_values>AAB</hidden_values></station><station><name>Násfsgfsgfs</name><inspection_description>- popis inspekceffffffff
+</inspection_description><camera_list><camera><type>FH-SC05R</type><controller>Kontroler 1  (FH-5051-10)</controller><controller_color>#1E90FF</controller_color><controller_info>IPadresa:192.168.000.000fgdf
+Jméno:gdgd
+Heslo:gdgdgd
+</controller_info><cable>FZ-VS3 5M</cable><optics_list><optic><type>3Z4S-LE SV-2514H</type><alternative>3Z4S-LE SV-1614H</alternative><accessory_list><accessory><type>monitor</type><dimension /><description>sfgggggg
+</description><excel_position>D8</excel_position><hidden_values>DDA</hidden_values></accessory></accessory_list><description>gfsgfsgfsgfsgfsgfsgfsgfsgfsgfs
+</description><row_count>1</row_count><excel_position>C8</excel_position><hidden_values>CCC</hidden_values></optic></optics_list><description>gggggggggggggggggggg
+</description><row_count>1</row_count><excel_position>B8</excel_position><hidden_values>BBC</hidden_values></camera></camera_list><row_count>1</row_count><excel_position>A8</excel_position><hidden_values>AAC</hidden_values></station></station_list><project_name>jttjjttj</project_name></metadata>

@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<metadata><controllers><controller><type>FH-2050</type><name>Kontroler 1 </name><color>#1E90FF</color><ip>IP adresa: 192.168.000.000</ip><username>Jméno: </username><password>Heslo: </password></controller></controllers><stations><inspection><name>Název stanice</name><inspection_description>- popis inspekce
+</inspection_description><camera_list><camera><type>None</type><controller>None</controller><controller_color>None</controller_color><controller_info>None</controller_info><cable>None</cable><optics_list><optic><type>None</type><alternative>None</alternative><accessory_list /><description>
+</description><row_count>0</row_count></optic></optics_list><description>
+</description><row_count>1</row_count></camera></camera_list><row_count>1</row_count></inspection><inspection><name>Názvbxc</name><inspection_description>- popis inspekce
+</inspection_description><camera_list><camera><type>FH-SC04</type><controller>Kontroler 1  (FH-2050)</controller><controller_color>#1E90FF</controller_color><controller_info /><cable>FZ-VS3 2M</cable><optics_list><optic><type>3Z4S-LE SV-1614H</type><alternative>3Z4S-LE SV-1614H</alternative><accessory_list><accessory><type>SD karta</type><dimension /><description>
+</description></accessory></accessory_list><description>vvv
+</description><row_count>1</row_count></optic></optics_list><description>
+</description><row_count>1</row_count></camera></camera_list><row_count>1</row_count></inspection></stations><project_name /></metadata>

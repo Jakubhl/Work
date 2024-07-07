@@ -392,16 +392,26 @@ nabízet u noveho kontroleru automaticky dalsi barvu v poradi - hotovo
 posledni radek u exportu neformatovat - hotovo
 legenda kontroleru do exportu - hotovo
 wrapovani textu u exportu - hotovo
+
+6:45 PM 7/7/2024
+Možnost uložit / načíst projekt - hotovo
+blbnout poznamky u kamery - prefill - hotovo
+když několik kamer - překlikávat mezi kamerama, vlevo navigační menu v editu (šipky) - hotovo
+když navigátor přeteče - dotaz zda přidat nový... -plusko a barva tlacitka - hotovo
+přidat info o pozici k navigátoru mezi stanicemi/ kamerami/ optikou... - hotovo
+klik vedle uloží a killne okno - hotovo
+ošetření otevírání moc oken - hotovo
+všude ošetřit resource path - hotovo
+
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 
-když několik kamer - překlikávat mezi kamerama, vlevo navigační menu v editu (šipky)
-když navigátor přeteče - dotaz zda přidat nový... -plusko a barva tlacitka
-přidat info o pozici k navigátoru mezi stanicemi/ kamerami/ optikou...
 
-Možnost uložit / načíst projekt
+ošetřit None při nahrávání dat programu
 
+přidat ikony
 
 
 TRIMAZKON - po aplikování změn ze setting killnout okno
