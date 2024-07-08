@@ -403,13 +403,19 @@ klik vedle uloží a killne okno - hotovo
 ošetření otevírání moc oken - hotovo
 všude ošetřit resource path - hotovo
 
+9:25 AM 7/8/2024
+explorer při hledání souboru pro načtení - hotovo
+ošetřit None při nahrávání dat programu - hotovo
+kdyz nejsou notes osetrit napisy... - hotovo
+initial prefill předvyplný option menu - hotovo
+
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 
+otevírat nastavení, když se přidá nové zařízení tlačítkem
 
-ošetřit None při nahrávání dat programu
 
 přidat ikony
 
