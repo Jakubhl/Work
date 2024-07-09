@@ -22,6 +22,9 @@ customtkinter.set_default_color_theme("dark-blue")
 root=customtkinter.CTk()
 root.geometry("1200x900")
 root.title("Catalogue maker v2.0")
+
+database_filename  = "Sharepoint_databaze.xlsx"
+
 # root.state('zoomed')
 def add_colored_line(text_widget, text, color,font=None,delete_line = None):
     """
@@ -353,7 +356,7 @@ class ToplevelWindow:
 
         manual_frame =  customtkinter.CTkFrame(master=window,corner_radius=0,height=100,fg_color="#212121")
         manual_frame    .pack(pady=0,padx=0,expand=False,side = "right",anchor="e",ipady = 10,ipadx = 10)
-        manual =        customtkinter.CTkImage(PILImage.open("images/excel_manual.png"),size=(1200,520))
+        manual =        customtkinter.CTkImage(PILImage.open(resource_path("images/excel_manual.png")),size=(1200,520))
         manual_label =  customtkinter.CTkLabel(master = manual_frame,text = "",image =manual,bg_color="#212121")
         manual_label    .pack(pady=0,padx=0,expand=True)
         button_exit =   customtkinter.CTkButton(master = manual_frame,text = "Zavřít",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: window.destroy())
@@ -582,7 +585,6 @@ class Catalogue_gui:
         self.current_block_id = "00"
         self.controller_object_list = []
         self.custom_controller_drop_list = [""]
-        self.database_name = "Sharepoint_databaze.xlsx"
         self.chosen_manufacturer = "Omron"
         self.last_selected_widget = ""
         
@@ -633,7 +635,7 @@ class Catalogue_gui:
         self.download_database_console_input.append(self.download_status)
         self.download_database_console_input.append(text_color)
 
-        sharepoint_database_path = resource_path(path_check(os.getcwd()) + self.database_name)
+        sharepoint_database_path = resource_path(path_check(os.getcwd()) + database_filename)
 
         self.camera_database_pointer = 0
         self.optics_database_pointer = 0
@@ -911,7 +913,7 @@ class Catalogue_gui:
             object_to_edit["camera_list"][cam_index]["optics_list"][optic_index]["accessory_list"].append(accessory)
             return object_to_edit
 
-    def manage_widgets(self,args,widget_tier,btn):
+    def manage_widgets(self,args,widget_tier,btn,open_edit = True):
         if btn == "add_line": # nova stanice
             new_station = self.make_new_object("station")
             self.station_list.append(new_station)
@@ -925,6 +927,8 @@ class Catalogue_gui:
                 station_with_new_camera = self.make_new_object("camera",object_to_edit = self.station_list[station_index])
                 self.station_list[station_index] = station_with_new_camera
                 self.make_project_widgets()
+                if open_edit:
+                    self.edit_object("",widget_tier,new_station=False)
         
         elif len(widget_tier) == 4: # 0101-9999 kamery, nove bude pridano: 010101-999999 optika
             if btn == "add_object": # nova optika kamery
@@ -932,6 +936,8 @@ class Catalogue_gui:
                 camera_with_new_optics = self.make_new_object("optic",object_to_edit = self.station_list[station_index],cam_index = camera_index)
                 self.station_list[station_index] = camera_with_new_optics
                 self.make_project_widgets()
+                if open_edit:
+                    self.edit_object("",widget_tier,new_station=False)
 
         elif len(widget_tier) == 6: # 010101-999999 optika, nove bude pridano: 01010101-99999999 prislusenstvi
             if btn == "add_object": # nove prislusenstvi ka kamere
@@ -940,6 +946,8 @@ class Catalogue_gui:
                 camera_with_new_accessoryes = self.make_new_object("accessory",object_to_edit = self.station_list[station_index],cam_index = camera_index,optic_index = optic_index)
                 self.station_list[station_index] = camera_with_new_accessoryes
                 self.make_project_widgets()
+                if open_edit:
+                    self.edit_object("",widget_tier,new_station=False)
 
 
         # print("STATION_LIST: ",self.station_list)
@@ -1139,7 +1147,7 @@ class Catalogue_gui:
                     widget_tier_st = str(station_index)
 
                 print("camera st widget tier",widget_tier_st)
-                self.manage_widgets("",widget_tier_st,"add_object")
+                self.manage_widgets("",widget_tier_st,"add_object",open_edit=False)
                 intial_prefill() # prefill s novým indexem 
 
         def previous_camera():
@@ -1187,7 +1195,7 @@ class Catalogue_gui:
                 else:
                     widget_tier_cam = str(camera_index)
                 widget_tier = widget_tier_st + widget_tier_cam
-                self.manage_widgets("",widget_tier,"add_object")
+                self.manage_widgets("",widget_tier,"add_object",open_edit=False)
                 intial_prefill() # prefill s novým indexem 
 
         def previous_optic():
@@ -1204,6 +1212,54 @@ class Catalogue_gui:
                 intial_prefill() # prefill s novým indexem - index se prenese i do ukládání
             else: # aby to neslo zase odznovu:
                 optics_index += 1
+
+        def next_accessory():
+            nonlocal station_index
+            nonlocal camera_index
+            nonlocal optics_index
+            nonlocal accessory_index
+            accessory_index += 1
+            if accessory_index < len(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"]):
+                accessory_index -= 1
+                save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                accessory_index += 1
+                intial_prefill() # prefill s novým indexem - index se prenese i do ukládání
+
+            else: # TLACITKO +:
+                accessory_index -= 1
+                save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                accessory_index += 1
+                
+                if station_index < 10:
+                    widget_tier_st = "0" + str(station_index)
+                else:
+                    widget_tier_st = str(station_index)
+                if camera_index < 10:
+                    widget_tier_cam = "0" + str(camera_index)
+                else:
+                    widget_tier_cam = str(camera_index)
+                if optics_index < 10:
+                    widget_tier_opt = "0" + str(optics_index)
+                else:
+                    widget_tier_opt = str(optics_index)
+
+                widget_tier = widget_tier_st + widget_tier_cam + widget_tier_opt
+                self.manage_widgets("",widget_tier,"add_object",open_edit=False)
+                intial_prefill() # prefill s novým indexem
+
+        def previous_accessory():
+            nonlocal station_index
+            nonlocal camera_index
+            nonlocal optics_index
+            nonlocal accessory_index
+            accessory_index -= 1
+            if accessory_index > -1:
+                accessory_index += 1
+                save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                accessory_index -= 1
+                intial_prefill() # prefill s novým indexem - index se prenese i do ukládání
+            else: # aby to neslo zase odznovu:
+                accessory_index += 1
 
         def close_window(child_root):
             self.root.unbind("<Button-1>")
@@ -1501,6 +1557,14 @@ class Catalogue_gui:
         # PŘÍSLUŠENSTVÍ ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
         accessory_frame =           customtkinter.CTkFrame(master = child_root,corner_radius=0,border_width=3)
+        counter_frame_acc =         customtkinter.CTkFrame(master = accessory_frame,corner_radius=0,fg_color="transparent")
+        button_prev_acc =           customtkinter.CTkButton(master = counter_frame_acc,text = "<",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: previous_accessory())
+        counter_acc =               customtkinter.CTkLabel(master = counter_frame_acc,text = "0/0",font=("Arial",22,"bold"))
+        button_next_acc =           customtkinter.CTkButton(master = counter_frame_acc,text = ">",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: next_accessory())
+        button_prev_acc             .pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
+        counter_acc                 .pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
+        button_next_acc             .pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
+
         accessory_label =           customtkinter.CTkLabel(master = accessory_frame,text = "Příslušenství:",font=("Arial",22,"bold"))
         hw_type =                   customtkinter.CTkLabel(master = accessory_frame,text = "Zařízení:",font=("Arial",22,"bold"))
         hw_type_entry =             customtkinter.CTkOptionMenu(master = accessory_frame,font=("Arial",22),dropdown_font=("Arial",22),width=355,height=50,values=self.accessory_database[self.accessory_database_pointer],corner_radius=0)
@@ -1511,6 +1575,7 @@ class Catalogue_gui:
         note3_label.                pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
         import_notes3_btn.          pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
         notes_input3 =              customtkinter.CTkTextbox(master = accessory_frame,font=("Arial",22),width=300,height=220,corner_radius=0)
+        counter_frame_acc.          pack(pady=(10,0),padx=3,anchor="n",expand=False,side = "top")
         accessory_label             .pack(pady=(15,5),padx=10,anchor="w",expand=False,side = "top")
         hw_type                     .pack(pady= 5 ,padx=10,anchor="w",expand=False,side = "top")
         hw_type_entry               .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
@@ -1522,8 +1587,11 @@ class Catalogue_gui:
             nonlocal station_index
             nonlocal optics_index
             nonlocal camera_index
+            nonlocal accessory_index
             nonlocal counter_cam
             nonlocal counter_opt
+            nonlocal counter_acc
+
             try:
                 counter_cam_state = str(camera_index+1) + "/" + str(len(self.station_list[station_index]["camera_list"]))
                 counter_cam.configure(text = counter_cam_state)
@@ -1534,47 +1602,43 @@ class Catalogue_gui:
                 counter_opt.configure(text = counter_opt_state)
             except Exception:
                 pass
+            try:
+                counter_acc_state = str(accessory_index+1) + "/" + str(len(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"]))
+                counter_acc.configure(text = counter_acc_state)
+            except Exception:
+                pass
 
         def refresh_button_appearance():
             nonlocal station_index
             nonlocal camera_index
             nonlocal optics_index
+            nonlocal accessory_index
             nonlocal button_prev_st
             nonlocal button_next_st
             nonlocal button_prev_cam
             nonlocal button_next_cam
             nonlocal button_prev_opt
             nonlocal button_next_opt
-            # stations:
-            if station_index ==0:
-                button_prev_st.configure(text = "",fg_color = "#636363")
-            else:
-                button_prev_st.configure(text = "<",fg_color = "#636363")
 
-            if station_index == len(self.station_list)-1:
-                button_next_st.configure(text = "+",fg_color = "green")
-            else:
-                button_next_st.configure(text = ">",fg_color = "#636363")
-            # cameras:
-            if camera_index ==0:
-                button_prev_cam.configure(text = "",fg_color = "#636363")
-            else:
-                button_prev_cam.configure(text = "<",fg_color = "#636363")
+            def config_buttons(button_left,button_right,index,max_array_value):
+                if index ==0:
+                    button_left.configure(text = "",fg_color = "#636363")
+                else:
+                    button_left.configure(text = "<",fg_color = "#636363")
 
-            if camera_index == len(self.station_list[station_index]["camera_list"])-1:
-                button_next_cam.configure(text = "+",fg_color = "green")
-            else:
-                button_next_cam.configure(text = ">",fg_color = "#636363")
-            
-            if optics_index ==0:
-                button_prev_opt.configure(text = "",fg_color = "#636363")
-            else:
-                button_prev_opt.configure(text = "<",fg_color = "#636363")
+                if index == max_array_value:
+                    button_right.configure(text = "+",fg_color = "green")
+                else:
+                    button_right.configure(text = ">",fg_color = "#636363")
 
-            if optics_index == len(self.station_list[station_index]["camera_list"][camera_index]["optics_list"])-1:
-                button_next_opt.configure(text = "+",fg_color = "green")
-            else:
-                button_next_opt.configure(text = ">",fg_color = "#636363")
+            config_buttons(button_prev_st,button_next_st,station_index,len(self.station_list)-1)
+            config_buttons(button_prev_cam,button_next_cam,camera_index,len(self.station_list[station_index]["camera_list"])-1)
+            config_buttons(button_prev_opt,button_next_opt,optics_index,len(self.station_list[station_index]["camera_list"][camera_index]["optics_list"])-1)
+            # pokud není accessory:
+            try:
+                config_buttons(button_prev_acc,button_next_acc,accessory_index,len(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"])-1)
+            except Exception as e:
+                print(f"chyba při nastavování vzhledu tlačítek - accessory: {e}")
 
         def intial_prefill():
             def filter_text_input(text):
@@ -1927,12 +1991,12 @@ class Catalogue_gui:
 
         def switch_manufacturer():
             if self.chosen_manufacturer == "Omron":
-                manufacturer_logo =             customtkinter.CTkImage(PILImage.open("images/keyence_logo.png"),size=(240, 50))
+                manufacturer_logo =             customtkinter.CTkImage(PILImage.open(resource_path("images/keyence_logo.png")),size=(240, 50))
                 self.chosen_manufacturer = "Keyence"
                 switch_manufacturer_image.configure(image = manufacturer_logo)
                 self.read_database()
             elif self.chosen_manufacturer == "Keyence":
-                manufacturer_logo =             customtkinter.CTkImage(PILImage.open("images/omron_logo.png"),size=(240, 50))
+                manufacturer_logo =             customtkinter.CTkImage(PILImage.open(resource_path("images/omron_logo.png")),size=(240, 50))
                 self.chosen_manufacturer = "Omron"
                 switch_manufacturer_image.configure(image = manufacturer_logo)
                 self.read_database()
@@ -1947,7 +2011,7 @@ class Catalogue_gui:
         console_frame=              customtkinter.CTkFrame(master=self.root,corner_radius=0,height=50)
         image_frame =               customtkinter.CTkFrame(master=main_header,corner_radius=0,height=100,fg_color="#212121")
         image_frame                 .pack(pady=0,padx=0,expand=False,side = "right",anchor="e",ipady = 10,ipadx = 10)
-        logo =                      customtkinter.CTkImage(PILImage.open("images/jhv_logo.png"),size=(300, 100))
+        logo =                      customtkinter.CTkImage(PILImage.open(resource_path("images/jhv_logo.png")),size=(300, 100))
         image_logo =                customtkinter.CTkLabel(master = image_frame,text = "",image =logo,bg_color="#212121")
         image_logo                  .pack(pady=0,padx=0,expand=True)
 
@@ -1974,7 +2038,7 @@ class Catalogue_gui:
         export_button =                 customtkinter.CTkButton(master = main_header_row2,text = "Exportovat",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command=lambda:self.export_option_window())
         switch_manufacturer_frame =     customtkinter.CTkFrame(master = main_header_row2,corner_radius=0)
         switch_manufacturer_btn =       customtkinter.CTkButton(master=switch_manufacturer_frame,text="Změnit výrobce:",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command=lambda:switch_manufacturer())
-        manufacturer_logo =             customtkinter.CTkImage(PILImage.open("images/omron_logo.png"),size=(240, 50))
+        manufacturer_logo =             customtkinter.CTkImage(PILImage.open(resource_path("images/omron_logo.png")),size=(240, 50))
         switch_manufacturer_image =     customtkinter.CTkLabel(master = switch_manufacturer_frame,text = "",image=manufacturer_logo)
         save_button =                   customtkinter.CTkButton(master = main_header_row2,text = "Uložit/ Nahrát",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,
                                                                 # command=lambda:Save_prog_metadata(self.main_console,self.controller_object_list,self.station_list,self.project_name_input.get()))
@@ -2205,7 +2269,7 @@ class Save_excel:
             ws["D3"] = "Příslušenství"
             ws["E3"] = "Legenda kontrolerů"
 
-        image = Image("images/jhv_logo2.png")
+        image = Image(resource_path("images/jhv_logo2.png"))
         ws.add_image(image,"A1")
    
     def merge_cells(self,wb,merge_list:str):
@@ -2758,10 +2822,10 @@ class Save_excel:
                 add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}, chyba: {e}","red",None,True)
                 wb.close()
 
-# download = download_database.database("Sharepoint_databaze.xlsx")
-# Catalogue_gui(root,download.output)
+download = download_database.database(database_filename)
+Catalogue_gui(root,download.output)
 
-Catalogue_gui(root,"testing - stahování vypnuto")
+# Catalogue_gui(root,"testing - stahování vypnuto")
 
 
 root.mainloop()

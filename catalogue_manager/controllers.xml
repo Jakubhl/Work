@@ -1,2 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<controllers><controller><type>FH-2050</type><name>Kontroler 1 </name><color>#1E90FF</color><ip>IP adresa: 192.168.000.000</ip><username>Jméno: </username><password>Heslo: </password></controller><controller><type>FH-2050</type><name>Kontroler 2 </name><color>#32CD32</color><ip>IP adresa: 192.168.000.0g</ip><username>Jméno: kjg</username><password>Heslo: kjg</password></controller></controllers>

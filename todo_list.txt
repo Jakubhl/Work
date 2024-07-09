@@ -408,19 +408,21 @@ explorer při hledání souboru pro načtení - hotovo
 ošetřit None při nahrávání dat programu - hotovo
 kdyz nejsou notes osetrit napisy... - hotovo
 initial prefill předvyplný option menu - hotovo
+přidat ikony- hotovo
 
+
+8:23 AM 7/9/2024
+otevírat nastavení, když se přidá nové zařízení tlačítkem - hotovo
+přidat přidávání a přepínání na accessory - hotovo
+release verze catalogue makeru 2.0
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 
-otevírat nastavení, když se přidá nové zařízení tlačítkem
-
-
-přidat ikony
-
-
 TRIMAZKON - po aplikování změn ze setting killnout okno
+
+
 
 ??? Excel a txt přesunout do appdata - Temp
 ??? udělat soubor.py s databazí textů pro changelog a texty, co se zobrazují po spuštění tutorial modu - na Enter každého tlačítka zobrazit vysvětlující okno
