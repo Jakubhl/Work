@@ -5,13 +5,16 @@ from PIL import Image, ImageTk
 import Sorting_option_v5 as Trideni
 import Deleting_option_v1 as Deleting
 import Converting_option_v3 as Converting
+import catalogue_maker_v2 as Catalogue
+import sharepoint_download as download_database
 import IP_setting_v1 as IP_setting
+import string_database
 from tkinter import filedialog
 import tkinter as tk
 import threading
 import shutil
 import sys
-import ctypes
+# import ctypes
 
 def path_check(path_raw,only_repair = None):
     path=path_raw
@@ -53,8 +56,25 @@ customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 root=customtkinter.CTk()
 root.geometry("1200x900")
-root.title("TRIMAZKON v_3.7.2")
+root.title("TRIMAZKON v_3.7.3")
 root.wm_iconbitmap(resource_path(app_icon))
+
+def app_data_test():
+    def move_config_files():
+        pass
+        
+    local_appdata = os.getenv('LOCALAPPDATA')
+    if local_appdata:
+        appdata_path = os.path.join(local_appdata, 'TRIMAZKON')
+        if not os.path.exists(appdata_path):
+            os.mkdir(appdata_path)
+        move_config_files()
+    else:
+        # Handle case where LOCALAPPDATA is not defined (unlikely)
+        appdata_path = False
+    print(appdata_path)
+
+# app_data_test()
 
 def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
     """
@@ -518,6 +538,7 @@ class main_menu:
     def __init__(self,root):
         self.root = root
         self.data_read_in_txt = read_text_file_data()
+        self.database_downloaded = False
     
     def clear_frames(self):
         for frames in self.list_of_menu_frames:
@@ -539,6 +560,11 @@ class main_menu:
         self.clear_frames()
         self.root.unbind("<f>")
         IP_manager(self.root)
+    
+    def call_catalogue_maker(self):
+        self.clear_frames()
+        self.root.unbind("<f>")
+        Catalogue_maker(self.root)
 
     def call_advanced_option(self):
         self.clear_frames()
@@ -546,90 +572,12 @@ class main_menu:
         Advanced_option(self.root)
 
     def fill_changelog(self,change_log):
-        change_log.insert("current lineend"," Verze 3.4 (3.3.2024)\n")
-        change_log.insert("current lineend",
-    """ 
-    - velikost písma
-    - načítací animace
-    - nové konzole (převedeno na thread "real time")
-    - image browser - jména souborů (zkopírovatelná)
-    - chybové hlášky při procházení subfolderů
-    - pokročilá nastavení - nová vizualizace + nový způsob nabídky\n""")
-        change_log.insert("current lineend","\n Verze 3.5 (22.4.2024)\n")
-        change_log.insert("current lineend",
-    """ 
-    - film obrázků před a po + bind přepínání kolečkem
-    - možnost procházet obrázky ve formátu .ifz
-    - třídění podle ID - úprava popisu
-    - oprava zoomování obrázku
-    - nové možnosti v pokročilých možnostech
-    - oprava chyb se soubory s mezerou v názvu
-    - možnost nastavit trimazkon, jako výchozí prohlížeč obrázků\n""")
-        change_log.insert("current lineend","\n Verze 3.6.0 (5.6.2024)\n")
-        change_log.insert("current lineend",
-    """ 
-    - Nové možnosti změny IP a mountění disků (import ver.3.7)
-    - okno s informacemi o aktualizacích v menu
-    - nová vizualizace u pokročilých nastavení (okno se záložkami)
-    - tlačítka nastavení ve všech oknech programu\n""")
-        change_log.insert("current lineend","\n Verze 3.6.1 (17.6.2024)\n")
-        change_log.insert("current lineend",
-    """ 
-    - Zadávání při vkládání nového síťového disku již nevyžaduje
-    jméno a heslo
-    - Ošetření spouštění IP setting s otevřeným excelem se
-    vstupními daty
-    - Opraveno čtení statických IP adres (četla se vždy, pro daný
-    inteface, automaticky nastavená místo privátní adresy)
-    - Aplikace již k sobě nevyžaduje přikládat složku images
-    - Bind klávesy F5 pro reset (refresh)
-    - Nové, přesné chybové hlášky + nepřekrývají okna cmd a pws
-    - Vizualizace již přiřazených ip adres\n""")
-        change_log.insert("current lineend","\n Verze 3.6.2 (19.6.2024)\n")
-        change_log.insert("current lineend",
-    """ 
-    - Oprava chyb s aut. plněním interfaců
-    - dotaz o admin práva, když je vyžadováno
-    - chybová hláška při mazání používaného síť. disku
-    - po namapování otevře explorer v novém disku
-    - zobrazování připojených interfaců\n""")
-        change_log.insert("current lineend","\n Verze 3.7.0 (20.6.2024)\n")
-        change_log.insert("current lineend",
-    """ 
-    - Plně funkční nastavování ip adres a mounting disků
-    - nová vizualizace hlavního menu
-    - rozklik poznámek převeden na hover
-    - odebrány možnosti přídávání/ odebírání interfaců
-    - možnost refresh online připojení
-    - refresh disků na tlačítko\n""")
-        change_log.insert("current lineend","\n Verze 3.7.1 (24.6.2024)\n")
-        change_log.insert("current lineend",
-    """ 
-    - Nově lze poznámky v ip setting upravovat přímo 
-    - Možnosti nastavení základního chování u disků
-    - Změny v excelu: list-Setting, buňka-B6 (automaticky se zapíše)\n""")
-        change_log.insert("current lineend","\n Verze 3.7.2 (1.7.2024)\n")
-        change_log.insert("current lineend",
-    """ 
-    - Oprava padání aplikace při přechodu na admina
-    - Vyskakovací okno cmd odstaněno (při změně ip)
-    - Oprava duplikovaných jmen
-    - Oprava vypisování seznamu online interfaců
-    - Nově lze pro daný interface nastavit DHCP
-    - Možnost volby u poznámek - editovatelné/ needitovatelné
-    - Předčasné zjištění úspěšné změny ip adresy
-    - Sloníci odebráni
-    - Oprava aktualizace současně nastavených adres
-    - Namapované disky persistentní (zůstanou po restartu)
-    - Oprava kontroly připojených disků\n""")
-        change_log.insert("current lineend","\n Verze 3.7.3 (xx.7.2024)\n")
-        change_log.insert("current lineend",
-    """ 
-    - Ošetření nastavování DHCP chyb. hláškami
-    - Možnost v nastavení u ip_setting změnit způsob mapování disků\n""")
+        # Iterate through each <string> element and print its text
+        for string_element in string_database.change_log_list:
+            change_log.insert("current lineend",string_element + "\n")
         change_log.see(tk.END)
 
-    def menu(self,initial=False): # Funkce spouští základní menu při spuštění aplikace (MAIN)
+    def menu(self,initial=False,catalogue_downloaded = False): # Funkce spouští základní menu při spuštění aplikace (MAIN)
         """
         Funkce spouští základní menu při spuštění aplikace (MAIN)
 
@@ -657,18 +605,20 @@ class main_menu:
         IB_as_def_browser_path = None
         self.list_of_menu_frames = [frame_with_buttons,frame_with_logo,frame_with_buttons_right]
         
-        manage_images   = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Obrázky (správa)", command = lambda: self.call_sorting_option(),font=("Arial",25,"bold"))
-        viewer_button   = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Prohlížeč obrázků", command = lambda: self.call_view_option(),font=("Arial",25,"bold"))
-        ip_setting_button = customtkinter.CTkButton(master= frame_with_buttons, width= 400,height=100, text = "IP setting", command = lambda: self.call_ip_manager(),font=("Arial",25,"bold"))
-        advanced_button = customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Nastavení", command = lambda: self.call_advanced_option(),font=("Arial",25,"bold"))
-        change_log_label = customtkinter.CTkLabel(master=frame_with_buttons_right, width= 600,height=50,font=("Arial",24,"bold"),text="Seznam posledně provedených změn: ")
-        change_log = customtkinter.CTkTextbox(master=frame_with_buttons_right, width= 600,height=550,fg_color="#212121",font=("Arial",20),border_color="#636363",border_width=3,corner_radius=0)
-        manage_images.     pack(pady =(105,10), padx=20,side="top",anchor="e")
-        viewer_button.      pack(pady =0,       padx=20,side="top",anchor="e")
-        ip_setting_button.  pack(pady = 10,     padx=20,side="top",anchor="e")
-        advanced_button.    pack(pady =0,       padx=20,side="top",anchor="e")
-        change_log_label.  pack(pady = (50,5), padx=20,side="top",anchor="w")
-        change_log.        pack(pady =0,       padx=20,side="top",anchor="w")
+        manage_images =         customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Obrázky (správa)", command = lambda: self.call_sorting_option(),font=("Arial",25,"bold"))
+        viewer_button =         customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Prohlížeč obrázků", command = lambda: self.call_view_option(),font=("Arial",25,"bold"))
+        ip_setting_button =     customtkinter.CTkButton(master= frame_with_buttons, width= 400,height=100, text = "IP setting", command = lambda: self.call_ip_manager(),font=("Arial",25,"bold"))
+        catalogue_button =      customtkinter.CTkButton(master= frame_with_buttons, width= 400,height=100, text = "Katalog", command = lambda: self.call_catalogue_maker(),font=("Arial",25,"bold"))
+        advanced_button =       customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Nastavení", command = lambda: self.call_advanced_option(),font=("Arial",25,"bold"))
+        change_log_label =      customtkinter.CTkLabel(master=frame_with_buttons_right, width= 600,height=50,font=("Arial",24,"bold"),text="Seznam posledně provedených změn: ")
+        change_log =            customtkinter.CTkTextbox(master=frame_with_buttons_right, width= 600,height=550,fg_color="#212121",font=("Arial",20),border_color="#636363",border_width=3,corner_radius=0)
+        manage_images.          pack(pady =(105,0), padx=20,side="top",anchor="e")
+        viewer_button.          pack(pady = (10,0), padx=20,side="top",anchor="e")
+        ip_setting_button.      pack(pady = (10,0), padx=20,side="top",anchor="e")
+        catalogue_button.       pack(pady = (10,0), padx=20,side="top",anchor="e")
+        advanced_button.        pack(pady = (10,0), padx=20,side="top",anchor="e")
+        change_log_label.       pack(pady = (50,5), padx=20,side="top",anchor="w")
+        change_log.             pack(pady =0,       padx=20,side="top",anchor="w")
 
         self.fill_changelog(change_log)
         
@@ -2170,6 +2120,8 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
 
     def refresh_main_window(self):
         self.clear_frame(self.root)
+        self.clear_frame(self.current_root)
+        self.current_root.destroy()
         if self.spec_location == "image_browser":
             Image_browser(self.root)
         elif self.spec_location == "converting_option":
@@ -2837,18 +2789,18 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
 
     def creating_advanced_option_widgets(self): # Vytváří veškeré widgets (advance option MAIN)
         if self.windowed:
-            current_root=customtkinter.CTk()
+            self.current_root=customtkinter.CTk()
             x = self.root.winfo_rootx()
             y = self.root.winfo_rooty()
-            current_root.geometry(f"1250x900+{x+200}+{y+200}")
-            current_root.title("Pokročilá nastavení")
+            self.current_root.geometry(f"1250x900+{x+200}+{y+200}")
+            self.current_root.title("Pokročilá nastavení")
             # current_root.wm_iconbitmap(initial_path+'images/logo_TRIMAZKON.ico')
-            current_root.wm_iconbitmap(resource_path(app_icon))
+            self.current_root.wm_iconbitmap(resource_path(app_icon))
         else:
-            current_root = self.root
-        self.bottom_frame_default_path   = customtkinter.CTkFrame(master=current_root,corner_radius=0,border_width = 0)
-        self.top_frame                   = customtkinter.CTkFrame(master=current_root,corner_radius=0,border_width = 0)
-        self.menu_buttons_frame          = customtkinter.CTkFrame(master=current_root,corner_radius=0,fg_color="#636363",height=50,border_width = 0)
+            self.current_root = self.root
+        self.bottom_frame_default_path   = customtkinter.CTkFrame(master=self.current_root,corner_radius=0,border_width = 0)
+        self.top_frame                   = customtkinter.CTkFrame(master=self.current_root,corner_radius=0,border_width = 0)
+        self.menu_buttons_frame          = customtkinter.CTkFrame(master=self.current_root,corner_radius=0,fg_color="#636363",height=50,border_width = 0)
         self.top_frame.                 pack(pady=(2.5,0),padx=5,fill="x",expand=False,side = "top")
         self.menu_buttons_frame.        pack(pady=0,padx=5,fill="x",expand=False,side = "top")
         self.bottom_frame_default_path. pack(pady=(0,2.5),padx=5,fill="both",expand=True,side = "bottom")
@@ -2900,7 +2852,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         self.unbind_list.append("<Escape>")
 
         if self.windowed:
-            current_root.mainloop()
+            self.current_root.mainloop()
 
 class Converting_option: # Spouští možnosti konvertování typu souborů
     """
@@ -4503,6 +4455,40 @@ class IP_manager: # Umožňuje nastavit možnosti třídění souborů
             current_window_size = "min"
         
         self.ip_assignment_prg = IP_setting.IP_assignment(self.root,self.callback,current_window_size,initial_path)
+
+class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
+    """
+    Umožňuje sestavit katalog produktů k projektu
+    - ten následné vyexportovat do excelu (.xlm/ .xls)
+    - rozpracovaný projekt je možné uložit do souboru .xml
+    - databázi produktů stahuje automaticky při spuštění z sharepointu (po restartu celé app)
+    """
+    def __init__(self,root):
+        self.root = root
+        self.database_filename  = "Sharepoint_databaze.xlsx"
+        # self.database_downloaded = menu.database_downloaded
+        self.database_downloaded = True
+
+        self.create_catalogue_maker_widgets()
+
+    def callback(self):
+        menu.menu()
+
+    def create_catalogue_maker_widgets(self):
+        
+        if root.wm_state() == "zoomed":
+            current_window_size = "max"
+        else:
+            current_window_size = "min"
+        
+        if not self.database_downloaded:
+            download = download_database.database(self.database_filename)
+            input_message = str(download.output)
+            menu.database_downloaded = True
+        else:
+            input_message = "Datábáze se stáhne znovu až po restartu TRIMAZKONU"
+        
+        self.ip_assignment_prg = Catalogue.Catalogue_gui(self.root,input_message,self.callback,current_window_size,self.database_filename)
         
 menu = main_menu(root)
 menu.menu(initial=True)

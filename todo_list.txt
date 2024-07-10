@@ -410,22 +410,29 @@ kdyz nejsou notes osetrit napisy... - hotovo
 initial prefill předvyplný option menu - hotovo
 přidat ikony- hotovo
 
-
 8:23 AM 7/9/2024
 otevírat nastavení, když se přidá nové zařízení tlačítkem - hotovo
 přidat přidávání a přepínání na accessory - hotovo
 release verze catalogue makeru 2.0
 
+9:11 AM 7/10/2024
+přenést katalogue maker do TRIMAZKONU - stáhnout databázi pouze jednou - hotovo
+TRIMAZKON - po aplikování změn ze setting killnout okno - hotovo
+udělat soubor.py s databazí textů pro changelog a texty - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 
-TRIMAZKON - po aplikování změn ze setting killnout okno
+
 
 
 
 ??? Excel a txt přesunout do appdata - Temp
-??? udělat soubor.py s databazí textů pro changelog a texty, co se zobrazují po spuštění tutorial modu - na Enter každého tlačítka zobrazit vysvětlující okno
+
+
+
+
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 
