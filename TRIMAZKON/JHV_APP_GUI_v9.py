@@ -14,6 +14,7 @@ import tkinter as tk
 import threading
 import shutil
 import sys
+# import stat
 # import ctypes
 
 def path_check(path_raw,only_repair = None):
@@ -43,7 +44,7 @@ if len(sys.argv) > 1: #spousteni pres cmd
 
 #pro pripad vypisovani do konzole z exe:
 # sys.stdout = sys.__stdout__
-# print(initial_path)
+print(initial_path)
 # input("continue")
 
 def resource_path(relative_path):
@@ -59,22 +60,45 @@ root.geometry("1200x900")
 root.title("TRIMAZKON v_3.7.3")
 root.wm_iconbitmap(resource_path(app_icon))
 
-def app_data_test():
-    def move_config_files():
-        pass
+"""def app_data_source_files():
+    \"""
+    Pokud složka s aplikací obsahuje konfigurační soubory, přenese je do appdata
+    - vytvoří složku TRIMAZKON v appdata/local
+    \"""
+    def move_config_files(src,dest):
+        # overwrites files at default...
+        if os.path.exists(dest):
+            os.remove(dest)
+        shutil.move(src, dest)
+        print(f"File moved from {src} to {dest}")
         
     local_appdata = os.getenv('LOCALAPPDATA')
     if local_appdata:
         appdata_path = os.path.join(local_appdata, 'TRIMAZKON')
         if not os.path.exists(appdata_path):
             os.mkdir(appdata_path)
-        move_config_files()
-    else:
-        # Handle case where LOCALAPPDATA is not defined (unlikely)
-        appdata_path = False
-    print(appdata_path)
+        
+        files_to_move = []
+        files_to_move.append(os.path.join(initial_path, 'Recources.txt'))
+        files_to_move.append(os.path.join(initial_path, 'test_text.txt'))
+        files_to_move.append(os.path.join(initial_path, 'convert_application'))
+        files_to_move.append(os.path.join(initial_path, 'saved_addresses_2.xlsx'))
 
-# app_data_test()
+        for files in files_to_move:
+            print(files)
+            if os.path.exists(files):
+                move_config_files(src = files,dest=appdata_path)
+                print("moving: ",files)
+
+        # initial_path = appdata_path
+        return appdata_path
+    return False
+try:
+    result = app_data_source_files()
+    if result != False:
+        initial_path = result
+except Exception as e:
+    print(f"chyba při načítání zdrojových dat - {e}")"""
 
 def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
     """
@@ -4466,8 +4490,8 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
     def __init__(self,root):
         self.root = root
         self.database_filename  = "Sharepoint_databaze.xlsx"
-        # self.database_downloaded = menu.database_downloaded
-        self.database_downloaded = True
+        self.database_downloaded = menu.database_downloaded
+        # self.database_downloaded = True
 
         self.create_catalogue_maker_widgets()
 

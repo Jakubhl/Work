@@ -73,7 +73,7 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - Oprava aktualizace současně nastavených adres
     - Namapované disky persistentní (zůstanou po restartu)
     - Oprava kontroly připojených disků\n"""
-        ," Verze 3.7.3 (10.7.2024)"
+        ," Verze 3.7.3 (11.7.2024)"
         ,
     """ 
     - Ošetření nastavování DHCP chyb. hláškami
