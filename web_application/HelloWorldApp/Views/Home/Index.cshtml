@@ -2,7 +2,71 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
+@* <div class="text-center">
     <h1 class="display-4">Welcome</h1>
     <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+</div> *@
+
+
+
+<!DOCTYPE html>
+<link rel="stylesheet" href="site.css" />
+
+<header>
+    <h1 id = "top_header">Zkušební zadání</h1>
+</header>
+
+<body>
+      
+    <div id = "div1"></div>
+    <div id = "controls"></div>
+    <div id = "main_table"></div>
+
+    <br>
+
+    <table class = "button_table">
+        <tr>
+            <td>
+                <button class="glow-on-hover" onclick="add_logic()">Pridat logiku</button>
+            </td>
+            <td>
+                <button class="glow-on-hover" onclick="delete_logic()">smazat logiku</button>
+            </td>
+            <td>
+                <button class="glow-on-hover" onclick="current_logic(false)">seznam nastavene logiky</button>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <button class="glow-on-hover" onclick="add_control()">Pridat kontrolku</button>
+            </td>
+            <td>
+                <button class="glow-on-hover" onclick="delete_control()">smazat kontrolku</button>
+            </td>
+            <td>
+                <button class="glow-on-hover" onclick="current_controls(false)">seznam kontrolek</button>
+            </td>
+        </tr>
+    </table>
+    
+    <br>
+    <div class = "hidden" id= "custom_prompt">
+        <div id = "prompttext">
+            prompt text
+        </div>
+        <input id ="promptinput">
+        <button id = "promptbutton">
+            Ulozit
+        </button>
+    </div>
+
+    <br>
+    <div id = "logic_table"></div>   
+    
+</body>
+
+<script src="~/js/site.js"></script>
+
+</html>
+
+

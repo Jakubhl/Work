@@ -427,9 +427,12 @@ release verze trimazkonu v 3.7.3
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
+příslušenství bude skoro vždy ke kontoleru - udělat kontroler rozklikávací, pokud budou poznámky
 
-LayoutSetting7_1	Layout7Window part information1	"FZ-PanDA.exe\FZ_PanDA.PictureWindow\37\234\1542\292\0,Picture/Picture.bmp\ExData\True;False;#FF00FF"	"Window part information1"
-LayoutSetting7_1	Layout7Window part information1	"FZ-PanDA.exe\FZ_PanDA.PictureWindow\37\234\1542\292\1,Picture/Picture.bmp\ExData\True;False;#FF00FF"	"Window part information1"
+udělat možnost nastavit si barvy
+
+pod kamerou smazat při importu poznámky o kontroleru a Kontroler + IP adresa: - předělat na Kontroler 1: ... 
+
 
 
 

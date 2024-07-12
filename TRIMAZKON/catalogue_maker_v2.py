@@ -1831,7 +1831,7 @@ class Catalogue_gui:
         button_exit     .pack(pady = 10, padx = 10,anchor="e",expand=True,side="right")
 
         # child_root.transient(root)
-        self.root.bind("<Button-1>",lambda e: save_changes())
+        # self.root.bind("<Button-1>",lambda e: save_changes())
         # child_root.grab_set()
         child_root.focus_force()
         child_root.focus()
@@ -2036,11 +2036,19 @@ class Catalogue_gui:
             if self.chosen_manufacturer == "Omron":
                 manufacturer_logo =             customtkinter.CTkImage(PILImage.open(resource_path("images/keyence_logo.png")),size=(240, 50))
                 self.chosen_manufacturer = "Keyence"
+                self.camera_database_pointer = 0
+                self.optics_database_pointer = 0
+                self.camera_cable_database_pointer = 0
+                self.accessory_database_pointer = 0
                 switch_manufacturer_image.configure(image = manufacturer_logo)
                 self.read_database()
             elif self.chosen_manufacturer == "Keyence":
                 manufacturer_logo =             customtkinter.CTkImage(PILImage.open(resource_path("images/omron_logo.png")),size=(240, 50))
                 self.chosen_manufacturer = "Omron"
+                self.camera_database_pointer = 0
+                self.optics_database_pointer = 0
+                self.camera_cable_database_pointer = 0
+                self.accessory_database_pointer = 0
                 switch_manufacturer_image.configure(image = manufacturer_logo)
                 self.read_database()
 

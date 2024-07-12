@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='utf-8'?>
+<metadata><controllers><controller><type>FH-5050-20</type><name>Kontroler 1 </name><color>#1E90FF</color><ip>IP adresa: 192.168.000.000</ip><username>Jméno: </username><password>Heslo: </password></controller></controllers><station_list><station><name>Název stanice</name><inspection_description>- popis inspekce
+</inspection_description><camera_list><camera><type /><controller /><controller_color /><controller_info /><cable /><optics_list><optic><type /><alternative /><accessory_list /><description>
+</description><row_count>0</row_count></optic></optics_list><description>
+</description><row_count>1</row_count></camera><camera><type /><controller /><controller_color /><controller_info /><cable /><optics_list><optic><type /><alternative /><accessory_list /><description>
+</description><row_count>0</row_count></optic></optics_list><description>
+</description><row_count>1</row_count></camera><camera><type>FH-SC05R</type><controller>Kontroler 1  (FH-5050-20)</controller><controller_color>#1E90FF</controller_color><controller_info /><cable>FZ-VS3 3M</cable><optics_list><optic><type /><alternative /><accessory_list /><description>
+</description><row_count>0</row_count></optic><optic><type /><alternative /><accessory_list /><description>
+</description><row_count>0</row_count></optic><optic><type /><alternative /><accessory_list /><description>
+</description><row_count>0</row_count></optic><optic><type /><alternative>3Z4S-LE SV-1614H</alternative><accessory_list><accessory><type /><dimension /><description /></accessory><accessory><type /><dimension /><description /></accessory><accessory><type /><dimension /><description /></accessory><accessory><type /><dimension /><description /></accessory><accessory><type>konzole</type><dimension /><description>
+</description></accessory></accessory_list><description>Alternativní: Příslušenství pro kamery, čočky, C montáž, pro kamery FZ-S_2M, FZ-S_5M3, FH-S_05R, FH-S_X05, FHV7H, ohnisková vzdálenost 12 mm, nejmenší vzdálenost 100mm, světelnost 1,4 až 16, maximální kompatiblní CCD čip 2/3" nebo 1"
+
+
+</description><row_count>5</row_count></optic></optics_list><description>Kontroler: kontrolér pro vysokorychlostní / vysokovýkonové kamery FH, 4 jádra, NPN/PNP, 8 kamer
+
+Kamera: FH kamera, velké rozlišení 5M pixel, barevná, rolovací uzávěrka
+
+Kabel: příslušenství kamerových systémů, FH a FZ, kabel ke standardní kameře, 3m
+http://industrial.omron.co.uk/en/search?q=G639
+
+
+</description><row_count>8</row_count></camera></camera_list><row_count>10</row_count></station></station_list><project_name /></metadata>
