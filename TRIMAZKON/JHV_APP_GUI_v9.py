@@ -5,8 +5,8 @@ from PIL import Image, ImageTk
 import Sorting_option_v5 as Trideni
 import Deleting_option_v1 as Deleting
 import Converting_option_v3 as Converting
-import catalogue_maker_v2 as Catalogue
-import sharepoint_download as download_database
+import catalogue_maker_v3 as Catalogue
+# import sharepoint_download as download_database
 import IP_setting_v1 as IP_setting
 import string_database
 from tkinter import filedialog
@@ -4490,8 +4490,8 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
     def __init__(self,root):
         self.root = root
         self.database_filename  = "Sharepoint_databaze.xlsx"
-        self.database_downloaded = menu.database_downloaded
-        # self.database_downloaded = True
+        # self.database_downloaded = menu.database_downloaded
+        self.database_downloaded = True
 
         self.create_catalogue_maker_widgets()
 
@@ -4506,8 +4506,8 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
             current_window_size = "min"
         
         if not self.database_downloaded:
-            download = download_database.database(self.database_filename)
-            input_message = str(download.output)
+            # download = download_database.database(self.database_filename)
+            # input_message = str(download.output)
             menu.database_downloaded = True
         else:
             input_message = "Datábáze se stáhne znovu až po restartu TRIMAZKONU"
