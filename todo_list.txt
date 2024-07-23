@@ -424,17 +424,30 @@ udělat soubor.py s databazí textů pro changelog a texty - hotovo
 ??? Excel a txt přesunout do appdata - Temp - hotovo - MUSEL BY BÝT ADMIN, - Winerror 5 - Acess denied
 release verze trimazkonu v 3.7.3
 
+9:10 AM 7/23/2024
+zavrit okna, co se ponechaji otevrena pri pridavani noveho kontroleru - hotovo
+pridat dummy optiky, kamery... - hotovo
+příslušenství bude skoro vždy ke kontoleru - udělat kontroler rozklikávací, pokud budou poznámky - hotovo
+upravit check_widget_growth - hotovo
+opravit mazani bloku - hotovo
+kdyz nova optika je spatne ukazany ukazatel - neni na konci - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
-příslušenství bude skoro vždy ke kontoleru - udělat kontroler rozklikávací, pokud budou poznámky
+
 
 udělat možnost nastavit si barvy
 
-pod kamerou smazat při importu poznámky o kontroleru a Kontroler + IP adresa: - předělat na Kontroler 1: ... 
+pod kamerou smazat při importu poznámky o kontroleru a Kontroler + IP adresa: - předělat na Kontroler 1: ... - hotovo
 
 
 
+
+opravit edit po smazani optiky
+
+edit a nova prislusenstvi
+
+edit gui presunout do toplevel
 
 
 ??? Koumu: admin práva, online auto aktualizace nové verze

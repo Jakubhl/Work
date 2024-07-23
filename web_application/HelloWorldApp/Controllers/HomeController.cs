@@ -15,7 +15,9 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
-        return Content("Hello gjWorld");
+        // return Content("Hello World");
+    // }
+        return View();
     }
 
     public IActionResult Privacy()
