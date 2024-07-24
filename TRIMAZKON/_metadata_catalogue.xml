@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<metadata><controllers><controller><type>FH-2050</type><name>Kontroler 1 </name><color>#1E90FF</color><ip>192.168.000.000</ip><username /><password /><accessory_list /><notes>
+</notes><detailed_name>Kontroler 1 (FH-2050)</detailed_name></controller></controllers><station_list><station><name>Název stanice</name><inspection_description>- popis inspekce
+</inspection_description><camera_list><camera><type>FH-SC02</type><controller>Kontroler 1  (FH-2050)</controller><controller_color /><controller_info /><cable>FZ-VS3 3M</cable><optics_list><optic><type /><alternative /><accessory_list>[]</accessory_list><description>
+</description></optic><optic><type /><alternative /><accessory_list>[]</accessory_list><description>
+</description></optic><optic><type>3Z4S-LE SV-1614H</type><alternative>3Z4S-LE SV-1614H</alternative><accessory_list>[]</accessory_list><description>
+</description></optic></optics_list><description>
+</description><row_count>3</row_count><controller_index>0</controller_index></camera></camera_list><row_count>3</row_count></station></station_list><project_name /></metadata>

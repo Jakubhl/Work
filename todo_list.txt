@@ -431,23 +431,31 @@ příslušenství bude skoro vždy ke kontoleru - udělat kontroler rozklikávac
 upravit check_widget_growth - hotovo
 opravit mazani bloku - hotovo
 kdyz nova optika je spatne ukazany ukazatel - neni na konci - hotovo
+pod kamerou smazat při importu poznámky o kontroleru a Kontroler + IP adresa: - předělat na Kontroler 1: ... - hotovo
+
+2:02 PM 7/24/2024
+edit a nova prislusenstvi - hotovo
+edit gui presunout do toplevel - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 
+- Nejprve metadata - controllery se doted ukladaly, jako string. ted je potreba je cist
+- do kontroleru jsou nove ulozene informace o prislusenstvi
+- opravit cteni metadat programu
+
 
 udělat možnost nastavit si barvy
-
-pod kamerou smazat při importu poznámky o kontroleru a Kontroler + IP adresa: - předělat na Kontroler 1: ... - hotovo
-
-
 
 
 opravit edit po smazani optiky
 
-edit a nova prislusenstvi
 
-edit gui presunout do toplevel
+dodelat export s kontrolery... 
+
+
+
+automaticky zavirat okna pro nastaveni exportu a ukladani
 
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
