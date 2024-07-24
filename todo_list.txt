@@ -436,13 +436,15 @@ pod kamerou smazat při importu poznámky o kontroleru a Kontroler + IP adresa: 
 2:02 PM 7/24/2024
 edit a nova prislusenstvi - hotovo
 edit gui presunout do toplevel - hotovo
+- opravit cteni metadat programu - hotovo
+- Nejprve metadata - controllery se doted ukladaly, jako string. ted je potreba je cist - hotovo
+- do kontroleru jsou nove ulozene informace o prislusenstvi - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 
-- Nejprve metadata - controllery se doted ukladaly, jako string. ted je potreba je cist
-- do kontroleru jsou nove ulozene informace o prislusenstvi
-- opravit cteni metadat programu
+
 
 
 udělat možnost nastavit si barvy

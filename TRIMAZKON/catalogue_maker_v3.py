@@ -146,7 +146,6 @@ def strip_lines_to_fit(text):
     new_string = ""
     max_num_of_chars_one_line = 32
     for items in text_splitted:
-        print(items)
         if items != "\n":
             number_of_chars += len(items)
             if number_of_chars > max_num_of_chars_one_line:
@@ -172,12 +171,20 @@ class Save_prog_metadata:
     def store_xml_data(self):
         # KONTROLERY ----------------------------------------------------------------------------------------------------------------------------------------------------------------
         root1 = ET.Element("metadata")
-        controllers = ET.SubElement(root1, "controllers")
-        for item in self.controller_database:
-            controller = ET.SubElement(controllers, "controller")
-            for key, value in item.items():
-                child = ET.SubElement(controller, key)
-                child.text = value
+        controller_list = ET.SubElement(root1, "controllers")
+        for controllers in self.controller_database:
+            controller = ET.SubElement(controller_list, "controller")
+            for contr_key, contr_value in controllers.items():
+                if contr_key == "accessory_list":
+                    accessories = ET.SubElement(controller, "accessory_list")
+                    for accessory in contr_value:
+                        accessory_element = ET.SubElement(accessories, "accessory")
+                        for acc_key, acc_value in accessory.items():
+                            acc_child = ET.SubElement(accessory_element, acc_key)
+                            acc_child.text = str(acc_value)  # Ensure value is a string
+                else:
+                    contr_child = ET.SubElement(controller, contr_key)
+                    contr_child.text = str(contr_value)
 
         # STANICE ---------------------------------------------------------------------------------------------------------------------------------------------------------------
         station_list = ET.SubElement(root1, "station_list")
@@ -194,14 +201,6 @@ class Save_prog_metadata:
                                 for optic in cam_value:
                                     optic_element = ET.SubElement(optics, "optic")
                                     for opt_key, opt_value in optic.items():
-                                        # if opt_key == "accessory_list":
-                                        #     accessories = ET.SubElement(optic_element, "accessory_list")
-                                        #     for accessory in opt_value:
-                                        #         accessory_element = ET.SubElement(accessories, "accessory")
-                                        #         for acc_key, acc_value in accessory.items():
-                                        #             acc_child = ET.SubElement(accessory_element, acc_key)
-                                        #             acc_child.text = str(acc_value)  # Ensure value is a string
-                                        # else:
                                         opt_child = ET.SubElement(optic_element, opt_key)
                                         opt_child.text = str(opt_value)  # Ensure value is a string
                             else:
@@ -243,10 +242,23 @@ class Save_prog_metadata:
             # controller_data = {child.tag: child.text for child in controller}
             controller_data = {}
             for child in controller:
-                if child.text is not None:
-                    controller_data[child.tag] = child.text
-                else:
-                    controller_data[child.tag] = ""
+                if child.tag == "accessory_list":
+                    accessory_list = []
+                    for accessory in child.findall("accessory"):
+                        # accessory_data = {acc_child.tag: acc_child.text for acc_child in accessory}
+                        accessory_data = {}
+                        for acc_child in accessory:
+                            if acc_child.text is not None:
+                                accessory_data[acc_child.tag] = acc_child.text
+                            else:
+                                accessory_data[acc_child.tag] = ""
+                        accessory_list.append(accessory_data)
+                    controller_data[child.tag] = accessory_list
+                else:                        
+                    if child.text is not None:
+                        controller_data[child.tag] = child.text
+                    else:
+                        controller_data[child.tag] = ""
 
             controllers.append(controller_data)
         
@@ -270,24 +282,11 @@ class Save_prog_metadata:
                                 for optic in cam_child.findall("optic"):
                                     optic_data = {}
                                     for opt_child in optic:
-                                        if opt_child.tag == "accessory_list":
-                                            accessory_list = []
-                                            for accessory in opt_child.findall("accessory"):
-                                                # accessory_data = {acc_child.tag: acc_child.text for acc_child in accessory}
-                                                accessory_data = {}
-                                                for acc_child in accessory:
-                                                    if acc_child.text is not None:
-                                                        accessory_data[acc_child.tag] = acc_child.text
-                                                    else:
-                                                        accessory_data[acc_child.tag] = ""
-                                                accessory_list.append(accessory_data)
-                                            optic_data[opt_child.tag] = accessory_list
+                                        if opt_child.text is not None:
+                                            optic_data[opt_child.tag] = opt_child.text
                                         else:
-                                            if opt_child.text is not None:
-                                                optic_data[opt_child.tag] = opt_child.text
-                                            else:
-                                                optic_data[opt_child.tag] = ""
-                                            # optic_data[opt_child.tag] = opt_child.text
+                                            optic_data[opt_child.tag] = ""
+                                        # optic_data[opt_child.tag] = opt_child.text
                                     optics_list.append(optic_data)
                                 camera_data[cam_child.tag] = optics_list
                             else:
@@ -2550,35 +2549,6 @@ class Save_excel:
                 os.remove(self.temp_excel_file_name)
             return "rights_error"
 
-    # def check_row_count(self,widget,station_index,camera_index=None,optics_index = None):
-    #     """
-    #     pridavame novy parametr, informace o poctu radku u kazde stanice, kazde kamery a kazde optiky\n
-    #     nemohu to číst a zapisovat dříve, kvůli zpětnému přidávání bloků...\n
-    #     widget:
-    #     - station
-    #     - camera
-    #     - optics
-    #     """
-    #     station_accessory_count = 0 # dummy block...
-    #     if widget == "station":
-    #         for camera in self.station_list[station_index]["camera_list"]:
-    #             for optics in camera["optics_list"]:
-    #                 station_accessory_count += len(optics["accessory_list"])
-    #                 if len(optics["accessory_list"]) == 0:
-    #                     station_accessory_count +=1
-    #         self.station_list[station_index]["row_count"] = station_accessory_count
-
-    #     elif widget == "camera":
-    #         for optics in self.station_list[station_index]["camera_list"][camera_index]["optics_list"]:
-    #             station_accessory_count += len(optics["accessory_list"])
-    #             if len(optics["accessory_list"]) == 0:
-    #                 station_accessory_count +=1
-    #         self.station_list[station_index]["camera_list"][camera_index]["row_count"] = station_accessory_count
-
-    #     elif widget == "optics":
-    #         station_accessory_count = len(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"])
-    #         self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["row_count"] = station_accessory_count
-
     def get_cells_to_merge(self):
         last_row = self.values_start_row
         last_row_cam = self.values_start_row
@@ -2605,7 +2575,7 @@ class Save_excel:
                 # last_row_accessory = last_row_accessory + 1
             for cameras in stations["camera_list"]:
                 camera_index = self.station_list[station_index]["camera_list"].index(cameras)
-                if cameras["row_count"] > 1:
+                if int(cameras["row_count"]) > 1:
                     self.station_list[station_index]["camera_list"][camera_index]["excel_position"] = columns[1]+str(last_row_cam)
                     rows_to_merge.append(columns[1] + str(last_row_cam) + ":"+columns[1] + str(last_row_cam + int(cameras["row_count"]) - 1))
                     # kontrolery maji stejný merge, pocet vsech radku ulozen v kamere (i kdyz je vetsi pocet prislusenstvi nez objektivu ke kamere)
