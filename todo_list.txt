@@ -443,9 +443,15 @@ edit gui presunout do toplevel - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
+dodelat manualni pridani objektivu - jak se bude ukladat?
+
+export xlsx - nepozná když je více stejných kontorlerů
+
+ip setting když omylem mount disku - potom cancel - zeptá se jako admin - cancel - spadne...
 
 
-
+prefill poznamek u editu kontorleru...
+poznamky nejsou ulozeny v objektu u kontroleru + moc prazdnych radku
 
 udělat možnost nastavit si barvy
 
@@ -453,7 +459,7 @@ udělat možnost nastavit si barvy
 opravit edit po smazani optiky
 
 
-dodelat export s kontrolery... 
+
 
 
 

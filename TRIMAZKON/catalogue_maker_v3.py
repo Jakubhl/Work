@@ -949,11 +949,12 @@ class Catalogue_gui:
                     section_database.append(database_section)
 
                 # druhý parametr, dolplňující poznámky
-                for row in ws.iter_rows(min_row=2,max_row=row_count,min_col=column_index+1, max_col=column_index+1,values_only=True):
+                for row in ws.iter_rows(min_row=2,max_row=row_count+1,min_col=column_index+1, max_col=column_index+1,values_only=True):
                     if row[0] is not None and str(row[0]) != "None": 
                         notes_database.append(str(row[0]))
                     else:
                         notes_database.append("")
+                    
                 
                 return [whole_database,section_database,notes_database]
             
@@ -2284,12 +2285,16 @@ class Catalogue_gui:
                 # station_optic_count += len(camera["optics_list"])
                 station_optics_count = len(camera["optics_list"])
                 try:
-                    controller_index = camera["controller_index"]
+                    try:
+                        controller_index = int(camera["controller_index"])
+                    except Exception:
+                        controller_index = camera["controller_index"]
+
                     accessory_count = len(self.controller_object_list[controller_index]["accessory_list"])
                 except Exception as e:
                     # neni prirazen kontroler
+                    print(e)
                     pass
-
                 if accessory_count > station_optics_count:
                     number_of_blocks += accessory_count
                 else:
@@ -2556,6 +2561,23 @@ class Save_excel:
         last_row_accessory = self.values_start_row
         rows_to_merge = []
         columns = ["A","B","C","D"]
+
+        def check_for_dummy(last_cam=False):
+            #fill the rest with dummies:
+            addition = 0
+            if last_cam:
+                addition = 1
+            if int(cameras["row_count"]) > len(cameras["optics_list"]):
+                cam_row_count = (int(cameras["row_count"]) - len(cameras["optics_list"])) + addition
+                for _ in range(0,cam_row_count):
+                    dummy_opt = {
+                        "type": "",
+                        "alternative": "",
+                        "excel_position": columns[2]+str(last_row_optics),
+                        "description": ""
+                    }
+                    self.station_list[station_index]["camera_list"][camera_index]["optics_list"].append(dummy_opt)
+
         if self.xlsx_format:
             columns = ["A","C","E","G","I"]
         
@@ -2573,6 +2595,7 @@ class Save_excel:
                 last_row_cam = last_row_cam + 1
                 last_row_optics = last_row_optics + 1
                 # last_row_accessory = last_row_accessory + 1
+            cam_inc = 0
             for cameras in stations["camera_list"]:
                 camera_index = self.station_list[station_index]["camera_list"].index(cameras)
                 if int(cameras["row_count"]) > 1:
@@ -2601,55 +2624,28 @@ class Save_excel:
                     self.station_list[station_index]["camera_list"][camera_index]["excel_position"] = columns[1]+str(last_row_cam)
                     last_row_cam = last_row_cam + 1
 
-                # last_row_optics = last_row_optics + 1
-
                 if len(cameras["optics_list"]) == 0:
                     last_row_optics = last_row_optics + 1
+                
+                print("cam inc",cam_inc,"length list",len(stations["camera_list"]))
+                if cam_inc == len(stations["camera_list"])-1:
+                    check_for_dummy(last_cam = True)
+                else:
+                    check_for_dummy()
+
                 for optics in cameras["optics_list"]:
                     optics_index = self.station_list[station_index]["camera_list"][camera_index]["optics_list"].index(optics)
                     self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["excel_position"] = columns[2]+str(last_row_optics)
                     last_row_optics = last_row_optics + 1
 
-                    # if len(optics["accessory_list"]) == 0:
-                    #     last_row_accessory = last_row_accessory + 1
-                    # for accessory in optics["accessory_list"]:
-                    #     accessory_index = self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"].index(accessory)
-                    #     self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"][accessory_index]["excel_position"] = columns[3]+str(last_row_accessory)
-                    #     last_row_accessory = last_row_accessory + 1
+                cam_inc+=1
+
                 
             self.between_station_rows.append(last_row_cam)
             #radek mezera mezi kazdou stanici
             last_row+=1
             last_row_cam+=1
-            # last_row_optics+=1
-            # last_row_accessory+=1
 
-        # last_row_controller = self.values_start_row
-        # last_row_accessory = self.values_start_row
-
-        # for controllers in self.controller_list:
-        #     controller_index = self.controller_list.index(controllers)
-        #     if controllers["row_count"] > 1:
-        #         self.controller_list[controller_index]["excel_position"] = columns[0]+str(last_row_controller)
-        #         rows_to_merge.append(columns[0] + str(last_row_controller) + ":" + columns[0] + str(last_row_controller + int(controllers["row_count"]) - 1))
-        #         last_row_controller = last_row_controller + (controllers["row_count"])
-        #     else:
-        #         self.controller_list[controller_index]["excel_position"] = columns[0]+str(last_row_controller)
-        #         last_row_controller = last_row_controller + 1
-
-        #     # if len(controllers["accessory_list"]) == 0:
-        #     last_row_accessory = last_row_accessory + 1
-            # for accessories in controllers["accessory_list"]:
-            #     accessory_index = self.controller_list[controller_index]["accessory_list"].index(accessories)
-            #     if accessories["row_count"] > 1:
-            #         self.controller_list[controller_index]["accessory_list"][accessory_index]["excel_position"] = columns[1]+str(last_row_accessory)
-            #         rows_to_merge.append(columns[1] + str(last_row_accessory) + ":"+columns[1] + str(last_row_accessory + int(accessories["row_count"]) - 1))
-            #         last_row_accessory = last_row_accessory + (accessories["row_count"])
-            #     else:
-            #         self.controller_list[controller_index]["accessory_list"][accessory_index]["excel_position"] = columns[1]+str(last_row_accessory)
-            #         last_row_accessory = last_row_accessory + 1
-
-        # self.between_station_rows.pop(len(self.between_station_rows)-1) #odebrání posledního řádku
         self.excel_rows_used = last_row_optics
         if self.xlsx_format:
             columns = ["A","C","E","G"]
@@ -2796,12 +2792,12 @@ class Save_excel:
                 ws.column_dimensions[columns].width = self.excel_column_width
                 cell = ws[columns + str(i)]
                 cell.alignment = Alignment(horizontal = "left", vertical = "center")
-                if self.xlsx_format:
-                    if columns != "I":
-                        cell.border = thin_border
-                else:
-                    if columns != "E":
-                        cell.border = thin_border
+                # if self.xlsx_format:
+                #     if columns != "I":
+                #         cell.border = thin_border
+                # else:
+                #     if columns != "E":
+                #         cell.border = thin_border
 
                 if i == 3: # nadpisy sloupců
                     header_fill = PatternFill(start_color="636363", end_color="636363", fill_type="solid")
@@ -2812,44 +2808,44 @@ class Save_excel:
                     cell.font = regular_font
 
         # mřížka na legendě
-        if self.xlsx_format:
-            cell = ws["I3"]
-            cell.border = thin_border
-            for i in range(4,len(self.controller_list)+4):
-                cell = ws["I" + str(i)]
-                cell.border = thin_border
-                cell.font = regular_font
-                cell.alignment = Alignment(horizontal = "center", vertical = "center")
+        # if self.xlsx_format:
+        #     cell = ws["I3"]
+        #     cell.border = thin_border
+        #     for i in range(4,len(self.controller_list)+4):
+        #         cell = ws["I" + str(i)]
+        #         cell.border = thin_border
+        #         cell.font = regular_font
+        #         cell.alignment = Alignment(horizontal = "center", vertical = "center")
 
-        else:
-            cell = ws["E3"]
-            cell.border = thin_border
-            for i in range(4,len(self.controller_list)+4):
-                cell = ws["E" + str(i)]
-                cell.border = thin_border
-                cell.font = regular_font
-                cell.alignment = Alignment(horizontal = "center", vertical = "center")
+        # else:
+        #     cell = ws["E3"]
+        #     cell.border = thin_border
+        #     for i in range(4,len(self.controller_list)+4):
+        #         cell = ws["E" + str(i)]
+        #         cell.border = thin_border
+        #         cell.font = regular_font
+        #         cell.alignment = Alignment(horizontal = "center", vertical = "center")
 
 
         # fill the empty rows between stations:
         for rows in self.between_station_rows:
             for columns in self.used_columns:
                 if self.xlsx_format:
-                    if columns != "I":
-                        cell = ws[columns + str(rows)]
-                        fill = PatternFill(start_color="636363", end_color="636363", fill_type="solid")
-                        cell.fill = fill
+                    # if columns != "I":
+                    cell = ws[columns + str(rows)]
+                    fill = PatternFill(start_color="636363", end_color="636363", fill_type="solid")
+                    cell.fill = fill
                 else:
-                    if columns != "E":
-                        cell = ws[columns + str(rows)]
-                        fill = PatternFill(start_color="636363", end_color="636363", fill_type="solid")
-                        cell.fill = fill
+                    # if columns != "E":
+                    cell = ws[columns + str(rows)]
+                    fill = PatternFill(start_color="636363", end_color="636363", fill_type="solid")
+                    cell.fill = fill
 
     def fill_values(self,wb):
         ws = wb.active
         columns = ["B","C","D"]
         if self.xlsx_format:
-            columns = ["C","E","G"]
+            columns = ["C","E","G","I"]
 
         for stations in self.station_list:
             excel_cell = stations["excel_position"]
@@ -2881,21 +2877,21 @@ class Save_excel:
         for controllers in self.controller_list:
             excel_cell = controllers["excel_position"]
             ws[excel_cell] = controllers["type"]
-
+            if str(controllers["color"]) != "":
+                try:
+                    color_modified = str(controllers["color"])[1:] # without hashtag
+                    controller_fill = PatternFill(start_color=color_modified, end_color=color_modified, fill_type="solid")
+                    ws[excel_cell].fill = controller_fill
+                except Exception as e:
+                    print(f"chyba pri nastavovani barvy kontroleru pri exportu: {e}")
+                    pass
             if len(controllers["accessory_list"]) == 0:
-                excel_cell = columns[2] + controllers["excel_position"][1:]
+                excel_cell = columns[3] + controllers["excel_position"][1:]
                 ws[excel_cell] = ""
             for accessories in controllers["accessory_list"]:
                 excel_cell = accessories["excel_position"]
                 ws[excel_cell] = accessories["type"]
-                if str(cameras["controller_color"]) != "":
-                    try:
-                        color_modified = str(cameras["controller_color"])[1:]
-                        controller_fill = PatternFill(start_color=color_modified, end_color=color_modified, fill_type="solid")
-                        ws[excel_cell].fill = controller_fill
-                    except Exception as e:
-                        print(f"chyba pri nastavovani barvy kontroleru pri exportu: {e}")
-                        pass
+                
                 
                
         self.format_cells(ws)
@@ -2955,7 +2951,7 @@ class Save_excel:
 
     def fill_xlsx_column(self,wb):
         ws = wb.active
-        columns = ["D","F","H"]
+        columns = ["D","F","H","J"]
         for stations in self.station_list:
             excel_cell = str(stations["excel_position"])
             excel_cell = excel_cell.replace("A","B")
@@ -2968,8 +2964,6 @@ class Save_excel:
                 excel_cell = cameras["excel_position"]
                 excel_cell = excel_cell.replace("C","D")
                 detail_info = ""
-                if str(cameras["controller"]) != "":
-                    detail_info = detail_info + "Kontroler: " + str(cameras["controller"]) + "\n"
                 if str(cameras["controller_info"]) != "":
                     detail_info = detail_info + str(cameras["controller_info"])+ "\n"
                 if str(cameras["controller_color"]) != "":
@@ -2998,16 +2992,32 @@ class Save_excel:
                     ws[excel_cell] = detail_info + str(optics["description"])
                     ws[excel_cell].alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
 
-                    if len(optics["accessory_list"]) == 0:
-                        excel_cell = columns[2] + optics["excel_position"][1:]
-                        ws[excel_cell] = ""
-                    for accessory in optics["accessory_list"]:
-                        excel_cell = accessory["excel_position"]
-                        excel_cell = excel_cell.replace("G","H")
-                        ws[excel_cell] = accessory["description"]
-                        ws[excel_cell].alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
+        for controllers in self.controller_list:
+            excel_cell = str(controllers["excel_position"])
+            excel_cell = excel_cell.replace("G","H")
+            detail_info = controllers["detailed_name"] + "\n"
 
-    def make_legend(self,wb):
+            if str(controllers["ip"]) != "" and str(controllers["ip"]) != "192.168.000.000":
+                detail_info += str(controllers["ip"]) + "\n"
+            if str(controllers["username"]) != "":
+                detail_info += str(controllers["username"]) + "\n"
+            if str(controllers["password"]) != "":
+                detail_info += str(controllers["password"]) + "\n"
+            
+            ws[excel_cell] = detail_info
+            ws[excel_cell].alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
+
+
+            if len(controllers["accessory_list"]) == 0:
+                excel_cell = columns[3] + controllers["excel_position"][1:]
+                ws[excel_cell] = ""
+            for accessory in controllers["accessory_list"]:
+                excel_cell = accessory["excel_position"]
+                excel_cell = excel_cell.replace("I","J")
+                ws[excel_cell] = accessory["description"]
+                ws[excel_cell].alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
+
+    '''def make_legend(self,wb):
         ws = wb.active
         if self.xlsx_format:
             cell_letter = "I"
@@ -3027,7 +3037,7 @@ class Save_excel:
                         ws[cell_letter + str(i+4)].fill = controller_fill
                     except Exception as e:
                         print(f"chyba pri nastavovani barvy kontroleru v exportovane legende: {e}")
-                        pass
+                        pass'''
 
     def main(self):
         wb = Workbook() #vytvorit novy excel, prepsat...
@@ -3075,7 +3085,7 @@ class Save_excel:
                 self.merge_cells(wb,merge_list=rows_to_merge)
 
                 self.fill_values(wb)
-                # self.fill_xlsx_column(wb)
+                self.fill_xlsx_column(wb)
                 # self.make_legend(wb)
                 wb.save(self.excel_file_name)
                 wb.close()

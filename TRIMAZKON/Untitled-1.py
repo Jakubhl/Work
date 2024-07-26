@@ -66,3 +66,5 @@ string = "cpolyoxyethylen"
 print(string[1:3])
 
 print(string[3:5])
+
+print(int(string))
