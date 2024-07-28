@@ -332,6 +332,7 @@ class ToplevelWindow:
         self.x = self.root.winfo_rootx()
         self.y = self.root.winfo_rooty()
         self.controller_color_list = [
+            "",
             "#1E90FF",  # Dodger Blue
             "#32CD32",  # Lime Green
             "#FF4500",  # Orange Red
@@ -385,7 +386,12 @@ class ToplevelWindow:
             # output = [controller_entry.get(),controller_name_entry.get(),IP_adress_entry.get(),username_entry.get(),password_entry.get()]
 
             notes = notes_input.get("1.0", tk.END)
-            output = [controller_entry.get(),controller_name_entry.get(),controller_color.cget("fg_color"),IP_adress_entry.get(),username_entry.get(),password_entry.get(),controller["accessory_list"],notes]
+            try:
+                color_chosen = controller_color.cget("fg_color")
+            except Exception:
+                color_chosen = ""
+            print("chosen color: ",color_chosen)
+            output = [controller_entry.get(),controller_name_entry.get(),color_chosen,IP_adress_entry.get(),username_entry.get(),password_entry.get(),controller["accessory_list"],notes]
             window.destroy()
 
             self.callback_function(output)
@@ -394,14 +400,15 @@ class ToplevelWindow:
             used_colors=[]
             print("controller database input",self.custom_controller_database)
             for items in self.custom_controller_database:
-                if items["color"] in self.controller_color_list:
-                    if controller != None:
-                        if not items["color"] == controller["color"]:
+                if items["color"] != "": # možnost nezvolit žádnou barvu
+                    if items["color"] in self.controller_color_list:
+                        if controller != None:
+                            if not items["color"] == controller["color"]:
+                                used_colors.append(items["color"])
+                                self.controller_color_list.pop(self.controller_color_list.index(items["color"]))
+                        elif not edit:
                             used_colors.append(items["color"])
                             self.controller_color_list.pop(self.controller_color_list.index(items["color"]))
-                    elif not edit:
-                        used_colors.append(items["color"])
-                        self.controller_color_list.pop(self.controller_color_list.index(items["color"]))
             print("used colors: ",used_colors)
         check_used_colors()
 
@@ -410,8 +417,11 @@ class ToplevelWindow:
             if self.controller_color_pointer > len(self.controller_color_list)-1:
                 self.controller_color_pointer = 0
 
-            controller_color.configure(fg_color = self.controller_color_list[self.controller_color_pointer],hover_color = self.controller_color_list[self.controller_color_pointer])
-            print(controller_color.cget("fg_color"))
+            new_color = self.controller_color_list[self.controller_color_pointer]
+            if new_color != "":
+                controller_color.configure(fg_color = new_color,hover_color = new_color)
+            else:
+                controller_color.configure(fg_color= "#212121",hover_color="#212121")
 
         def close_window(window):
             if not edit:
@@ -432,6 +442,8 @@ class ToplevelWindow:
             current_username = controller["username"]
             current_password = controller["password"]
             current_color = controller["color"]
+            current_notes = controller["notes"]
+
             window.title(f"Editovat kontroler {current_name}({current_type})")
         else:
             window.title("Nový kontroler")
@@ -470,6 +482,7 @@ class ToplevelWindow:
                 # initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
 
             else: # TLACITKO +:
+                # program nedopusti pridani noveho accessory pokud neni alespon vyplnen typ nebo poznamka
                 if hw_type_entry.get() != "" or notes_input3.get("0.0", "end") != "\n":
                     accessory_index -= 1
                     save_changes() # ulozit zmeny pri prepinani jeste u predesle stanice
@@ -513,7 +526,7 @@ class ToplevelWindow:
                 if current_controller != "":
                     controller_notes = str(self.controller_notes_database[self.controller_database.index(current_controller)])
                     if controller_notes != "":
-                        notes_string = notes_string + "Kontroler: " + controller_notes + "\n\n"
+                        notes_string = notes_string + controller_notes + "\n\n"
                 notes_input.delete("1.0",tk.END)
                 notes_input.insert("1.0",notes_string)
             else:
@@ -523,6 +536,7 @@ class ToplevelWindow:
                 notes_input3.delete("1.0",tk.END)
                 notes_input3.insert("1.0",notes_string)
 
+
         # KONTROLER ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         main_frame =                customtkinter.CTkFrame(master = window,corner_radius=0,border_width=3)
         controller_frame =          customtkinter.CTkFrame(master = main_frame,corner_radius=0,border_width=3)
@@ -530,8 +544,7 @@ class ToplevelWindow:
         controller_entry =          customtkinter.CTkOptionMenu(master = controller_frame,font=("Arial",22),dropdown_font=("Arial",22),values=self.controller_database,corner_radius=0,height=50)
         controller_name =           customtkinter.CTkLabel(master = controller_frame,text = "Název (interní označení): ",font=("Arial",20,"bold"))
         controller_name_entry =     customtkinter.CTkEntry(master = controller_frame,font=("Arial",20),corner_radius=0,height=50)
-        controller_color =          customtkinter.CTkButton(master = controller_frame,corner_radius=0,fg_color=self.controller_color_list[self.controller_color_pointer],hover_color=self.controller_color_list[self.controller_color_pointer]
-                                                            ,text="Podbarvení kontroleru",font=("Arial",20,"bold"),height=50,command=lambda:switch_color())
+        controller_color =          customtkinter.CTkButton(master = controller_frame,corner_radius=0,text="Podbarvení kontroleru",font=("Arial",20,"bold"),height=50,command=lambda:switch_color())
         IP_adress =                 customtkinter.CTkLabel(master = controller_frame,text = "IP adresa: ",font=("Arial",20,"bold"))
         IP_adress_entry =           customtkinter.CTkEntry(master = controller_frame,font=("Arial",20),corner_radius=0,height=50)
         username =                  customtkinter.CTkLabel(master = controller_frame,text = "Jméno: ",font=("Arial",20,"bold"))
@@ -559,6 +572,11 @@ class ToplevelWindow:
         note_label_frame.           pack(pady = 5, padx = 10,expand=True,side="top",fill="both")
         notes_input.                pack(pady = 5, padx = 10,expand=True,side="top",fill="both")
 
+        selected_color = self.controller_color_list[self.controller_color_pointer]
+        if selected_color != "":
+            controller_color.configure(fg_color=selected_color,hover_color=selected_color)
+        else:
+            controller_color.configure(fg_color= "#212121",hover_color="#212121")
 
         # PŘÍSLUŠENSTVÍ ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -606,13 +624,37 @@ class ToplevelWindow:
         button_save                 .pack(pady=10,padx=(0,10),expand=False,side = "right",anchor="e")
         button_exit                 .pack(pady=10,padx=(0,10),expand=False,side = "right",anchor="e")
 
+        def filter_text_input(text):
+            """
+            - removes extra new empty lines
+            """
+            legit_rows = []
+            legit_notes = ""
+            rows = text.split("\n")
+            for i in range(0,len(rows)):
+                if rows[i].replace(" ","") != "":
+                    legit_rows.append(rows[i])
+
+            for i in range(0,len(legit_rows)): 
+                if i == len(legit_rows)-1:
+                    legit_notes = legit_notes + legit_rows[i]
+                else:
+                    legit_notes = legit_notes + legit_rows[i]+ "\n"
+            return legit_notes
+
         if edit:
             IP_adress_entry.insert(0,str(current_ip))
             controller_entry.set(str(current_type))
             controller_name_entry.insert(0,str(current_name))
             username_entry.insert(0,str(current_username))
             password_entry.insert(0,str(current_password))
-            controller_color.configure(fg_color = str(current_color))
+            if str(current_color) != "":
+                controller_color.configure(fg_color = str(current_color))
+            else:
+                controller_color.configure(fg_color= "#212121",hover_color="#212121")
+
+            notes_input.delete("1.0",tk.END)
+            notes_input.insert("1.0",filter_text_input(str(current_notes)))
         else:
             IP_adress_entry.insert(0,"192.168.000.000")
             controller_name_entry.insert(0,"Kontroler " + str(len(self.custom_controller_database)+1) + " ")
@@ -657,24 +699,6 @@ class ToplevelWindow:
             nonlocal notes_input3
             nonlocal accessory_index
 
-            def filter_text_input(text):
-                """
-                - removes extra new empty lines
-                """
-                legit_rows = []
-                legit_notes = ""
-                rows = text.split("\n")
-                for i in range(0,len(rows)):
-                    if rows[i].replace(" ","") != "":
-                        legit_rows.append(rows[i])
-
-                for i in range(0,len(legit_rows)): 
-                    if i == len(legit_rows)-1:
-                        legit_notes = legit_notes + legit_rows[i]
-                    else:
-                        legit_notes = legit_notes + legit_rows[i]+ "\n"
-                return legit_notes
-            
             try:
                 if str(controller["accessory_list"][accessory_index]["type"]) in self.whole_accessory_database:
                     hw_type_entry.set(str(controller["accessory_list"][accessory_index]["type"]))
@@ -682,7 +706,7 @@ class ToplevelWindow:
                     hw_type_entry.set("")
                 notes_input3.delete("1.0",tk.END)
                 notes_input3.insert("1.0",filter_text_input(str(controller["accessory_list"][accessory_index]["description"])))
-            except TypeError:
+            except TypeError: # pokud je v indexu None - defaultně nastavit index na nulu:
                 try:
                     accessory_index = 0
                     if str(controller["accessory_list"][accessory_index]["type"]) in self.whole_accessory_database:   
@@ -1040,12 +1064,6 @@ class Catalogue_gui:
             if widget._text == str(self.station_list[station_index]["camera_list"][camera_index]["type"]):
                 notes_raw = str(self.station_list[station_index]["camera_list"][camera_index]["description"])
                 description = strip_lines_to_fit(notes_raw)
-                try:
-                    controller_info =  str(self.station_list[station_index]["camera_list"][camera_index]["controller_info"])
-                    if controller_info != "":
-                        details = details + controller_info + "\n"
-                except Exception:
-                    pass
                 cable = str(self.station_list[station_index]["camera_list"][camera_index]["cable"])
                 if cable != "":
                     details = details + "Kabel: " + str(self.station_list[station_index]["camera_list"][camera_index]["cable"])+ "\n"
@@ -1156,7 +1174,6 @@ class Catalogue_gui:
                 "type": "",
                 "controller": "",
                 "controller_color": "",
-                "controller_info": "",
                 "cable": "",
                 "optics_list": [optic],
                 "description": "",
@@ -1180,7 +1197,6 @@ class Catalogue_gui:
                 "type": "",
                 "controller": "",
                 "controller_color": "",
-                "controller_info": "",
                 "cable": "",
                 "optics_list": [optic],
                 "description": "",
@@ -1226,16 +1242,16 @@ class Catalogue_gui:
                 if open_edit:
                     self.edit_object("",widget_tier,new_station=False)
 
-        elif len(widget_tier) == 3: #c01-c99 kontrolery
+        elif len(widget_tier) == 3: #c01-c99 kontrolery - tzn. nove prislusenstvi ke kontroleru
             if btn == "add_object":
                 controller_index = int(widget_tier[1:3])
                 controller_with_new_accessories = self.make_new_object("accessory",object_to_edit = self.controller_object_list[controller_index])
                 self.controller_object_list[controller_index] = controller_with_new_accessories
-                # self.make_controller_widgets()
-                self.make_project_widgets()
+                # self.make_project_widgets()
+                if open_edit:
+                    self.edit_object("",widget_tier,new_station=False)
 
-                # if open_edit:
-                #     self.edit_object("",widget_tier,new_station=False)
+
         
         elif len(widget_tier) == 4: # 0101-9999 kamery, nove bude pridano: 010101-999999 optika
             if btn == "add_object": # nova optika kamery
@@ -1247,16 +1263,7 @@ class Catalogue_gui:
                 if open_edit:
                     self.edit_object("",widget_tier,new_station=False)
 
-        elif len(widget_tier) == 6: # 010101-999999 optika, nove bude pridano: 01010101-99999999 prislusenstvi
-            if btn == "add_object": # nove prislusenstvi ka kamere
-                station_index = int(widget_tier[:2])
-                camera_index = int(widget_tier[2:4])
-                optic_index = int(widget_tier[4:])
-                camera_with_new_accessoryes = self.make_new_object("accessory",object_to_edit = self.station_list[station_index],cam_index = camera_index,optic_index = optic_index)
-                self.station_list[station_index] = camera_with_new_accessoryes
-                self.make_project_widgets()
-                if open_edit:
-                    self.edit_object("",widget_tier,new_station=False)
+        print(widget_tier)
 
 
         # print("STATION_LIST: ",self.station_list)
@@ -1346,7 +1353,12 @@ class Catalogue_gui:
                 self.station_list[station_index]["camera_list"][camera_index]["description"] = notes_input.get("1.0", tk.END)
                 
             if object == "optics" or "camera" or all_parameters:
-                self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"] = optic_type_entry.get()
+                # Pokud je zadán manuálně, upřednostni
+                if manual_optics_input.get().replace(" ","") != "":
+                    optic_type = manual_optics_input.get()
+                else:
+                    optic_type = optic_type_entry.get()
+                self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"] = optic_type
                 self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"] = alternative_entry.get()
                 self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"] = notes_input2.get("1.0", tk.END)
 
@@ -1621,9 +1633,10 @@ class Catalogue_gui:
                 current_controller = str(*args)
                 if str(current_controller).replace(" ","") != "":
                     for controllers in self.controller_object_list:
-                        if (controllers["name"]+"("+controllers["type"]+")").replace(" ","") == str(current_controller).replace(" ",""):
-                            controller_entry.configure(fg_color = controllers["color"])
-                            break
+                        if controllers["color"] != "":
+                            if (controllers["name"]+"("+controllers["type"]+")").replace(" ","") == str(current_controller).replace(" ",""):
+                                controller_entry.configure(fg_color = controllers["color"])
+                                break
                 else:
                     controller_entry.configure(fg_color = "#636363")
             else:
@@ -1683,7 +1696,7 @@ class Catalogue_gui:
 
         controller =                customtkinter.CTkLabel(master = camera_frame,text = "Kontroler:",font=("Arial",22,"bold"))
         controller_frame =          customtkinter.CTkFrame(master = camera_frame,corner_radius=0)
-        controller_entry =          customtkinter.CTkOptionMenu(master = controller_frame,font=("Arial",22),dropdown_font=("Arial",22),width=280,height=50,values=self.custom_controller_drop_list,corner_radius=0,fg_color="#636363",command=controller_opt_menu_color)
+        controller_entry =          customtkinter.CTkOptionMenu(master = controller_frame,font=("Arial",22),dropdown_font=("Arial",22),width=280,height=50,values=self.custom_controller_drop_list,corner_radius=0,fg_color="#212121",command=controller_opt_menu_color)
         new_controller =            customtkinter.CTkButton(master = controller_frame,text = "Přidat",font=("Arial",22,"bold"),width = 80,height=50,corner_radius=0,command=lambda: call_new_controller_gui())
         controller_entry.           pack(pady = 5, padx = (10,0),anchor="w",expand=True,side="left",fill="x")
         new_controller.             pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
@@ -1729,6 +1742,7 @@ class Catalogue_gui:
         optic_type_entry             .pack(pady = 5, padx = (5,0),anchor="w",expand=True,side="left",fill="x")
         button_prev_section_optic    .pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
         button_next_section_optic    .pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+        manual_optics_input =        customtkinter.CTkEntry(master = optics_frame,font=("Arial",22),width=305,height=50,corner_radius=0,placeholder_text="manuálně")
 
         alternative_type =                  customtkinter.CTkLabel(master = optics_frame,text = "Alternativa:",font=("Arial",22,"bold"))
         option_menu_frame_alternative =     customtkinter.CTkFrame(master = optics_frame,corner_radius=0)
@@ -1749,7 +1763,8 @@ class Catalogue_gui:
         notes_input2 =                      customtkinter.CTkTextbox(master = optics_frame,font=("Arial",22),width=300,height=200,corner_radius=0)
         counter_frame_optics                .pack(pady=(10,0),padx=3,anchor="n",expand=False,side = "top")
         optic_type                          .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
-        option_menu_frame_optic             .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
+        option_menu_frame_optic             .pack(pady = (5,0), padx = 10,anchor="w",expand=False,side="top",fill="x")
+        manual_optics_input                 .pack(pady = 0, padx = 15,anchor="w",expand=False,side="top",fill="x")
         alternative_type                    .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
         option_menu_frame_alternative       .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
         note2_label_frame                   .pack(pady = 0, padx = 3,anchor="w",expand=False,side="top",fill="x")
@@ -1852,6 +1867,9 @@ class Catalogue_gui:
 
             # initial prefill - optics:
             try:
+                if str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"]) not in self.whole_optics_database:
+                    manual_optics_input.delete(0,300)
+                    manual_optics_input.insert(0,str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"]))
                 if str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"]) in self.whole_optics_database:
                     optic_type_entry.set(str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"]))
                 if str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"]) in self.whole_optics_database:
@@ -1863,6 +1881,9 @@ class Catalogue_gui:
             except TypeError:
                 optics_index = 0
                 if len(self.station_list[station_index]["camera_list"][camera_index]["optics_list"]) > 0:
+                    if str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"]) not in self.whole_optics_database:
+                        manual_optics_input.delete(0,300)
+                        manual_optics_input.insert(0,str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"]))
                     if str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"]) in self.whole_optics_database:
                         optic_type_entry.set(str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"]))
                     if str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"]) in self.whole_optics_database:
@@ -1949,13 +1970,21 @@ class Catalogue_gui:
             if new_station:
                 self.edit_object_gui_new("station",(len(self.station_list)-1),all_parameters=True)
             else:
-                self.edit_object_gui_new("station",station_index,all_parameters=True)
+                # kdyz nova kamera, chci rovnou editovat tu nově přidanou
+                current_cam_count = len(self.station_list[station_index]["camera_list"])
+                if current_cam_count > 0:
+                    camera_index = current_cam_count-1
+                self.edit_object_gui_new("station",station_index,camera_index,all_parameters=True)
 
         elif len(widget_tier) == 4: # 0101-9999 kamery
             station_index = int(widget_tier[:2])
             camera_index = int(widget_tier[2:])
             print("editing",self.station_list[station_index]["camera_list"][camera_index])
-            self.edit_object_gui_new("camera",station_index,camera_index)
+            # kdyz edituju, chci prejit na posledni optiku...
+            current_optics_count = len(self.station_list[station_index]["camera_list"][camera_index]["optics_list"])
+            if current_optics_count > 0:
+                optic_index = current_optics_count-1
+            self.edit_object_gui_new("camera",station_index,camera_index,optic_index)
 
         elif len(widget_tier) == 6: # 010101-999999 optika
             station_index = int(widget_tier[:2])
@@ -1966,8 +1995,11 @@ class Catalogue_gui:
         
         elif len(widget_tier) == 3: # c01-c99 kontolery
             controller_index = int(widget_tier[1:3])
+            current_acc_count = len(self.controller_object_list[controller_index]["accessory_list"])
+            if current_acc_count > 0:
+                accessory_index = current_acc_count-1
             window = ToplevelWindow(self.root,[self.controller_database,self.controller_notes_database],callback_edited_controller,self.controller_object_list,[self.accessory_database,self.whole_accessory_database,self.accessory_notes_database])
-            window.new_controller_window(childroot=None,controller=self.controller_object_list[controller_index],edit=True)
+            window.new_controller_window(childroot=None,controller=self.controller_object_list[controller_index],edit=True,accessory_index=accessory_index)
 
         elif len(widget_tier) == 5: # c0101-c9999 prislusenstvi kontoleru
             controller_index = int(widget_tier[1:3])
@@ -2161,7 +2193,6 @@ class Catalogue_gui:
                 switch_manufacturer_image.configure(image = manufacturer_logo)
                 self.read_database()
 
-
         self.clear_frame(self.root)
         main_header =               customtkinter.CTkFrame(master=self.root,corner_radius=0,height=100)
         console_frame=              customtkinter.CTkFrame(master=self.root,corner_radius=0,height=50)
@@ -2292,8 +2323,7 @@ class Catalogue_gui:
 
                     accessory_count = len(self.controller_object_list[controller_index]["accessory_list"])
                 except Exception as e:
-                    # neni prirazen kontroler
-                    print(e)
+                    # neni prirazen kontroler - index je v tomto pripade None
                     pass
                 if accessory_count > station_optics_count:
                     number_of_blocks += accessory_count
@@ -2341,37 +2371,7 @@ class Catalogue_gui:
             
         #     self.controller_object_list[controller_index]["row_count"] = controller_accessory_count
         #     return controller_widget_growth_accessory
-        
-    def make_controller_widgets(self):
-        return
-        default_height = 55
-        self.clear_frame(self.controller_column)
-        self.clear_frame(self.accessory_column)
-
-        for i in range(0,len(self.controller_object_list)):
-            self.controller_object_list[i]["detailed_name"] = str(self.controller_object_list[i]["name"]) + "(" + str(self.controller_object_list[i]["type"]) + ")"
-            if i < 10:
-                controller_tier =  "c0" + str(i) #c01-c99 
-            else:
-                controller_tier =  "c" + str(i) #c01-c99
-            
-            controller_widget_growth = self.check_widget_growth("controller",controller_index=i)
-            self.make_block(master_widget=self.controller_column,height=default_height+controller_widget_growth,width=self.default_block_width,fg_color=self.controller_object_list[i]["color"],
-                            side = "top",text=self.controller_object_list[i]["type"],tier = controller_tier)
-
-            accessory_list = self.controller_object_list[i]["accessory_list"]
-            accessory_count = len(accessory_list)
-            for x in range(0,accessory_count):
-                accessory_type = accessory_list[x]["type"]
-                if x < 10:
-                    accessory_tier =  controller_tier + "0" + str(x) #c0101-c9999
-                else:
-                    accessory_tier =  controller_tier + str(x) #c0101-c9999
-                
-                self.make_block(master_widget=self.accessory_column,height=default_height,width=self.default_block_width,fg_color="#181818",side = "top",text=accessory_type,tier = accessory_tier)
-            if accessory_count == 0:
-                dummy_acc = self.make_block(master_widget=self.accessory_column,height=default_height-5,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
-
+         
     def make_project_widgets(self):
         self.clear_frame(self.project_column)
         self.clear_frame(self.camera_column)
@@ -2403,7 +2403,9 @@ class Catalogue_gui:
                 try:
                     controller_index = int(station_camera_list[x]["controller_index"])
                     controller_color = self.controller_object_list[controller_index]["color"]
-                except Exception:
+                    if controller_color == "": # nebyla zvolena žádná barva
+                        controller_color = "#181818"
+                except Exception: # pokud ke kamere neni prirazen zadny kontroler
                     controller_color = "#181818"
                     controller_index = None
 
@@ -2427,7 +2429,10 @@ class Catalogue_gui:
                         controller_tier =  "c" + str(controller_index) #c01-c99
                     self.controller_object_list[controller_index]["detailed_name"] = str(self.controller_object_list[controller_index]["name"]) + "(" + str(self.controller_object_list[controller_index]["type"]) + ")"
                     # controller_widget_growth = self.check_widget_growth("controller",controller_index=controller_index)
-                    self.make_block(master_widget=self.controller_column,height=default_height+camera_widget_growth,width=self.default_block_width,fg_color=self.controller_object_list[controller_index]["color"],
+                    controller_color = self.controller_object_list[controller_index]["color"]
+                    if controller_color == "": # nebyla zvolena žádná barva
+                        controller_color = "#181818"
+                    self.make_block(master_widget=self.controller_column,height=default_height+camera_widget_growth,width=self.default_block_width,fg_color=controller_color,
                                     side = "top",text=self.controller_object_list[controller_index]["type"],tier = controller_tier)
                     
                     accessory_list = self.controller_object_list[controller_index]["accessory_list"]
@@ -2598,31 +2603,36 @@ class Save_excel:
             cam_inc = 0
             for cameras in stations["camera_list"]:
                 camera_index = self.station_list[station_index]["camera_list"].index(cameras)
+                row_before_addition = last_row_cam
                 if int(cameras["row_count"]) > 1:
                     self.station_list[station_index]["camera_list"][camera_index]["excel_position"] = columns[1]+str(last_row_cam)
                     rows_to_merge.append(columns[1] + str(last_row_cam) + ":"+columns[1] + str(last_row_cam + int(cameras["row_count"]) - 1))
                     # kontrolery maji stejný merge, pocet vsech radku ulozen v kamere (i kdyz je vetsi pocet prislusenstvi nez objektivu ke kamere)
                     rows_to_merge.append(columns[3] + str(last_row_cam) + ":"+columns[3] + str(last_row_cam + int(cameras["row_count"]) - 1))
-                    if cameras["controller"] != "":
-                        for controllers in self.controller_list:
-                            if (controllers["name"]+"("+controllers["type"]+")").replace(" ","") == str(cameras["controller"]).replace(" ",""):
-                                controller_index = self.controller_list.index(controllers)
-                                self.controller_list[controller_index]["excel_position"] = columns[3]+str(last_row_cam)
-
-                                if len(controllers["accessory_list"]) == 0:
-                                    last_row_accessory = last_row_accessory + 1
-                                for accessories in controllers["accessory_list"]:
-                                    # nejprve hledam index abych mohl prepisovat přímo celý objekt
-                                    accessory_index = self.controller_list[controller_index]["accessory_list"].index(accessories)
-                                    self.controller_list[controller_index]["accessory_list"][accessory_index]["excel_position"] = columns[4]+str(last_row_optics)
-                                    last_row_accessory = last_row_accessory + 1
-
-                                break
-
                     last_row_cam = last_row_cam + (cameras["row_count"])
                 else:
                     self.station_list[station_index]["camera_list"][camera_index]["excel_position"] = columns[1]+str(last_row_cam)
                     last_row_cam = last_row_cam + 1
+
+                if cameras["controller"] != "":
+                    for controllers in self.controller_list:
+                        if (controllers["name"]+"("+controllers["type"]+")").replace(" ","") == str(cameras["controller"]).replace(" ",""):
+                            controller_index = self.controller_list.index(controllers)
+                            # stejny kontroler muze byt soucasti vice kamer, proto pole s excel_position
+                            try:
+                                self.controller_list[controller_index]["excel_position"].append(columns[3]+str(row_before_addition))
+                            except Exception:
+                                self.controller_list[controller_index]["excel_position"] = [(columns[3]+str(row_before_addition))]
+
+                            if len(controllers["accessory_list"]) == 0:
+                                last_row_accessory = last_row_accessory + 1
+                            for accessories in controllers["accessory_list"]:
+                                # nejprve hledam index abych mohl prepisovat přímo celý objekt
+                                accessory_index = self.controller_list[controller_index]["accessory_list"].index(accessories)
+                                self.controller_list[controller_index]["accessory_list"][accessory_index]["excel_position"] = columns[4]+str(last_row_optics)
+                                last_row_accessory = last_row_accessory + 1
+
+                            break
 
                 if len(cameras["optics_list"]) == 0:
                     last_row_optics = last_row_optics + 1
@@ -2873,24 +2883,25 @@ class Save_excel:
                     excel_cell = optics["excel_position"]
                     ws[excel_cell] = optics["type"]
 
-
         for controllers in self.controller_list:
-            excel_cell = controllers["excel_position"]
-            ws[excel_cell] = controllers["type"]
-            if str(controllers["color"]) != "":
-                try:
-                    color_modified = str(controllers["color"])[1:] # without hashtag
-                    controller_fill = PatternFill(start_color=color_modified, end_color=color_modified, fill_type="solid")
-                    ws[excel_cell].fill = controller_fill
-                except Exception as e:
-                    print(f"chyba pri nastavovani barvy kontroleru pri exportu: {e}")
-                    pass
-            if len(controllers["accessory_list"]) == 0:
-                excel_cell = columns[3] + controllers["excel_position"][1:]
-                ws[excel_cell] = ""
-            for accessories in controllers["accessory_list"]:
-                excel_cell = accessories["excel_position"]
-                ws[excel_cell] = accessories["type"]
+            print(controllers["excel_position"])
+            for position in controllers["excel_position"]:
+                excel_cell = str(position)
+                ws[excel_cell] = controllers["type"]
+                if str(controllers["color"]) != "":
+                    try:
+                        color_modified = str(controllers["color"])[1:] # without hashtag
+                        controller_fill = PatternFill(start_color=color_modified, end_color=color_modified, fill_type="solid")
+                        ws[excel_cell].fill = controller_fill
+                    except Exception as e:
+                        print(f"chyba pri nastavovani barvy kontroleru pri exportu: {e}")
+                        pass
+                if len(controllers["accessory_list"]) == 0:
+                    excel_cell = columns[3] + position[1:]
+                    ws[excel_cell] = ""
+                for accessories in controllers["accessory_list"]:
+                    excel_cell = accessories["excel_position"]
+                    ws[excel_cell] = accessories["type"]
                 
                 
                
@@ -2923,10 +2934,6 @@ class Save_excel:
                 excel_cell = cameras["hidden_values"]
                 ws[excel_cell + str(1)] = cameras["type"]
                 detail_info = ""
-                if str(cameras["controller"]) != "":
-                    detail_info = detail_info + "Kontroler: " + str(cameras["controller"]) + "\n"
-                if str(cameras["controller_info"]) != "":
-                    detail_info = detail_info + str(cameras["controller_info"])+ "\n"
                 if str(cameras["cable"]) != "":
                     detail_info = detail_info + "Kabel: " + str(cameras["cable"])+ "\n"
 
@@ -2964,8 +2971,6 @@ class Save_excel:
                 excel_cell = cameras["excel_position"]
                 excel_cell = excel_cell.replace("C","D")
                 detail_info = ""
-                if str(cameras["controller_info"]) != "":
-                    detail_info = detail_info + str(cameras["controller_info"])+ "\n"
                 if str(cameras["controller_color"]) != "":
                     try:
                         color_modified = str(cameras["controller_color"])[1:]
@@ -2988,34 +2993,37 @@ class Save_excel:
                     excel_cell = excel_cell.replace("E","F")
                     detail_info = ""
                     if str(optics["alternative"]) != "":
-                        detail_info = "Alternativa: " + str(optics["alternative"]) + "\n"
+                        detail_info = "Alternativa: " + str(optics["alternative"]) + "\n\n"
                     ws[excel_cell] = detail_info + str(optics["description"])
                     ws[excel_cell].alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
 
         for controllers in self.controller_list:
-            excel_cell = str(controllers["excel_position"])
-            excel_cell = excel_cell.replace("G","H")
-            detail_info = controllers["detailed_name"] + "\n"
+            for position in controllers["excel_position"]:
+                excel_cell = str(position)
+                excel_cell = excel_cell.replace("G","H")
+                detail_info = controllers["detailed_name"] + "\n"
 
-            if str(controllers["ip"]) != "" and str(controllers["ip"]) != "192.168.000.000":
-                detail_info += str(controllers["ip"]) + "\n"
-            if str(controllers["username"]) != "":
-                detail_info += str(controllers["username"]) + "\n"
-            if str(controllers["password"]) != "":
-                detail_info += str(controllers["password"]) + "\n"
-            
-            ws[excel_cell] = detail_info
-            ws[excel_cell].alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
-
-
-            if len(controllers["accessory_list"]) == 0:
-                excel_cell = columns[3] + controllers["excel_position"][1:]
-                ws[excel_cell] = ""
-            for accessory in controllers["accessory_list"]:
-                excel_cell = accessory["excel_position"]
-                excel_cell = excel_cell.replace("I","J")
-                ws[excel_cell] = accessory["description"]
+                if str(controllers["ip"]) != "" and str(controllers["ip"]) != "192.168.000.000":
+                    detail_info += str(controllers["ip"]) + "\n"
+                if str(controllers["username"]) != "":
+                    detail_info += str(controllers["username"]) + "\n"
+                if str(controllers["password"]) != "":
+                    detail_info += str(controllers["password"]) + "\n\n"
+                if str(controllers["notes"]) != "":
+                    detail_info += str(controllers["notes"]) + "\n"
+                ws[excel_cell] = detail_info
                 ws[excel_cell].alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
+
+
+                if len(controllers["accessory_list"]) == 0:
+                    # excel_cell = columns[3] + controllers["excel_position"][1:]
+                    excel_cell = columns[3] + position[1:]
+                    ws[excel_cell] = ""
+                for accessory in controllers["accessory_list"]:
+                    excel_cell = accessory["excel_position"]
+                    excel_cell = excel_cell.replace("I","J")
+                    ws[excel_cell] = accessory["description"]
+                    ws[excel_cell].alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
 
     '''def make_legend(self,wb):
         ws = wb.active
@@ -3081,19 +3089,19 @@ class Save_excel:
             rows_to_merge = self.get_cells_to_merge()
             self.make_header(wb)
 
-            try:
-                self.merge_cells(wb,merge_list=rows_to_merge)
+            # try:
+            self.merge_cells(wb,merge_list=rows_to_merge)
 
-                self.fill_values(wb)
-                self.fill_xlsx_column(wb)
-                # self.make_legend(wb)
-                wb.save(self.excel_file_name)
-                wb.close()
-                add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
-                os.startfile(self.excel_file_name)
-            except Exception as e:
-                add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}, chyba: {e}","red",None,True)
-                wb.close()
+            self.fill_values(wb)
+            self.fill_xlsx_column(wb)
+            # self.make_legend(wb)
+            wb.save(self.excel_file_name)
+            wb.close()
+            add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
+            os.startfile(self.excel_file_name)
+            # except Exception as e:
+            #     add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}, chyba: {e}","red",None,True)
+            #     wb.close()
 
 # download = download_database.database(database_filename)
 # Catalogue_gui(root,download.output)

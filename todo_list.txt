@@ -440,30 +440,33 @@ edit gui presunout do toplevel - hotovo
 - Nejprve metadata - controllery se doted ukladaly, jako string. ted je potreba je cist - hotovo
 - do kontroleru jsou nove ulozene informace o prislusenstvi - hotovo
 
+3:46 PM 7/28/2024
+export xlsx - nepozná když je více stejných kontorlerů - hotovo
+prefill poznamek u editu kontorleru... - hotovo
+poznamky nejsou ulozeny v objektu u kontroleru + moc prazdnych radku - hotovo
+- moznost nezvolit si žádnou barvu kontroleru - default - hotovo
+dodelat manualni pridani objektivu. - hotovo
+nova optika - spatne nastaveny index kdyz pridavam novou z nakliknute kamery - hotovo
+nova kamera - spatne nastaveny index kdyz pridavam novou z nakliknute stanice - hotovo
+nove prislusenstvi - spatne nastaveny index kdyz pridavam novou z nakliknuteho kontroleru - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
-dodelat manualni pridani objektivu - jak se bude ukladat?
-
-export xlsx - nepozná když je více stejných kontorlerů
-
-ip setting když omylem mount disku - potom cancel - zeptá se jako admin - cancel - spadne...
-
-
-prefill poznamek u editu kontorleru...
-poznamky nejsou ulozeny v objektu u kontroleru + moc prazdnych radku
 
 udělat možnost nastavit si barvy
-
 
 opravit edit po smazani optiky
 
 
 
-
-
-
 automaticky zavirat okna pro nastaveni exportu a ukladani
+
+
+ip setting když omylem mount disku - potom cancel - zeptá se jako admin - cancel - spadne...
+ip setting - podbarvovat prave zvolena okna
+ip setting - optimalizovat vyskakovaci okna s toplevel
+ip setting - opravit generovani prazdnych radku u poznamek
 
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
