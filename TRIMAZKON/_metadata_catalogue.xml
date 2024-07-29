@@ -25,28 +25,19 @@ Alternativní: Příslušenství pro kamery, čočky, C montáž, pro kamery FZ-
 Kabel: příslušenství kamerových systémů, FH a FZ, kabel pro kameru, odolný ohybu, 10m
 http://industrial.omron.co.uk/en/search?q=G639
 </description><row_count>4</row_count><controller_index>0</controller_index></camera></camera_list><row_count>4</row_count></station><station><name>2</name><inspection_description>22222222222222222
-</inspection_description><camera_list><camera><type>FH-SM</type><controller>Kontroler 2  (FH-2050)</controller><controller_color /><controller_info /><cable>FZ-VSLB3 5M</cable><optics_list><optic><type>3Z4S-LE SV-7525H</type><alternative>3Z4S-LE SV-2514H</alternative><accessory_list>[]</accessory_list><description>Objektiv: Příslušenství pro kamery, čočky, C montáž, pro kamery FZ-S_2M, FZ-S_5M3, FH-S_05R, FH-S_X05, FHV7H, ohnisková vzdálenost 50 mm, nejmenší vzdálenost 300mm, světelnost 1,4 až 16, maximální kompatiblní CCD čip 2/3" nebo 1"
+</inspection_description><camera_list><camera><type>FH-SM</type><controller>Kontroler 2  (FH-5050-10)</controller><controller_color /><controller_info /><cable>FZ-VSLB3 5M</cable><optics_list><optic><type>3Z4S-LE SV-7525H</type><alternative>3Z4S-LE SV-2514H</alternative><accessory_list>[]</accessory_list><description>Objektiv: Příslušenství pro kamery, čočky, C montáž, pro kamery FZ-S_2M, FZ-S_5M3, FH-S_05R, FH-S_X05, FHV7H, ohnisková vzdálenost 50 mm, nejmenší vzdálenost 300mm, světelnost 1,4 až 16, maximální kompatiblní CCD čip 2/3" nebo 1"
 
 Alternativní: Příslušenství pro kamery, čočky, C montáž, pro kamery FZ-S_2M, FZ-S_5M3, FH-S_05R, FH-S_X05, FHV7H, ohnisková vzdálenost 16 mm, nejmenší vzdálenost 100mm, světelnost 1,4 až 16, maximální kompatiblní CCD čip 2/3" nebo 1"
 
 
 </description></optic><optic><type>3Z4S-LE SV-10028H</type><alternative>3Z4S-LE SV-5014H</alternative><accessory_list>[]</accessory_list><description>Objektiv: Příslušenství pro kamery, čočky, C montáž, pro kamery FZ-S_2M, FZ-S_5M3, FH-S_05R, FH-S_X05, FHV7H, ohnisková vzdálenost 75 mm, nejmenší vzdálenost 1200mm, světelnost 2,5 až zavřeno, maximální kompatiblní CCD čip 2/3" nebo 1", revize 1
-
 Alternativní: Příslušenství pro kamery, čočky, C montáž, pro kamery FZ-S_2M, FZ-S_5M3, FH-S_05R, FH-S_X05, FHV7H, ohnisková vzdálenost 35 mm, nejmenší vzdálenost 200mm, světelnost 1,4 až 16, maximální kompatiblní CCD čip 2/3" nebo 1"
-
-
 </description></optic></optics_list><description>Kamera: FH kamera, standardní rozlišení, monochromatický
 Kabel: příslušenství kamerových systémů, FH a FZ, kabel pro kameru, odolný ohybu, konektor úhlový, 5m
-</description><row_count>3</row_count><controller_index>1</controller_index></camera><camera><type>FH-SM</type><controller>Kontroler 2  (FH-2050)</controller><controller_color /><controller_info /><cable>FZ-VSBX 10M</cable><optics_list><optic><type>3Z4S-LE SV-5014H</type><alternative>3Z4S-LE VS-L10028/M42-10</alternative><accessory_list>[]</accessory_list><description>Objektiv: Příslušenství pro kamery, čočky, C montáž, pro kamery FZ-S_2M, FZ-S_5M3, FH-S_05R, FH-S_X05, FHV7H, ohnisková vzdálenost 35 mm, nejmenší vzdálenost 200mm, světelnost 1,4 až 16, maximální kompatiblní CCD čip 2/3" nebo 1"
-
+</description><row_count>3</row_count><controller_index>1</controller_index></camera><camera><type>FH-SM</type><controller>Kontroler 2  (FH-5050-10)</controller><controller_color /><controller_info /><cable>FZ-VSBX 10M</cable><optics_list><optic><type>3Z4S-LE SV-5014H</type><alternative>3Z4S-LE VS-L10028/M42-10</alternative><accessory_list>[]</accessory_list><description>Objektiv: Příslušenství pro kamery, čočky, C montáž, pro kamery FZ-S_2M, FZ-S_5M3, FH-S_05R, FH-S_X05, FHV7H, ohnisková vzdálenost 35 mm, nejmenší vzdálenost 200mm, světelnost 1,4 až 16, maximální kompatiblní CCD čip 2/3" nebo 1"
 Alternativní: Objektiv, ultra vysoké rozlišení, nízké zkreslení 16 mm pro 1/1" velik
-
-
 </description></optic></optics_list><description>Kamera: FH kamera, standardní rozlišení, monochromatický
-
 Kabel: Ultra bend resistant camera cable, 10 m
-
-
 </description><row_count>3</row_count><controller_index>1</controller_index></camera></camera_list><row_count>6</row_count></station><station><name>3</name><inspection_description>- popis inspekce- popis inspekce- popis inspekce- popis inspekce
 </inspection_description><camera_list><camera><type>FH-SCX05</type><controller>Kontroler 3  (FH-2050)</controller><controller_color /><controller_info /><cable>FZ-VSB3 10M</cable><optics_list><optic><type>3Z4S-LE VS-HVA2524</type><alternative>3Z4S-LE VS-HVA3522</alternative><accessory_list>[]</accessory_list><description>Objektiv: Příslušenství pro kamery, pro C-montáž, prodlužovací kroužek, 50 mm
 
@@ -60,6 +51,11 @@ http://industrial.omron.co.uk/en/search?q=G639
 
 
 </description><row_count>2</row_count><controller_index>2</controller_index></camera></camera_list><row_count>2</row_count></station><station><name>Název staniceghggg</name><inspection_description>- popis inspekce
-</inspection_description><camera_list><camera><type /><controller /><controller_color /><controller_info /><cable /><optics_list><optic><type /><alternative /><accessory_list>[]</accessory_list><description>
-</description></optic></optics_list><description>
-</description><row_count>1</row_count><controller_index>None</controller_index></camera></camera_list><row_count>1</row_count></station></station_list><project_name /></metadata>
+</inspection_description><camera_list /><row_count>0</row_count></station><station><name>Název stanice</name><inspection_description>- popis inspekce
+</inspection_description><camera_list><camera><type>FH-SCX01</type><controller>Kontroler 1  (FH-2050)</controller><controller_color /><cable>FZ-VSB3 10M</cable><optics_list /><description>Kamera: FH Camera, high speed, 1.6 MPixel, C-Mount, global shutter, colour
+
+Kabel: příslušenství kamerových systémů, FH a FZ, kabel pro kameru, odolný ohybu, 10m
+http://industrial.omron.co.uk/en/search?q=G639
+
+
+</description><row_count>4</row_count><controller_index>0</controller_index></camera></camera_list><row_count>4</row_count></station></station_list><project_name /></metadata>

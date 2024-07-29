@@ -392,8 +392,9 @@ class ToplevelWindow:
                 color_chosen = ""
             print("chosen color: ",color_chosen)
             output = [controller_entry.get(),controller_name_entry.get(),color_chosen,IP_adress_entry.get(),username_entry.get(),password_entry.get(),controller["accessory_list"],notes]
-            window.destroy()
-
+            # window.destroy()
+            close_window(window)
+            # self.root.focus_force()
             self.callback_function(output)
 
         def check_used_colors():
@@ -432,8 +433,8 @@ class ToplevelWindow:
             window.destroy()
 
         window = customtkinter.CTkToplevel()
-        window_height = 900
-        window.geometry(f"{self.one_segment_width}x{window_height}+{self.x+150}+{self.y+150}")
+        window_height = 870
+        window.geometry(f"{self.one_segment_width}x{window_height}+{self.x+150}+{self.y+5}")
         window.wm_iconbitmap(app_icon_path)
         if edit:
             current_name = controller["name"]
@@ -444,7 +445,7 @@ class ToplevelWindow:
             current_color = controller["color"]
             current_notes = controller["notes"]
 
-            window.title(f"Editovat kontroler {current_name}({current_type})")
+            window.title(f"Editování kontroleru: {current_name} ({current_type})")
         else:
             window.title("Nový kontroler")
             controller = {
@@ -614,11 +615,11 @@ class ToplevelWindow:
         notes_input3                .pack(pady = 5, padx = 10,expand=True,side="top",fill="both")
         main_frame                  .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="top")
         if not only_accessory:
-            window.geometry(f"{2*self.one_segment_width}x{window_height}+{self.x+150}+{self.y+150}")
+            window.geometry(f"{2*self.one_segment_width}x{window_height}+{self.x+150}+{self.y+5}")
             controller_frame            .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
         accessory_frame             .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
         bottom_frame =              customtkinter.CTkFrame(master=window,corner_radius=0)
-        bottom_frame                .pack(pady = 0, padx = 0,fill="x",anchor="s",expand=False,side="bottom")
+        bottom_frame                .pack(pady = 0, padx = 0,fill="x",anchor="s",expand=True,side="bottom")
         button_save =               customtkinter.CTkButton(master = bottom_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: save_contoller())
         button_exit =               customtkinter.CTkButton(master = bottom_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
         button_save                 .pack(pady=10,padx=(0,10),expand=False,side = "right",anchor="e")
@@ -734,17 +735,47 @@ class ToplevelWindow:
         window.focus_force()
         window.focus()
 
-    def save_prog_options_window(self,main_console,station_list,project_name,callback):
+    def save_prog_options_window(self,main_console,station_list,project_name,callback,last_file = None):
         """
         okno s možnostmi uložení rozdělaného projektu
         """
         window = customtkinter.CTkToplevel()
-        window.geometry(f"1015x350+{self.x+200}+{self.y+100}")
+        window.geometry(f"1015x350+{self.x+200}+{self.y+50}")
         window.wm_iconbitmap(app_icon_path)
         window.title("Možnosti uložení projektu")
+        subwindow = ""
+
+        def confirm_window(final_path):
+            nonlocal subwindow
+            def call_save(final_path):
+                nonlocal subwindow
+                save_file(final_path)
+                subwindow.destroy()
+            subwindow = customtkinter.CTkToplevel()
+            subwindow.geometry(f"900x110+{self.x+200}+{self.y+50}")
+            subwindow.title("Potvrdit přepsání souboru")
+            main_frame = customtkinter.CTkFrame(master = subwindow,corner_radius=0)
+            export_label = customtkinter.CTkLabel(master = main_frame,text = "V zadané cestě se soubor s tímto názvem již vyskytuje, přepsat?",font=("Arial",22,"bold"),justify = "left",text_color="orange")
+            button_frame = customtkinter.CTkFrame(master = main_frame,corner_radius=0)
+            button_yes = customtkinter.CTkButton(master = button_frame,text = "Ano",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command = lambda: call_save(final_path))
+            button_no = customtkinter.CTkButton(master = button_frame,text = "Ne",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command = lambda: subwindow.destroy())
+            main_frame.pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left")
+            export_label.pack(pady = 0, padx = 0,fill="x",anchor="w",expand=False,side="top")
+            button_frame.pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="bottom")
+            button_yes.pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
+            button_no.pack(pady = 10, padx = (10,0),expand=False,side="right",anchor = "e")
+            subwindow.update()
+            subwindow.update_idletasks()
+            subwindow.focus_force()
+            subwindow.focus()
 
         def close_window(window):
-            # window.grab_release()
+            nonlocal subwindow
+            try:
+                if subwindow.winfo_exists():
+                    subwindow.destroy()
+            except Exception:
+                pass
             window.destroy()
 
         def create_path(path_inserted):
@@ -756,16 +787,27 @@ class ToplevelWindow:
             print(path)
             return path
 
+        def save_file(final_path):
+            nonlocal window
+            save_prog = Save_prog_metadata(station_list=station_list,project_name=project_name,controller_database=self.custom_controller_database,console=console,xml_file_path=final_path)
+            save_prog.store_xml_data()
+            add_colored_line(main_console,f"Data úspěšně uložena do: {final_path}","green",None,True)
+            close_window(window)
+
         def call_save_file(window):
             nonlocal console
             nonlocal export_path
             path_inserted = export_path.get()
             if os.path.exists(path_inserted):
                 final_path = create_path(path_inserted)
-                save_prog = Save_prog_metadata(station_list=station_list,project_name=project_name,controller_database=self.custom_controller_database,console=console,xml_file_path=final_path)
-                save_prog.store_xml_data()
-                add_colored_line(main_console,f"Data úspěšně uložena do: {final_path}","green",None,True)
-                window.destroy()
+                if os.path.exists(final_path):
+                    confirm_window(final_path)
+                else:
+                    save_file(final_path)
+                # save_prog = Save_prog_metadata(station_list=station_list,project_name=project_name,controller_database=self.custom_controller_database,console=console,xml_file_path=final_path)
+                # save_prog.store_xml_data()
+                # add_colored_line(main_console,f"Data úspěšně uložena do: {final_path}","green",None,True)
+                # window.destroy()
             else:
                 add_colored_line(console,"Zadaná cesta pro uložení je neplatná","red",None,True)
         
@@ -828,7 +870,6 @@ class ToplevelWindow:
         export_path             .pack(pady = 5, padx = 10,anchor="w",fill="x",expand=True,side="left")
         explorer_btn            .pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
         console =               tk.Text(export_frame, wrap="none", height=0, width=180,background="black",font=("Arial",22),state=tk.DISABLED)
-
         button_load =           customtkinter.CTkButton(master = export_frame,text = "Nahrát",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: call_load_file(window))
         button_save =           customtkinter.CTkButton(master = export_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: call_save_file(window))
         button_exit =           customtkinter.CTkButton(master = export_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
@@ -845,11 +886,26 @@ class ToplevelWindow:
 
         initial_path = path_check(os.getcwd())
         export_path.insert("0",resource_path(str(initial_path)))
-
         export_name.insert("0",str(project_name) + self.default_xml_file_name)
+        self.root.bind("<Button-1>",lambda e: close_window(window))
+        window.update()
+        window.update_idletasks()
+        window.focus_force()
+        window.focus()
+
+    def setting_window(self):
+        def close_window(window):
+            window.destroy()
+
+        window = customtkinter.CTkToplevel()
+        window_height = 870
+        window_width = 500
+        window.geometry(f"{window_width}x{window_height}+{self.x+150}+{self.y+5}")
+        window.title("Nastavení")
+
+
 
         self.root.bind("<Button-1>",lambda e: close_window(window))
-        # window.grab_set()
         window.update()
         window.update_idletasks()
         window.focus_force()
@@ -1140,14 +1196,15 @@ class Catalogue_gui:
 
     def make_block(self,master_widget,height,width,fg_color,text,side,dummy_block = False,tier = ""):
         if dummy_block:
-            dummy_block_widget =    customtkinter.CTkFrame(master=master_widget,corner_radius=0,height=height,width =width,fg_color="#212121")
-            dummy_block_widget.     pack(pady = (0,0),padx =0,expand = False,side = side,anchor="w")
+            dummy_block_widget =    customtkinter.CTkFrame(master=master_widget,corner_radius=0,height=height,width =width-10,fg_color="#212121")
+            dummy_block_widget.     pack(pady = 0,padx =0,expand = False,side = side,anchor="w")
             return dummy_block
         else:
             block_widget =    customtkinter.CTkFrame(master=master_widget,corner_radius=0,fg_color=fg_color,height=height,width =width,border_width= 2,border_color="#636363")
             block_widget.     pack(pady = (0,0),padx =0,expand = False,side = side,anchor="w")
             block_name =      customtkinter.CTkLabel(master = block_widget,text = text,font=("Arial",25,"bold"),width=block_widget.cget("width")-15,height=block_widget.cget("height")-15,justify = "left",anchor="w")
             block_name.       pack(pady = 5,padx =5)
+            # block_name.       pack(pady = 0,padx =0)
             block_widget.bind("<Button-3>",lambda e, widget_tier=tier,widget = block_name: self.switch_widget_info(e, widget_tier,widget))
             block_name.bind("<Button-3>",lambda e, widget_tier=tier,widget = block_name: self.switch_widget_info(e, widget_tier,widget))
             block_widget.bind("<Button-1>",lambda e, widget_tier=tier,widget = block_widget: self.select_block(e, widget_tier,widget))
@@ -1531,6 +1588,7 @@ class Catalogue_gui:
             controller_entry.configure(values = self.custom_controller_drop_list)
             controller_entry.set(new_drop_option)
             controller_opt_menu_color("",only_color=new_controller["color"])
+            child_root.focus_force()
 
         def import_notes(which):
             """
@@ -1909,7 +1967,7 @@ class Catalogue_gui:
         if object == "station":
             # child_root.geometry(f"420x450+{x+80}+{y+80}")
             width = 3*one_segment_width
-            child_root.geometry(f"{width}x{height}+{x+100}+{y+100}")
+            child_root.geometry(f"{width}x{height}+{x+100}+{y+30}")
             print(len(self.station_list))
             print(station_index)
             child_root.title("Editování stanice: " + str(self.station_list[station_index]["name"]))
@@ -1920,14 +1978,14 @@ class Catalogue_gui:
 
         elif object == "camera":
             width = 2*one_segment_width
-            child_root.geometry(f"{width}x{height}+{x+100}+{y+100}")
+            child_root.geometry(f"{width}x{height}+{x+100}+{y+30}")
             child_root.title("Editování kamery: " + str(self.station_list[station_index]["camera_list"][camera_index]["type"]))
             camera_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
             optics_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
 
         elif object == "optics":
             width = one_segment_width
-            child_root.geometry(f"{width}x{height}+{x+100}+{y+100}")
+            child_root.geometry(f"{width}x{height}+{x+100}+{y+30}")
             child_root.title("Editování optiky: " + str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"]))
             optics_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
 
@@ -1962,6 +2020,7 @@ class Catalogue_gui:
                 self.custom_controller_drop_list.append(new_drop_option)
             # self.make_controller_widgets()
             self.make_project_widgets()
+            self.root.focus_force()
 
         if len(widget_tier) == 2: #01-99 stanice
             station_index = int(widget_tier[:2])
@@ -1972,6 +2031,7 @@ class Catalogue_gui:
             else:
                 # kdyz nova kamera, chci rovnou editovat tu nově přidanou
                 current_cam_count = len(self.station_list[station_index]["camera_list"])
+                camera_index = 0
                 if current_cam_count > 0:
                     camera_index = current_cam_count-1
                 self.edit_object_gui_new("station",station_index,camera_index,all_parameters=True)
@@ -1982,6 +2042,7 @@ class Catalogue_gui:
             print("editing",self.station_list[station_index]["camera_list"][camera_index])
             # kdyz edituju, chci prejit na posledni optiku...
             current_optics_count = len(self.station_list[station_index]["camera_list"][camera_index]["optics_list"])
+            optic_index = 0
             if current_optics_count > 0:
                 optic_index = current_optics_count-1
             self.edit_object_gui_new("camera",station_index,camera_index,optic_index)
@@ -1996,6 +2057,7 @@ class Catalogue_gui:
         elif len(widget_tier) == 3: # c01-c99 kontolery
             controller_index = int(widget_tier[1:3])
             current_acc_count = len(self.controller_object_list[controller_index]["accessory_list"])
+            accessory_index = 0
             if current_acc_count > 0:
                 accessory_index = current_acc_count-1
             window = ToplevelWindow(self.root,[self.controller_database,self.controller_notes_database],callback_edited_controller,self.controller_object_list,[self.accessory_database,self.whole_accessory_database,self.accessory_notes_database])
@@ -2011,7 +2073,8 @@ class Catalogue_gui:
         self.make_project_widgets()
 
     def export_option_window(self):
-        child_root=customtkinter.CTk()
+        child_root = customtkinter.CTkToplevel()
+        # child_root=customtkinter.CTk()
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
         child_root.geometry(f"1000x350+{x+200}+{y+100}")
@@ -2069,7 +2132,9 @@ class Catalogue_gui:
                 export_path.insert(0, str(output[1]))
                 add_colored_line(console,"Byla vložena cesta pro uložení","green",None,True)
             print(output[0])
-            child_root.grab_set()
+            # child_root.grab_set()
+            # child_root.update()
+            # child_root.update_idletasks()
             child_root.focus()
             child_root.focus_force()
 
@@ -2111,10 +2176,14 @@ class Catalogue_gui:
         export_path.insert("0",str(initial_path))
 
         self.root.bind("<Button-1>",lambda e: close_window(child_root))
-        child_root.mainloop()
+        # child_root.mainloop()
+
+        child_root.update()
+        child_root.update_idletasks()
+        child_root.focus()
+        child_root.focus_force()
     
     def load_metadata_callback(self,input_data):
-
         self.station_list = input_data[0]
         print("loaded station list: ",self.station_list)
 
@@ -2123,12 +2192,12 @@ class Catalogue_gui:
             self.project_name_input.delete(0,300)
             self.project_name_input.insert(0,str(input_data[2]))
 
+        self.custom_controller_drop_list = [""]
         for controllers in self.controller_object_list:
             new_drop_option = f"{controllers['name']} ({controllers['type']})"
             self.custom_controller_drop_list.append(new_drop_option)
 
         self.make_project_widgets()
-        # self.make_controller_widgets()
 
     def call_save_metadata_gui(self):
         window = ToplevelWindow(self.root,custom_controller_database=self.controller_object_list)
@@ -2193,6 +2262,10 @@ class Catalogue_gui:
                 switch_manufacturer_image.configure(image = manufacturer_logo)
                 self.read_database()
 
+        def call_setting_window():
+            window = ToplevelWindow(self.root)
+            window.setting_window()
+
         self.clear_frame(self.root)
         main_header =               customtkinter.CTkFrame(master=self.root,corner_radius=0,height=100)
         console_frame=              customtkinter.CTkFrame(master=self.root,corner_radius=0,height=50)
@@ -2233,13 +2306,15 @@ class Catalogue_gui:
         manufacturer_logo =             customtkinter.CTkImage(PILImage.open(resource_path("images/omron_logo.png")),size=(240, 50))
         switch_manufacturer_image =     customtkinter.CTkLabel(master = switch_manufacturer_frame,text = "",image=manufacturer_logo)
         save_button =                   customtkinter.CTkButton(master = main_header_row2,text = "Uložit/ Nahrát",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,
-                                                                # command=lambda:Save_prog_metadata(self.main_console,self.controller_object_list,self.station_list,self.project_name_input.get()))
-                                                                command=lambda:self.call_save_metadata_gui())
+                                                               command=lambda:self.call_save_metadata_gui())
+        button_settings =               customtkinter.CTkButton(master = main_header_row2, width = 50,height=50,text="⚙️",command =  lambda: call_setting_window(),font=("",22),corner_radius=0)
+        
         switch_manufacturer_btn         .pack(pady = 0, padx = 0,anchor="w",side="left")
         switch_manufacturer_image       .pack(pady = 0, padx = (10,0),anchor="w",side="left")
         export_button                   .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         switch_manufacturer_frame       .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         save_button                     .pack(pady = 0, padx = (20,0),anchor="w",expand=False,side="left")
+        button_settings                 .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         self.main_console =             tk.Text(console_frame, wrap="none", height=0, width=180,background="black",font=("Arial",22),state=tk.DISABLED)
         self.main_console               .pack(pady = 10, padx = (10,0),anchor="w",expand=True,side="bottom")
         # self.search_input.insert("0","00")
@@ -2267,7 +2342,7 @@ class Catalogue_gui:
         self.project_column     .pack(pady=0,padx=0,fill="y",expand=False,side = "left")
         self.camera_column      .pack(pady=0,padx=0,fill="y",expand=False,side = "left")
         self.optic_column       .pack(pady=0,padx=0,fill="y",expand=False,side = "left")
-        self.controller_column     .pack(pady=0,padx=0,fill="y",expand=False,side = "left")
+        self.controller_column  .pack(pady=0,padx=0,fill="y",expand=False,side = "left")
         self.accessory_column   .pack(pady=0,padx=0,fill="y",expand=False,side = "left")
         # self.station_list.append(self.make_new_object("station"))
         self.make_project_widgets()
@@ -2395,8 +2470,10 @@ class Catalogue_gui:
             station_widget = self.make_block(master_widget=self.project_column,height=default_height+station_widget_growth,width=self.default_block_width,fg_color="#181818",side = "top",text=station_name,tier=station_tier)
             # creating cameras ------------------------------------------------------------------------------------------------------------------------------
             if camera_count == 0:
-                dummy_cam = self.make_block(master_widget=self.camera_column,height=default_height-5+station_widget_growth,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
-                dummy_opt = self.make_block(master_widget=self.optic_column,height=default_height-5+station_widget_growth,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
+                dummy_cam =         self.make_block(master_widget=self.camera_column,height=default_height-5+station_widget_growth,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
+                dummy_opt =         self.make_block(master_widget=self.optic_column,height=default_height-5+station_widget_growth,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
+                dummy_controller =  self.make_block(master_widget=self.controller_column,height=default_height-5+station_widget_growth,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
+                dummy_acc =         self.make_block(master_widget=self.accessory_column,height=default_height-5+station_widget_growth,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
 
             for x in range(0,camera_count):
                 camera_type = station_camera_list[x]["type"]
@@ -2468,7 +2545,6 @@ class Catalogue_gui:
                     optic_widget = self.make_block(master_widget=self.optic_column,height=default_height,width=self.default_block_width,fg_color="#181818",side = "top",text=optic_type,tier=optic_tier)
 
                 # doplneni prazdnych mist
-
                 if (optic_count-accessory_count) < 0:
                     for _ in range(cycle_start_value_opt,-(optic_count-accessory_count)):
                         dummy_opt = self.make_block(master_widget=self.optic_column,height=default_height-5,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
@@ -2476,11 +2552,6 @@ class Catalogue_gui:
                 if (optic_count-accessory_count) > 0 and accessory_count > 0:
                     for _ in range(0,(optic_count-accessory_count)):
                         dummy_acc = self.make_block(master_widget=self.accessory_column,height=default_height-5,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
-
-            # # doplneni prazdnych mist
-            # if (accessory_count - camera_count) > 0:
-            #     for _ in range(cycle_start_value_cam,(accessory_count-camera_count)):
-            #         dummy_cam = self.make_block(master_widget=self.camera_column,height=default_height-5,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
 
 class Save_excel:
     def __init__(self,root,station_list,project_name,console,excel_name,controller_list):
@@ -2560,12 +2631,18 @@ class Save_excel:
             return "rights_error"
 
     def get_cells_to_merge(self):
+        """
+        skládá se pole, které buňky je potřeba spojit\n
+        + ukládají se pozice pro danou hodnotu v excelu k danému objektu pod key argument: excel position
+        """
         last_row = self.values_start_row
         last_row_cam = self.values_start_row
         last_row_optics = self.values_start_row
         last_row_accessory = self.values_start_row
         rows_to_merge = []
-        columns = ["A","B","C","D"]
+        columns = ["A","B","C","D","E"]
+        if self.xlsx_format:
+            columns = ["A","C","E","G","I"]
 
         def check_for_dummy(last_cam=False):
             #fill the rest with dummies:
@@ -2583,9 +2660,6 @@ class Save_excel:
                     }
                     self.station_list[station_index]["camera_list"][camera_index]["optics_list"].append(dummy_opt)
 
-        if self.xlsx_format:
-            columns = ["A","C","E","G","I"]
-        
         for stations in self.station_list:
             station_index = self.station_list.index(stations)
             if stations["row_count"] > 1:
@@ -2615,33 +2689,43 @@ class Save_excel:
                     last_row_cam = last_row_cam + 1
 
                 if cameras["controller"] != "":
+                    ii = 0
                     for controllers in self.controller_list:
-                        if (controllers["name"]+"("+controllers["type"]+")").replace(" ","") == str(cameras["controller"]).replace(" ",""):
-                            controller_index = self.controller_list.index(controllers)
+                        if str((controllers["name"]+"("+controllers["type"]+")")).replace(" ","") == str(cameras["controller"]).replace(" ",""):
+                            controller_index = ii
                             # stejny kontroler muze byt soucasti vice kamer, proto pole s excel_position
                             try:
-                                self.controller_list[controller_index]["excel_position"].append(columns[3]+str(row_before_addition))
+                                if not str(columns[3]+str(row_before_addition)) in self.controller_list[controller_index]["excel_position"]:
+                                    self.controller_list[controller_index]["excel_position"].append(str(columns[3]+str(row_before_addition)))
                             except Exception:
                                 self.controller_list[controller_index]["excel_position"] = [(columns[3]+str(row_before_addition))]
 
                             if len(controllers["accessory_list"]) == 0:
                                 last_row_accessory = last_row_accessory + 1
+                            iii = 0
                             for accessories in controllers["accessory_list"]:
                                 # nejprve hledam index abych mohl prepisovat přímo celý objekt
-                                accessory_index = self.controller_list[controller_index]["accessory_list"].index(accessories)
-                                self.controller_list[controller_index]["accessory_list"][accessory_index]["excel_position"] = columns[4]+str(last_row_optics)
+                                # accessory_index = self.controller_list[controller_index]["accessory_list"].index(accessories)
+                                accessory_index = iii
+                                try:
+                                    if not (columns[4]+str(row_before_addition+iii)) in self.controller_list[controller_index]["accessory_list"][accessory_index]["excel_position"]:
+                                        self.controller_list[controller_index]["accessory_list"][accessory_index]["excel_position"].append(columns[4]+str(row_before_addition+iii))
+                                except Exception:
+                                    self.controller_list[controller_index]["accessory_list"][accessory_index]["excel_position"] = [columns[4]+str(row_before_addition+iii)]
                                 last_row_accessory = last_row_accessory + 1
-
+                                iii+=1
                             break
+                        ii += 1
+
 
                 if len(cameras["optics_list"]) == 0:
                     last_row_optics = last_row_optics + 1
                 
-                print("cam inc",cam_inc,"length list",len(stations["camera_list"]))
-                if cam_inc == len(stations["camera_list"])-1:
-                    check_for_dummy(last_cam = True)
-                else:
-                    check_for_dummy()
+                # print("cam inc",cam_inc,"length list",len(stations["camera_list"]))
+                # if cam_inc == len(stations["camera_list"])-1:
+                #     check_for_dummy(last_cam = True)
+                # else:
+                check_for_dummy()
 
                 for optics in cameras["optics_list"]:
                     optics_index = self.station_list[station_index]["camera_list"][camera_index]["optics_list"].index(optics)
@@ -2655,8 +2739,11 @@ class Save_excel:
             #radek mezera mezi kazdou stanici
             last_row+=1
             last_row_cam+=1
+            last_row_optics = last_row_optics + 1
 
         self.excel_rows_used = last_row_optics
+        print("LAST ROW USED: ",self.excel_rows_used)
+
         if self.xlsx_format:
             columns = ["A","C","E","G"]
             for merges in rows_to_merge:
@@ -2688,24 +2775,35 @@ class Save_excel:
     def change_vba_script(self):
         """
         Slouží pro přidávání rozsahu hodnot, uložených v hidden sheetu a alokování k určité buňce
+        - současná kapacita pro jeden objekt: 78 (3* abeceda)
         """
         vba_code_range = """"""
         alphabet = string.ascii_uppercase
         i = 0
         ii = 0
         iii = 0
-        iiii = 0
+        columns = ["A","B","C","D","E","F","G","H","I"]
+        column_letter_st = 0
+        column_letter_cam = 3
+        column_letter_opt = 6
+
         for stations in self.station_list:
             cell_with_toggle = stations["excel_position"]
-            column = "AA" + alphabet[i:i+1] #maximum 26 stanic... dalo by se upravit na 26*26
+            if i > 25:
+                column_letter_st +=1
+                i=0
+            column = columns[column_letter_st] + alphabet[i:i+1] 
             stations["hidden_values"] = column # pridame jen informaci o nazvu sloupce
             station_vba_code_range_row = f"ToggleCell Range(\"Sheet!{cell_with_toggle}\"), \"{column + str(1)}\", \"{column + str(2)}\", \"{column + str(3)}\", Cancel, Target"
             vba_code_range += "\n            "+station_vba_code_range_row
             i+=1
-            
+
             for cameras in stations["camera_list"]:
                 cell_with_toggle = cameras["excel_position"]
-                column = "BB" + alphabet[ii:ii+1]
+                if ii > 25:
+                    column_letter_cam +=1
+                    ii=0
+                column = columns[column_letter_cam] + alphabet[ii:ii+1] 
                 cameras["hidden_values"] = column # pridame jen informaci o nazvu sloupce
                 camera_vba_code_range_row = f"ToggleCell Range(\"Sheet!{cell_with_toggle}\"), \"{column + str(1)}\", \"{column + str(2)}\", \"{column + str(3)}\", Cancel, Target"
                 vba_code_range += "\n            "+camera_vba_code_range_row
@@ -2713,19 +2811,49 @@ class Save_excel:
 
                 for optics in cameras["optics_list"]:
                     cell_with_toggle = optics["excel_position"]
-                    column = "CC" + alphabet[iii:iii+1] 
+                    if iii > 25:
+                        column_letter_opt += 1
+                        iii=0
+                    column = columns[column_letter_opt] + alphabet[iii:iii+1] 
                     optics["hidden_values"] = column # pridame jen informaci o nazvu sloupce
                     optics_vba_code_range_row = f"ToggleCell Range(\"Sheet!{cell_with_toggle}\"), \"{column + str(1)}\", \"{column + str(2)}\", \"{column + str(3)}\", Cancel, Target"
                     vba_code_range += "\n            "+optics_vba_code_range_row
                     iii+=1
-
-                    for accessory in optics["accessory_list"]:
-                        cell_with_toggle = accessory["excel_position"]
-                        column = "DD" + alphabet[iiii:iiii+1] 
-                        accessory["hidden_values"] = column # pridame jen informaci o nazvu sloupce
-                        accessory_vba_code_range_row = f"ToggleCell Range(\"Sheet!{cell_with_toggle}\"), \"{column + str(1)}\", \"{column + str(2)}\", \"{column + str(3)}\", Cancel, Target"
-                        vba_code_range += "\n            "+accessory_vba_code_range_row
-                        iiii+=1
+        i = 0
+        ii = 0
+        columns = ["J","K","L","M","N","O","P","Q"]
+        column_letter_controller = 0
+        column_letter_acc = 3
+        for controllers in self.controller_list:
+            for controller_positions in controllers["excel_position"]: 
+                cell_with_toggle = controller_positions
+                if i > 25:
+                    column_letter_controller +=1
+                    i=0
+                column = columns[column_letter_controller] + alphabet[i:i+1] 
+                try:
+                    controllers["hidden_values"].append(column) # pridame jen informaci o nazvu sloupce
+                except Exception:
+                    controllers["hidden_values"] = [column]
+                    
+                controller_vba_code_range_row = f"ToggleCell Range(\"Sheet!{cell_with_toggle}\"), \"{column + str(1)}\", \"{column + str(2)}\", \"{column + str(3)}\", Cancel, Target"
+                vba_code_range += "\n            "+controller_vba_code_range_row
+                i+=1
+                print("co se nam nezresetuje? ",controllers["accessory_list"])
+                for accessories in controllers["accessory_list"]:
+                    for acc_positions in accessories["excel_position"]:
+                        cell_with_toggle = acc_positions
+                        if ii > 25:
+                            column_letter_acc +=1
+                            ii=0
+                        column = columns[column_letter_acc] + alphabet[ii:ii+1]
+                        try:
+                            accessories["hidden_values"].append(column) # pridame jen informaci o nazvu sloupce
+                        except Exception:
+                            accessories["hidden_values"] = [column]
+                        acc_vba_code_range_row = f"ToggleCell Range(\"Sheet!{cell_with_toggle}\"), \"{column + str(1)}\", \"{column + str(2)}\", \"{column + str(3)}\", Cancel, Target"
+                        vba_code_range += "\n            "+acc_vba_code_range_row
+                        ii+=1
 
         vba_code = f"""
         Private Sub Workbook_SheetBeforeRightClick(ByVal Sh As Object, ByVal Target As Range, Cancel As Boolean)
@@ -2767,8 +2895,9 @@ class Save_excel:
         return vba_code
 
     def format_cells(self,ws):
-        bold_font = Font(bold=True,size=20,color="ffffff") # ffffff = bílá!
-        regular_font = Font(bold=False,size=16)
+        bold_font_white = Font(bold=True,size=20,color="ffffff") # ffffff = bílá!
+        bold_font = Font(bold=True,size=12)
+        regular_font = Font(bold=False,size=12)
         thin_border = Border(
             left=Side(style='thin'),
             right=Side(style='thin'),
@@ -2788,72 +2917,55 @@ class Save_excel:
         comment = Comment(comment_text, comment_author)
         if not self.xlsx_format:
             ws['B1'].comment = comment
-        ws['B1'].fill = top_header_fill
+        # ws['B1'].fill = top_header_fill
         
         current_date = datetime.now().date()
         date_string = current_date.strftime("%d.%m.%Y")
         ws["B2"] = f"Projekt: {self.project_name}\nDatum: {date_string}"
         ws["B2"].alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
         ws["B2"].font = Font(bold=True,size=20)
-        ws['B2'].fill = top_header_fill
+        # ws['B2'].fill = top_header_fill
         
         for columns in self.used_columns:
-            for i in range(3,self.excel_rows_used):
+            for i in range(3,self.excel_rows_used-1):
                 ws.column_dimensions[columns].width = self.excel_column_width
                 cell = ws[columns + str(i)]
-                cell.alignment = Alignment(horizontal = "left", vertical = "center")
-                # if self.xlsx_format:
-                #     if columns != "I":
-                #         cell.border = thin_border
-                # else:
-                #     if columns != "E":
-                #         cell.border = thin_border
+                # cell.alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
+                cell.alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True,shrink_to_fit=True,justifyLastLine=True)
+                cell.border = thin_border
 
                 if i == 3: # nadpisy sloupců
                     header_fill = PatternFill(start_color="636363", end_color="636363", fill_type="solid")
-                    cell.font = bold_font
+                    cell.font = bold_font_white
                     cell.alignment = Alignment(horizontal = "center", vertical = "center")
                     cell.fill = header_fill
                 else:
                     cell.font = regular_font
-
-        # mřížka na legendě
-        # if self.xlsx_format:
-        #     cell = ws["I3"]
-        #     cell.border = thin_border
-        #     for i in range(4,len(self.controller_list)+4):
-        #         cell = ws["I" + str(i)]
-        #         cell.border = thin_border
-        #         cell.font = regular_font
-        #         cell.alignment = Alignment(horizontal = "center", vertical = "center")
-
-        # else:
-        #     cell = ws["E3"]
-        #     cell.border = thin_border
-        #     for i in range(4,len(self.controller_list)+4):
-        #         cell = ws["E" + str(i)]
-        #         cell.border = thin_border
-        #         cell.font = regular_font
-        #         cell.alignment = Alignment(horizontal = "center", vertical = "center")
-
+                
+                # Názvy stanic:
+                if columns == "A" and i != 3:
+                    cell.font = bold_font
 
         # fill the empty rows between stations:
         for rows in self.between_station_rows:
             for columns in self.used_columns:
                 if self.xlsx_format:
-                    # if columns != "I":
                     cell = ws[columns + str(rows)]
                     fill = PatternFill(start_color="636363", end_color="636363", fill_type="solid")
                     cell.fill = fill
                 else:
-                    # if columns != "E":
                     cell = ws[columns + str(rows)]
                     fill = PatternFill(start_color="636363", end_color="636363", fill_type="solid")
                     cell.fill = fill
 
     def fill_values(self,wb):
+        """
+        vepíše hodnoty
+        - xlsx první sloupec - v gui prvně viditelné informace
+        - xlsm první informace
+        """
         ws = wb.active
-        columns = ["B","C","D"]
+        columns = ["B","C","D","E"]
         if self.xlsx_format:
             columns = ["C","E","G","I"]
 
@@ -2884,11 +2996,10 @@ class Save_excel:
                     ws[excel_cell] = optics["type"]
 
         for controllers in self.controller_list:
-            print(controllers["excel_position"])
             for position in controllers["excel_position"]:
                 excel_cell = str(position)
                 ws[excel_cell] = controllers["type"]
-                if str(controllers["color"]) != "":
+                if str(controllers["color"]) != "" and str(controllers["color"]) != "#212121":
                     try:
                         color_modified = str(controllers["color"])[1:] # without hashtag
                         controller_fill = PatternFill(start_color=color_modified, end_color=color_modified, fill_type="solid")
@@ -2896,15 +3007,16 @@ class Save_excel:
                     except Exception as e:
                         print(f"chyba pri nastavovani barvy kontroleru pri exportu: {e}")
                         pass
+
                 if len(controllers["accessory_list"]) == 0:
                     excel_cell = columns[3] + position[1:]
                     ws[excel_cell] = ""
                 for accessories in controllers["accessory_list"]:
-                    excel_cell = accessories["excel_position"]
-                    ws[excel_cell] = accessories["type"]
-                
-                
-               
+                    for acc_positions in accessories["excel_position"]:
+                        # print("accessories excel position: ",accessories["excel_position"])
+                        excel_cell = acc_positions
+                        ws[excel_cell] = accessories["type"]
+                   
         self.format_cells(ws)
 
     def fill_hidden_sheet_values(self,wb):
@@ -2915,10 +3027,11 @@ class Save_excel:
             - toggle první hodnota (název/ typ)
             - toggle druhá hodnota (doplňující informace)
             - stav togglu (přepnutí 0-1)
-        - stanice: AA(A-Z)n
-        - kamery: BB(A-Z)n
-        - optika: CC(A-Z)n
-        - příslušenství: DD(A-Z)n
+        - stanice: AZ - CZ
+        - kamery: DZ - FZ
+        - optika: GZ - IZ
+        - kontrolery: JZ - LZ
+        - příslušenství: MZ - OZ
         """
 
         ws = wb.create_sheet("HiddenSheet")
@@ -2950,11 +3063,28 @@ class Save_excel:
                     ws[excel_cell + str(2)] = detail_info
                     ws[excel_cell + str(3)] = 1
 
-                    for accessory in optics["accessory_list"]:
-                        excel_cell = accessory["hidden_values"]
-                        ws[excel_cell + str(1)] = accessory["type"]
-                        ws[excel_cell + str(2)] = accessory["description"]
-                        ws[excel_cell + str(3)] = 1
+        for controllers in self.controller_list:
+            for controller_positions in controllers["hidden_values"]:
+                excel_cell = controller_positions
+                ws[excel_cell + str(1)] = controllers["type"]
+                details = controllers["detailed_name"] + "\n"
+                if not controllers["notes"] == "":
+                    details = details + controllers["notes"] + "\n\n"
+                if not controllers["ip"] == "" and not controllers["ip"] == "192.168.000.000":
+                    details = details + controllers["ip"] + "\n"
+                if not controllers["username"] == "":
+                    details = details + "Jméno: " + controllers["username"] + "\n"
+                if not controllers["password"] == "":
+                    details = details + "Heslo: " + controllers["password"] + "\n"
+                ws[excel_cell + str(2)] = details
+                ws[excel_cell + str(3)] = 1 # toggle status... default: 1
+
+                for accessories in controllers["accessory_list"]:
+                    for acc_positions in accessories["hidden_values"]:
+                        excel_cell = acc_positions
+                        ws[excel_cell + str(1)] = accessories["type"]
+                        ws[excel_cell + str(2)] = accessories["description"]
+                        ws[excel_cell + str(3)] = 1 # toggle status... default: 1
 
     def fill_xlsx_column(self,wb):
         ws = wb.active
@@ -3020,68 +3150,46 @@ class Save_excel:
                     excel_cell = columns[3] + position[1:]
                     ws[excel_cell] = ""
                 for accessory in controllers["accessory_list"]:
-                    excel_cell = accessory["excel_position"]
-                    excel_cell = excel_cell.replace("I","J")
-                    ws[excel_cell] = accessory["description"]
-                    ws[excel_cell].alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
-
-    '''def make_legend(self,wb):
-        ws = wb.active
-        if self.xlsx_format:
-            cell_letter = "I"
-        else:
-            cell_letter = "E"
-
-        if len(self.controller_list) != 0: 
-            for i in range(0,len(self.controller_list)):
-                name_and_type = f"{self.controller_list[i]['name']} ({self.controller_list[i]['type']})"
-                ws[cell_letter + str(i+4)] = name_and_type
-                print(str(self.controller_list[i]))
-                print(self.controller_list[i]['color'])
-                if self.controller_list[i]['color'] != "":
-                    try:
-                        color_modified = self.controller_list[i]['color'][1:]
-                        controller_fill = PatternFill(start_color=color_modified, end_color=color_modified, fill_type="solid")
-                        ws[cell_letter + str(i+4)].fill = controller_fill
-                    except Exception as e:
-                        print(f"chyba pri nastavovani barvy kontroleru v exportovane legende: {e}")
-                        pass'''
+                    for acc_positions in accessory["excel_position"]:
+                        excel_cell = acc_positions
+                        excel_cell = excel_cell.replace("I","J")
+                        ws[excel_cell] = accessory["description"]
+                        ws[excel_cell].alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
 
     def main(self):
         wb = Workbook() #vytvorit novy excel, prepsat...
         if ".xlsm" in self.excel_file_name:
             rows_to_merge = self.get_cells_to_merge()
             self.make_header(wb)
-            try:
-                if os.path.exists(self.temp_excel_file_name):
-                    os.remove(self.temp_excel_file_name)
-                # kličky aby se uložilo vba:
-                wb.save(filename=self.temp_excel_file_name)
-                wb2 = load_workbook(filename=self.temp_excel_file_name, keep_vba=True)
-                wb2.save(self.temp_excel_file_name)
-                wb.close()
-                wb2.close()
-                wb = load_workbook(filename=self.temp_excel_file_name, read_only=False, keep_vba=True)
-                self.merge_cells(wb,merge_list=rows_to_merge)
-                self.fill_values(wb)
-                new_vba_code = self.change_vba_script()
-                self.fill_hidden_sheet_values(wb)
-                self.make_legend(wb)
-                wb.save(self.temp_excel_file_name)
-                wb.close()
-                attempt = self.update_sheet_vba_code(new_code=new_vba_code)
-                if attempt == False:
-                    add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}","red",None,True)
-                elif attempt == "rights_error":
-                    add_colored_line(self.main_console,f"Nemáte nastavená potřebná práva v excelu pro makra (VBA)","red",None,True)
-                    window = ToplevelWindow(self.root)
-                    window.excel_manual_window()
-                else:
-                    add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
-                    os.startfile(self.excel_file_name)
-            except Exception as e:
-                add_colored_line(self.main_console,f"Neočekávaná chyba {e}","red",None,True)
-                wb.close()
+            # try:
+            if os.path.exists(self.temp_excel_file_name):
+                os.remove(self.temp_excel_file_name)
+            # kličky aby se uložilo vba:
+            wb.save(filename=self.temp_excel_file_name)
+            wb2 = load_workbook(filename=self.temp_excel_file_name, keep_vba=True)
+            wb2.save(self.temp_excel_file_name)
+            wb.close()
+            wb2.close()
+            wb = load_workbook(filename=self.temp_excel_file_name, read_only=False, keep_vba=True)
+            self.merge_cells(wb,merge_list=rows_to_merge)
+            self.fill_values(wb)
+            new_vba_code = self.change_vba_script()
+            self.fill_hidden_sheet_values(wb)
+            wb.save(self.temp_excel_file_name)
+            wb.close()
+            attempt = self.update_sheet_vba_code(new_code=new_vba_code)
+            if attempt == False:
+                add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}","red",None,True)
+            elif attempt == "rights_error":
+                add_colored_line(self.main_console,f"Nemáte nastavená potřebná práva v excelu pro makra (VBA)","red",None,True)
+                window = ToplevelWindow(self.root)
+                window.excel_manual_window()
+            else:
+                add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
+                os.startfile(self.excel_file_name)
+            # except Exception as e:
+            #     add_colored_line(self.main_console,f"Neočekávaná chyba {e}","red",None,True)
+            #     wb.close()
                 
         elif ".xlsx" in self.excel_file_name:
             self.used_columns = ["A","B","C","D","E","F","G","H","I","J"]
@@ -3091,10 +3199,8 @@ class Save_excel:
 
             # try:
             self.merge_cells(wb,merge_list=rows_to_merge)
-
             self.fill_values(wb)
             self.fill_xlsx_column(wb)
-            # self.make_legend(wb)
             wb.save(self.excel_file_name)
             wb.close()
             add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)

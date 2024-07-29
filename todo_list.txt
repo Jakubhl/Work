@@ -449,19 +449,25 @@ dodelat manualni pridani objektivu. - hotovo
 nova optika - spatne nastaveny index kdyz pridavam novou z nakliknute kamery - hotovo
 nova kamera - spatne nastaveny index kdyz pridavam novou z nakliknute stanice - hotovo
 nove prislusenstvi - spatne nastaveny index kdyz pridavam novou z nakliknuteho kontroleru - hotovo
+automaticky zavirat okna pro nastaveni exportu a ukladani - hotovo
 
+9:14 AM 7/29/2024
+vyresene focusy - hotovo
+opravit edit po smazani optiky - hotovo
+u xlsx dodelat accessories - hotovo
+zvysit kapacitu u xlsm - max pocet accessories = 26 - hotovo (78)
+format u velkeho poctu stanic - posledni jsou malý font-hotovo
+upravit export xlsm - hotovo
+kdyz chybi kamera - dummy kontroler (export funguje) - hotovo
+varovne hlaseni, že se přepisuje xml soubor - hotovo
+Export predelat do toplevel - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-
+pamatovat si posledni soubor/ nabidnout existujici
+pamatovat si posledni cestu
 
 udělat možnost nastavit si barvy
-
-opravit edit po smazani optiky
-
-
-
-automaticky zavirat okna pro nastaveni exportu a ukladani
-
+- pridat settings - moznost defaultne nastavit edit v maximalizovanem okne
 
 ip setting když omylem mount disku - potom cancel - zeptá se jako admin - cancel - spadne...
 ip setting - podbarvovat prave zvolena okna
