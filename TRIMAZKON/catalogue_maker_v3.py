@@ -10,11 +10,11 @@ import string
 from PIL import Image as PILImage
 from datetime import datetime
 from tkinter import filedialog
-# from PIL import Image
 import os
 import xml.etree.ElementTree as ET
 # import sharepoint_download as download_database
 import sys
+import threading
 
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
@@ -735,7 +735,7 @@ class ToplevelWindow:
         window.focus_force()
         window.focus()
 
-    def save_prog_options_window(self,main_console,station_list,project_name,callback,last_file = None):
+    def save_prog_options_window(self,main_console,station_list,project_name,callback,callback_save_last_file,last_file = None,last_path = None):
         """
         okno s možnostmi uložení rozdělaného projektu
         """
@@ -789,6 +789,13 @@ class ToplevelWindow:
 
         def save_file(final_path):
             nonlocal window
+            # ukladani posledne zadaneho nazvu souboru:
+            nonlocal export_name
+            nonlocal export_path
+            path_inserted = export_path.get()
+            file_name = export_name.get()
+            callback_save_last_file(file_name,path_inserted)
+            # samotne ukladani vsech dat:
             save_prog = Save_prog_metadata(station_list=station_list,project_name=project_name,controller_database=self.custom_controller_database,console=console,xml_file_path=final_path)
             save_prog.store_xml_data()
             add_colored_line(main_console,f"Data úspěšně uložena do: {final_path}","green",None,True)
@@ -804,10 +811,6 @@ class ToplevelWindow:
                     confirm_window(final_path)
                 else:
                     save_file(final_path)
-                # save_prog = Save_prog_metadata(station_list=station_list,project_name=project_name,controller_database=self.custom_controller_database,console=console,xml_file_path=final_path)
-                # save_prog.store_xml_data()
-                # add_colored_line(main_console,f"Data úspěšně uložena do: {final_path}","green",None,True)
-                # window.destroy()
             else:
                 add_colored_line(console,"Zadaná cesta pro uložení je neplatná","red",None,True)
         
@@ -823,6 +826,9 @@ class ToplevelWindow:
                     received_data = save_prog.read_xml_data(final_path)
                     add_colored_line(main_console,f"Data úspěšně nahrána z: {final_path}","green",None,True)
                     callback(received_data)
+                    # ulozit posledně načtený soubor
+                    file_name = export_name.get()
+                    callback_save_last_file(file_name,path_inserted)
                     window.destroy()
                 except Exception:
                     add_colored_line(main_console,f"Soubor .xml je neplatný: {final_path}","red",None,True)
@@ -854,6 +860,14 @@ class ToplevelWindow:
             window.focus_force()
             window.focus()
 
+        def search_for_xmls(path):
+            found_files = []
+            for files in os.listdir(path):
+                if ".xml" in files:
+                    if not files in found_files:
+                        found_files.append(files)
+            return found_files
+
         export_frame =          customtkinter.CTkFrame(master = window,corner_radius=0)
         export_label =          customtkinter.CTkLabel(master = export_frame,text = "Zadejte název souboru:",font=("Arial",22,"bold"))
         export_name_frame =     customtkinter.CTkFrame(master = export_frame,corner_radius=0)
@@ -873,7 +887,6 @@ class ToplevelWindow:
         button_load =           customtkinter.CTkButton(master = export_frame,text = "Nahrát",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: call_load_file(window))
         button_save =           customtkinter.CTkButton(master = export_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: call_save_file(window))
         button_exit =           customtkinter.CTkButton(master = export_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
-
         export_frame            .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left")
         export_label            .pack(pady=(15,5),padx=10,anchor="w",expand=False,side="top")
         export_name_frame       .pack(expand=True,side="top",anchor="n",fill="x")
@@ -884,9 +897,24 @@ class ToplevelWindow:
         button_save             .pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
         button_exit             .pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
 
-        initial_path = path_check(os.getcwd())
-        export_path.insert("0",resource_path(str(initial_path)))
-        export_name.insert("0",str(project_name) + self.default_xml_file_name)
+        if last_path != None and last_path.replace(" ","") != "":
+            initial_path = last_path
+            export_path.insert("0",resource_path(path_check(str(initial_path))))
+        else:
+            initial_path = path_check(os.getcwd())
+            export_path.insert("0",resource_path(str(initial_path)))
+
+        found_xmls = search_for_xmls(initial_path)
+        # posledni ulozeny/ nacteny soubor:
+        if last_file != None and last_file.replace(" ","") != "":
+            export_name.insert("0",str(last_file))
+        # první soubor nalezeny ve slozce:
+        elif len(found_xmls) > 0:
+            export_name.insert("0",str(found_xmls[0].replace(".xml","")))
+        # default název + název projektu:
+        else:
+            export_name.insert("0",str(project_name) + self.default_xml_file_name)
+
         self.root.bind("<Button-1>",lambda e: close_window(window))
         window.update()
         window.update_idletasks()
@@ -898,12 +926,31 @@ class ToplevelWindow:
             window.destroy()
 
         window = customtkinter.CTkToplevel()
-        window_height = 870
-        window_width = 500
+        window_height = 500
+        window_width = 700
         window.geometry(f"{window_width}x{window_height}+{self.x+150}+{self.y+5}")
         window.title("Nastavení")
 
+        main_frame = customtkinter.CTkFrame(master = window,corner_radius=0)
+        checkbox = customtkinter.CTkCheckBox(master = main_frame, text = "Okna editování otevírat maximalizované",font=("Arial",22,"bold"))#,command=lambda: save_new_behav_notes()
+        xml_name_label = customtkinter.CTkLabel(master = main_frame,text = "Nastavte základní název pro ukládání ve formátu xml",font=("Arial",22,"bold"),justify = "left")
+        xml_name_label_entry = customtkinter.CTkEntry(master = main_frame,font=("Arial",20),corner_radius=0)
+        excel_name_label = customtkinter.CTkLabel(master = main_frame,text = "Nastavte základní název pro ukládání ve formátu xlsm/ xlsx",font=("Arial",22,"bold"),justify = "left")
+        excel_name_label_entry = customtkinter.CTkEntry(master = main_frame,font=("Arial",20),corner_radius=0)
 
+        # button_frame = customtkinter.CTkFrame(master = main_frame,corner_radius=0)
+        # button_yes = customtkinter.CTkButton(master = button_frame,text = "Ano",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command = lambda: call_save(final_path))
+        # button_no = customtkinter.CTkButton(master = button_frame,text = "Ne",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command = lambda: subwindow.destroy())
+        main_frame.pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 10,ipadx=10)
+        checkbox.pack(pady = 10, padx = 10,anchor="w",expand=False,side="top")
+        xml_name_label.pack(pady = 0, padx = 0,fill="x",anchor="w",side="top")
+        xml_name_label_entry.pack(pady = 0, padx = 0,fill="x",anchor="w",side="top")
+        excel_name_label.pack(pady = 0, padx = 0,fill="x",anchor="w",side="top")
+        excel_name_label_entry.pack(pady = 0, padx = 0,fill="x",anchor="w",side="top")
+        # export_label.pack(pady = 0, padx = 0,fill="x",anchor="w",expand=False,side="top")
+        # button_frame.pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="bottom")
+        # button_yes.pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
+        # button_no.pack(pady = 10, padx = (10,0),expand=False,side="right",anchor = "e")
 
         self.root.bind("<Button-1>",lambda e: close_window(window))
         window.update()
@@ -929,6 +976,7 @@ class Catalogue_gui:
         self.station_list = []
         self.default_block_width = 400
         self.format_list = ["xlsm","xlsx"]
+        self.favourite_format = "xlsm"
         self.current_block_id = "00"
         self.controller_object_list = []
         self.custom_controller_drop_list = [""]
@@ -948,6 +996,9 @@ class Catalogue_gui:
         self.accessory_database = [["no data"]]
         self.accessory_notes_database = []
         self.whole_accessory_database = []
+        self.last_xml_filename = ""
+        self.last_path_input = ""
+        self.default_excel_filename = "Katalog_kamerového_vybavení"
         self.read_database()
         self.create_main_widgets()
 
@@ -1334,10 +1385,11 @@ class Catalogue_gui:
 
         def close_window(window):
             self.root.unbind("<Button-1>")
-            window.quit()
+            # window.quit()
             window.destroy()
         
-        child_root=customtkinter.CTk()
+        # child_root=customtkinter.CTk()
+        child_root = customtkinter.CTkToplevel()
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
         child_root.geometry(f"650x130+{x+80}+{y+80}")
@@ -1353,7 +1405,11 @@ class Catalogue_gui:
         button_yes      .pack(pady = 5, padx = 10,anchor="w",expand=False,side="right")
 
         self.root.bind("<Button-1>",lambda e: close_window(child_root))
-        child_root.mainloop()
+        child_root.update()
+        child_root.update_idletasks()
+        child_root.focus_force()
+        child_root.focus()
+        # child_root.mainloop()
         
     def delete_block(self,args,widget_tier):
         station_index = int(widget_tier[:2])
@@ -2072,6 +2128,11 @@ class Catalogue_gui:
         #refresh
         self.make_project_widgets()
 
+    def export_to_excel(self,path_with_name):
+        save_excel_class = Save_excel(self.root,station_list = self.station_list,project_name = self.project_name_input.get(),excel_name=path_with_name,controller_list=self.controller_object_list,console = self.main_console)
+        output = save_excel_class.main()
+        return
+
     def export_option_window(self):
         child_root = customtkinter.CTkToplevel()
         # child_root=customtkinter.CTk()
@@ -2106,20 +2167,27 @@ class Catalogue_gui:
                     click_count += 1
                     add_colored_line(console,f"Cesta již obsahuje soubor se stejným názvem, při druhém kliknutí na \"Uložit\" bude přepsán","orange",None,True)
                     if click_count > 1 and previous_path == excel_path_with_name: # když podruhé a nebyla změněna cesta
-                        Save_excel(self.root,station_list = self.station_list,project_name = self.project_name_input.get(),console=self.main_console,excel_name=excel_path_with_name,controller_list=self.controller_object_list)
+                        self.favourite_format = str(format_entry.get())
+                        self.last_path_input = path_inserted
+                        self.export_to_excel(excel_path_with_name)
                         close_window(child_root)
                     elif click_count > 1 and previous_path != excel_path_with_name:
                         click_count =1
                     previous_path = excel_path_with_name
-                else: 
-                    Save_excel(self.root,station_list = self.station_list,project_name = self.project_name_input.get(),console=self.main_console,excel_name=excel_path_with_name,controller_list=self.controller_object_list)
+                else:
+                    self.favourite_format = str(format_entry.get())
+                    self.last_path_input = path_inserted
+                    self.export_to_excel(excel_path_with_name)
                     close_window(child_root)
             else:
                 add_colored_line(console,"Zadaná cesta pro uložení je neplatná","red",None,True)
 
         def close_window(child_root):
-            self.root.unbind("<Button-1>")
-            child_root.quit()
+            try:
+                self.root.unbind("<Button-1>")
+            except Exception:
+                pass
+            # child_root.quit()
             child_root.destroy()
 
         def call_browse_directories():
@@ -2167,13 +2235,18 @@ class Catalogue_gui:
         button_save         .pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
         button_exit         .pack(pady = 10, padx = 10,expand=True,side="right",anchor = "e")
 
-        default_name = "Katalog_kamerového_vybavení"
+        excel_filename = self.default_excel_filename
         if str(self.project_name_input.get().replace(" ","")) != "":
-            default_name = default_name + "_projekt_" + str(self.project_name_input.get())
-        export_name.insert("0",default_name)
+            excel_filename = self.default_excel_filename + "_projekt_" + str(self.project_name_input.get())
+        export_name.insert("0",excel_filename)
 
-        initial_path = resource_path(path_check(os.getcwd()))
+        if self.last_path_input != None and self.last_path_input.replace(" ","") != "":
+            initial_path = resource_path(path_check(self.last_path_input))
+        else:
+            initial_path = resource_path(path_check(os.getcwd()))
         export_path.insert("0",str(initial_path))
+
+        format_entry.set(self.favourite_format)
 
         self.root.bind("<Button-1>",lambda e: close_window(child_root))
         # child_root.mainloop()
@@ -2200,8 +2273,11 @@ class Catalogue_gui:
         self.make_project_widgets()
 
     def call_save_metadata_gui(self):
+        def callback_save_last_input(filename,path_inserted):
+            self.last_xml_filename = filename
+            self.last_path_input = path_inserted
         window = ToplevelWindow(self.root,custom_controller_database=self.controller_object_list)
-        window.save_prog_options_window(self.main_console,self.station_list,self.project_name_input.get(),self.load_metadata_callback)
+        window.save_prog_options_window(self.main_console,self.station_list,self.project_name_input.get(),self.load_metadata_callback,callback_save_last_input,self.last_xml_filename,self.last_path_input)
 
     def create_main_widgets(self):
         def call_manage_widgets(button):
@@ -2554,7 +2630,7 @@ class Catalogue_gui:
                         dummy_acc = self.make_block(master_widget=self.accessory_column,height=default_height-5,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
 
 class Save_excel:
-    def __init__(self,root,station_list,project_name,console,excel_name,controller_list):
+    def __init__(self,root,station_list,project_name,excel_name,controller_list,console):
         self.root = root
         self.main_console = console
         self.project_name = project_name
@@ -2571,7 +2647,7 @@ class Save_excel:
         self.excel_column_width=50
         self.between_station_rows = []
         self.xlsx_format = False
-        self.main() 
+        # self.main()
 
     def make_header(self,wb):
         ws = wb["Sheet"]
@@ -2591,6 +2667,19 @@ class Save_excel:
         image = Image(resource_path("images/jhv_logo2.png"))
         ws.add_image(image,"A1")
    
+    def init_objects(self):
+        """
+        The excel_position and the hidden_values parameters of objects needs to be inited
+        - only for objects containing more locations (mentioned above)
+        - case of exporting again with some changes made
+        """
+        for controllers in self.controller_list:
+            controllers["excel_position"] = []
+            controllers["hidden_values"] = []
+            for accessories in controllers["accessory_list"]:
+                accessories["excel_position"] = []
+                accessories["hidden_values"] = []
+
     def merge_cells(self,wb,merge_list:str):
         """
         cell range format: A1:A2
@@ -2825,35 +2914,37 @@ class Save_excel:
         column_letter_controller = 0
         column_letter_acc = 3
         for controllers in self.controller_list:
-            for controller_positions in controllers["excel_position"]: 
-                cell_with_toggle = controller_positions
-                if i > 25:
-                    column_letter_controller +=1
-                    i=0
-                column = columns[column_letter_controller] + alphabet[i:i+1] 
-                try:
-                    controllers["hidden_values"].append(column) # pridame jen informaci o nazvu sloupce
-                except Exception:
-                    controllers["hidden_values"] = [column]
-                    
-                controller_vba_code_range_row = f"ToggleCell Range(\"Sheet!{cell_with_toggle}\"), \"{column + str(1)}\", \"{column + str(2)}\", \"{column + str(3)}\", Cancel, Target"
-                vba_code_range += "\n            "+controller_vba_code_range_row
-                i+=1
-                print("co se nam nezresetuje? ",controllers["accessory_list"])
-                for accessories in controllers["accessory_list"]:
-                    for acc_positions in accessories["excel_position"]:
-                        cell_with_toggle = acc_positions
-                        if ii > 25:
-                            column_letter_acc +=1
-                            ii=0
-                        column = columns[column_letter_acc] + alphabet[ii:ii+1]
-                        try:
-                            accessories["hidden_values"].append(column) # pridame jen informaci o nazvu sloupce
-                        except Exception:
-                            accessories["hidden_values"] = [column]
-                        acc_vba_code_range_row = f"ToggleCell Range(\"Sheet!{cell_with_toggle}\"), \"{column + str(1)}\", \"{column + str(2)}\", \"{column + str(3)}\", Cancel, Target"
-                        vba_code_range += "\n            "+acc_vba_code_range_row
-                        ii+=1
+            try:
+                for controller_positions in controllers["excel_position"]: 
+                    cell_with_toggle = controller_positions
+                    if i > 25:
+                        column_letter_controller +=1
+                        i=0
+                    column = columns[column_letter_controller] + alphabet[i:i+1] 
+                    try:
+                        controllers["hidden_values"].append(column) # pridame jen informaci o nazvu sloupce
+                    except Exception:
+                        controllers["hidden_values"] = [column]
+                        
+                    controller_vba_code_range_row = f"ToggleCell Range(\"Sheet!{cell_with_toggle}\"), \"{column + str(1)}\", \"{column + str(2)}\", \"{column + str(3)}\", Cancel, Target"
+                    vba_code_range += "\n            "+controller_vba_code_range_row
+                    i+=1
+                    for accessories in controllers["accessory_list"]:
+                        for acc_positions in accessories["excel_position"]:
+                            cell_with_toggle = acc_positions
+                            if ii > 25:
+                                column_letter_acc +=1
+                                ii=0
+                            column = columns[column_letter_acc] + alphabet[ii:ii+1]
+                            try:
+                                accessories["hidden_values"].append(column) # pridame jen informaci o nazvu sloupce
+                            except Exception:
+                                accessories["hidden_values"] = [column]
+                            acc_vba_code_range_row = f"ToggleCell Range(\"Sheet!{cell_with_toggle}\"), \"{column + str(1)}\", \"{column + str(2)}\", \"{column + str(3)}\", Cancel, Target"
+                            vba_code_range += "\n            "+acc_vba_code_range_row
+                            ii+=1
+            except Exception: # the station with this controller was deleted
+                pass
 
         vba_code = f"""
         Private Sub Workbook_SheetBeforeRightClick(ByVal Sh As Object, ByVal Target As Range, Cancel As Boolean)
@@ -2996,27 +3087,29 @@ class Save_excel:
                     ws[excel_cell] = optics["type"]
 
         for controllers in self.controller_list:
-            for position in controllers["excel_position"]:
-                excel_cell = str(position)
-                ws[excel_cell] = controllers["type"]
-                if str(controllers["color"]) != "" and str(controllers["color"]) != "#212121":
-                    try:
-                        color_modified = str(controllers["color"])[1:] # without hashtag
-                        controller_fill = PatternFill(start_color=color_modified, end_color=color_modified, fill_type="solid")
-                        ws[excel_cell].fill = controller_fill
-                    except Exception as e:
-                        print(f"chyba pri nastavovani barvy kontroleru pri exportu: {e}")
-                        pass
+            try:
+                for position in controllers["excel_position"]:
+                    excel_cell = str(position)
+                    ws[excel_cell] = controllers["type"]
+                    if str(controllers["color"]) != "" and str(controllers["color"]) != "#212121":
+                        try:
+                            color_modified = str(controllers["color"])[1:] # without hashtag
+                            controller_fill = PatternFill(start_color=color_modified, end_color=color_modified, fill_type="solid")
+                            ws[excel_cell].fill = controller_fill
+                        except Exception as e:
+                            print(f"chyba pri nastavovani barvy kontroleru pri exportu: {e}")
+                            pass
 
-                if len(controllers["accessory_list"]) == 0:
-                    excel_cell = columns[3] + position[1:]
-                    ws[excel_cell] = ""
-                for accessories in controllers["accessory_list"]:
-                    for acc_positions in accessories["excel_position"]:
-                        # print("accessories excel position: ",accessories["excel_position"])
-                        excel_cell = acc_positions
-                        ws[excel_cell] = accessories["type"]
-                   
+                    if len(controllers["accessory_list"]) == 0:
+                        excel_cell = columns[3] + position[1:]
+                        ws[excel_cell] = ""
+                    for accessories in controllers["accessory_list"]:
+                        for acc_positions in accessories["excel_position"]:
+                            # print("accessories excel position: ",accessories["excel_position"])
+                            excel_cell = acc_positions
+                            ws[excel_cell] = accessories["type"]
+            except Exception: # the station with this controller was deleted
+                pass       
         self.format_cells(ws)
 
     def fill_hidden_sheet_values(self,wb):
@@ -3159,6 +3252,7 @@ class Save_excel:
     def main(self):
         wb = Workbook() #vytvorit novy excel, prepsat...
         if ".xlsm" in self.excel_file_name:
+            self.init_objects()
             rows_to_merge = self.get_cells_to_merge()
             self.make_header(wb)
             # try:
@@ -3187,6 +3281,7 @@ class Save_excel:
             else:
                 add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
                 os.startfile(self.excel_file_name)
+                return
             # except Exception as e:
             #     add_colored_line(self.main_console,f"Neočekávaná chyba {e}","red",None,True)
             #     wb.close()
@@ -3194,6 +3289,7 @@ class Save_excel:
         elif ".xlsx" in self.excel_file_name:
             self.used_columns = ["A","B","C","D","E","F","G","H","I","J"]
             self.xlsx_format = True
+            self.init_objects()
             rows_to_merge = self.get_cells_to_merge()
             self.make_header(wb)
 
@@ -3205,6 +3301,7 @@ class Save_excel:
             wb.close()
             add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
             os.startfile(self.excel_file_name)
+            return
             # except Exception as e:
             #     add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}, chyba: {e}","red",None,True)
             #     wb.close()

@@ -461,13 +461,23 @@ upravit export xlsm - hotovo
 kdyz chybi kamera - dummy kontroler (export funguje) - hotovo
 varovne hlaseni, že se přepisuje xml soubor - hotovo
 Export predelat do toplevel - hotovo
+
+8:22 AM 7/30/2024
+pamatovat si posledni soubor/ nabidnout existujici - hotovo
+pamatovat si posledni cestu - hotovo
+2x export za sebou schodí aplikaci - hotovo
+po smazani stanice si to pamatovalo predchozi lokace kontroleru a accessories - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-pamatovat si posledni soubor/ nabidnout existujici
-pamatovat si posledni cestu
 
-udělat možnost nastavit si barvy
+
+az to bude součástí celé aplikace:
 - pridat settings - moznost defaultne nastavit edit v maximalizovanem okne
+- moznost nastavit si default nazev xml
+- moznost nastavit si default nazev xls, xlsm
+- ukládat posledně zvolený formát
+- přednastavovat cestu, která je pro trimazkon defaultní
 
 ip setting když omylem mount disku - potom cancel - zeptá se jako admin - cancel - spadne...
 ip setting - podbarvovat prave zvolena okna
