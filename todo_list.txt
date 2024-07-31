@@ -468,9 +468,16 @@ pamatovat si posledni cestu - hotovo
 2x export za sebou schodí aplikaci - hotovo
 po smazani stanice si to pamatovalo predchozi lokace kontroleru a accessories - hotovo
 
+8:31 PM 7/31/2024
+ip setting - podbarvovat prave zvolena okna - hotovo
+ip setting - nebrat focus kdyz je otevrene okno pri prejezdu na poznamky - hotovo
+ip setting když omylem mount disku - potom cancel - zeptá se jako admin - cancel - spadne... - hotovo
+ip setting - optimalizovat vyskakovaci okna s toplevel - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-
+trimazkon - moznost ignorovat nepary - u trideni podle id
+trimazkon - setting windows predelat na toplevel
 
 az to bude součástí celé aplikace:
 - pridat settings - moznost defaultne nastavit edit v maximalizovanem okne
@@ -479,11 +486,10 @@ az to bude součástí celé aplikace:
 - ukládat posledně zvolený formát
 - přednastavovat cestu, která je pro trimazkon defaultní
 
-ip setting když omylem mount disku - potom cancel - zeptá se jako admin - cancel - spadne...
-ip setting - podbarvovat prave zvolena okna
-ip setting - optimalizovat vyskakovaci okna s toplevel
-ip setting - opravit generovani prazdnych radku u poznamek
+ip setting - opravit generovani prazdnych radku u poznamek - stacilo by expand?
+ip setting - predelat grid logiku na pack...
 
+vyresit ikony u toplevel oken
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 
