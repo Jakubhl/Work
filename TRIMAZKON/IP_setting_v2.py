@@ -1286,9 +1286,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 widget[1].configure(state = "normal")
                 filtered_input = filter_text_input(self.all_rows[row_of_widget][3])
                 self.all_rows[row_of_widget][3] = filtered_input
+                addition = widget[0]._current_height
                 if "\n" in self.all_rows[row_of_widget][3]:
                     notes_rows = self.all_rows[row_of_widget][3].split("\n")
-                    expanded_dim = (len(notes_rows)) * 35
+                    expanded_dim = addition + (len(notes_rows)-1) * 24
                     widget[0].configure(height = expanded_dim)
                     widget[1].configure(height = expanded_dim-10)
                     if self.default_note_behav == 0:
@@ -1300,84 +1301,68 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
         if no_read == None:
             self.read_excel_data()
-        # padx_list = [10,190,390,390,650]
-        # padx_list = [60,240,440,440,700]
-        padx_list = [10,190,390,390,650]
+
         self.clear_frame(self.project_tree)
-        label_frame =  customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,height=50,width=50)
-        column1 =  customtkinter.CTkLabel(master = label_frame,text = "Projekt: ",font=("Arial",20,"bold"))
-        column2 =  customtkinter.CTkLabel(master = label_frame,text = "IPv4 adresa: ",font=("Arial",20,"bold"))
-        column3 =  customtkinter.CTkLabel(master = label_frame,text = "Poznámky: ",font=("Arial",20,"bold"))
-        column1.pack(pady=0,padx=(10,0),expand=False,side = "left")
-        column2.pack(pady=0,padx=(10,0),expand=False,side = "left")
-        column3.pack(pady=0,padx=(10,0),expand=False,side = "left")
-        label_frame.pack(pady=0,padx=0,fill="x",expand=False,side = "top")
+        column1 =           customtkinter.CTkFrame(master = self.project_tree,corner_radius=0,border_width=0)
+        column2 =           customtkinter.CTkFrame(master = self.project_tree,corner_radius=0,border_width=0)
+        column3 =           customtkinter.CTkFrame(master = self.project_tree,corner_radius=0,border_width=0)
+        column1_header =    customtkinter.CTkLabel(master = column1,text = "Projekt: ",font=("Arial",20,"bold"),justify = "left",anchor = "w")
+        column2_header =    customtkinter.CTkLabel(master = column2,text = "IPv4 adresa: ",font=("Arial",20,"bold"),justify = "left",anchor = "w")
+        column3_header =    customtkinter.CTkLabel(master = column3,text = "Poznámky: ",font=("Arial",20,"bold"),justify = "left",anchor = "w")
+        column1.            pack(fill="both",expand=False,side = "left")
+        column2.            pack(fill="both",expand=False,side = "left")
+        column3.            pack(fill="both",expand=True, side = "left")
+        column1_header.     pack(padx = (5,0),side = "top",anchor = "w")
+        column2_header.     pack(padx = (5,0),side = "top",anchor = "w")
+        column3_header.     pack(padx = (5,0),side = "top",anchor = "w")
+
         # y = widgets ve smeru y, x = widgets ve smeru x
-        # nejprve vypis oblibene, potom zbytek
         for y in range(0,len(self.all_rows)):
-            # ♡,♥,❤️
-            project_frame =  customtkinter.CTkFrame(master=self.project_tree,corner_radius=0)
-            project_frame.pack(pady=0,padx=0,fill="x",expand=True,side = "top")
-            # is_favourite = self.is_project_favourite(y)
-            # if is_favourite:
-            #     filled_hearth =  customtkinter.CTkLabel(master = project_frame, width = 45,height=45,text = "🐘",font=("Arial",35),text_color="pink")
-            #     filled_hearth.grid(column = 0,row=0,pady = 2,padx =2)
-            #     filled_hearth.bind("<Button-1>",lambda e, widget_id = y: self.clicked_on_project(e, widget_id,"favourite"))
-            # else:
-            #     unfilled_hearth =  customtkinter.CTkLabel(master = project_frame, width =45,height=45,text = "♡",font=("Arial",40),text_color="red")
-            #     unfilled_hearth.grid(column = 0,row=0,pady = 2,padx =2)
-            #     unfilled_hearth.bind("<Button-1>",lambda e, widget_id = y: self.clicked_on_project(e, widget_id,"no_favourite"))
-            
+            # na pozici x = 2 je maska, kterou nevypisujeme
             for x in range(0,len(self.all_rows[y])):
-                if x != 2: #nevypisujeme masku
-                    if x == 0:
-                        btn_frame =  customtkinter.CTkFrame(master=project_frame,corner_radius=0,height=50,fg_color="black",border_color="#636363",border_width=2)
-                        btn_frame.pack(pady=0,padx=0,side = "left",anchor = "w")
-                        # binding the click on widget
-                        btn_frame.bind("<Button-1>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
-                        button =  customtkinter.CTkButton(master = btn_frame,width = 160,text = self.all_rows[y][x],font=("Arial",20,"bold"),corner_radius=0, command = lambda widget_id = y: self.change_computer_ip(widget_id))
-                        button.pack(padx =10,pady = 0)
-                        # zkopírovat pravým klikem na button
-                        button.bind("<Button-3>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
-                    elif x == 1:
-                        id_frame =  customtkinter.CTkFrame(master=project_frame,corner_radius=0,fg_color="black",border_color="#636363",border_width=2,width = 300,height=50)
-                        id_frame.pack(pady=0,padx=0,side = "left",anchor = "w",expand = False)
-                        # binding the click on widget
-                        id_frame.bind("<Button-1>",lambda e,widget = id_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
-                        parameter =  customtkinter.CTkLabel(master = id_frame,text = self.all_rows[y][x],font=("Arial",20,"bold"),justify='left')
-                        parameter.pack(padx =10,pady = 0)#grid(column = 0,row=0,pady = 10,padx =10,sticky=tk.W)
-                        parameter.bind("<Button-1>",lambda e,widget = id_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
-                        # if x == 1: #frame s ip adresou
-                        ip_addr = self.all_rows[y][x]
-                        if ip_addr in self.current_address_list:
-                            id_frame.configure(fg_color = "green")
-                            id_frame.  bind("<Enter>",lambda e, interface = self.connection_option_list[self.current_address_list.index(ip_addr)], widget = parameter: on_enter(e,interface,widget))
-                            id_frame.  bind("<Leave>",lambda e, ip = ip_addr, widget = parameter,frame = id_frame: on_leave(e,ip,widget,frame))
-                            parameter.      bind("<Enter>",lambda e, interface = self.connection_option_list[self.current_address_list.index(ip_addr)], widget = parameter: on_enter(e,interface,widget))
-                            parameter.      bind("<Leave>",lambda e, ip = ip_addr, widget = parameter,frame = id_frame: on_leave(e,ip,widget,frame))
-                    elif x == 3:#frame s poznamkami...
-                        notes_frame =  customtkinter.CTkFrame(master=project_frame,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)
-                        notes_frame.pack(pady=0,padx=0,side = "left",anchor = "w",fill="x",expand = False)
-                        # binding the click on widget
-                        notes_frame.bind("<Button-1>",lambda e,widget = notes_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
-                        notes =  customtkinter.CTkTextbox(master = notes_frame,font=("Arial",20,"bold"),corner_radius=0,fg_color="black")
-                        notes.pack(padx =10,pady = 0,anchor="w",fill = "x",expand = True)#grid(column = 0,row=0,pady = 5,padx =5,sticky=tk.W)
-                        notes.bind("<Button-1>",lambda e,widget = notes_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
-                        if "\n" in self.all_rows[y][x]:
-                            notes_rows = self.all_rows[y][x].split("\n")
-                            first_row = notes_rows[0]
-                            # notes.configure(text =first_row) #vepsat pouze prvni radek
-                            notes.delete("1.0",tk.END)
-                            notes.insert(tk.END,str(first_row))
-                        else:
-                            notes.insert(tk.END,str(self.all_rows[y][x]))
-                        
-                        # notes.bind("<Enter>",lambda e, widget = [notes_frame,notes],row=y: expand_frame(e,widget,row))
-                        # notes.bind("<Leave>",lambda e, widget = [notes_frame,notes]:       shrink_frame(e,widget))
-                        # notes.bind("<Enter>",lambda e, widget = notes,row=y:               on_enter_entry(e,widget,row))
-                        # notes.bind("<Leave>",lambda e, widget = notes,row=y:               on_leave_entry(e,widget,row))
-                        # if self.default_note_behav == 0:
-                        #     notes.configure(state = "disabled")
+                if x == 0: # frame s názvem projektu
+                    btn_frame = customtkinter.CTkFrame(master=column1,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)
+                    button =    customtkinter.CTkButton(master = btn_frame,width = 200,height=40,text = self.all_rows[y][x],font=("Arial",20,"bold"),corner_radius=0, command = lambda widget_id = y: self.change_computer_ip(widget_id))
+                    button.     pack(padx =5,pady = 5, fill= "x")
+                    btn_frame.  pack(side = "top",anchor = "w",expand = False)
+                    btn_frame.  bind("<Button-1>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
+                    # zkopírovat pravým klikem na button:
+                    button.     bind("<Button-3>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
+                elif x == 1: # frame s ip adresou
+                    id_frame =  customtkinter.CTkFrame(master=column2,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)
+                    parameter = customtkinter.CTkLabel(master = id_frame,text = self.all_rows[y][x],height=40,width = 250,font=("Arial",20,"bold"),justify='left',anchor = "w")
+                    parameter.  pack(padx = (10,5),pady = 5)
+                    id_frame.   pack(side = "top")
+                    id_frame.   bind("<Button-1>",lambda e,widget = id_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
+                    parameter.  bind("<Button-1>",lambda e,widget = id_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
+                    ip_addr = self.all_rows[y][x]
+                    if ip_addr in self.current_address_list:
+                        id_frame.   configure(fg_color = "green") 
+                        id_frame.   bind("<Enter>",lambda e, interface = self.connection_option_list[self.current_address_list.index(ip_addr)], widget = parameter: on_enter(e,interface,widget))
+                        id_frame.   bind("<Leave>",lambda e, ip = ip_addr, widget = parameter,frame = id_frame: on_leave(e,ip,widget,frame))
+                        parameter.  bind("<Enter>",lambda e, interface = self.connection_option_list[self.current_address_list.index(ip_addr)], widget = parameter: on_enter(e,interface,widget))
+                        parameter.  bind("<Leave>",lambda e, ip = ip_addr, widget = parameter,frame = id_frame: on_leave(e,ip,widget,frame))
+                elif x == 3: # frame s poznamkami...
+                    notes_frame =   customtkinter.CTkFrame(master=column3,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)
+                    notes =         customtkinter.CTkTextbox(master = notes_frame,font=("Arial",20,"bold"),corner_radius=0,fg_color="black",height=40)
+                    notes.          pack(padx =5,pady = 5,anchor="w",fill="x")
+                    notes_frame.    pack(pady=0,padx=0,side = "top",anchor = "w",fill="x",expand = True)
+                    notes_frame.    bind("<Button-1>",lambda e,widget = notes_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
+                    notes.          bind("<Button-1>",lambda e,widget = notes_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
+                    if "\n" in self.all_rows[y][x]:
+                        notes_rows = self.all_rows[y][x].split("\n")
+                        first_row = notes_rows[0]
+                        notes.delete("1.0",tk.END)
+                        notes.insert(tk.END,str(first_row))
+                    else:
+                        notes.insert(tk.END,str(self.all_rows[y][x]))
+                    
+                    notes.bind("<Enter>",lambda e, widget = [notes_frame,notes],row=y: expand_frame(e,widget,row))
+                    notes.bind("<Leave>",lambda e, widget = [notes_frame,notes]:       shrink_frame(e,widget))
+                    notes.bind("<Enter>",lambda e, widget = notes,row=y:               on_enter_entry(e,widget,row))
+                    notes.bind("<Leave>",lambda e, widget = notes,row=y:               on_leave_entry(e,widget,row))
+                    if self.default_note_behav == 0:
+                        notes.configure(state = "disabled")
 
         self.project_tree.update()
         self.project_tree.update_idletasks()
@@ -1485,55 +1470,67 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             disk_statuses = True
         if disk_statuses:
             mapped_disks = list_mapped_disks(whole_format = True)
-        column1 =  customtkinter.CTkLabel(master = self.project_tree, width = 20,height=30,text = "Projekt: ",font=("Arial",20,"bold"))
-        column2 =  customtkinter.CTkLabel(master = self.project_tree, width = 20,height=30,text = "ftp adresa: ",font=("Arial",20,"bold"))
-        column3 =  customtkinter.CTkLabel(master = self.project_tree, width = 20,height=30,text = "Poznámky: ",font=("Arial",20,"bold"))
-        column1.grid(column = 0,row=0,pady = 5,padx =padx_list[0],sticky = tk.W)
-        column2.grid(column = 0,row=0,pady = 5,padx =padx_list[2],sticky = tk.W)
-        column3.grid(column = 0,row=0,pady = 5,padx =padx_list[5],sticky = tk.W)
+        
+        column1 =           customtkinter.CTkFrame(master = self.project_tree,corner_radius=0,border_width=0)
+        column2 =           customtkinter.CTkFrame(master = self.project_tree,corner_radius=0,border_width=0,width = 50)
+        column3 =           customtkinter.CTkFrame(master = self.project_tree,corner_radius=0,border_width=0)
+        column4 =           customtkinter.CTkFrame(master = self.project_tree,corner_radius=0,border_width=0)
+        column1_header =    customtkinter.CTkLabel(master = column1,text = "Projekt: ",font=("Arial",20,"bold"),justify = "left",anchor = "w")
+        column2_header =    customtkinter.CTkLabel(master = column2,text = "💾",font=("",22)) #💿
+        column3_header =    customtkinter.CTkLabel(master = column3,text = "ftp adresa: ",font=("Arial",20,"bold"),justify = "left",anchor = "w")
+        column4_header =    customtkinter.CTkLabel(master = column4,text = "Poznámky: ",font=("Arial",20,"bold"),justify = "left",anchor = "w")
+        column1.            pack(fill="both",expand=False,side = "left")
+        column2.            pack(fill="both",expand=False,side = "left")
+        column3.            pack(fill="both",expand=False,side = "left")
+        column4.            pack(fill="both",expand=True, side = "left")
+        column1_header.     pack(padx = (5,0),side = "top",anchor = "w")
+        column2_header.     pack(padx = (12,0),side = "top",anchor = "w")
+        column3_header.     pack(padx = (5,0),side = "top",anchor = "w")
+        column4_header.     pack(padx = (5,0),side = "top",anchor = "w")
+
         # y = widgets ve smeru y, x = widgets ve smeru x
         for y in range(0,len(self.disk_all_rows)):
             for x in range(0,len(self.disk_all_rows[y])):# x: 0=button, 1=disk_letter, 2=ip, 3=name, 4=password, 5=notes
                 if x == 0:
-                    project_frame =  customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,fg_color="black",border_width=2,height=50,width=180)
-                    project_frame.grid(row=y+1,column=0,padx=padx_list[x],sticky=tk.W)
-                    project_frame.grid_propagate(0)
-                    # binding the click on widget
-                    project_frame.bind("<Button-1>",lambda e,widget = project_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
-                    button =  customtkinter.CTkButton(master = project_frame,width = 160,text = self.disk_all_rows[y][x], command = lambda widget_id = y: self.map_disk(widget_id),font=("Arial",20,"bold"),corner_radius=0)
-                    button.grid(column = 0,row=0,pady = 10,padx =10)
-                    # zkopírovat pravým klikem na button
-                    button.bind("<Button-3>",lambda e,widget = project_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
-                elif x != 3 and x != 4 and x != 5: 
-                    project_frame =  customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,fg_color="black",border_width=2,height=50,width=400)
-                    if x == 1: #frame s písmenem disku, menší šířka, podbarvení
-                        project_frame.configure(width=50)
-                        if disk_statuses:
-                            for i in range(0,len(mapped_disks)):
-                                if mapped_disks[i][0:1] == self.disk_all_rows[y][x]:
-                                    drive_status = check_network_drive_status(mapped_disks[i])
-                                    if drive_status == True:
-                                        project_frame.configure(fg_color = "green")
-                                    else:
-                                        project_frame.configure(fg_color = "red")
+                    btn_frame = customtkinter.CTkFrame(master=column1,corner_radius=0,fg_color="black",border_width=2)
+                    button =    customtkinter.CTkButton(master = btn_frame,width=200,height=40,text = self.disk_all_rows[y][x], command = lambda widget_id = y: self.map_disk(widget_id),font=("Arial",20,"bold"),corner_radius=0)
+                    button.     pack(padx =5,pady = 5, fill= "x")
+                    btn_frame.  pack(side = "top",anchor = "w",expand = False) 
+                    btn_frame.  bind("<Button-1>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
+                    button.     bind("<Button-3>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
+                elif x == 1: # frame s písmenem disku, menší šířka, podbarvení
+                    param_frame =   customtkinter.CTkFrame(master=column2,corner_radius=0,fg_color="black",border_width=2)
+                    parameter =     customtkinter.CTkLabel(master = param_frame,text = self.disk_all_rows[y][x],font=("Arial",20,"bold"),width = 40,height=40)
+                    parameter.      pack(padx = (5,5),pady = 5)
+                    param_frame.    pack(side = "top")
+                    if disk_statuses:
+                        for i in range(0,len(mapped_disks)):
+                            if mapped_disks[i][0:1] == self.disk_all_rows[y][x]:
+                                drive_status = check_network_drive_status(mapped_disks[i])
+                                if drive_status == True:
+                                    param_frame.configure(fg_color = "green")
+                                else:
+                                    param_frame.configure(fg_color = "red")
 
-                    project_frame.grid(row=y+1,column=0,padx=padx_list[x],sticky=tk.W)
-                    project_frame.grid_propagate(0)
-                    # binding the click on widget
-                    project_frame.bind("<Button-1>",lambda e,widget = project_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
-                    parameter =  customtkinter.CTkLabel(master = project_frame,text = self.disk_all_rows[y][x],font=("Arial",20,"bold"),justify='left')
-                    parameter.grid(column = 0,row=0,pady = 10,padx =10,sticky=tk.W)
-                    parameter.bind("<Button-1>",lambda e,widget = project_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
+                    param_frame.    bind("<Button-1>",lambda e,widget = param_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
+                    parameter.      bind("<Button-1>",lambda e,widget = param_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
 
-                elif x==5: #frame s poznamkami...
-                    notes_frame =  customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,fg_color="black",border_width=2,height=50,width=200)
-                    notes_frame.grid(row=y+1,column=0,padx=padx_list[x],sticky=tk.W)
-                    notes_frame.grid_propagate(0)
-                    notes_frame.bind("<Button-1>",lambda e,widget = notes_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
-                    notes =  customtkinter.CTkTextbox(master = notes_frame,font=("Arial",20,"bold"),width = 2200,height=40,corner_radius=0,fg_color="black")
-                    notes.grid(column = 0,row=0,pady = 5,padx =5,sticky=tk.W)
-                    notes.bind("<Button-1>",lambda e,widget = notes_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
-                    notes_frame.configure(width=2200)
+                elif x == 2: # frame s ftp adresou
+                    param_frame =   customtkinter.CTkFrame(master=column3,corner_radius=0,fg_color="black",border_width=2)
+                    parameter =     customtkinter.CTkLabel(master = param_frame,text = self.disk_all_rows[y][x],font=("Arial",20,"bold"),justify='left',anchor = "w",width = 300,height=40)
+                    parameter.      pack(padx = (10,5),pady = 5)
+                    param_frame.    pack(side = "top")
+                    param_frame.    bind("<Button-1>",lambda e,widget = param_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
+                    parameter.      bind("<Button-1>",lambda e,widget = param_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
+
+                elif x == 5: #frame s poznamkami...
+                    notes_frame =   customtkinter.CTkFrame(master=column4,corner_radius=0,fg_color="black",border_width=2)
+                    notes =         customtkinter.CTkTextbox(master = notes_frame,font=("Arial",20,"bold"),height=40,corner_radius=0,fg_color="black")
+                    notes.          pack(padx =5,pady = 5,anchor="w",fill="x")
+                    notes_frame.    pack(pady=0,padx=0,side = "top",anchor = "w",fill="x",expand = True)
+                    notes_frame.    bind("<Button-1>",lambda e,widget = notes_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
+                    notes.          bind("<Button-1>",lambda e,widget = notes_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
+
                     if "\n" in self.disk_all_rows[y][x]:
                         notes_rows = self.disk_all_rows[y][x].split("\n")
                         first_row = notes_rows[0]
@@ -1550,6 +1547,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
                     if self.default_note_behav == 0:
                         notes.configure(state = "disabled")
+
+            
 
     def edit_project(self):
         result = self.check_given_input()
@@ -2057,9 +2056,9 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         
         self.clear_frame(self.root)
         self.managing_disk = False
-        menu_cards =            customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=50)
-        main_widgets =          customtkinter.CTkFrame(master=self.root,corner_radius=0)
-        self.project_tree =     customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
+        menu_cards =            customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=50,border_width=0)
+        main_widgets =          customtkinter.CTkFrame(master=self.root,corner_radius=0,border_width=0)
+        self.project_tree =     customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0,border_width=0)
 
         menu_cards.             pack(pady=0,padx=5,fill="x",expand=False,side = "top")
         # logo =                  customtkinter.CTkImage(Image.open(self.initial_path+"images/jhv_logo.png"),size=(300, 100))

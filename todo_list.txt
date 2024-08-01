@@ -477,7 +477,8 @@ ip setting - optimalizovat vyskakovaci okna s toplevel - hotovo
 12:12 PM 8/1/2024
 trimazkon - moznost ignorovat nepary - u trideni podle id - hotovo
 trimazkon verze 3.7.4 - early acess - potřebná úprava pro třídění podle id
-
+ip setting - opravit generovani prazdnych radku u poznamek - stacilo by expand? - hotovo
+ip setting - predelat grid logiku na pack... - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -489,9 +490,6 @@ az to bude součástí celé aplikace:
 - moznost nastavit si default nazev xls, xlsm
 - ukládat posledně zvolený formát
 - přednastavovat cestu, která je pro trimazkon defaultní
-
-ip setting - opravit generovani prazdnych radku u poznamek - stacilo by expand?
-ip setting - predelat grid logiku na pack...
 
 vyresit ikony u toplevel oken
 
