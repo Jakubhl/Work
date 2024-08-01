@@ -10,7 +10,7 @@ import time
 class whole_sorting_function:
     def __init__(self,path_given,selected_sort,more_dir,max_num_of_pallets_given,by_which_ID_number,
                 prefix_func,prefix_Cam,supported_formats,aut_detect_num_of_pallets,nok_folder_name,
-                pairs_folder_name,safe_mode,sort_pair_folder:bool,only_one_subfolder:bool):
+                pairs_folder_name,safe_mode,sort_pair_folder:bool,only_one_subfolder:bool,ignore_pairs:bool):
         
         self.nok_folder = nok_folder_name
         self.pair_folder = pairs_folder_name
@@ -53,6 +53,7 @@ class whole_sorting_function:
         self.output_list = []
         self.output_console2 = []
         self.sort_pair_folder = sort_pair_folder
+        self.ignore_pairs = ignore_pairs
         #self.main()
 
     def make_dir(self,name):
@@ -344,6 +345,8 @@ class whole_sorting_function:
         cutting_condition = "&"
         count=0
 
+        print("ignore status: ",self.ignore_pairs)
+
         # výtah z názvu vhodný pro porovnání:
         for files in self.file_list:
             files_cut = files.split(cutting_condition)
@@ -357,8 +360,7 @@ class whole_sorting_function:
                     error_length = 1
                 if files == files_arr_cut[i]:
                     count+=1
-            
-            if count == len(self.files_type_arr): # overeni zda je od vsech typu souboru jeden
+            if count == len(self.files_type_arr) or self.ignore_pairs: # overeni zda je od vsech typu souboru jeden
                 ok_count += 1
                 if self.sort_option == 0: # podle typu souboru
                     for formats in self.files_type_arr:
@@ -497,7 +499,6 @@ class whole_sorting_function:
                         count = 0
                         files_to_copy_part1 = [] #resetuje se kazde kolo, jsou to ty prvni "podezrele" soubory, ktere se doplni do pole files_to_copy, kdyz jich je vice nez pocet typu souboru
                                         
-
         if len(list_of_pairs_clear) !=0:
             #self.output.append(f"- Nalezený seznam dvojic v řadě za sebou podle ID: {list_of_pairs_clear}- Každá v počtu souborů: {list_of_pair_count}")
             output_msg = self.make_tuple(list_of_pairs_clear,list_of_pair_count)

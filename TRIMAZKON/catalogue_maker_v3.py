@@ -16,13 +16,13 @@ import xml.etree.ElementTree as ET
 import sys
 import threading
 
-customtkinter.set_appearance_mode("dark")
-customtkinter.set_default_color_theme("dark-blue")
-root=customtkinter.CTk()
-root.geometry("1200x900")
-root.title("Catalogue maker v3.0")
-database_filename  = "Sharepoint_databaze.xlsx"
-root.state('zoomed')
+# customtkinter.set_appearance_mode("dark")
+# customtkinter.set_default_color_theme("dark-blue")
+# root=customtkinter.CTk()
+# root.geometry("1200x900")
+# root.title("Catalogue maker v3.0")
+# database_filename  = "Sharepoint_databaze.xlsx"
+# root.state('zoomed')
 
 def add_colored_line(text_widget, text, color,font=None,delete_line = None):
     """
@@ -3308,5 +3308,5 @@ class Save_excel:
 
 # download = download_database.database(database_filename)
 # Catalogue_gui(root,download.output)
-Catalogue_gui(root,"testing - stahování vypnuto","","max",database_filename=database_filename)
-root.mainloop()
+# Catalogue_gui(root,"testing - stahování vypnuto","","max",database_filename=database_filename)
+# root.mainloop()

@@ -80,4 +80,25 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - Možnost v nastavení u ip_setting změnit způsob mapování disků
     - Po aplikování změn v okně nastavení se okno shodí
     - Přidání funkce pro vytváření katalogů\n"""
+        ," Verze 3.7.4 (1.8.2024)"
+        ,
+    """ 
+    Katalog:
+    - Nová logika stromové struktury u vytváření katalogů
+    - aut. zavírání ponechaných oken
+    - oprava ukazatelů při přidávání vybavení
+    - oprava focusovaných oken
+    - Zvýšená kapacita produktů k jednomu objektu (z 26 na 78)
+    - Varování při přepisování .xml souboru
+    - Ukládání posledně zvolených souborů/ cest
+    - Automaticky nabízí nalezené soubory
+    - Oprava 2x export po sobě shodil aplikaci
+    - Oprava chování po smazání stanice - pamatovalo si to
+    některé parametry
+    IP setting:
+    - Podbarvování právě zvolených oken
+    - Oprava braní focusu při přejezdu nad poznámkami
+    - Optimalizace vyskakovacích oken
+    Správa souborů - třídění:
+    - Možnost při třídění podle id ignorovat nepáry\n"""
 ]

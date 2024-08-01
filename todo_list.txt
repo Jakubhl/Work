@@ -474,9 +474,13 @@ ip setting - nebrat focus kdyz je otevrene okno pri prejezdu na poznamky - hotov
 ip setting když omylem mount disku - potom cancel - zeptá se jako admin - cancel - spadne... - hotovo
 ip setting - optimalizovat vyskakovaci okna s toplevel - hotovo
 
+12:12 PM 8/1/2024
+trimazkon - moznost ignorovat nepary - u trideni podle id - hotovo
+trimazkon verze 3.7.4 - early acess - potřebná úprava pro třídění podle id
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-trimazkon - moznost ignorovat nepary - u trideni podle id
+
 trimazkon - setting windows predelat na toplevel
 
 az to bude součástí celé aplikace:
@@ -492,7 +496,6 @@ ip setting - predelat grid logiku na pack...
 vyresit ikony u toplevel oken
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
-
 ??? návod na trimazkon
 
 

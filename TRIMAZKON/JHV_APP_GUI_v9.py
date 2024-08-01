@@ -6,7 +6,7 @@ import Sorting_option_v5 as Trideni
 import Deleting_option_v1 as Deleting
 import Converting_option_v3 as Converting
 import catalogue_maker_v3 as Catalogue
-# import sharepoint_download as download_database
+import sharepoint_download as download_database
 import IP_setting_v1 as IP_setting
 import string_database
 from tkinter import filedialog
@@ -57,7 +57,7 @@ customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 root=customtkinter.CTk()
 root.geometry("1200x900")
-root.title("TRIMAZKON v_3.7.3")
+root.title("TRIMAZKON v_3.7.4")
 root.wm_iconbitmap(resource_path(app_icon))
 
 """def app_data_source_files():
@@ -3853,6 +3853,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
     def sort_files(self,path): # Volání externího scriptu
         selected_sort = 0
         self.loading_bar.set(value = 0)
+        ignore_pairs = False
 
         only_one_subfolder = False
         if self.checkbox.get() == 1:
@@ -3872,6 +3873,8 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             if self.one_subfolder.get() == 1:
                 self.more_dirs = True
                 only_one_subfolder = True
+        if self.checkbox_ignore_pairs.get() == 1 and selected_sort == 2:
+            ignore_pairs = True
 
         if self.checkbox_safe_mode.get() == 1:
             self.safe_mode = "ne"
@@ -3919,7 +3922,8 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             self.pairs_folder_name,
             self.safe_mode,
             self.sort_inside_pair_folder,
-            only_one_subfolder
+            only_one_subfolder,
+            ignore_pairs
         )
 
         run_background = threading.Thread(target=call_trideni_main, args=(running_program,))
@@ -4070,6 +4074,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         button_save1     = customtkinter.CTkButton(master = self.frame6,height=30,width=50, text = "Uložit", command = lambda: set_which_num_of_ID(),font=("Arial",18,"bold"))
         console_frame6_1 = customtkinter.CTkLabel(master = self.frame6,height=30,text = " ",justify = "left",font=("Arial",18))
         #labelx2          = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=30,text = "",justify = "left",font=("Arial",16))
+        self.checkbox_ignore_pairs = customtkinter.CTkCheckBox(master = self.frame6,height=30,font=("Arial",16), text = "Ignorovat páry (Třídit pouze podle id)")
         button_back      = customtkinter.CTkButton(master = self.frame6,width=100,height=30, text = "Zpět", command = self.selected2,font=("Arial",18,"bold"))
         label_fill          = customtkinter.CTkLabel(master = self.frame6,width=self.width_of_frame6,height=115,text = "",justify = "left",font=("Arial",16))
         label1.grid(column =0,row=0,sticky = tk.W,pady =5,padx=10)
@@ -4077,6 +4082,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         button_save1.grid(column =0,row=1,sticky = tk.W,pady =0,padx=160)
         console_frame6_1.grid(column =0,row=2,sticky = tk.W,pady =5,padx=10)  
         #labelx2.grid(column =0,row=3,sticky = tk.W,pady =0,padx=10)
+        self.checkbox_ignore_pairs.grid(column =0,row=3,sticky = tk.W,pady =(0,10),padx=10)
         button_back.grid(column =0,row=5,sticky = tk.W,pady =10,padx=10)
         label_fill.grid(column =0,row=6,sticky = tk.W,pady =0,padx=10)
         def which_id_num_enter_btn(e):
@@ -4490,8 +4496,8 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
     def __init__(self,root):
         self.root = root
         self.database_filename  = "Sharepoint_databaze.xlsx"
-        # self.database_downloaded = menu.database_downloaded
-        self.database_downloaded = True
+        self.database_downloaded = menu.database_downloaded
+        # self.database_downloaded = True
 
         self.create_catalogue_maker_widgets()
 
@@ -4506,8 +4512,8 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
             current_window_size = "min"
         
         if not self.database_downloaded:
-            # download = download_database.database(self.database_filename)
-            # input_message = str(download.output)
+            download = download_database.database(self.database_filename)
+            input_message = str(download.output)
             menu.database_downloaded = True
         else:
             input_message = "Datábáze se stáhne znovu až po restartu TRIMAZKONU"
