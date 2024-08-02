@@ -345,7 +345,6 @@ class ToplevelWindow:
             "#FFD700"  # Gold
         ]
         self.controller_color_pointer = 0
-        self.default_xml_file_name = "_metadata_catalogue"
         self.accessory_database_pointer = 0
         self.one_segment_width = 450
 
@@ -354,7 +353,7 @@ class ToplevelWindow:
         # window.geometry(f"912x402+{self.x+100}+{self.y+100}")
         window = customtkinter.CTkToplevel()
         window.geometry(f"1200x580+{self.x+100}+{self.y+200}")
-        window.wm_iconbitmap(app_icon_path)
+        window.after(200, lambda: window.iconbitmap(app_icon_path))
         window.title("Manual")
 
         manual_frame =  customtkinter.CTkFrame(master=window,corner_radius=0,height=100,fg_color="#212121")
@@ -433,9 +432,9 @@ class ToplevelWindow:
             window.destroy()
 
         window = customtkinter.CTkToplevel()
+        window.after(200, lambda: window.iconbitmap(app_icon_path))
         window_height = 870
         window.geometry(f"{self.one_segment_width}x{window_height}+{self.x+150}+{self.y+5}")
-        window.wm_iconbitmap(app_icon_path)
         if edit:
             current_name = controller["name"]
             current_type = controller["type"]
@@ -735,13 +734,13 @@ class ToplevelWindow:
         window.focus_force()
         window.focus()
 
-    def save_prog_options_window(self,main_console,station_list,project_name,callback,callback_save_last_file,last_file = None,last_path = None):
+    def save_prog_options_window(self,main_console,station_list,project_name,callback,callback_save_last_file,last_file = None,last_path = None,default_xml_file_name="_metadata_catalogue"):
         """
         okno s možnostmi uložení rozdělaného projektu
         """
         window = customtkinter.CTkToplevel()
         window.geometry(f"1015x350+{self.x+200}+{self.y+50}")
-        window.wm_iconbitmap(app_icon_path)
+        window.after(200, lambda: window.iconbitmap(app_icon_path))
         window.title("Možnosti uložení projektu")
         subwindow = ""
 
@@ -752,6 +751,7 @@ class ToplevelWindow:
                 save_file(final_path)
                 subwindow.destroy()
             subwindow = customtkinter.CTkToplevel()
+            subwindow.after(200, lambda: subwindow.iconbitmap(app_icon_path))
             subwindow.geometry(f"900x110+{self.x+200}+{self.y+50}")
             subwindow.title("Potvrdit přepsání souboru")
             main_frame = customtkinter.CTkFrame(master = subwindow,corner_radius=0)
@@ -780,9 +780,10 @@ class ToplevelWindow:
 
         def create_path(path_inserted):
             nonlocal export_name
+            nonlocal default_xml_file_name
             file_name = export_name.get()
             if file_name =="":
-                file_name = self.default_xml_file_name
+                file_name = default_xml_file_name
             path = path_inserted + file_name + ".xml"
             print(path)
             return path
@@ -913,7 +914,7 @@ class ToplevelWindow:
             export_name.insert("0",str(found_xmls[0].replace(".xml","")))
         # default název + název projektu:
         else:
-            export_name.insert("0",str(project_name) + self.default_xml_file_name)
+            export_name.insert("0",str(project_name) + default_xml_file_name)
 
         self.root.bind("<Button-1>",lambda e: close_window(window))
         window.update()
@@ -921,36 +922,59 @@ class ToplevelWindow:
         window.focus_force()
         window.focus()
 
-    def setting_window(self):
+    def setting_window(self,default_excel_name,default_xml_name,window_status,callback):
         def close_window(window):
             window.destroy()
 
+        def save_changes():
+            if checkbox.get() == 1:
+                window_status = 1
+            else:
+                window_status = 0
+            default_excel_name = str(excel_name_label_entry.get())
+            default_xml_name = str(xml_name_label_entry.get())
+
+            input_data = [default_excel_name,default_xml_name,window_status]
+            callback(input_data)
+            close_window(window)
+
         window = customtkinter.CTkToplevel()
-        window_height = 500
+        window.after(200, lambda: window.iconbitmap(app_icon_path))
+        window_height = 350
         window_width = 700
         window.geometry(f"{window_width}x{window_height}+{self.x+150}+{self.y+5}")
         window.title("Nastavení")
 
-        main_frame = customtkinter.CTkFrame(master = window,corner_radius=0)
-        checkbox = customtkinter.CTkCheckBox(master = main_frame, text = "Okna editování otevírat maximalizované",font=("Arial",22,"bold"))#,command=lambda: save_new_behav_notes()
-        xml_name_label = customtkinter.CTkLabel(master = main_frame,text = "Nastavte základní název pro ukládání ve formátu xml",font=("Arial",22,"bold"),justify = "left")
-        xml_name_label_entry = customtkinter.CTkEntry(master = main_frame,font=("Arial",20),corner_radius=0)
-        excel_name_label = customtkinter.CTkLabel(master = main_frame,text = "Nastavte základní název pro ukládání ve formátu xlsm/ xlsx",font=("Arial",22,"bold"),justify = "left")
-        excel_name_label_entry = customtkinter.CTkEntry(master = main_frame,font=("Arial",20),corner_radius=0)
+        main_frame =                customtkinter.CTkFrame(master = window,corner_radius=0)
+        option1_frame =             customtkinter.CTkFrame(master = main_frame,corner_radius=0)
+        checkbox =                  customtkinter.CTkCheckBox(master = option1_frame, text = "Okna editování otevírat maximalizované",font=("Arial",22,"bold"))#,command=lambda: save_new_behav_notes()
+        checkbox.                   pack(pady = 20, padx = 10,anchor="w")
 
-        # button_frame = customtkinter.CTkFrame(master = main_frame,corner_radius=0)
-        # button_yes = customtkinter.CTkButton(master = button_frame,text = "Ano",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command = lambda: call_save(final_path))
-        # button_no = customtkinter.CTkButton(master = button_frame,text = "Ne",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command = lambda: subwindow.destroy())
-        main_frame.pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 10,ipadx=10)
-        checkbox.pack(pady = 10, padx = 10,anchor="w",expand=False,side="top")
-        xml_name_label.pack(pady = 0, padx = 0,fill="x",anchor="w",side="top")
-        xml_name_label_entry.pack(pady = 0, padx = 0,fill="x",anchor="w",side="top")
-        excel_name_label.pack(pady = 0, padx = 0,fill="x",anchor="w",side="top")
-        excel_name_label_entry.pack(pady = 0, padx = 0,fill="x",anchor="w",side="top")
-        # export_label.pack(pady = 0, padx = 0,fill="x",anchor="w",expand=False,side="top")
-        # button_frame.pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="bottom")
-        # button_yes.pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
-        # button_no.pack(pady = 10, padx = (10,0),expand=False,side="right",anchor = "e")
+        option2_frame =             customtkinter.CTkFrame(master = main_frame,corner_radius=0,fg_color="#303030")
+        xml_name_label =            customtkinter.CTkLabel(master = option2_frame,text = "Nastavte základní název pro ukládání ve formátu xml:",font=("Arial",22,"bold"),justify = "left",anchor="w")
+        xml_name_label_entry =      customtkinter.CTkEntry(master = option2_frame,font=("Arial",20),corner_radius=0)
+        xml_name_label.             pack(pady = (10,0), padx = 10,fill="x",anchor="w",side="top")
+        xml_name_label_entry.       pack(pady = 10, padx = 10,fill="x",anchor="w",side="top")
+
+        option3_frame =             customtkinter.CTkFrame(master = main_frame,corner_radius=0)
+        excel_name_label =          customtkinter.CTkLabel(master = option3_frame,text = "Nastavte základní název pro ukládání ve formátu xlsm/ xlsx:",font=("Arial",22,"bold"),justify = "left",anchor="w")
+        excel_name_label_entry =    customtkinter.CTkEntry(master = option3_frame,font=("Arial",20),corner_radius=0)
+        excel_name_label.           pack(pady = (10,0), padx = 10,fill="x",anchor="w",side="top")
+        excel_name_label_entry.     pack(pady = 10, padx = 10,fill="x",anchor="w",side="top")
+        button_save =               customtkinter.CTkButton(master = main_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: save_changes())
+        button_exit =               customtkinter.CTkButton(master = main_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
+
+        main_frame.                 pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 10,ipadx=10)
+        option1_frame.              pack(pady = 0, padx = 0,fill="x",anchor="n",expand=False,side="top")
+        option2_frame.              pack(pady = 0, padx = 0,fill="x",anchor="n",expand=False,side="top")
+        option3_frame.              pack(pady = 0, padx = 0,fill="x",anchor="n",expand=False,side="top")
+        button_save.                pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
+        button_exit.                pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
+
+        excel_name_label_entry.insert(0,str(default_excel_name))
+        xml_name_label_entry.insert(0,str(default_xml_name))
+        if window_status == 1:
+            checkbox.select()
 
         self.root.bind("<Button-1>",lambda e: close_window(window))
         window.update()
@@ -959,7 +983,7 @@ class ToplevelWindow:
         window.focus()
 
 class Catalogue_gui:
-    def __init__(self,root,download_status,callback_function,window_size,database_filename):
+    def __init__(self,root,download_status,callback_function,window_size,database_filename,default_excel_name,default_xml_name,default_subwindow_status,default_file_extension):
         self.root = root
         self.download_status = download_status
         self.callback = callback_function
@@ -977,6 +1001,13 @@ class Catalogue_gui:
         self.default_block_width = 400
         self.format_list = ["xlsm","xlsx"]
         self.favourite_format = "xlsm"
+        try:
+            if default_file_extension in self.format_list:
+                self.favourite_format = default_file_extension
+            elif default_file_extension.replace(".","") in self.format_list:
+                self.favourite_format = default_file_extension.replace(".","")
+        except Exception:
+            pass
         self.current_block_id = "00"
         self.controller_object_list = []
         self.custom_controller_drop_list = [""]
@@ -998,7 +1029,9 @@ class Catalogue_gui:
         self.whole_accessory_database = []
         self.last_xml_filename = ""
         self.last_path_input = ""
-        self.default_excel_filename = "Katalog_kamerového_vybavení"
+        self.default_excel_filename = default_excel_name
+        self.default_xml_file_name = default_xml_name
+        self.default_subwindow_status = default_subwindow_status # 0 = minimalized, 1 = maximalized
         self.read_database()
         self.create_main_widgets()
 
@@ -1124,7 +1157,7 @@ class Catalogue_gui:
         Funkce čistí všechny zaplněné rámečky a funguje, jako tlačítko zpět do hlavního menu trimazkonu
         """
         self.clear_frame(self.root)
-        self.callback()
+        self.callback([self.default_excel_filename,self.default_xml_file_name,self.default_subwindow_status,self.favourite_format])
 
     def switch_widget_info(self,args,widget_tier,widget):
         if len(widget_tier) == 2: #01-99 stanice
@@ -1393,7 +1426,7 @@ class Catalogue_gui:
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
         child_root.geometry(f"650x130+{x+80}+{y+80}")
-        child_root.wm_iconbitmap(app_icon_path)
+        child_root.after(200, lambda: child_root.iconbitmap(app_icon_path))
         child_root.title("Upozornění")
 
         proceed_label = customtkinter.CTkLabel(master = child_root,text = "Opravdu si přejete odstranit celou stanici a všechna zařízení k ní připojená?",font=("Arial",18))
@@ -2019,15 +2052,13 @@ class Catalogue_gui:
         y = self.root.winfo_rooty()
         one_segment_width = 450
         height = 850
-        child_root.wm_iconbitmap(app_icon_path)
+        child_root.after(200, lambda: child_root.iconbitmap(app_icon_path))
+
         if object == "station":
             # child_root.geometry(f"420x450+{x+80}+{y+80}")
             width = 3*one_segment_width
             child_root.geometry(f"{width}x{height}+{x+100}+{y+30}")
-            print(len(self.station_list))
-            print(station_index)
             child_root.title("Editování stanice: " + str(self.station_list[station_index]["name"]))
-
             station_frame   .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
             camera_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
             optics_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
@@ -2050,13 +2081,12 @@ class Catalogue_gui:
         button_save     .pack(pady = 10, padx = 10,anchor="e",expand=False,side="right")
         button_exit     .pack(pady = 10, padx = 10,anchor="e",expand=True,side="right")
 
-        # child_root.transient(root)
-        # self.root.bind("<Button-1>",lambda e: save_changes())
+        if self.default_subwindow_status == 1:
+            child_root.state('zoomed')
         child_root.update()
         child_root.update_idletasks()
         child_root.focus_force()
         child_root.focus()
-        # child_root.mainloop()
 
     def edit_object(self,args,widget_tier,new_station = False):
         def callback_edited_controller(new_controller_data):
@@ -2135,11 +2165,10 @@ class Catalogue_gui:
 
     def export_option_window(self):
         child_root = customtkinter.CTkToplevel()
-        # child_root=customtkinter.CTk()
+        child_root.after(200, lambda: child_root.iconbitmap(app_icon_path))
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
         child_root.geometry(f"1000x350+{x+200}+{y+100}")
-        child_root.wm_iconbitmap(app_icon_path)
         child_root.title("Možnosti exportování souboru")
 
         def get_excel_path():
@@ -2245,12 +2274,9 @@ class Catalogue_gui:
         else:
             initial_path = resource_path(path_check(os.getcwd()))
         export_path.insert("0",str(initial_path))
-
         format_entry.set(self.favourite_format)
 
         self.root.bind("<Button-1>",lambda e: close_window(child_root))
-        # child_root.mainloop()
-
         child_root.update()
         child_root.update_idletasks()
         child_root.focus()
@@ -2277,7 +2303,7 @@ class Catalogue_gui:
             self.last_xml_filename = filename
             self.last_path_input = path_inserted
         window = ToplevelWindow(self.root,custom_controller_database=self.controller_object_list)
-        window.save_prog_options_window(self.main_console,self.station_list,self.project_name_input.get(),self.load_metadata_callback,callback_save_last_input,self.last_xml_filename,self.last_path_input)
+        window.save_prog_options_window(self.main_console,self.station_list,self.project_name_input.get(),self.load_metadata_callback,callback_save_last_input,self.last_xml_filename,self.last_path_input,self.default_xml_file_name)
 
     def create_main_widgets(self):
         def call_manage_widgets(button):
@@ -2339,8 +2365,15 @@ class Catalogue_gui:
                 self.read_database()
 
         def call_setting_window():
+            def apply_changes_callback(input_data):
+                if input_data[0] != "":
+                    self.default_excel_filename = input_data[0]
+                if input_data[0] != "":
+                    self.default_xml_file_name = input_data[1]
+                if input_data[0] != "":
+                    self.default_subwindow_status = input_data[2]
             window = ToplevelWindow(self.root)
-            window.setting_window()
+            window.setting_window(self.default_excel_filename,self.default_xml_file_name,self.default_subwindow_status,apply_changes_callback)
 
         self.clear_frame(self.root)
         main_header =               customtkinter.CTkFrame(master=self.root,corner_radius=0,height=100)

@@ -7,7 +7,7 @@ import Deleting_option_v1 as Deleting
 import Converting_option_v3 as Converting
 import catalogue_maker_v3 as Catalogue
 import sharepoint_download as download_database
-import IP_setting_v1 as IP_setting
+import IP_setting_v2 as IP_setting
 import string_database
 from tkinter import filedialog
 import tkinter as tk
@@ -57,7 +57,7 @@ customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 root=customtkinter.CTk()
 root.geometry("1200x900")
-root.title("TRIMAZKON v_3.7.4")
+root.title("TRIMAZKON v_3.7.5")
 root.wm_iconbitmap(resource_path(app_icon))
 
 """def app_data_source_files():
@@ -121,6 +121,11 @@ def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
     12 show_changelog\n
     13 image_film\n
     14 num_of_IB_film_images\n
+    15 default sharepoint database filename\n
+    16 default excel filnename prefix for catalogue output\n
+    17 default xml filename for catalogue output \n
+    18 default subwindow behavior status in catalogue menu\n
+    19 default format of catalogue export\n
     """
 
     if os.path.exists(initial_path+'Recources.txt'):
@@ -232,12 +237,27 @@ def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
         else:
             num_of_IB_film_images = 6 #default
 
+        default_sharepoint_database_filename = Lines[46].replace("\n","")
+        default_catalogue_excel_filename = Lines[48].replace("\n","")
+        default_catalogue_xml_filename = Lines[50].replace("\n","")
+        Lines[52] = Lines[52].replace("\n","")
+        if Lines[52].isdigit():
+            default_catalogue_subwindow_behavior_status = int(Lines[52])
+        else:
+            default_catalogue_subwindow_behavior_status = False
+        default_catalogue_export_extension = Lines[54].replace("\n","")
+        catalogue_save_data = [default_sharepoint_database_filename,default_catalogue_excel_filename,default_catalogue_xml_filename,default_catalogue_subwindow_behavior_status,default_catalogue_export_extension]
+        for i in range(0,len(catalogue_save_data)):
+            if catalogue_save_data[i] == "":
+                catalogue_save_data[i] = False
+
         return [supported_formats_sorting,supported_formats_deleting,path_repaired,files_to_keep,cutoff_date,
                 prefix_function,prefix_camera,maximalized,max_pallets,static_dirs_names,safe_mode,image_browser_param,
-                show_changelog,image_film,num_of_IB_film_images]
+                show_changelog,image_film,num_of_IB_film_images,catalogue_save_data[0],catalogue_save_data[1],catalogue_save_data[2],
+                catalogue_save_data[3],catalogue_save_data[4]]
     else:
         print("Chybí konfigurační soubor Recources.txt")
-        return [False]*11
+        return [False]*19
 
 def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do textoveho souboru Recources.txt
     """
@@ -264,6 +284,7 @@ def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do 
     15 show_change_log\n
     16 image_film\n
     17 num_of_IB_film_images\n
+    18 catalogue_data\n
     """
     unwanted_chars = ["\"","\n"," ","."]
     if os.path.exists(initial_path+'Recources.txt'):
@@ -399,6 +420,18 @@ def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do 
         elif which_parameter == "num_of_IB_film_images":
             lines[44] = lines[44].replace("\n","")
             lines[44] = str(input_data)+"\n"
+
+        elif which_parameter == "catalogue_data":
+            # lines[46] = lines[46].replace("\n","")
+            # lines[46] = str(input_data[0])+"\n"
+            lines[48] = lines[48].replace("\n","")
+            lines[48] = str(input_data[0])+"\n"
+            lines[50] = lines[50].replace("\n","")
+            lines[50] = str(input_data[1])+"\n"
+            lines[52] = lines[52].replace("\n","")
+            lines[52] = str(input_data[2])+"\n"
+            lines[54] = lines[54].replace("\n","")
+            lines[54] = str(input_data[3])+"\n"
 
         #navraceni poli zpet do stringu radku:
         lines[2] = ""
@@ -2503,13 +2536,13 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             button_save5 =              customtkinter.CTkButton(    master = second_option_frame,width=100,height=40, text = "Uložit", command = lambda: save_path(),font=("Arial",22,"bold"))
             button_explorer =           customtkinter.CTkButton(    master = second_option_frame,width=100,height=40, text = "EXPLORER", command = lambda: call_browseDirectories(),font=("Arial",22,"bold"))
             default_path_insert_console=customtkinter.CTkLabel(     master = second_option_frame,height=40,text ="",justify = "left",font=("Arial",22),text_color="white")
-            console_frame =             customtkinter.CTkFrame(     master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
+            console_frame =             customtkinter.CTkFrame(     master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1,fg_color="black")
             console_frame.              pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             main_console =              customtkinter.CTkLabel(master = console_frame,height=20,text = str(main_console_text),text_color=str(main_console_text_color),justify = "left",font=("Arial",22))
             if self.windowed:
                 save_frame =            customtkinter.CTkFrame(     master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
                 save_frame.             pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top",anchor = "e")
-                save_changes_button =       customtkinter.CTkButton(master = save_frame,width=150,height=40, text = "Aplikovat/ načíst změny", command = lambda: self.refresh_main_window(),font=("Arial",22,"bold"))
+                save_changes_button =   customtkinter.CTkButton(master = save_frame,width=150,height=40, text = "Aplikovat/ načíst změny", command = lambda: self.refresh_main_window(),font=("Arial",22,"bold"))
             self.checkbox_maximalized.  grid(column =0,row=row_index-1,sticky = tk.W,pady =20,padx=10)
             label5.                     grid(column =0,row=row_index,sticky = tk.W,pady =(5,0),padx=10)
             explorer_settings_label.    grid(column =0,row=row_index+1,sticky = tk.W,pady =10,padx=10)
@@ -2526,7 +2559,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
 
             def save_path_enter_btn(e):
                 save_path()
-                self.root.focus_set()
+                self.current_root.focus_set()
             self.path_set.bind("<Return>",save_path_enter_btn)
 
             if text_file_data[2] != False and text_file_data[2] != "/":
@@ -2563,7 +2596,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                     set_new_default_prefix("cam")
                 elif str(drop_down_dir_names.get()) == str(self.drop_down_prefix_dir_names_list[1]):
                     set_new_default_prefix("func")
-                self.root.focus_set()
+                self.current_root.focus_set()
             set_new_def_prefix.bind("<Return>",prefix_enter_btn)
             #nastaveni defaultniho vyberu z drop-down menu
             if self.default_displayed_prefix_dir == "cam":
@@ -2580,7 +2613,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             set_new_def_folder_name         = customtkinter.CTkEntry(master = second_option_frame,width=200,height=40,font=("Arial",20), placeholder_text= str(default_prefix_func))
             button_save_new_name            = customtkinter.CTkButton(master = second_option_frame,width=100,height=40, text = "Uložit", command = lambda: set_new_default_dir_name(),font=("Arial",22,"bold"))
             drop_down_static_dir_names      = customtkinter.CTkOptionMenu(master = second_option_frame,width=290,height=40,values=self.drop_down_static_dir_names_list,font=("Arial",20),command= change_static_dir)
-            console_frame                   = customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
+            console_frame                   = customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1,fg_color="black")
             console_frame.                  pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             main_console                    = customtkinter.CTkLabel(master = console_frame,height=20,text = str(main_console_text),text_color=str(main_console_text_color),justify = "left",font=("Arial",22))
             if self.windowed:
@@ -2600,7 +2633,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             set_new_def_folder_name.insert("0", corrected_default_input)
             def static_dir_enter_btn(e):
                 set_new_default_dir_name()
-                self.root.focus_set()
+                self.current_root.focus_set()
             set_new_def_folder_name.bind("<Return>",static_dir_enter_btn)
             #nastaveni defaultniho vyberu z drop-down menu
             drop_down_static_dir_names.set(self.drop_down_static_dir_names_list[drop_down_increment])
@@ -2618,7 +2651,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             button_save_max_num_of_pallets.     grid(column =0,row=row_index+2,sticky = tk.W,pady =(0,10),padx=115)
             def new_max_pallets_enter_btn(e):
                 set_max_num_of_pallets()
-                self.root.focus_set()
+                self.current_root.focus_set()
             set_max_pallets.bind("<Return>",new_max_pallets_enter_btn)
 
             #widgets na nastaveni zakladniho poctu files_to_keep
@@ -2635,7 +2668,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             console_files_to_keep.              grid(column =0,row=row_index+5,sticky = tk.W,pady =(0,10),padx=10)
             def files_to_keep_enter_btn(e):
                 set_files_to_keep()
-                self.root.focus_set()
+                self.current_root.focus_set()
             files_to_keep_set.bind("<Return>",files_to_keep_enter_btn)
             
             #widgets na nastaveni zakladniho dne
@@ -2649,7 +2682,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             set_year =                          customtkinter.CTkEntry(master = third_option_frame,width=60,height=50,font=("Arial",20), placeholder_text= cutoff_date[2])
             button_save_date =                  customtkinter.CTkButton(master = third_option_frame,width=100,height=50, text = "Uložit", command = lambda: set_default_cutoff_date(),font=("Arial",22,"bold"))
             insert_button =                     customtkinter.CTkButton(master = third_option_frame,width=285,height=50, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",22,"bold"))
-            console_frame =                     customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
+            console_frame =                     customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1,fg_color="black")
             console_frame.                      pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             main_console =                      customtkinter.CTkLabel(master = console_frame,height=20,text = str(main_console_text),text_color=str(main_console_text_color),justify = "left",font=("Arial",22))
             if self.windowed:
@@ -2670,7 +2703,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
 
             def new_date_enter_btn(e):
                 set_default_cutoff_date()
-                self.root.focus_set()
+                self.current_root.focus_set()
             set_day.bind("<Return>",new_date_enter_btn)
             set_month.bind("<Return>",new_date_enter_btn)
             set_year.bind("<Return>",new_date_enter_btn)
@@ -2700,7 +2733,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             button_save3 =                      customtkinter.CTkButton(master = second_option_frame,width=50,height=50, text = "Uložit", command = lambda: add_format(0),font=("Arial",22,"bold"))
             button_pop =                        customtkinter.CTkButton(master = second_option_frame,width=70,height=50, text = "Odebrat", command = lambda: pop_format(0),font=("Arial",22,"bold"))
             console_bottom_frame_3=             customtkinter.CTkLabel(master = second_option_frame,height=50,text =supported_formats_sorting,justify = "left",font=("Arial",22))
-            console_frame =                     customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
+            console_frame =                     customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1,fg_color="black")
             console_frame.                      pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             main_console =                      customtkinter.CTkLabel(master = console_frame,height=20,text = str(main_console_text),text_color=str(main_console_text_color),justify = "left",font=("Arial",22))
             if self.windowed:
@@ -2717,7 +2750,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 save_changes_button.            pack(pady =5,padx=10,anchor = "e")
 
             def add_or_rem_formats(e):
-                self.root.focus_set()
+                self.current_root.focus_set()
             formats_deleting_input.bind("<Return>",add_or_rem_formats)
             formats_set.bind("<Return>",add_or_rem_formats)
 
@@ -2734,26 +2767,23 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             label_IB2 =                 customtkinter.CTkLabel(     master = first_option_frame,height=20,text = "- Možnost bez posuvníků funguje nejlépe na obrazovce ve windows nastavené, jako HLAVNÍ a v maximalizovaném okně aplikace\n- U možnosti s posuvníky na těchto podmínkách nezáleží",justify = "left",font=("Arial",20,"bold"))
             checkbox_omron_option =     customtkinter.CTkCheckBox(  master = first_option_frame, text = "Přibližování/ oddalování ke/ od kurzoru myši (bez posuvníků)",command = lambda: select_zoom_option(),font=("Arial",20))
             checkbox_slidebar_option =  customtkinter.CTkCheckBox(  master = first_option_frame, text = "Přibližování/ oddalování do/ od středu obrázku (s posuvníky)",command = lambda: select_zoom_option(),font=("Arial",20))
-
-            second_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
-            second_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
+            second_option_frame =       customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
+            second_option_frame.        pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             label_IB3 =                 customtkinter.CTkLabel(master = second_option_frame,height=20,text = "2. Nastavte o kolik procent se navýší přiblížení jedním krokem kolečka myši:",justify = "left",font=("Arial",22,"bold"))
             zoom_increment_set =        customtkinter.CTkSlider(master=second_option_frame,width=300,height=15,from_=5,to=100,number_of_steps= 19,command= update_zoom_increment_slider)
             label_IB4 =                 customtkinter.CTkLabel(master = second_option_frame,height=20,text = text_increment,justify = "left",font=("Arial",20))
-
             third_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
             third_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             label_IB5 =                 customtkinter.CTkLabel(master = third_option_frame,height=20,text = "3. Nastavte velikost kroku při posouvání přibližováním kolečkem myši:",justify = "left",font=("Arial",22,"bold"))
             zoom_movement_set =         customtkinter.CTkSlider(master=third_option_frame,width=300,height=15,from_=50,to=300,number_of_steps= 5,command= update_zoom_movement_slider)
             label_IB6 =                 customtkinter.CTkLabel(master = third_option_frame,height=20,text = text_movement,justify = "left",font=("Arial",20))
-
             forth_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
             forth_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             label_image_film =          customtkinter.CTkLabel(master = forth_option_frame,height=20,text = "4. Upravte nastavení filmu obrázků:",justify = "left",font=("Arial",22,"bold"))
             switch_image_film =         customtkinter.CTkCheckBox(master = forth_option_frame, text = "Zapnuto",command = lambda: on_off_image_film(),font=("Arial",20))
             num_of_image_film_images_slider = customtkinter.CTkSlider(master=forth_option_frame,width=300,height=15,from_=1,to=15,command= change_image_film_number)
             num_of_image_film_images =  customtkinter.CTkLabel(master = forth_option_frame,height=20,text = text_image_film,justify = "left",font=("Arial",20))
-            console_frame =             customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
+            console_frame =             customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1,fg_color="black")
             console_frame.              pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             main_console =              customtkinter.CTkLabel(master = console_frame,height=20,text = str(main_console_text),text_color=str(main_console_text_color),justify = "left",font=("Arial",22))
             if self.windowed:
@@ -2813,13 +2843,12 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
 
     def creating_advanced_option_widgets(self): # Vytváří veškeré widgets (advance option MAIN)
         if self.windowed:
-            self.current_root=customtkinter.CTk()
+            self.current_root=customtkinter.CTkToplevel()
             x = self.root.winfo_rootx()
             y = self.root.winfo_rooty()
             self.current_root.geometry(f"1250x900+{x+200}+{y+200}")
             self.current_root.title("Pokročilá nastavení")
-            # current_root.wm_iconbitmap(initial_path+'images/logo_TRIMAZKON.ico')
-            self.current_root.wm_iconbitmap(resource_path(app_icon))
+            self.current_root.after(200, lambda: self.current_root.iconbitmap(resource_path(app_icon)))
         else:
             self.current_root = self.root
         self.bottom_frame_default_path   = customtkinter.CTkFrame(master=self.current_root,corner_radius=0,border_width = 0)
@@ -2858,25 +2887,29 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
 
         def maximalize_window(e):
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
-            currently_focused = str(self.root.focus_get())
+            currently_focused = str(self.current_root.focus_get())
             if ".!ctkentry" in currently_focused:
                 return
-            if int(self.root._current_width) > 1200:
-                self.root.after(0, lambda:self.root.state('normal'))
-                self.root.geometry("1200x900")
+            if int(self.current_root._current_width) > 1200:
+                self.current_root.after(0, lambda:self.current_root.state('normal'))
+                self.current_root.geometry("1250x900")
             else:
-                self.root.after(0, lambda:self.root.state('zoomed'))
-        self.root.bind("<f>",maximalize_window)
+                self.current_root.after(0, lambda:self.current_root.state('zoomed'))
+        self.current_root.bind("<f>",maximalize_window)
         self.unbind_list.append("<f>")
 
         def unfocus_widget(e):
-            #print(self.root.focus_get())
-            self.root.focus_set()
-        self.root.bind("<Escape>",unfocus_widget)
+            self.current_root.focus_set()
+        self.current_root.bind("<Escape>",unfocus_widget)
         self.unbind_list.append("<Escape>")
 
         if self.windowed:
-            self.current_root.mainloop()
+            self.current_root.update()
+            self.current_root.update_idletasks()
+            self.current_root.focus_force()
+            self.current_root.focus()
+            # click outside the window - kill it
+            self.root.bind("<Button-1>",lambda e: self.current_root.destroy())
 
 class Converting_option: # Spouští možnosti konvertování typu souborů
     """
@@ -3873,8 +3906,11 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
             if self.one_subfolder.get() == 1:
                 self.more_dirs = True
                 only_one_subfolder = True
-        if self.checkbox_ignore_pairs.get() == 1 and selected_sort == 2:
-            ignore_pairs = True
+        try:
+            if self.checkbox_ignore_pairs.get() == 1 and selected_sort == 2:
+                ignore_pairs = True
+        except Exception: # the checkbox was not even loaded once...
+            pass
 
         if self.checkbox_safe_mode.get() == 1:
             self.safe_mode = "ne"
@@ -4495,17 +4531,31 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
     """
     def __init__(self,root):
         self.root = root
-        self.database_filename  = "Sharepoint_databaze.xlsx"
         self.database_downloaded = menu.database_downloaded
-        # self.database_downloaded = True
+        self.database_downloaded = True
+        text_file_data = read_text_file_data()
+        self.database_filename = text_file_data[15]
+        self.default_excel_filename = text_file_data[16]
+        self.default_xml_file_name = text_file_data[17]
+        self.default_subwindow_status = text_file_data[18]
+        self.default_export_extension = text_file_data[19]
+
+        if text_file_data[15] == False or text_file_data[16] == False or text_file_data[17] == False or text_file_data[18] == False or text_file_data[19] == False:
+            # default values:
+            self.database_filename  = "Sharepoint_databaze.xlsx"
+            self.default_excel_filename = "Katalog_kamerového_vybavení"
+            self.default_xml_file_name = "_metadata_catalogue"
+            self.default_subwindow_status = 0 # 0 = minimalized, 1 = maximalized
+            self.default_export_extension = "xlsm"
 
         self.create_catalogue_maker_widgets()
 
-    def callback(self):
+    def callback(self,data_to_save):
+        print("received data: ",data_to_save)
+        write_text_file_data(data_to_save,"catalogue_data")
         menu.menu()
 
     def create_catalogue_maker_widgets(self):
-        
         if root.wm_state() == "zoomed":
             current_window_size = "max"
         else:
@@ -4518,7 +4568,9 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
         else:
             input_message = "Datábáze se stáhne znovu až po restartu TRIMAZKONU"
         
-        self.ip_assignment_prg = Catalogue.Catalogue_gui(self.root,input_message,self.callback,current_window_size,self.database_filename)
+        print("calling catalogue: ",self.database_filename,self.default_excel_filename,self.default_xml_file_name,self.default_subwindow_status,self.default_export_extension)
+        self.ip_assignment_prg = Catalogue.Catalogue_gui(self.root,input_message,self.callback,current_window_size,self.database_filename,self.default_excel_filename,
+                                                         self.default_xml_file_name,self.default_subwindow_status,self.default_export_extension)
         
 menu = main_menu(root)
 menu.menu(initial=True)

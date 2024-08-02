@@ -15,11 +15,11 @@ import sys
 import ctypes
 import winreg
 
-customtkinter.set_appearance_mode("dark")
-customtkinter.set_default_color_theme("dark-blue")
-root=customtkinter.CTk()
-root.geometry("1200x900")
-root.title("ip_setting - testing")
+# customtkinter.set_appearance_mode("dark")
+# customtkinter.set_default_color_theme("dark-blue")
+# root=customtkinter.CTk()
+# root.geometry("1200x900")
+# root.title("ip_setting - testing")
 
 def path_check(path_raw,only_repair = None):
     path=path_raw
@@ -728,9 +728,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
         child_root.geometry(f"520x750+{x+50}+{y+80}")
-        # child_root.wm_iconbitmap(self.initial_path+'images/logo_TRIMAZKON.ico')
-        # child_root.wm_iconbitmap(resource_path(self.app_icon))
-        # child_root.geometry("520x750")
+        child_root.after(200, lambda: child_root.iconbitmap(resource_path(self.app_icon)))
         if edit:
             child_root.title("Editovat projekt: "+self.last_project_name)
         else:
@@ -805,15 +803,12 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         # child_root.mainloop()
 
     def add_new_project_disk(self,edit = None):
-        # child_root=customtkinter.CTk()
         child_root = customtkinter.CTkToplevel()
+        child_root.after(200, lambda: child_root.iconbitmap(resource_path(self.app_icon)))
         self.opened_window = child_root
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
         child_root.geometry(f"520x800+{x+50}+{y+100}")
-        # child_root.wm_iconbitmap(self.initial_path+'images/logo_TRIMAZKON.ico')
-        child_root.wm_iconbitmap(resource_path(self.app_icon))
-        # child_root.geometry("520x800")
         if edit == None:
             child_root.title("Nový projekt")
         else:
@@ -896,14 +891,13 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         def open_app_as_admin_prompt():
             def close_prompt(child_root):
                 child_root.destroy()
-            # child_root=customtkinter.CTk()
             child_root = customtkinter.CTkToplevel()
+            child_root.after(200, lambda: child_root.iconbitmap(resource_path(self.app_icon)))
             self.opened_window = child_root
             x = self.root.winfo_rootx()
             y = self.root.winfo_rooty()
             child_root.geometry(f"620x150+{x+300}+{y+300}")  
             child_root.title("Upozornění")
-            child_root.wm_iconbitmap(resource_path(self.app_icon))
             proceed_label = customtkinter.CTkLabel(master = child_root,text = "Přejete si znovu spustit aplikaci, jako administrátor?",font=("Arial",25))
             button_yes =    customtkinter.CTkButton(master = child_root,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: run_as_admin(child_root))
             button_no =     customtkinter.CTkButton(master = child_root,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
@@ -1593,15 +1587,12 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             child_root.destroy()
 
     def delete_disk_option_menu(self):
-        # child_root=customtkinter.CTk()
         child_root = customtkinter.CTkToplevel()
         self.opened_window = child_root
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
         child_root.geometry(f"+{x+250}+{y+200}")
-        # child_root.wm_iconbitmap(self.initial_path+'images/logo_TRIMAZKON.ico')
-        child_root.wm_iconbitmap(resource_path(self.app_icon))
-        # child_root.geometry("520x200")
+        child_root.after(200, lambda: child_root.iconbitmap(resource_path(self.app_icon)))
         child_root.title("Odpojování síťového disku")
         
         found_drive_letters=[]
@@ -1978,7 +1969,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 self.mapping_condition = 1
                 self.save_setting_parameter(parameter="change_mapping_cond",status=1)
 
-        # child_root=customtkinter.CTk()
         child_root = customtkinter.CTkToplevel()
         self.opened_window = child_root
         x = self.root.winfo_rootx()
@@ -1988,39 +1978,39 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         else:
             child_root.geometry(f"580x400+{x+350}+{y+180}")
 
-        child_root.wm_iconbitmap(resource_path(self.app_icon))
+        child_root.after(200, lambda: child_root.iconbitmap(resource_path(self.app_icon)))
         child_root.title("Nastavení")
-        main_frame =    customtkinter.CTkFrame(master=child_root,corner_radius=0)
+        main_frame =    customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
         label =         customtkinter.CTkLabel(master = main_frame, width = 100,height=40,text = "- Chování poznámek (editovatelné/ needitovatelné)",font=("Arial",20,"bold"))
         checkbox =      customtkinter.CTkCheckBox(master = main_frame, text = "Přímo zapisovat a ukládat do poznámek na úvodní obrazovce",font=("Arial",16,"bold"),command=lambda: save_new_behav_notes())
         label.          pack(pady = 10,padx=10,side="top",anchor = "w")
         checkbox.       pack(pady = 10,padx=10,side="top",anchor = "w")
 
-        main_frame2 =   customtkinter.CTkFrame(master=child_root,corner_radius=0)
+        main_frame2 =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
         label2 =        customtkinter.CTkLabel(master = main_frame2, width = 100,height=40,text = "- Chování při vstupu do menu \"Síťové disky\"",font=("Arial",20,"bold"))
         checkbox2 =     customtkinter.CTkCheckBox(master = main_frame2, text = "Při spuštění aktualizovat statusy disků",font=("Arial",16,"bold"),command=lambda: save_new_behav_disk())
         label2.         pack(pady = 10,padx=10,side="top",anchor = "w")
         checkbox2.      pack(pady = 10,padx=10,side="top",anchor = "w")
 
-        main_frame3 =   customtkinter.CTkFrame(master=child_root,corner_radius=0)
+        main_frame3 =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
         label3 =        customtkinter.CTkLabel(master = main_frame3, width = 100,height=40,text = "- Nastavení mapování disků",font=("Arial",20,"bold"))
         checkbox3 =     customtkinter.CTkCheckBox(master = main_frame3, text = "Automaticky připojovat po restartu PC",font=("Arial",16,"bold"),command=lambda: save_new_disk_map_cond())
         label3.         pack(pady = 10,padx=10,side="top",anchor = "w")
         checkbox3.      pack(pady = 10,padx=10,side="top",anchor = "w")
         
-        close_frame =   customtkinter.CTkFrame(master=child_root,corner_radius=0)
+        close_frame =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
         button_close =  customtkinter.CTkButton(master = close_frame, width = 150,height=40,text = "Zavřít",command = child_root.destroy,font=("Arial",20,"bold"),corner_radius=0)
         button_close.   pack(pady = 10,padx=10,side="bottom",anchor = "e")
 
         if ip_window:
-            main_frame.     pack(padx = 10,pady = (10,0),expand=False,fill="x",side="top")
-            close_frame.    pack(padx = 10,pady = 0,expand=False,fill="x",side="top")
+            main_frame.     pack(expand=False,fill="x",side="top")
+            close_frame.    pack(expand=True,fill="both",side="top")
             
         else: #disk window...
-            main_frame.     pack(padx = 10,pady = (10,0),expand=False,fill="x",side="top")
-            main_frame2.    pack(padx = 10,pady = (5,0),expand=False,fill="x",side="top")
-            main_frame3.    pack(padx = 10,pady = (5,0),expand=False,fill="x",side="top")
-            close_frame.    pack(padx = 10,pady = 0,expand=False,fill="x",side="top")
+            main_frame.     pack(expand=False,fill="x",side="top")
+            main_frame2.    pack(expand=False,fill="x",side="top")
+            main_frame3.    pack(expand=False,fill="x",side="top")
+            close_frame.    pack(expand=True,fill="both",side="top")
 
         if self.default_note_behav == 1:
             checkbox.select()
@@ -2286,5 +2276,5 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.call_make_cells_disk()
         self.root.mainloop()
 
-IP_assignment(root,"","max",str(os.getcwd())+"\\")
-root.mainloop()
+# IP_assignment(root,"","max",str(os.getcwd())+"\\")
+# root.mainloop()

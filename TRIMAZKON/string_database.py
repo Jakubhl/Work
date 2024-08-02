@@ -101,4 +101,9 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - Optimalizace vyskakovacích oken
     Správa souborů - třídění:
     - Možnost při třídění podle id ignorovat nepáry\n"""
+        ," Verze 3.7.5 (2.8.2024)"
+        ,
+    """ 
+    - Oprava možnosti ignorovat nepáry
+    - Optimalizace načítání buněk v ip setting\n"""
 ]

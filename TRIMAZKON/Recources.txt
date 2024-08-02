@@ -43,3 +43,13 @@ Zobrazovat v prohlížeči obrázků film obrázků?
 ano
 Kolik obrázků ve filmu obrázků zobrazovat na každé straně?
 5
+Default název pro sharepoint databázi:
+Sharepoint_databaze.xlsx
+Default název pro excel (Katalog):
+Katalog_kamerového_vybavení
+Default název pro xml (Katalog):
+_metadata_catalogue
+Defaultní chování suboken (Katalog):
+0
+Defaultní přípona exportu (Katalog):
+xlsm

@@ -479,19 +479,23 @@ trimazkon - moznost ignorovat nepary - u trideni podle id - hotovo
 trimazkon verze 3.7.4 - early acess - potřebná úprava pro třídění podle id
 ip setting - opravit generovani prazdnych radku u poznamek - stacilo by expand? - hotovo
 ip setting - predelat grid logiku na pack... - hotovo
+
+1:36 PM 8/2/2024
+vyresit ikony u toplevel oken - hotovo
+trimazkon - setting windows predelat na toplevel - hotovo + aut. zavirani
+- pridat settings - moznost defaultne nastavit edit v maximalizovanem okne - hotovo
+- moznost nastavit si default nazev xml - hotovo
+- moznost nastavit si default nazev xls, xlsm- hotovo
+- ukládat posledně zvolený formát - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-
-trimazkon - setting windows predelat na toplevel
-
-az to bude součástí celé aplikace:
-- pridat settings - moznost defaultne nastavit edit v maximalizovanem okne
-- moznost nastavit si default nazev xml
-- moznost nastavit si default nazev xls, xlsm
-- ukládat posledně zvolený formát
 - přednastavovat cestu, která je pro trimazkon defaultní
 
-vyresit ikony u toplevel oken
+sharepoint download neni osetren resource path funkci...
+do nastavení možnost změnit defaultní název pro sharepoint databazi s varovnym hlasenim, ze se tak musi jmenovat i na sharepointu
+z defaultně nastavených názvů filtrovat tečku
+
+v nastavení defaultních názvů ve vizualizaci připojit extension...
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon
