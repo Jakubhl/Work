@@ -52,6 +52,7 @@ def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
+
 app_icon = 'images/logo_TRIMAZKON.ico'
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
@@ -126,6 +127,7 @@ def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
     17 default xml filename for catalogue output \n
     18 default subwindow behavior status in catalogue menu\n
     19 default format of catalogue export\n
+    20 default path catalogue\n
     """
 
     if os.path.exists(initial_path+'Recources.txt'):
@@ -246,7 +248,8 @@ def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
         else:
             default_catalogue_subwindow_behavior_status = False
         default_catalogue_export_extension = Lines[54].replace("\n","")
-        catalogue_save_data = [default_sharepoint_database_filename,default_catalogue_excel_filename,default_catalogue_xml_filename,default_catalogue_subwindow_behavior_status,default_catalogue_export_extension]
+        default_path_catalogue = Lines[56].replace("\n","")
+        catalogue_save_data = [default_sharepoint_database_filename,default_catalogue_excel_filename,default_catalogue_xml_filename,default_catalogue_subwindow_behavior_status,default_catalogue_export_extension,default_path_catalogue]
         for i in range(0,len(catalogue_save_data)):
             if catalogue_save_data[i] == "":
                 catalogue_save_data[i] = False
@@ -254,7 +257,7 @@ def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
         return [supported_formats_sorting,supported_formats_deleting,path_repaired,files_to_keep,cutoff_date,
                 prefix_function,prefix_camera,maximalized,max_pallets,static_dirs_names,safe_mode,image_browser_param,
                 show_changelog,image_film,num_of_IB_film_images,catalogue_save_data[0],catalogue_save_data[1],catalogue_save_data[2],
-                catalogue_save_data[3],catalogue_save_data[4]]
+                catalogue_save_data[3],catalogue_save_data[4],catalogue_save_data[5]]
     else:
         print("Chybí konfigurační soubor Recources.txt")
         return [False]*19
@@ -422,8 +425,8 @@ def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do 
             lines[44] = str(input_data)+"\n"
 
         elif which_parameter == "catalogue_data":
-            # lines[46] = lines[46].replace("\n","")
-            # lines[46] = str(input_data[0])+"\n"
+            lines[46] = lines[46].replace("\n","")
+            lines[46] = str(input_data[5])+"\n"
             lines[48] = lines[48].replace("\n","")
             lines[48] = str(input_data[0])+"\n"
             lines[50] = lines[50].replace("\n","")
@@ -432,6 +435,9 @@ def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do 
             lines[52] = str(input_data[2])+"\n"
             lines[54] = lines[54].replace("\n","")
             lines[54] = str(input_data[3])+"\n"
+            if input_data[4] != None:
+                lines[56] = lines[56].replace("\n","")
+                lines[56] = str(input_data[4])+"\n"
 
         #navraceni poli zpet do stringu radku:
         lines[2] = ""
@@ -719,8 +725,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
     - umožňuje: měnit rychlost přehrávání, přiblížení, otočení obrázku
     - reaguje na klávesové zkratky
     """
-    def __init__(self,root,IB_as_def_browser_path = None,selected_image = ""):
+    def __init__(self,root,IB_as_def_browser_path = None,selected_image = "",path_given = ""):
         self.root = root
+        self.path_given = path_given
         # self.list_of_menu_frames = list_of_menu_frames
         self.IB_as_def_browser_path = IB_as_def_browser_path
         self.all_images = []
@@ -1688,10 +1695,12 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
 
     def create_widgets(self): # Vytvoření veškerých widgets (MAIN image browseru)
         #cisteni menu widgets
-        # for frames in self.list_of_menu_frames: 
-        #     frames.pack_forget()
-        #     frames.grid_forget()
-        #     frames.destroy()
+        def call_setting_window():
+            if self.ifz_located == True:
+                path_to_send = self.all_images[self.increment_of_image]
+            else:
+                path_to_send = self.all_images[self.increment_of_image]
+            Advanced_option(self.root,windowed=True,spec_location="image_browser", path_to_remember = path_to_send)
         
         self.frame_with_path =          customtkinter.CTkFrame(master=self.root,height = 200,corner_radius=0)
         self.background_frame =         customtkinter.CTkFrame(master=self.root,corner_radius=0)
@@ -1723,7 +1732,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         manual_path  =                  customtkinter.CTkButton(master = self.frame_with_path, width = 90,height=30,text = "Otevřít", command = lambda: self.start(self.path_set.get()),font=("Arial",16,"bold"))
         tree         =                  customtkinter.CTkButton(master = self.frame_with_path, width = 120,height=30,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",16,"bold"))
         button_save_path =              customtkinter.CTkButton(master = self.frame_with_path,width=100,height=30, text = "Uložit cestu", command = lambda: save_path(self.console,self.path_set.get()),font=("Arial",16,"bold"))        
-        button_open_setting =           customtkinter.CTkButton(master = self.frame_with_path,width=30,height=30, text = "⚙️", command = lambda: Advanced_option(self.root,windowed=True,spec_location="image_browser"),font=("",16))
+        button_open_setting =           customtkinter.CTkButton(master = self.frame_with_path,width=30,height=30, text = "⚙️", command = lambda: call_setting_window(),font=("",16))
 
         self.name_or_path =             customtkinter.CTkCheckBox(master = self.frame_with_path,font=("Arial",16), text = "Název/cesta",command= lambda: self.refresh_console_setting())
         self.console =                  tk.Text(self.frame_with_path, wrap="none", height=0, width=180,background="black",font=("Arial",14),state=tk.DISABLED)
@@ -2095,6 +2104,13 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             self.image_browser_path = self.IB_as_def_browser_path
             self.start(self.IB_as_def_browser_path)
         #hned na zacatku to vleze do defaultni slozky
+        elif self.path_given != "":
+            self.path_set.delete("0","200")
+            self.path_set.insert("0", self.path_given)
+            add_colored_line(self.console,"Nastavené změny uloženy","green",None,True)
+            self.root.update_idletasks()
+            self.image_browser_path = self.path_given
+            self.start(self.path_given)
         else:
             text_file_data = read_text_file_data()
             path = text_file_data[2]
@@ -2113,8 +2129,10 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
     """
     Umožňuje nastavit základní parametry, které ukládá do textového souboru
     """
-    def __init__(self,root,windowed=None,spec_location=None):
+    def __init__(self,root,windowed=None,spec_location=None,path_to_remember = None):
         self.spec_location = spec_location
+        self.path_to_remember = path_to_remember
+        print("image_path: ",self.path_to_remember)
         self.windowed = windowed
         # self.list_of_menu_frames = list_of_menu_frames
         self.root = root
@@ -2158,8 +2176,11 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         """
         Smaže widgets na daném framu
         """
-        for widget in frame.winfo_children():
-            widget.destroy()  
+        try:
+            for widget in frame.winfo_children():
+                widget.destroy()
+        except Exception:
+            pass  
 
     def maximalized(self): # Nastavení základního spouštění (v okně/ maximalizované)
         option = self.checkbox_maximalized.get()
@@ -2180,7 +2201,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         self.clear_frame(self.current_root)
         self.current_root.destroy()
         if self.spec_location == "image_browser":
-            Image_browser(self.root)
+            Image_browser(self.root,self.path_to_remember)
         elif self.spec_location == "converting_option":
             Converting_option(self.root)
         elif self.spec_location == "deleting_option":
@@ -4532,22 +4553,26 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
     def __init__(self,root):
         self.root = root
         self.database_downloaded = menu.database_downloaded
+        # automatic download bypass:
         self.database_downloaded = True
+        self.database_filename  = "Sharepoint_databaze.xlsx"
+        self.default_excel_filename = "Katalog_kamerového_vybavení"
+        self.default_xml_file_name = "_metadata_catalogue"
+        self.default_subwindow_status = 0 # 0 = minimalized, 1 = maximalized
+        self.default_export_extension = "xlsm"
         text_file_data = read_text_file_data()
-        self.database_filename = text_file_data[15]
-        self.default_excel_filename = text_file_data[16]
-        self.default_xml_file_name = text_file_data[17]
-        self.default_subwindow_status = text_file_data[18]
-        self.default_export_extension = text_file_data[19]
+        if text_file_data[15] != False:
+            self.database_filename = text_file_data[15]
+        if text_file_data[16] != False:
+            self.default_excel_filename = text_file_data[16]
+        if text_file_data[17] != False:
+            self.default_xml_file_name = text_file_data[17] 
+        if text_file_data[18] != False:
+            self.default_subwindow_status = text_file_data[18]
+        if text_file_data[19] != False:
+            self.default_export_extension = text_file_data[19]
 
-        if text_file_data[15] == False or text_file_data[16] == False or text_file_data[17] == False or text_file_data[18] == False or text_file_data[19] == False:
-            # default values:
-            self.database_filename  = "Sharepoint_databaze.xlsx"
-            self.default_excel_filename = "Katalog_kamerového_vybavení"
-            self.default_xml_file_name = "_metadata_catalogue"
-            self.default_subwindow_status = 0 # 0 = minimalized, 1 = maximalized
-            self.default_export_extension = "xlsm"
-
+        self.default_path = text_file_data[20]
         self.create_catalogue_maker_widgets()
 
     def callback(self,data_to_save):
@@ -4568,9 +4593,9 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
         else:
             input_message = "Datábáze se stáhne znovu až po restartu TRIMAZKONU"
         
-        print("calling catalogue: ",self.database_filename,self.default_excel_filename,self.default_xml_file_name,self.default_subwindow_status,self.default_export_extension)
+        print("calling catalogue: ",self.database_filename,self.default_excel_filename,self.default_xml_file_name,self.default_subwindow_status,self.default_export_extension,self.default_path)
         self.ip_assignment_prg = Catalogue.Catalogue_gui(self.root,input_message,self.callback,current_window_size,self.database_filename,self.default_excel_filename,
-                                                         self.default_xml_file_name,self.default_subwindow_status,self.default_export_extension)
+                                                         self.default_xml_file_name,self.default_subwindow_status,self.default_export_extension,self.default_path)
         
 menu = main_menu(root)
 menu.menu(initial=True)

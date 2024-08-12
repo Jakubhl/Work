@@ -487,15 +487,23 @@ trimazkon - setting windows predelat na toplevel - hotovo + aut. zavirani
 - moznost nastavit si default nazev xml - hotovo
 - moznost nastavit si default nazev xls, xlsm- hotovo
 - ukládat posledně zvolený formát - hotovo
+
+9:17 AM 8/12/2024
+kdyz je moc dlouha ftp adresa - expandne se widget - hotovo
+kdyz aktualizovat statusy a neni disk namaunten nastala chyba - lambda call make_widgets_disk chybi argument "e" - hotovo
+TRIMAZKON: kdyz zmena nastaveni pri prochazeni obrazku - znovu se nacte defaultni cesta - opraveno
+-katalog, přednastavovat cestu, která je pro trimazkon defaultní - přidám novou cestu na ukládání - hotovo
+sharepoint download neni osetren resource path funkci... - hotovo
+z defaultně nastavených názvů filtrovat tečku - hotovo
+v nastavení defaultních názvů ve vizualizaci připojit extension... - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-- přednastavovat cestu, která je pro trimazkon defaultní
 
-sharepoint download neni osetren resource path funkci...
+
 do nastavení možnost změnit defaultní název pro sharepoint databazi s varovnym hlasenim, ze se tak musi jmenovat i na sharepointu
-z defaultně nastavených názvů filtrovat tečku
 
-v nastavení defaultních názvů ve vizualizaci připojit extension...
+
+ip setting: když dotaz na powershell ano/ne a dam ne, zeptá se to, jestli otevřít, jako admin - sys.argument
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon

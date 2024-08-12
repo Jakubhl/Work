@@ -62,9 +62,11 @@ import time
 #                 ipv4_addresses.append(match.group(1))
 #                 print(current_interface,match.group(1))
 #                 #ipv4_addresses[current_interface] = match.group(1)
-string = "cpolyoxyethylen"
-print(string[1:3])
+def filter_input(data):
+    forbidden_formats = [".","xml","xlsm","xlsx"]
+    for formats in forbidden_formats:
+        data = data.replace(formats,"")
+    print(data)
+    return data
 
-print(string[3:5])
-
-print(int(string))
+filter_input("blabla.xlsm")

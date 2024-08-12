@@ -34,7 +34,7 @@ Přesunuté_obrázky
 Bezpečný mód při procházení subsložek:
 ano
 Nastavení prohlížeče obrázků: (1. zvolená možnost, 2. krok přibližování [%], 3. krok posunu)
-2
+1
 25
 150
 Zobrazit changelog?
@@ -53,3 +53,5 @@ Defaultní chování suboken (Katalog):
 0
 Defaultní přípona exportu (Katalog):
 xlsm
+Defaultní cesta katalog:
+C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/

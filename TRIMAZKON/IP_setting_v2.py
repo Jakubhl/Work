@@ -93,7 +93,7 @@ def check_network_drive_status(drive_path):
                 return False
         
         
-        run_background.join()
+        # run_background.join()
         if status == True:
             return True
         else:
@@ -252,12 +252,20 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.callback()
 
     def clear_frame(self,frame):
+        frame.update()
+        frame.update_idletasks()
         for widget in frame.winfo_children():
             if widget.winfo_exists():
-                # widget.pack_forget()
-                # widget.grid_forget()
-                # widget.place_forget()
                 widget.destroy()
+            # try:
+            #     if widget.winfo_exists():
+            #         # widget.pack_forget()
+            #         # widget.grid_forget()
+            #         # widget.place_forget()
+            #         widget.destroy()
+            # except Exception:
+            #     pass
+        print("out-------------")
 
     def fill_interfaces(self):
         """
@@ -976,19 +984,20 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             new_addr = self.current_address_list[interface_index]
             i = 0
             while new_addr == previous_addr or new_addr == None:
-                add_colored_line(self.main_console,f"Čekám, až windows provede změny: {5-i} s...","white",None,True)
+                add_colored_line(self.main_console,f"Čekám, až windows provede změny: {7-i} s...","white",None,True)
                 time.sleep(1)
                 self.option_change("",silent=True)
                 new_addr = self.current_address_list[interface_index]
                 print("current addr: ",new_addr)
                 i+=1
-                if i > 4:
+                if i > 6:
                     add_colored_line(self.main_console,f"Chyba, u {interface} se nepodařilo změnit ip adresu (pro nastavování odpojených interfaců spusťtě aplikaci jako administrátor)","red",None,True)
                     return
             
             add_colored_line(self.main_console,f"IPv4 adresa interfacu: {interface} úspěšně přenastavena na DHCP (automatickou)","green",None,True)
             self.make_project_cells(no_read=True)
-            
+            return
+        
         interface = str(self.drop_down_options.get())
         if not self.check_DHCP(interface):
             if interface != None or interface != "":
@@ -1123,7 +1132,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             
         return found    
 
-    def clicked_on_project(self,e,widget_id,widget,hearth=None):
+    def clicked_on_project(self,event,widget_id,widget,hearth=None):
         self.search_input.delete("0","300")
         if self.managing_disk == False:
             self.search_input.insert("0",str(self.all_rows[widget_id][0]))
@@ -1189,6 +1198,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             note_window.mainloop()"""
 
     def make_project_cells(self,no_read = None):
+        # self.clear_frame(self.project_tree)
+        for widgets in self.project_tree.winfo_children():
+            widgets.destroy()
+
         def opened_window_check():
             if self.opened_window == "":
                 return False
@@ -1296,7 +1309,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         if no_read == None:
             self.read_excel_data()
 
-        self.clear_frame(self.project_tree)
         column1 =           customtkinter.CTkFrame(master = self.project_tree,corner_radius=0,border_width=0)
         column2 =           customtkinter.CTkFrame(master = self.project_tree,corner_radius=0,border_width=0)
         column3 =           customtkinter.CTkFrame(master = self.project_tree,corner_radius=0,border_width=0)
@@ -1318,7 +1330,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     btn_frame = customtkinter.CTkFrame(master=column1,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)
                     button =    customtkinter.CTkButton(master = btn_frame,width = 200,height=40,text = self.all_rows[y][x],font=("Arial",20,"bold"),corner_radius=0, command = lambda widget_id = y: self.change_computer_ip(widget_id))
                     button.     pack(padx =5,pady = 5, fill= "x")
-                    btn_frame.  pack(side = "top",anchor = "w",expand = False)
+                    btn_frame.  pack(side = "top",anchor = "w",expand = False,fill= "x")
                     btn_frame.  bind("<Button-1>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
                     # zkopírovat pravým klikem na button:
                     button.     bind("<Button-3>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
@@ -1458,7 +1470,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
         if no_read == None:
             self.read_excel_data()
-        padx_list = [10,190,240,0,0,640]
         self.clear_frame(self.project_tree)
         if self.default_disk_status_behav == 1:
             disk_statuses = True
@@ -1479,7 +1490,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         column4.            pack(fill="both",expand=True, side = "left")
         column1_header.     pack(padx = (5,0),side = "top",anchor = "w")
         column2_header.     pack(padx = (12,0),side = "top",anchor = "w")
-        column3_header.     pack(padx = (5,0),side = "top",anchor = "w")
+        column3_header.     pack(padx = (5,0),side = "top",anchor = "w",expand = False)
         column4_header.     pack(padx = (5,0),side = "top",anchor = "w")
 
         # y = widgets ve smeru y, x = widgets ve smeru x
@@ -1512,8 +1523,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 elif x == 2: # frame s ftp adresou
                     param_frame =   customtkinter.CTkFrame(master=column3,corner_radius=0,fg_color="black",border_width=2)
                     parameter =     customtkinter.CTkLabel(master = param_frame,text = self.disk_all_rows[y][x],font=("Arial",20,"bold"),justify='left',anchor = "w",width = 300,height=40)
-                    parameter.      pack(padx = (10,5),pady = 5)
-                    param_frame.    pack(side = "top")
+                    parameter.      pack(padx = (10,5),pady = 5,anchor = "w",fill="x")
+                    param_frame.    pack(side = "top",fill="x",expand = False)
                     param_frame.    bind("<Button-1>",lambda e,widget = param_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
                     parameter.      bind("<Button-1>",lambda e,widget = param_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
 
@@ -1540,9 +1551,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     notes.bind("<Leave>",lambda e, widget = notes,row=y:               on_leave_entry(e,widget,row))
 
                     if self.default_note_behav == 0:
-                        notes.configure(state = "disabled")
-
-            
+                        notes.configure(state = "disabled")         
 
     def edit_project(self):
         result = self.check_given_input()
@@ -1939,8 +1948,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 self.save_setting_parameter(parameter="change_def_disk_behav",status=0)
             elif int(checkbox2.get()) == 1:
                 self.default_disk_status_behav = 1
-                self.make_project_cells_disk(no_read=True)
                 self.save_setting_parameter(parameter="change_def_disk_behav",status=1)
+                self.make_project_cells_disk(no_read=True)
 
         def save_new_behav_notes():
             nonlocal checkbox
@@ -1952,13 +1961,14 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     self.make_project_cells()
                 else:
                     self.make_project_cells_disk()
+
             elif int(checkbox.get()) == 1:
                 self.default_note_behav = 1
+                self.save_setting_parameter(parameter="change_def_notes_behav",status=1)
                 if ip_window:
                     self.make_project_cells()
                 else:
                     self.make_project_cells_disk()
-                self.save_setting_parameter(parameter="change_def_notes_behav",status=1)
 
         def save_new_disk_map_cond():
             nonlocal checkbox3
@@ -2163,9 +2173,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.search_input.bind("<Return>",call_search)
         self.root.mainloop()
 
-    def call_make_cells_disk(self):
-        self.make_project_cells_disk()
-
     def create_widgets_disk(self,init=None):
         if init:
             if self.window_mode == "max":
@@ -2273,7 +2280,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.root.bind("<F5>",lambda e: call_refresh(e))
 
         self.root.update()
-        self.call_make_cells_disk()
+        self.make_project_cells_disk()
         self.root.mainloop()
 
 # IP_assignment(root,"","max",str(os.getcwd())+"\\")
