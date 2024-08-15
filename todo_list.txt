@@ -496,14 +496,22 @@ TRIMAZKON: kdyz zmena nastaveni pri prochazeni obrazku - znovu se nacte defaultn
 sharepoint download neni osetren resource path funkci... - hotovo
 z defaultně nastavených názvů filtrovat tečku - hotovo
 v nastavení defaultních názvů ve vizualizaci připojit extension... - hotovo
+do nastavení možnost změnit defaultní název pro sharepoint databazi s varovnym hlasenim, ze se tak musi jmenovat i na sharepointu - hotovo
+
+11:11 AM 8/13/2024
+po zmene ip nenacitat vse - jen zmena podbarveni- hotovo
+chyba u prenastavovani ip adres - Tcl Error - dela to mazani framu - hotovo
+- nefunguje refresh tlacitko - hotovo
+po pripojeni/odpojeni/refreshstatusů disku - jen refresh podbarveni (pole framu...) - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
-
-do nastavení možnost změnit defaultní název pro sharepoint databazi s varovnym hlasenim, ze se tak musi jmenovat i na sharepointu
-
-
 ip setting: když dotaz na powershell ano/ne a dam ne, zeptá se to, jestli otevřít, jako admin - sys.argument
+
+když dám editovat poznámky rovnou - vymaže se schovaná část v ip setting při přejezdu myší a držením btn1 mimo widget
+
+enterem expandovat na další řádky při editu poznámek
+když kliknu na volnou plochu sebrat  focus na widgetu
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon

@@ -19,7 +19,7 @@ import sys
 
 def path_check(path_raw,only_repair = None):
     path=path_raw
-    backslash = "\ "
+    backslash = "\\"
     if backslash[0] in path:
         newPath = path.replace(backslash[0], '/')
         path = newPath
@@ -58,7 +58,7 @@ customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 root=customtkinter.CTk()
 root.geometry("1200x900")
-root.title("TRIMAZKON v_3.7.5")
+root.title("TRIMAZKON v_3.7.6")
 root.wm_iconbitmap(resource_path(app_icon))
 
 """def app_data_source_files():
@@ -239,20 +239,23 @@ def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
         else:
             num_of_IB_film_images = 6 #default
 
-        default_sharepoint_database_filename = Lines[46].replace("\n","")
-        default_catalogue_excel_filename = Lines[48].replace("\n","")
-        default_catalogue_xml_filename = Lines[50].replace("\n","")
-        Lines[52] = Lines[52].replace("\n","")
-        if Lines[52].isdigit():
-            default_catalogue_subwindow_behavior_status = int(Lines[52])
-        else:
-            default_catalogue_subwindow_behavior_status = False
-        default_catalogue_export_extension = Lines[54].replace("\n","")
-        default_path_catalogue = Lines[56].replace("\n","")
-        catalogue_save_data = [default_sharepoint_database_filename,default_catalogue_excel_filename,default_catalogue_xml_filename,default_catalogue_subwindow_behavior_status,default_catalogue_export_extension,default_path_catalogue]
-        for i in range(0,len(catalogue_save_data)):
-            if catalogue_save_data[i] == "":
-                catalogue_save_data[i] = False
+        try:
+            default_sharepoint_database_filename = Lines[46].replace("\n","")
+            default_catalogue_excel_filename = Lines[48].replace("\n","")
+            default_catalogue_xml_filename = Lines[50].replace("\n","")
+            Lines[52] = Lines[52].replace("\n","")
+            if Lines[52].isdigit():
+                default_catalogue_subwindow_behavior_status = int(Lines[52])
+            else:
+                default_catalogue_subwindow_behavior_status = False
+            default_catalogue_export_extension = Lines[54].replace("\n","")
+            default_path_catalogue = Lines[56].replace("\n","")
+            catalogue_save_data = [default_sharepoint_database_filename,default_catalogue_excel_filename,default_catalogue_xml_filename,default_catalogue_subwindow_behavior_status,default_catalogue_export_extension,default_path_catalogue]
+            for i in range(0,len(catalogue_save_data)):
+                if catalogue_save_data[i] == "":
+                    catalogue_save_data[i] = False
+        except Exception:
+            catalogue_save_data = [False]*6
 
         return [supported_formats_sorting,supported_formats_deleting,path_repaired,files_to_keep,cutoff_date,
                 prefix_function,prefix_camera,maximalized,max_pallets,static_dirs_names,safe_mode,image_browser_param,
@@ -425,19 +428,23 @@ def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do 
             lines[44] = str(input_data)+"\n"
 
         elif which_parameter == "catalogue_data":
-            lines[46] = lines[46].replace("\n","")
-            lines[46] = str(input_data[5])+"\n"
-            lines[48] = lines[48].replace("\n","")
-            lines[48] = str(input_data[0])+"\n"
-            lines[50] = lines[50].replace("\n","")
-            lines[50] = str(input_data[1])+"\n"
-            lines[52] = lines[52].replace("\n","")
-            lines[52] = str(input_data[2])+"\n"
-            lines[54] = lines[54].replace("\n","")
-            lines[54] = str(input_data[3])+"\n"
-            if input_data[4] != None:
-                lines[56] = lines[56].replace("\n","")
-                lines[56] = str(input_data[4])+"\n"
+            try:
+                lines[46] = lines[46].replace("\n","")
+                lines[46] = str(input_data[5])+"\n"
+                lines[48] = lines[48].replace("\n","")
+                lines[48] = str(input_data[0])+"\n"
+                lines[50] = lines[50].replace("\n","")
+                lines[50] = str(input_data[1])+"\n"
+                lines[52] = lines[52].replace("\n","")
+                lines[52] = str(input_data[2])+"\n"
+                lines[54] = lines[54].replace("\n","")
+                lines[54] = str(input_data[3])+"\n"
+                if input_data[4] != None:
+                    lines[56] = lines[56].replace("\n","")
+                    lines[56] = str(input_data[4])+"\n"
+            except Exception:
+                print("Aktualizujte si soubor Recources.txt")
+                pass
 
         #navraceni poli zpet do stringu radku:
         lines[2] = ""
@@ -4541,7 +4548,7 @@ class IP_manager: # Umožňuje nastavit možnosti třídění souborů
         else:
             current_window_size = "min"
         
-        self.ip_assignment_prg = IP_setting.IP_assignment(self.root,self.callback,current_window_size,initial_path)
+        IP_setting.IP_assignment(self.root,self.callback,current_window_size,initial_path)
 
 class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
     """
@@ -4554,7 +4561,7 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
         self.root = root
         self.database_downloaded = menu.database_downloaded
         # automatic download bypass:
-        self.database_downloaded = True
+        # self.database_downloaded = True
         self.database_filename  = "Sharepoint_databaze.xlsx"
         self.default_excel_filename = "Katalog_kamerového_vybavení"
         self.default_xml_file_name = "_metadata_catalogue"
@@ -4594,8 +4601,8 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
             input_message = "Datábáze se stáhne znovu až po restartu TRIMAZKONU"
         
         print("calling catalogue: ",self.database_filename,self.default_excel_filename,self.default_xml_file_name,self.default_subwindow_status,self.default_export_extension,self.default_path)
-        self.ip_assignment_prg = Catalogue.Catalogue_gui(self.root,input_message,self.callback,current_window_size,self.database_filename,self.default_excel_filename,
-                                                         self.default_xml_file_name,self.default_subwindow_status,self.default_export_extension,self.default_path)
+        Catalogue.Catalogue_gui(self.root,input_message,self.callback,current_window_size,self.database_filename,self.default_excel_filename,
+                                self.default_xml_file_name,self.default_subwindow_status,self.default_export_extension,self.default_path)
         
 menu = main_menu(root)
 menu.menu(initial=True)

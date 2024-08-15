@@ -106,4 +106,23 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     """ 
     - Oprava možnosti ignorovat nepáry
     - Optimalizace načítání buněk v ip setting\n"""
+        ," Verze 3.7.6 (15.8.2024)"
+        ,
+    """ 
+    - Úpravy v souboru Recources.txt
+    IP setting:
+    - úprava aut. velikosti widgetů
+    - oprava chybových hlášení v consoli
+    - při změně ip aktualizovat pouze statusy
+    - refresh/odpojeni/pripojeni disku aktualizuje pouze statusy
+    - opraven Tcl error
+    - delší ověřování statusu disku (1s->2s)
+    Katalog:
+    - ukládání poslední cesty do config
+    - filtrace uživatelských vstupů
+    - vizualizace nastavení
+    - možnost změnit defaultní název sharepoint databáze
+    TRIMAZKON:
+    - po změně nastavení v prohlížeči obrázků se zinitily
+    defaultní parametry\n"""
 ]
