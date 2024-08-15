@@ -503,15 +503,20 @@ po zmene ip nenacitat vse - jen zmena podbarveni- hotovo
 chyba u prenastavovani ip adres - Tcl Error - dela to mazani framu - hotovo
 - nefunguje refresh tlacitko - hotovo
 po pripojeni/odpojeni/refreshstatusů disku - jen refresh podbarveni (pole framu...) - hotovo
+
+3:00 PM 8/15/2024
+enterem expandovat na další řádky při editu poznámek - hotovo
+když dám editovat poznámky rovnou - vymaže se schovaná část v ip setting při přejezdu myší a držením btn1 mimo widget - opraveno
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 ip setting: když dotaz na powershell ano/ne a dam ne, zeptá se to, jestli otevřít, jako admin - sys.argument
 
-když dám editovat poznámky rovnou - vymaže se schovaná část v ip setting při přejezdu myší a držením btn1 mimo widget
 
-enterem expandovat na další řádky při editu poznámek
-když kliknu na volnou plochu sebrat  focus na widgetu
+když kliknu na volnou plochu sebrat focus na widgetu
+blbnou poznámky při přepínání mezi oblíbené - neoblíbené
+neuloží se poznámky když mám focus rozepsáno a vejdu do jiného okna
+klasika, když make_project_cells: TypeError: IP_assignment.make_project_cells.<locals>.<lambda>() missing 1 required positional argument: 'e' - možná unbind všeho
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon

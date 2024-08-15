@@ -159,12 +159,12 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.default_note_behav = 0
         self.mapping_condition = 0
         self.last_selected_widget = ""
+        self.last_selected_notes_widget = ""
         self.last_selected_textbox = ""
         self.last_selected_widget_id = 0
         self.opened_window = ""
         self.ip_frame_list = []
         self.disk_letter_frame_list = []
-        self.expanded_widget_status = False
         def call_main(what:str):
             try:
                 if what == "disk":
@@ -1137,7 +1137,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             
         return found    
 
-    def clicked_on_project(self,event,widget_id,widget,hearth=None,textbox = ""):
+    def clicked_on_project(self,event,widget_id,widget,textbox = "",flag = ""):
         def on_leave_entry(widget,row_of_widget):
             """
             při kliku na jiný widget:
@@ -1167,31 +1167,27 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.search_input.insert("0",str(self.disk_all_rows[widget_id][0]))
 
         self.check_given_input()
-        if hearth == "favourite":
-            add_colored_line(self.main_console,f"Projekt: {self.all_rows[widget_id][0]} byl odebrán z oblíbených","green",None,True)
-            self.switch_fav_status("del_favourite",change_status = True)
-            #refresh obrazku oblibenosti:
-            self.make_project_cells()
-        elif hearth == "no_favourite":
-            add_colored_line(self.main_console,f"Projekt: {self.all_rows[widget_id][0]} byl přidán do oblíbených","green",None,True)
-            self.switch_fav_status("add_favourite",change_status = True)
-            self.make_project_cells()
-            print("❤️",hearth)
-
-        print("widget id:" ,widget_id)
+        # print("widget id:" ,widget_id)
         # only if it is not pressed againt the same:
         if widget != self.last_selected_widget:
             try:
-                if self.last_selected_widget != "" and self.last_selected_widget.winfo_exists():
+                if self.last_selected_notes_widget != "" and self.last_selected_notes_widget.winfo_exists():
                     if self.last_selected_textbox != ""  and self.last_selected_textbox.winfo_exists():
-                        self.expanded_widget_status = False
                         on_leave_entry(self.last_selected_textbox,self.last_selected_widget_id)
                         shrink_frame(self.last_selected_widget,self.last_selected_textbox)
-                self.last_selected_textbox = textbox
+                if flag == "notes":
+                    self.last_selected_textbox = textbox
+                    self.last_selected_notes_widget = widget
+                else:
+                    # init the values:
+                    self.last_selected_textbox = ""
+                    self.last_selected_notes_widget = ""
+                    self.root.focus_set()
 
             except Exception as e:
                 print("chyba s navracenim framu do puvodniho formatu",e)
 
+            
             try:
                 if self.last_selected_widget != "" and self.last_selected_widget.winfo_exists():
                     self.last_selected_widget.configure(border_color="#636363")
@@ -1298,7 +1294,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
         def on_enter_entry(e,widget,row_of_widget):
             if not opened_window_check():
-                if str(widget) != str(self.last_selected_widget) + ".!ctktextbox":
+                if str(widget) != str(self.last_selected_notes_widget) + ".!ctktextbox":
                     widget.configure(state = "normal")
                     widget.delete("1.0",tk.END)
                     widget.insert(tk.END,str(self.all_rows[row_of_widget][3]))
@@ -1314,8 +1310,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             if not opened_window_check():
                 notes_before = filter_text_input(str(self.all_rows[row_of_widget][3]))
                 notes_after = filter_text_input(str(widget.get("1.0",tk.END)))
-
-                if str(widget) != str(self.last_selected_widget) + ".!ctktextbox":
+                if str(widget) != str(self.last_selected_notes_widget) + ".!ctktextbox":
                     widget.configure(state = "normal")
                     if notes_before != notes_after:
                         print("Poznamka byla zmenena")
@@ -1340,7 +1335,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
         def shrink_frame(e,widget):
             if not opened_window_check():
-                if str(widget[0]) != str(self.last_selected_widget):
+                if str(widget[0]) != str(self.last_selected_notes_widget):
                     widget[1].configure(state = "normal")
                     new_height = 50
                     widget[0].configure(height = new_height) #frame
@@ -1350,20 +1345,26 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
         def expand_frame(e,widget,row_of_widget):
             if not opened_window_check():
-                if not self.expanded_widget_status or str(widget[0]) != str(self.last_selected_widget):
-                    widget[1].configure(state = "normal")
-                    filtered_input = filter_text_input(self.all_rows[row_of_widget][3])
-                    self.all_rows[row_of_widget][3] = filtered_input
-                    addition = widget[0]._current_height
-                    if "\n" in self.all_rows[row_of_widget][3]:
-                        notes_rows = self.all_rows[row_of_widget][3].split("\n")
-                        expanded_dim = addition + (len(notes_rows)-1) * 24
-                        widget[0].configure(height = expanded_dim)
-                        widget[1].configure(height = expanded_dim-10)
-                        if self.default_note_behav == 0:
-                            widget[1].configure(state = "disabled")
-                    self.expanded_widget_status =True
+                if str(widget[0]) != str(self.last_selected_notes_widget):
+                    # if the height is not 50 then it means it is expanded already
+                    if widget[0].winfo_height() == 50:
+                        widget[1].configure(state = "normal")
+                        filtered_input = filter_text_input(self.all_rows[row_of_widget][3])
+                        self.all_rows[row_of_widget][3] = filtered_input
+                        addition = widget[0]._current_height
+                        if "\n" in self.all_rows[row_of_widget][3]:
+                            notes_rows = self.all_rows[row_of_widget][3].split("\n")
+                            expanded_dim = addition + (len(notes_rows)-1) * 24
+                            widget[0].configure(height = expanded_dim)
+                            widget[1].configure(height = expanded_dim-10)
+                            if self.default_note_behav == 0:
+                                widget[1].configure(state = "disabled")
                 
+        def add_row_return(e,widget):
+            addition = widget[0]._current_height
+            expanded_dim = addition + 24
+            widget[0].configure(height = expanded_dim)
+            widget[1].configure(height = expanded_dim-10)
 
         if no_read == None:
             self.read_excel_data()
@@ -1414,8 +1415,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     notes =         customtkinter.CTkTextbox(master = notes_frame,font=("Arial",20,"bold"),corner_radius=0,fg_color="black",height=40)
                     notes.          pack(padx =5,pady = 5,anchor="w",fill="x",expand = True)
                     notes_frame.    pack(pady=0,padx=0,side = "top",anchor = "w",fill="x",expand = True)
-                    notes_frame.    bind("<Button-1>",lambda e,widget = notes_frame, widget_id = y, textbox_widget = notes: self.clicked_on_project(e, widget_id,widget,None,textbox_widget))
-                    notes.          bind("<Button-1>",lambda e,widget = notes_frame, widget_id = y, textbox_widget = notes: self.clicked_on_project(e, widget_id,widget,None,textbox_widget))
+                    notes_frame.    bind("<Button-1>",lambda e,widget = notes_frame, widget_id = y, textbox_widget = notes: self.clicked_on_project(e, widget_id,widget,textbox_widget,flag="notes"))
+                    notes.          bind("<Button-1>",lambda e,widget = notes_frame, widget_id = y, textbox_widget = notes: self.clicked_on_project(e, widget_id,widget,textbox_widget,flag="notes"))
 
                     if "\n" in self.all_rows[y][x]:
                         notes_rows = self.all_rows[y][x].split("\n")
@@ -1429,6 +1430,9 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     notes.bind("<Leave>",lambda e, widget = [notes_frame,notes]:       shrink_frame(e,widget))
                     notes.bind("<Enter>",lambda e, widget = notes,row=y:               on_enter_entry(e,widget,row))
                     notes.bind("<Leave>",lambda e, widget = notes,row=y:               on_leave_entry(e,widget,row))
+                    
+                    notes.bind("<Return>",lambda e, widget = [notes_frame,notes]: add_row_return(e,widget))
+
                     if self.default_note_behav == 0:
                         notes.configure(state = "disabled")
 
