@@ -507,16 +507,16 @@ po pripojeni/odpojeni/refreshstatusů disku - jen refresh podbarveni (pole framu
 3:00 PM 8/15/2024
 enterem expandovat na další řádky při editu poznámek - hotovo
 když dám editovat poznámky rovnou - vymaže se schovaná část v ip setting při přejezdu myší a držením btn1 mimo widget - opraveno
+
+7:53 AM 8/16/2024
+klasika, když make_project_cells: TypeError: IP_assignment.make_project_cells.<locals>.<lambda>() missing 1 required positional argument: 'e' - možná unbind všeho - hotovo
+hodí mě to mimo obrazovku kdyz najedo dolu a prepinani oblibene nneoblibene - hotovo
+blbnou poznámky při přepínání mezi oblíbené - neoblíbené - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
+ip setting: když dotaz na powershell ano/ne a dam ne, zeptá se to, jestli otevřít, jako admin - sys.argument2:21 PM 8/16/2024
 
-ip setting: když dotaz na powershell ano/ne a dam ne, zeptá se to, jestli otevřít, jako admin - sys.argument
-
-
-když kliknu na volnou plochu sebrat focus na widgetu
-blbnou poznámky při přepínání mezi oblíbené - neoblíbené
-neuloží se poznámky když mám focus rozepsáno a vejdu do jiného okna
-klasika, když make_project_cells: TypeError: IP_assignment.make_project_cells.<locals>.<lambda>() missing 1 required positional argument: 'e' - možná unbind všeho
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon

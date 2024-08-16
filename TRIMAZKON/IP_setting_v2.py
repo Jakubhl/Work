@@ -162,6 +162,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.last_selected_notes_widget = ""
         self.last_selected_textbox = ""
         self.last_selected_widget_id = 0
+        self.editing_notes = False
         self.opened_window = ""
         self.ip_frame_list = []
         self.disk_letter_frame_list = []
@@ -261,6 +262,11 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         frame.update_idletasks()
         for widget in frame.winfo_children():
             if widget.winfo_exists():
+                widget.unbind("<Enter>")
+                widget.unbind("<Leave>")
+                widget.unbind("<Return>")
+                widget.unbind("<Button-1>")
+                widget.unbind("<Button-3>")
                 widget.destroy()
             # try:
             #     if widget.winfo_exists():
@@ -888,6 +894,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             return True
         else:
             return False
+        
+        # if ".!ctkentry" in currently_focused or ".!ctktextbox" in currently_focused:
 
     def make_sure_ip_changed(self,interface_name,ip):
         def run_as_admin():
@@ -1176,6 +1184,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                         on_leave_entry(self.last_selected_textbox,self.last_selected_widget_id)
                         shrink_frame(self.last_selected_widget,self.last_selected_textbox)
                 if flag == "notes":
+                    if self.show_favourite:
+                        add_colored_line(self.main_console,f"Poznámky je možné upravovat pouze v menu IP-všechny (stačí se zvoleným projektem stisknout editovat projekt)","orange",None,True)
                     self.last_selected_textbox = textbox
                     self.last_selected_notes_widget = widget
                 else:
@@ -1287,10 +1297,49 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         
         def save_changed_notes(notes,row):
             workbook = load_workbook(self.excel_file_path)
-            worksheet = workbook["ip_address_list"]
-            worksheet['D' + str(len(self.all_rows)-row)] = notes
+
+            def find_notes_in_whole_list(row,new_fav_status):
+                index_of_project = "no data"
+                try:
+                    wanted_project = self.all_rows[row][0]
+                    self.show_favourite = new_fav_status
+                    self.read_excel_data()
+                    for i in range(0,len(self.all_rows)):
+                        if self.all_rows[i][0] == wanted_project:
+                            index_of_project = i
+                            break
+                    return index_of_project
+                except Exception as e:
+                    print(e)
+                    return "no data"
+
+            def save_to_workbook(notes,row,excel_worksheet):
+                nonlocal workbook
+                worksheet = workbook[excel_worksheet]
+                worksheet['D' + str(len(self.all_rows)-row)] = notes
+                print("D"+str(len(self.all_rows)-row) +" = ",notes)
+
+            if self.show_favourite:
+                save_to_workbook(notes,row,"ip_adress_fav_list")
+                # self.show_favourite = False
+                index_of_project = find_notes_in_whole_list(row,new_fav_status = False)
+                print("index",index_of_project)
+                if str(index_of_project) != "no data":
+                    save_to_workbook(notes,index_of_project,"ip_address_list")
+                self.show_favourite = True
+            else:
+                save_to_workbook(notes,row,"ip_address_list")
+                # self.show_favourite = True
+                index_of_project = find_notes_in_whole_list(row,new_fav_status = True)
+                print("index",index_of_project)
+                if str(index_of_project) != "no data":
+                    save_to_workbook(notes,index_of_project,"ip_adress_fav_list")
+                self.show_favourite = False
+
             workbook.save(filename=self.excel_file_path)
             workbook.close()
+            self.read_excel_data()
+
 
         def on_enter_entry(e,widget,row_of_widget):
             if not opened_window_check():
@@ -1392,7 +1441,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     button =    customtkinter.CTkButton(master = btn_frame,width = 200,height=40,text = self.all_rows[y][x],font=("Arial",20,"bold"),corner_radius=0, command = lambda widget_id = y: self.change_computer_ip(widget_id))
                     button.     pack(padx =5,pady = 5, fill= "x")
                     btn_frame.  pack(side = "top",anchor = "w",expand = False,fill= "x")
-                    btn_frame.  bind("<Button-1>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
+                    button.     bind("<Button-1>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
                     # zkopírovat pravým klikem na button:
                     button.     bind("<Button-3>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
                 elif x == 1: # frame s ip adresou
@@ -1433,11 +1482,12 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     
                     notes.bind("<Return>",lambda e, widget = [notes_frame,notes]: add_row_return(e,widget))
 
-                    if self.default_note_behav == 0:
+                    if self.default_note_behav == 0 or self.show_favourite:
                         notes.configure(state = "disabled")
 
         self.project_tree.update()
         self.project_tree.update_idletasks()
+        self.project_tree._parent_canvas.yview_moveto(0.0)
     
     def refresh_disk_statuses(self):
         self.refresh_btn.configure(text = "🔄",font=("",25))
@@ -1970,6 +2020,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.last_project_mask = ""
             self.last_project_notes = ""
             self.last_project_id = ""
+            self.last_selected_widget = ""
+            self.last_selected_notes_widget = ""
+            self.last_selected_textbox = ""
+            self.last_selected_widget_id = 0
             # self.show_only_fav.configure(text = "Oblíbené")
             if keep_search_input == False:
                 self.search_input.delete("0","300")
@@ -1993,6 +2047,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.last_project_mask = ""
             self.last_project_notes = ""
             self.last_project_id = ""
+            self.last_selected_widget = ""
+            self.last_selected_notes_widget = ""
+            self.last_selected_textbox = ""
+            self.last_selected_widget_id = 0
             # self.show_only_fav.configure(text = "Všechny projekty")
             if keep_search_input == False:
                 self.search_input.delete("0","300")
@@ -2257,6 +2315,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         def call_search(e):
             self.make_project_first("search")
         self.search_input.bind("<Return>",call_search)
+
         self.root.mainloop()
 
     def create_widgets_disk(self,init=None):
