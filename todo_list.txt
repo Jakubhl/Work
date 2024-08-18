@@ -512,11 +512,18 @@ když dám editovat poznámky rovnou - vymaže se schovaná část v ip setting 
 klasika, když make_project_cells: TypeError: IP_assignment.make_project_cells.<locals>.<lambda>() missing 1 required positional argument: 'e' - možná unbind všeho - hotovo
 hodí mě to mimo obrazovku kdyz najedo dolu a prepinani oblibene nneoblibene - hotovo
 blbnou poznámky při přepínání mezi oblíbené - neoblíbené - hotovo
+ip setting: když dotaz na powershell ano/ne a dam ne, zeptá se to, jestli otevřít, jako admin - sys.argument- hotovo
+
+3:20 PM 8/17/2024
+pri kliku mimo odebrat focus- hotovo
+vyresit unbind btn1 - hotovo
+dotaz zda opravdu smazat projekt - hotovo
+oprava poznámek i u disků - hotovo
+dotaz zda opravdu smazat projekt,disky - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-ip setting: když dotaz na powershell ano/ne a dam ne, zeptá se to, jestli otevřít, jako admin - sys.argument2:21 PM 8/16/2024
-
+direct editig u oblíbených ip adres (aby to vůbec nelezlo do všech)
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon

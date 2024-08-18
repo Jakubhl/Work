@@ -23,6 +23,9 @@ pracovni notebook:
 pyinstaller --noconfirm --onefile -w --console --icon=images\logo_TRIMAZKON.ico --add-data images\nothing.PNG;images --add-data images\logo.png;images --add-data images\24_both.PNG;images --add-data images\24_cam.PNG;images --add-data images\25basic.PNG;images --add-data images\24_func.PNG;images --add-data images\2sub_vol.PNG;images --add-data images\2sub_roz.PNG;images --add-data images\1sub_vol.PNG;images --add-data images\1sub_roz.PNG;images --add-data images\nosub_roz.PNG;images --add-data images\nosub_vol.PNG;images --add-data images\24_type.PNG;images --add-data images\directories.png;images --add-data images\logo_TRIMAZKON.ico;images --add-data images\loading3.png;images --add-data images\jhv_logo.png;images --add-data images\omron_logo.png;images  --add-data images\keyence_logo.png;images --add-data images\excel_manual.png;images --add-data images\jhv_logo2.png;images --add-data "C:\Users\jakub.hlavacek.local\AppData\Local\Programs\Python\Python312\Lib\site-packages\customtkinter;customtkinter/" --name TRIMAZKON JHV_APP_GUI_v9.py
 
 
+git reset --hard origin/main
+git clean -fd
+
 
 
 
