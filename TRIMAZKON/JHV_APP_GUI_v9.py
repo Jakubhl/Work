@@ -58,7 +58,7 @@ customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 root=customtkinter.CTk()
 root.geometry("1200x900")
-root.title("TRIMAZKON v_3.7.6")
+root.title("TRIMAZKON v_3.7.7")
 root.wm_iconbitmap(resource_path(app_icon))
 
 """def app_data_source_files():

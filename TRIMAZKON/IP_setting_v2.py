@@ -366,12 +366,14 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.default_disk_status_behav = int(worksheet['B' + str(6)].value)
         workbook.close()
                      
-    def save_excel_data(self,project_name,IP_adress,mask,notes,only_edit = None,force_row_to_print=None,fav_status = None):
+    def save_excel_data(self,project_name,IP_adress,mask,notes,only_edit = None,force_row_to_print=None,fav_status = None,force_ws = None):
         workbook = load_workbook(self.excel_file_path)
         if self.show_favourite:
             excel_worksheet = "ip_adress_fav_list"
         else:
             excel_worksheet = "ip_address_list"
+        if force_ws != None:
+            excel_worksheet = force_ws
         worksheet = workbook[excel_worksheet]
         # excel je od jednicky...
         if force_row_to_print == None:
@@ -526,6 +528,58 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.make_project_cells(no_read=True)
 
     def save_new_project_data(self,child_root,only_edit = None,make_fav=False):
+
+        def get_both_row_indexes():
+            """
+            returns array of 2 excel row indexes:\n
+            [0] = normal list\n
+            [1] = favourite list
+            """
+            # nonlocal project_name
+            wanted_project = self.last_project_name
+            # workbook = load_workbook(self.excel_file_path)
+
+            def find_project_index(wanted_project,new_fav_status):
+                index_of_project = "no data"
+                try:
+                    # wanted_project = self.all_rows[row][0]
+                    if new_fav_status != None:
+                        self.show_favourite = new_fav_status
+                        self.read_excel_data()
+                    for i in range(0,len(self.all_rows)):
+                        if self.all_rows[i][0] == wanted_project:
+                            index_of_project = i
+                            break
+                    return (len(self.all_rows) - index_of_project)
+                except Exception as err:
+                    print(err)
+                    return "no data"
+
+            # def save_to_workbook(notes,row,excel_worksheet):
+            #     worksheet = workbook[excel_worksheet]
+            #     worksheet['D' + str(len(self.all_rows)-row)] = notes
+            print(wanted_project)
+            if self.show_favourite:
+                index_of_fav_project = find_project_index(wanted_project,new_fav_status = None)
+                # save_to_workbook(notes,index_of_fav_project,"ip_adress_fav_list")
+                index_of_project = find_project_index(wanted_project,new_fav_status = False)
+                # if str(index_of_project) != "no data":
+                #     save_to_workbook(notes,index_of_project,"ip_address_list")
+                self.show_favourite = True
+
+            elif not self.show_favourite:
+                index_of_project = find_project_index(wanted_project,new_fav_status = None)
+                # save_to_workbook(notes,index_of_project,"ip_address_list")
+                index_of_fav_project = find_project_index(wanted_project,new_fav_status = True)
+                # if str(index_of_fav_project) != "no data":
+                #     save_to_workbook(notes,index_of_fav_project,"ip_adress_fav_list")
+                self.show_favourite = False
+
+            # workbook.save(filename=self.excel_file_path)
+            # workbook.close()
+            self.read_excel_data()
+            return [index_of_project,index_of_fav_project]
+
         project_name = str(self.name_input.get())
         IP_adress = str(self.IP_adress_input.get())
         IP_adress = self.check_ip_and_mask(IP_adress)
@@ -550,7 +604,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         if errors ==0:
             self.read_excel_data()
 
-            if only_edit == None: # pridavam novy projekt
+            if only_edit == None: # pridavam novy projekt 1: rovnou do oblibených 2:jen do všech
                 if make_fav:
                     new_project = [project_name,IP_adress,mask,notes,1]
                     self.switch_fav_status("add_favourite",new_project)
@@ -574,10 +628,13 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=None,fav_status=0)
                 elif make_fav and current_fav_status == 1:
                     #nedoslo ke zmene statusu, ale mohlo dojit ke zmene - proto prepsat v oblibenych - vzdy se jedna o oblibene...
-                    project_with_changes = [project_name,IP_adress,mask,notes,current_fav_status]
-                    self.switch_fav_status("rewrite_favourite",project_with_changes)
+                    # project_with_changes = [project_name,IP_adress,mask,notes,current_fav_status]
+                    # self.switch_fav_status("rewrite_favourite",project_with_changes)
                     add_colored_line(self.main_console,f"Projekt: {self.last_project_name} úspěšně pozměněn","green",None,True)
-                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=None,fav_status=current_fav_status)
+                    row_index_list = get_both_row_indexes()
+                    print(row_index_list)
+                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[0],fav_status=current_fav_status,force_ws="ip_address_list")
+                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[1],fav_status=current_fav_status,force_ws="ip_adress_fav_list")
                 else:
                     add_colored_line(self.main_console,f"Projekt: {self.last_project_name} úspěšně pozměněn","green",None,True)
                     self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=None,fav_status=current_fav_status)
@@ -807,10 +864,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             do_favourite()
 
     def add_new_project(self,edit = None):
-        if self.show_favourite:
+        # if self.show_favourite:
             #přepnutí do hlavního prostředí
-            self.show_favourite_toggle(True)
-        # child_root=customtkinter.CTk()
+            # self.show_favourite_toggle(True)
+            
         child_root = customtkinter.CTkToplevel()
         self.opened_window = child_root
         x = self.root.winfo_rootx()
@@ -1562,9 +1619,9 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     self.ip_frame_list.append([ip_frame,parameter])
                     if ip_addr in self.current_address_list:
                         ip_frame.   configure(fg_color = "green")
-                        ip_frame.   bind("<Enter>",lambda e, interface = self.connection_option_list[self.current_address_list.index(ip_addr)], widget = parameter: on_enter(e,interface,widget))
+                        ip_frame.   bind("<Enter>",lambda e, interface = self.connection_option_list[self.current_address_list.index(ip_addr)], widget = parameter: on_enter(interface,widget))
                         ip_frame.   bind("<Leave>",lambda e, ip = ip_addr, widget = parameter,frame = ip_frame: on_leave(ip,widget,frame))
-                        parameter.  bind("<Enter>",lambda e, interface = self.connection_option_list[self.current_address_list.index(ip_addr)], widget = parameter: on_enter(e,interface,widget))
+                        parameter.  bind("<Enter>",lambda e, interface = self.connection_option_list[self.current_address_list.index(ip_addr)], widget = parameter: on_enter(interface,widget))
                         parameter.  bind("<Leave>",lambda e, ip = ip_addr, widget = parameter,frame = ip_frame: on_leave(ip,widget,frame))
                 elif x == 3: # frame s poznamkami...
                     notes_frame =   customtkinter.CTkFrame(master=column3,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)

@@ -524,6 +524,12 @@ dotaz zda opravdu smazat projekt,disky - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 direct editig u oblíbených ip adres (aby to vůbec nelezlo do všech)
+- muze dojit k tomu, ze se lisi informace v oblibenem a normalnim listu... - osetrit
+- osetrit to, že se rovná index "no data" - když ukládá 
+
+přidat tlačítko zrušit u editu a nový projekt v ip setting
+
+
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon
