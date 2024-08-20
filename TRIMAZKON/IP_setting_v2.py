@@ -166,6 +166,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.opened_window = ""
         self.ip_frame_list = []
         self.disk_letter_frame_list = []
+        self.make_edited_project_first = True
         def call_main(what:str):
             try:
                 if what == "disk":
@@ -315,12 +316,13 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         
         return [interfaces,connected_interfaces]
 
-    def read_excel_data(self):
+    def read_excel_data(self,force_ws = None):
         if self.show_favourite:
             excel_worksheet = "ip_adress_fav_list"
         else:
             excel_worksheet = "ip_address_list"
-
+        if force_ws != None:
+            excel_worksheet = force_ws
         workbook = load_workbook(self.excel_file_path)
         # seznam vsech statickych ip adres
         self.all_rows = []
@@ -529,16 +531,15 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
     def save_new_project_data(self,child_root,only_edit = None,make_fav=False):
 
-        def get_both_row_indexes():
+        def get_both_row_indexes(new_project = False):
             """
-            returns array of 2 excel row indexes:\n
+            - new project = bool - returs the last position of excel row, where the new project takes place\n
+            returns array of 2 excel row indexes: (finds matches)\n
             [0] = normal list\n
-            [1] = favourite list
+            [1] = favourite list\n
+            - if not found returns "no data"\n
             """
-            # nonlocal project_name
             wanted_project = self.last_project_name
-            # workbook = load_workbook(self.excel_file_path)
-
             def find_project_index(wanted_project,new_fav_status):
                 index_of_project = "no data"
                 try:
@@ -550,33 +551,26 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                         if self.all_rows[i][0] == wanted_project:
                             index_of_project = i
                             break
-                    return (len(self.all_rows) - index_of_project)
+                    if new_project:
+                        return len(self.all_rows)
+                    elif index_of_project != "no data":
+                        return (len(self.all_rows) - index_of_project)
+                    else:
+                        return index_of_project
                 except Exception as err:
                     print(err)
                     return "no data"
 
-            # def save_to_workbook(notes,row,excel_worksheet):
-            #     worksheet = workbook[excel_worksheet]
-            #     worksheet['D' + str(len(self.all_rows)-row)] = notes
-            print(wanted_project)
             if self.show_favourite:
                 index_of_fav_project = find_project_index(wanted_project,new_fav_status = None)
-                # save_to_workbook(notes,index_of_fav_project,"ip_adress_fav_list")
                 index_of_project = find_project_index(wanted_project,new_fav_status = False)
-                # if str(index_of_project) != "no data":
-                #     save_to_workbook(notes,index_of_project,"ip_address_list")
                 self.show_favourite = True
 
             elif not self.show_favourite:
                 index_of_project = find_project_index(wanted_project,new_fav_status = None)
-                # save_to_workbook(notes,index_of_project,"ip_address_list")
                 index_of_fav_project = find_project_index(wanted_project,new_fav_status = True)
-                # if str(index_of_fav_project) != "no data":
-                #     save_to_workbook(notes,index_of_fav_project,"ip_adress_fav_list")
                 self.show_favourite = False
 
-            # workbook.save(filename=self.excel_file_path)
-            # workbook.close()
             self.read_excel_data()
             return [index_of_project,index_of_fav_project]
 
@@ -603,43 +597,80 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         # poznamky nejsou povinne
         if errors ==0:
             self.read_excel_data()
-
-            if only_edit == None: # pridavam novy projekt 1: rovnou do oblibených 2:jen do všech
+            # pridavam novy projekt 1: rovnou do oblibených, 2:jen do všech
+            if only_edit == None: 
+                row_index_list = get_both_row_indexes(new_project=True)
                 if make_fav:
-                    new_project = [project_name,IP_adress,mask,notes,1]
-                    self.switch_fav_status("add_favourite",new_project)
+                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[0]+1,fav_status=1,force_ws="ip_address_list")
+                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[1]+1,fav_status=1,force_ws="ip_adress_fav_list")
                     add_colored_line(self.main_console,f"Přidán nový oblíbený projekt: {project_name}","green",None,True)
-                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=None,force_row_to_print=None,fav_status=1)                
                 else:
-                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=None,force_row_to_print=None,fav_status=0)
+                    # shift_projects(which_list="all")
+                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[0]+1,fav_status=0,force_ws="ip_address_list")
                     add_colored_line(self.main_console,f"Přidán nový projekt: {project_name}","green",None,True)
-            else:
+
+            elif only_edit:
                 # kdyz edituji muze mit projekt jiz prideleny status
                 current_fav_status = self.is_project_favourite(self.last_project_id)
+
                 if make_fav and current_fav_status == 0:
-                    project_with_changes = [project_name,IP_adress,mask,notes,current_fav_status]
-                    self.switch_fav_status("add_favourite",project_with_changes)
-                    add_colored_line(self.main_console,f"Projekt: {self.last_project_name} úspěšně pozměněn a přidán do oblíbených","green",None,True)
+                    # zaskrtnuto oblibene + je nebyl oblibeny  = ZMENA:
+                    row_index_list = get_both_row_indexes(new_project=True)
+                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[1]+1,fav_status=1,force_ws="ip_adress_fav_list")
                     self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=None,fav_status=1)
-                elif make_fav == False and current_fav_status == 1:
-                    project_without_changes = self.all_rows[self.last_project_id]
-                    self.switch_fav_status("del_favourite",project_without_changes)
-                    add_colored_line(self.main_console,f"Projekt: {self.last_project_name} úspěšně pozměněn a odebrán z oblíbených","green",None,True)
-                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=None,fav_status=0)
-                elif make_fav and current_fav_status == 1:
-                    #nedoslo ke zmene statusu, ale mohlo dojit ke zmene - proto prepsat v oblibenych - vzdy se jedna o oblibene...
+
                     # project_with_changes = [project_name,IP_adress,mask,notes,current_fav_status]
-                    # self.switch_fav_status("rewrite_favourite",project_with_changes)
+                    add_colored_line(self.main_console,f"Projekt: {self.last_project_name} úspěšně pozměněn a přidán do oblíbených","green",None,True)
+                
+                elif make_fav == False and current_fav_status == 1:
+                    # neni zaskrtnuto oblibene + je jiz oblibeny = ZMENA
+                    row_index_list = get_both_row_indexes()
+                    print("odebran z oblibenych", row_index_list)
+
+                    if row_index_list[0] == "no data" or row_index_list[1] == "no data":
+                        add_colored_line(self.main_console,f"Chyba synchronizace (oblíbené <-> všechny). Projekt {self.last_project_name} se nepodařilo pozměnit","red",None,True)
+                        child_root.destroy()
+                        return
+
+                    if self.show_favourite:
+                        self.delete_project(wanted_project=self.last_project_name,silence=True)
+                        self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[0],fav_status=0,force_ws="ip_address_list")
+
+                    else:
+                        # nejprve smazat z oblíbených:
+                        workbook = load_workbook(self.excel_file_path)
+                        worksheet = workbook["ip_adress_fav_list"]
+                        worksheet.delete_rows(row_index_list[1])
+                        workbook.save(self.excel_file_path)
+                        # poté uložit změnu statusu do všech:
+                        self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=None,fav_status=0)
+
+                    add_colored_line(self.main_console,f"Projekt: {self.last_project_name} úspěšně pozměněn a odebrán z oblíbených","green",None,True)
+
+                elif make_fav and current_fav_status == 1:
+                    # zaskrtnuto oblibene + je jiz oblibeny = BEZ ZMENY
+                    #nedoslo ke zmene statusu, ale mohlo dojit ke zmene - proto prepsat v oblibenych
                     add_colored_line(self.main_console,f"Projekt: {self.last_project_name} úspěšně pozměněn","green",None,True)
                     row_index_list = get_both_row_indexes()
-                    print(row_index_list)
-                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[0],fav_status=current_fav_status,force_ws="ip_address_list")
-                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[1],fav_status=current_fav_status,force_ws="ip_adress_fav_list")
-                else:
-                    add_colored_line(self.main_console,f"Projekt: {self.last_project_name} úspěšně pozměněn","green",None,True)
-                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=None,fav_status=current_fav_status)
+                    print("pozmenen 1",row_index_list)
+                    # edited_project = [project_name,IP_adress,mask,notes,current_fav_status]
+                    if row_index_list[0] != "no data":
+                        self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[0],fav_status=current_fav_status,force_ws="ip_address_list")
+                    if row_index_list[1] != "no data":
+                        self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[1],fav_status=current_fav_status,force_ws="ip_adress_fav_list")
+                    # self.make_project_first(purpouse="silent",make_cells=False,project=edited_project)
 
-            # self.close_window(child_root)
+                elif make_fav == False and current_fav_status == 0:
+                    # neni zaskrtnuto oblibene + nebyl oblibeny = BEZ ZMENY
+                    row_index_list = get_both_row_indexes()
+                    print("pozmenen 2",row_index_list)
+
+                    # edited_project = [project_name,IP_adress,mask,notes,current_fav_status]
+                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[0],fav_status=current_fav_status,force_ws="ip_address_list")
+                    # self.make_project_first(purpouse="silent",make_cells=False,project=edited_project)
+                    add_colored_line(self.main_console,f"Projekt: {self.last_project_name} úspěšně pozměněn","green",None,True)
+
+
             child_root.destroy()
             self.make_project_cells()
     
@@ -894,11 +925,17 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 self.make_fav_label =   customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Neoblíbený",font=("Arial",20,"bold"))
                 fav_frame =             customtkinter.CTkFrame(master=child_root,corner_radius=0,border_width=0,height=150,width=150)
                 self.make_fav_btn =     customtkinter.CTkLabel(master = fav_frame, width = 150,height=150,text = "❌",font=("Arial",100),text_color = "red")
-        else: # defaultne neoblibeny
-            self.make_project_favourite = False #init hodnota
-            self.make_fav_label =   customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Neoblíbený",font=("Arial",20,"bold"))
-            fav_frame =             customtkinter.CTkFrame(master=child_root,corner_radius=0,border_width=0,height=150,width=150)
-            self.make_fav_btn =     customtkinter.CTkLabel(master = fav_frame, width = 150,height=150,text = "❌",font=("Arial",100),text_color = "red")
+        else: # přidat nový projekt:
+            if self.show_favourite:
+                self.make_project_favourite = True #init hodnota
+                self.make_fav_label =   customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Oblíbený ❤️",font=("Arial",20,"bold"))
+                fav_frame =             customtkinter.CTkFrame(master=child_root,corner_radius=0,border_width=0,height=150,width=150)
+                self.make_fav_btn =     customtkinter.CTkLabel(master = fav_frame, width = 150,height=150,text = "🐘",font=("Arial",130),text_color = "pink")
+            else:
+                self.make_project_favourite = False #init hodnota
+                self.make_fav_label =   customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Neoblíbený",font=("Arial",20,"bold"))
+                fav_frame =             customtkinter.CTkFrame(master=child_root,corner_radius=0,border_width=0,height=150,width=150)
+                self.make_fav_btn =     customtkinter.CTkLabel(master = fav_frame, width = 150,height=150,text = "❌",font=("Arial",100),text_color = "red")
 
         IP_adress =            customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "IP adresa: ",font=("Arial",20,"bold"))
         self.IP_adress_input = customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0)
@@ -1283,6 +1320,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         flag = unfocus:
         - při kliku mimo se odebere focus z nakliknutých widgetů
         """
+        print("widget_id",widget_id)
+
         def on_leave_entry(widget,row_of_widget):
             """
             při kliku na jiný widget:
@@ -1571,8 +1610,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                         else:
                             if self.default_note_behav == 0:
                                 widget[1].configure(state = "disabled")
-
-                
+         
         def add_row_return(widget):
             addition = widget[0]._current_height
             expanded_dim = addition + 24
@@ -1608,6 +1646,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     button.     bind("<Button-1>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
                     # zkopírovat pravým klikem na button:
                     button.     bind("<Button-3>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
+
+                    if self.is_project_favourite(y):
+                        button.configure(fg_color = "#1E90FF")
+
                 elif x == 1: # frame s ip adresou
                     ip_frame =  customtkinter.CTkFrame(master=column2,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)
                     parameter = customtkinter.CTkLabel(master = ip_frame,text = self.all_rows[y][x],height=40,width = 250,font=("Arial",20,"bold"),justify='left',anchor = "w")
@@ -2072,7 +2114,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 message = "nenalezeno"
             add_colored_line(self.main_console,f"Současné připojení: {message}","white",None,True)
 
-    def make_project_first(self,purpouse=None):
+    def make_project_first(self,purpouse=None,make_cells = True,project = None):
         """
         purpouse:
         - search
@@ -2081,7 +2123,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         result = self.check_given_input()
         if result == True:
             #zmena poradi
-            project = self.all_rows[self.last_project_id]
+            if project == None:
+                project = self.all_rows[self.last_project_id]
             favourite_status = self.favourite_list[self.last_project_id]
             self.all_rows.pop(self.last_project_id)
             self.all_rows.insert(0,project)
@@ -2092,8 +2135,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             for i in range(0,len(self.all_rows)):
                 row = (len(self.all_rows)-1)-i
                 self.save_excel_data(self.all_rows[i][0],self.all_rows[i][1],self.all_rows[i][2],self.all_rows[i][3],None,row+1,fav_status=self.favourite_list[i])
-
-            self.make_project_cells()
+            if make_cells:
+                self.make_project_cells()
             if purpouse == "search":
                 add_colored_line(self.main_console,f"Projekt {self.all_rows[0][0]} nalezen","green",None,True)
             elif purpouse != "silent":
@@ -2223,6 +2266,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.save_setting_parameter(parameter="change_def_ip_window",status=window_status)
             self.button_switch_favourite_ip. configure(fg_color="black")
             self.button_switch_all_ip.       configure(fg_color="#212121")
+            self.button_remove_main.         configure(text="Smazat projekt")
 
         elif self.show_favourite == False and (determine_status == None or determine_status == "fav"):
             # favourite window
@@ -2250,6 +2294,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.save_setting_parameter(parameter="change_def_ip_window",status=window_status)
             self.button_switch_favourite_ip. configure(fg_color="#212121")
             self.button_switch_all_ip.       configure(fg_color="black")
+            self.button_remove_main.         configure(text="Odebrat projekt")
 
     def refresh_interfaces(self,all = False):
         """
@@ -2413,9 +2458,11 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         button_settings_behav =     customtkinter.CTkButton(master = main_widgets, width = 40,height=40,text="⚙️",command =  lambda: self.setting_window(ip_window=True),font=("",22),corner_radius=0)
         
         if self.show_favourite:
+            self.button_remove_main.         configure(text="Odebrat projekt")
             self.button_switch_favourite_ip. configure(fg_color="#212121")
             self.button_switch_all_ip.       configure(fg_color="black")
         else:
+            self.button_remove_main.         configure(text="Smazat projekt")
             self.button_switch_favourite_ip. configure(fg_color="black")
             self.button_switch_all_ip.       configure(fg_color="#212121")
 
