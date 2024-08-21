@@ -162,7 +162,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.last_selected_notes_widget = ""
         self.last_selected_textbox = ""
         self.last_selected_widget_id = 0
-        self.editing_notes = False
         self.opened_window = ""
         self.ip_frame_list = []
         self.disk_letter_frame_list = []
@@ -178,10 +177,12 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
         def insert_new_excel_param(wb,ws,param):
             """
+            Oveřuje zda konfigurační excel již obsahuje tyto parametry, případně zapíše
             param:
             - (disk_behav) default chování načítání obrazovky s disky
             - (notes_behav) default chování poznámek
             - (mapping_cond) disk persistent - yes/ no
+            - (make_first_behav) = chování při editu
             """
             if param == "disk_behav":
                 ws['B' + str(6)] = 0
@@ -194,6 +195,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             elif param == "mapping_cond":
                 ws['B' + str(8)] = 0
                 ws['A' + str(8)] = "disk persistentní - yes(1)/ no(0)"
+                wb.save(self.excel_file_path)
+            elif param == "make_first_behav":
+                ws['B' + str(9)] = 1
+                ws['A' + str(9)] = "automaticky přesouvat upravené projekty na začátek"
                 wb.save(self.excel_file_path)
 
             print('inserting new parameter to excel')
@@ -236,6 +241,16 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 insert_new_excel_param(workbook,worksheet,param="mapping_cond")
             else:
                 self.mapping_condition = int(worksheet['B' + str(8)].value)
+
+            value_check = worksheet['B' + str(9)].value
+            if value_check is None or str(value_check) == "":
+                insert_new_excel_param(workbook,worksheet,param="mapping_cond")
+            else:
+                excel_value =  int(worksheet['B' + str(9)].value)
+                if excel_value == 1:
+                    self.make_edited_project_first = True
+                else:
+                    self.make_edited_project_first = False
 
             def_show_disk = worksheet['B' + str(4)].value
             workbook.close()
@@ -574,6 +589,14 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.read_excel_data()
             return [index_of_project,index_of_fav_project]
 
+        def switch_database():
+            if self.show_favourite:
+                self.show_favourite = False
+                self.read_excel_data()
+            else:
+                self.show_favourite = True
+                self.read_excel_data()
+
         project_name = str(self.name_input.get())
         IP_adress = str(self.IP_adress_input.get())
         IP_adress = self.check_ip_and_mask(IP_adress)
@@ -605,7 +628,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[1]+1,fav_status=1,force_ws="ip_adress_fav_list")
                     add_colored_line(self.main_console,f"Přidán nový oblíbený projekt: {project_name}","green",None,True)
                 else:
-                    # shift_projects(which_list="all")
                     self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[0]+1,fav_status=0,force_ws="ip_address_list")
                     add_colored_line(self.main_console,f"Přidán nový projekt: {project_name}","green",None,True)
 
@@ -614,13 +636,20 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 current_fav_status = self.is_project_favourite(self.last_project_id)
 
                 if make_fav and current_fav_status == 0:
-                    # zaskrtnuto oblibene + je nebyl oblibeny  = ZMENA:
+                    # zaskrtnuto oblibene + nebyl oblibeny  = ZMENA:
                     row_index_list = get_both_row_indexes(new_project=True)
                     self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[1]+1,fav_status=1,force_ws="ip_adress_fav_list")
                     self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=None,fav_status=1)
 
-                    # project_with_changes = [project_name,IP_adress,mask,notes,current_fav_status]
-                    add_colored_line(self.main_console,f"Projekt: {self.last_project_name} úspěšně pozměněn a přidán do oblíbených","green",None,True)
+                    if self.last_project_name != project_name:
+                        status_text = f"Projekt: {self.last_project_name} (nově: {project_name}) úspěšně pozměněn a přidán do oblíbených"
+                    else:
+                        status_text = f"Projekt: {self.last_project_name} úspěšně pozměněn a přidán do oblíbených"
+                    add_colored_line(self.main_console,status_text,"green",None,True)
+
+                    edited_project = [project_name,IP_adress,mask,notes,1]
+                    if self.make_edited_project_first:
+                        self.make_project_first(purpouse="silent",make_cells=False,project=edited_project)
                 
                 elif make_fav == False and current_fav_status == 1:
                     # neni zaskrtnuto oblibene + je jiz oblibeny = ZMENA
@@ -645,32 +674,56 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                         # poté uložit změnu statusu do všech:
                         self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=None,fav_status=0)
 
-                    add_colored_line(self.main_console,f"Projekt: {self.last_project_name} úspěšně pozměněn a odebrán z oblíbených","green",None,True)
+                    if self.last_project_name != project_name:
+                        status_text = f"Projekt: {self.last_project_name} (nově: {project_name}) úspěšně pozměněn a odebrán z oblíbených"
+                    else:
+                        status_text = f"Projekt: {self.last_project_name} úspěšně pozměněn a odebrán z oblíbených"
+                    add_colored_line(self.main_console,status_text,"green",None,True)
+
+                    edited_project = [project_name,IP_adress,mask,notes,0]
+                    if self.make_edited_project_first:
+                        if not self.show_favourite:
+                            self.make_project_first(purpouse="silent",make_cells=False,project=edited_project)
+
 
                 elif make_fav and current_fav_status == 1:
                     # zaskrtnuto oblibene + je jiz oblibeny = BEZ ZMENY
                     #nedoslo ke zmene statusu, ale mohlo dojit ke zmene - proto prepsat v oblibenych
-                    add_colored_line(self.main_console,f"Projekt: {self.last_project_name} úspěšně pozměněn","green",None,True)
                     row_index_list = get_both_row_indexes()
                     print("pozmenen 1",row_index_list)
-                    # edited_project = [project_name,IP_adress,mask,notes,current_fav_status]
                     if row_index_list[0] != "no data":
                         self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[0],fav_status=current_fav_status,force_ws="ip_address_list")
                     if row_index_list[1] != "no data":
                         self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[1],fav_status=current_fav_status,force_ws="ip_adress_fav_list")
-                    # self.make_project_first(purpouse="silent",make_cells=False,project=edited_project)
+                    if self.last_project_name != project_name:
+                        status_text = f"Projekt: {self.last_project_name} (nově: {project_name}) úspěšně pozměněn"
+                    else:
+                        status_text = f"Projekt: {self.last_project_name} úspěšně pozměněn"
+                    add_colored_line(self.main_console,status_text,"green",None,True)
 
+                    edited_project = [project_name,IP_adress,mask,notes,current_fav_status]
+                    if self.make_edited_project_first:
+                        self.make_project_first(purpouse="silent",make_cells=False,project=edited_project)
+                        # promítnout změny i do druhého menu:
+                        switch_database()
+                        self.make_project_first(purpouse="silent",make_cells=False,project=edited_project,input_entry_bypass=edited_project[0])
+                        switch_database()
+                    
                 elif make_fav == False and current_fav_status == 0:
                     # neni zaskrtnuto oblibene + nebyl oblibeny = BEZ ZMENY
                     row_index_list = get_both_row_indexes()
                     print("pozmenen 2",row_index_list)
-
-                    # edited_project = [project_name,IP_adress,mask,notes,current_fav_status]
                     self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[0],fav_status=current_fav_status,force_ws="ip_address_list")
-                    # self.make_project_first(purpouse="silent",make_cells=False,project=edited_project)
-                    add_colored_line(self.main_console,f"Projekt: {self.last_project_name} úspěšně pozměněn","green",None,True)
+                    
+                    if self.last_project_name != project_name:
+                        status_text = f"Projekt: {self.last_project_name} (nově: {project_name}) úspěšně pozměněn"
+                    else:
+                        status_text = f"Projekt: {self.last_project_name} úspěšně pozměněn"
+                    add_colored_line(self.main_console,status_text,"green",None,True)
 
-
+                    edited_project = [project_name,IP_adress,mask,notes,current_fav_status]
+                    if self.make_edited_project_first:
+                        self.make_project_first(purpouse="silent",make_cells=False,project=edited_project)
             child_root.destroy()
             self.make_project_cells()
     
@@ -1283,8 +1336,9 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             # Handle any other exceptions that may occur
             add_colored_line(self.main_console, f"Nastala neočekávaná chyba: {e}", "red", None, True)
 
-    def check_given_input(self):
-        given_data = self.search_input.get()
+    def check_given_input(self,given_data = None):
+        if given_data == None:
+            given_data = self.search_input.get()
         if given_data == "":
             found = None
             return found
@@ -1321,6 +1375,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         - při kliku mimo se odebere focus z nakliknutých widgetů
         """
         print("widget_id",widget_id)
+        if widget_id == None:
+            return
 
         def on_leave_entry(widget,row_of_widget):
             """
@@ -2037,7 +2093,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         if self.connection_status == 0:
             add_colored_line(self.main_console,f"Disk úspěšně připojen","green",None,True)
             self.refresh_explorer()
-            #  self.make_project_cells_disk(no_read=True)
             self.refresh_disk_statuses()
 
             def open_explorer(path):
@@ -2114,24 +2169,27 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 message = "nenalezeno"
             add_colored_line(self.main_console,f"Současné připojení: {message}","white",None,True)
 
-    def make_project_first(self,purpouse=None,make_cells = True,project = None):
+    def make_project_first(self,purpouse=None,make_cells = True,project = None, input_entry_bypass = None):
         """
         purpouse:
         - search
         - silent
         """
-        result = self.check_given_input()
+        result = self.check_given_input(input_entry_bypass)
+
         if result == True:
             #zmena poradi
             if project == None:
                 project = self.all_rows[self.last_project_id]
-            favourite_status = self.favourite_list[self.last_project_id]
+                favourite_status = self.favourite_list[self.last_project_id]
+            else:
+                favourite_status = project[4]
+
             self.all_rows.pop(self.last_project_id)
             self.all_rows.insert(0,project)
             self.favourite_list.pop(self.last_project_id)
             self.favourite_list.insert(0,favourite_status)
-            #self.all_rows.append(project)
-            #if save == True:
+
             for i in range(0,len(self.all_rows)):
                 row = (len(self.all_rows)-1)-i
                 self.save_excel_data(self.all_rows[i][0],self.all_rows[i][1],self.all_rows[i][2],self.all_rows[i][3],None,row+1,fav_status=self.favourite_list[i])
@@ -2142,12 +2200,14 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             elif purpouse != "silent":
                 add_colored_line(self.main_console,f"Projekt {self.all_rows[0][0]} přesunut na začátek","green",None,True)
         elif result == None and purpouse != "silent":
+            print("nevlozeno id")
             if purpouse == "search":
                 add_colored_line(self.main_console,f"Vložte hledaný projekt do vyhledávání","orange",None,True)
             else:
                 add_colored_line(self.main_console,f"Nejprve vyberte projekt (nakliknout levým na parametry daného projektu nebo pravým na tlačíko projektu)","orange",None,True)
         elif purpouse != "silent":
             add_colored_line(self.main_console,"Projekt nenalezen","red",None,True)
+            print("projekt nenalezen")
 
     def make_project_first_disk(self,purpouse = None):
         result = self.check_given_input()
@@ -2217,6 +2277,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         change_def_window_size\n
         change_def_disk_behav\n
         change_def_notes_behav\n
+        change_mapping_cond\n
+        change_make_first_behav\n
         """
         workbook = load_workbook(self.excel_file_path)
         worksheet = workbook["Settings"]
@@ -2236,6 +2298,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             row = 7
         elif parameter == "change_mapping_cond":
             row = 8
+        elif parameter == "change_make_first_behav":
+            row = 9
         worksheet['B' + str(row)] = status
         workbook.save(filename=self.excel_file_path)
         workbook.close()
@@ -2252,7 +2316,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.last_selected_widget = ""
             self.last_selected_notes_widget = ""
             self.last_selected_textbox = ""
-            self.last_selected_widget_id = 0
+            self.last_selected_widget_id = 0           
+            self.ip_frame_list = []
             # self.show_only_fav.configure(text = "Oblíbené")
             if keep_search_input == False:
                 self.search_input.delete("0","300")
@@ -2281,6 +2346,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.last_selected_notes_widget = ""
             self.last_selected_textbox = ""
             self.last_selected_widget_id = 0
+            self.ip_frame_list = []
             # self.show_only_fav.configure(text = "Všechny projekty")
             if keep_search_input == False:
                 self.search_input.delete("0","300")
@@ -2354,12 +2420,22 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 self.mapping_condition = 1
                 self.save_setting_parameter(parameter="change_mapping_cond",status=1)
 
+        def change_make_first_behav():
+            nonlocal checkbox4
+            if int(checkbox4.get()) == 0:
+                self.make_edited_project_first = False
+                self.save_setting_parameter(parameter="change_make_first_behav",status=0)
+            elif int(checkbox4.get()) == 1:
+                self.make_edited_project_first = True
+                self.save_setting_parameter(parameter="change_make_first_behav",status=1)
+
+
         child_root = customtkinter.CTkToplevel()
         self.opened_window = child_root
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
         if ip_window:
-            child_root.geometry(f"580x185+{x+350}+{y+180}")
+            child_root.geometry(f"580x280+{x+350}+{y+180}")
         else:
             child_root.geometry(f"580x400+{x+350}+{y+180}")
 
@@ -2383,12 +2459,19 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         label3.         pack(pady = 10,padx=10,side="top",anchor = "w")
         checkbox3.      pack(pady = 10,padx=10,side="top",anchor = "w")
         
+        main_frame4 =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
+        label4 =        customtkinter.CTkLabel(master = main_frame4, width = 100,height=40,text = "- Nastavení chování při editaci projektů",font=("Arial",20,"bold"))
+        checkbox4 =     customtkinter.CTkCheckBox(master = main_frame4, text = "Automaticky přesouvat editovaný projekt na začátek",font=("Arial",16,"bold"),command=lambda: change_make_first_behav())
+        label4.         pack(pady = 10,padx=10,side="top",anchor = "w")
+        checkbox4.      pack(pady = 10,padx=10,side="top",anchor = "w")
+
         close_frame =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
         button_close =  customtkinter.CTkButton(master = close_frame, width = 150,height=40,text = "Zavřít",command = child_root.destroy,font=("Arial",20,"bold"),corner_radius=0)
         button_close.   pack(pady = 10,padx=10,side="bottom",anchor = "e")
 
         if ip_window:
             main_frame.     pack(expand=False,fill="x",side="top")
+            main_frame4.    pack(expand=False,fill="x",side="top")
             close_frame.    pack(expand=True,fill="both",side="top")
             
         else: #disk window...
@@ -2400,6 +2483,9 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         if self.default_note_behav == 1:
             checkbox.select()
         
+        if self.make_edited_project_first:
+            checkbox4.select()
+
         if self.default_disk_status_behav == 1 and ip_window == False:
             checkbox2.select()
 
