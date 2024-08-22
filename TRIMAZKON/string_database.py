@@ -125,13 +125,22 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     TRIMAZKON:
     - po změně nastavení v prohlížeči obrázků se zinitily
     defaultní parametry\n"""
-        ," Verze 3.7.7 (19.8.2024)"
+        ," Verze 3.7.7 (22.8.2024)"
         ,
     """ 
     IP setting:
     - enterem při přímé editaci poznámek se přidá řádek
     - nová logika editace poznámek (zůstane rozbaleno)
-    - opraveno chybové hlášení při neposkytnutí práv
+    - opraveno chybové hlášení při neposkytnutí práv (pws)
     - klik mimo odebere focus widgetu
-    - dotazování, zda určitě smazat projekt\n"""
+    - dotazování, zda určitě smazat projekt
+    - přímé upravování všeho v sekci oblíbené
+    - zvýraznění oblíbených v sekci všech
+    - odolnost proti chybám v exelu
+    - nová možnost zvolit si automatické řazení na začátek
+    po editu projektu
+    - ve všech oknech přidáno tlačítko zrušit
+    TRIMAZKON:
+    - Odolnost proti chybějícím config souborům
+    - Opravy chybových hlášení\n"""
 ]

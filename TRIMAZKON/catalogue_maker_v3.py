@@ -163,10 +163,6 @@ class Save_prog_metadata:
         self.project_name = project_name
         self.main_console = console
         self.xml_file_path = xml_file_path
-        # self.xml_file_name = str(self.project_name) + "_metadata_catalogue.xml"
-
-        # self.store_xml_data()
-        # print(self.read_xml_data(self.xml_file_name))
 
     def store_xml_data(self):
         # KONTROLERY ----------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -212,7 +208,6 @@ class Save_prog_metadata:
             
         # NÁZEV PROJEKTU ----------------------------------------------------------------------------------------------------------------------------------------------------------------
         project_name = ET.SubElement(root1,"project_name")
-        # root3 = ET.Element("project_name")
         if self.project_name == None:
             self.project_name = ""
         project_name.text = str(self.project_name)
@@ -239,13 +234,11 @@ class Save_prog_metadata:
         controllers = []
         controller_list = root.find("controllers")
         for controller in controller_list.findall("controller"):
-            # controller_data = {child.tag: child.text for child in controller}
             controller_data = {}
             for child in controller:
                 if child.tag == "accessory_list":
                     accessory_list = []
                     for accessory in child.findall("accessory"):
-                        # accessory_data = {acc_child.tag: acc_child.text for acc_child in accessory}
                         accessory_data = {}
                         for acc_child in accessory:
                             if acc_child.text is not None:
@@ -286,7 +279,6 @@ class Save_prog_metadata:
                                             optic_data[opt_child.tag] = opt_child.text
                                         else:
                                             optic_data[opt_child.tag] = ""
-                                        # optic_data[opt_child.tag] = opt_child.text
                                     optics_list.append(optic_data)
                                 camera_data[cam_child.tag] = optics_list
                             else:
@@ -294,7 +286,6 @@ class Save_prog_metadata:
                                     camera_data[cam_child.tag] = cam_child.text
                                 else:
                                     camera_data[cam_child.tag] = ""
-                                # camera_data[cam_child.tag] = cam_child.text
                         camera_list.append(camera_data)
                     station_data[child.tag] = camera_list
                 else:
@@ -349,8 +340,6 @@ class ToplevelWindow:
         self.one_segment_width = 450
 
     def excel_manual_window(self):
-        #1824x805
-        # window.geometry(f"912x402+{self.x+100}+{self.y+100}")
         window = customtkinter.CTkToplevel()
         window.geometry(f"1200x580+{self.x+100}+{self.y+200}")
         window.after(200, lambda: window.iconbitmap(app_icon_path))
@@ -382,7 +371,6 @@ class ToplevelWindow:
         """
         def save_contoller():
             save_changes()
-            # output = [controller_entry.get(),controller_name_entry.get(),IP_adress_entry.get(),username_entry.get(),password_entry.get()]
 
             notes = notes_input.get("1.0", tk.END)
             try:
@@ -391,9 +379,7 @@ class ToplevelWindow:
                 color_chosen = ""
             print("chosen color: ",color_chosen)
             output = [controller_entry.get(),controller_name_entry.get(),color_chosen,IP_adress_entry.get(),username_entry.get(),password_entry.get(),controller["accessory_list"],notes]
-            # window.destroy()
             close_window(window)
-            # self.root.focus_force()
             self.callback_function(output)
 
         def check_used_colors():
@@ -479,7 +465,6 @@ class ToplevelWindow:
                 accessory_index -= 1
                 save_changes() # ulozit zmeny pri prepinani jeste u predesle stanice
                 accessory_index += 1
-                # initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
 
             else: # TLACITKO +:
                 # program nedopusti pridani noveho accessory pokud neni alespon vyplnen typ nebo poznamka
@@ -609,7 +594,6 @@ class ToplevelWindow:
         accessory_label             .pack(pady=(15,5),padx=10,anchor="w",expand=False,side = "top")
         hw_type                     .pack(pady= 5 ,padx=10,anchor="w",expand=False,side = "top")
         option_menu_frame_acc       .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
-        # hw_type_entry               .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
         note3_label_frame           .pack(pady = 0, padx = 3,anchor="w",expand=False,side="top",fill="x")
         notes_input3                .pack(pady = 5, padx = 10,expand=True,side="top",fill="both")
         main_frame                  .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="top")
@@ -1036,7 +1020,6 @@ class Catalogue_gui:
         self.path_for_callback = None
         if window_size == "max":
             self.root.state('zoomed')
-            # root.state('zoomed')
             self.root.update()
         else:
             self.root.state('normal')
@@ -1216,7 +1199,6 @@ class Catalogue_gui:
             else:
                 notes_raw = str(self.station_list[station_index]["inspection_description"])
                 description = strip_lines_to_fit(notes_raw)
-                # widget.configure(text=str(self.station_list[station_index]["inspection_description"]),font = ("Arial",25))
                 widget.configure(text=str(description),font = ("Arial",25))
         
         elif len(widget_tier) == 3: # c01-c99 kontolery
@@ -1239,8 +1221,7 @@ class Catalogue_gui:
                 if not username == "":
                     details = details + "Jméno: " + username + "\n"
                 if not password == "":
-                    details = details + "Heslo: " + password + "\n"
-                
+                    details = details + "Heslo: " + password + "\n"       
 
                 widget.configure(text=details,font = ("Arial",25))
             else:
@@ -1311,7 +1292,6 @@ class Catalogue_gui:
             self.new_device.configure(text="",state = tk.DISABLED)
             self.edit_device.configure(text="Editovat optiku")
             self.del_device.configure(text = "Odebrat optiku")
-
         elif len(widget_tier) == 3: # c01-c99 kontrolery
             self.new_device.configure(state = tk.NORMAL)
             self.new_device.configure(text="Nové příslušenství")
@@ -1453,11 +1433,8 @@ class Catalogue_gui:
                 if open_edit:
                     self.edit_object("",widget_tier,new_station=False)
 
-        print(widget_tier)
+        print("widget_tier: ",widget_tier)
 
-
-        # print("STATION_LIST: ",self.station_list)
-    
     def confirm_delete(self,to_del_object):
         def make_decision(decision):
             if decision == True:
@@ -1467,10 +1444,8 @@ class Catalogue_gui:
 
         def close_window(window):
             self.root.unbind("<Button-1>")
-            # window.quit()
             window.destroy()
-        
-        # child_root=customtkinter.CTk()
+
         child_root = customtkinter.CTkToplevel()
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
@@ -1491,7 +1466,6 @@ class Catalogue_gui:
         child_root.update_idletasks()
         child_root.focus_force()
         child_root.focus()
-        # child_root.mainloop()
         
     def delete_block(self,args,widget_tier):
         station_index = int(widget_tier[:2])
@@ -1559,7 +1533,6 @@ class Catalogue_gui:
 
             self.make_project_widgets() #refresh
             if not no_window_shut:
-                # child_root.grab_release()
                 self.close_window(child_root)
 
         def next_station():
@@ -1608,8 +1581,6 @@ class Catalogue_gui:
             nonlocal camera_index
             nonlocal optics_index
             nonlocal accessory_index
-            # optics_index = 0
-            # accessory_index = 0
             camera_index += 1
             if camera_index < len(self.station_list[station_index]["camera_list"]):
                 camera_index -= 1
@@ -1639,8 +1610,6 @@ class Catalogue_gui:
             nonlocal camera_index
             nonlocal optics_index
             nonlocal accessory_index
-            # optics_index = 0
-            # accessory_index = 0
             camera_index -= 1
             if camera_index > -1:
                 camera_index += 1
@@ -1735,15 +1704,9 @@ class Catalogue_gui:
             - accessory
             """
             if which == "camera":
-                # current_controller = controller_entry.get()
                 current_camera = camera_type_entry.get()
                 current_cable = cam_cable_menu.get()
                 notes_string = ""
-                # if current_controller != "":
-                #     controller_type = current_controller.split("(")[1]
-                #     controller_notes = str(self.controller_notes_database[self.controller_database.index(controller_type[:-1])])
-                #     if controller_notes != "":
-                #         notes_string = notes_string + "Kontroler: " + controller_notes + "\n\n"
                 if current_camera != "":
                     camera_notes = str(self.camera_notes_database[self.whole_camera_type_database.index(current_camera)])
                     if camera_notes != "":
@@ -1901,7 +1864,6 @@ class Catalogue_gui:
         import_notes_btn =          customtkinter.CTkButton(master = note_label_frame,text = "Import z databáze",font=("Arial",22,"bold"),width = 100,height=30,corner_radius=0,command=lambda: import_notes("camera"))
         note_label.                 pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
         import_notes_btn.           pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
-        # notes_input_controller =    customtkinter.CTkTextbox(master = camera_frame,font=("Arial",22),height=100,corner_radius=0)
         notes_input =               customtkinter.CTkTextbox(master = camera_frame,font=("Arial",22),corner_radius=0)
         counter_frame_cam           .pack(pady=(10,0),padx= 3,anchor="n",expand=False,side="top")
         camera_type                 .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
@@ -2104,7 +2066,6 @@ class Catalogue_gui:
         child_root.after(200, lambda: child_root.iconbitmap(app_icon_path))
 
         if object == "station":
-            # child_root.geometry(f"420x450+{x+80}+{y+80}")
             width = 3*one_segment_width
             child_root.geometry(f"{width}x{height}+{x+100}+{y+30}")
             child_root.title("Editování stanice: " + str(self.station_list[station_index]["name"]))
@@ -2153,14 +2114,12 @@ class Catalogue_gui:
             for controllers in self.controller_object_list:
                 new_drop_option = f"{controllers['name']} ({controllers['type']})"
                 self.custom_controller_drop_list.append(new_drop_option)
-            # self.make_controller_widgets()
             self.make_project_widgets()
             self.root.focus_force()
 
         if len(widget_tier) == 2: #01-99 stanice
             station_index = int(widget_tier[:2])
             print("editing",self.station_list[station_index])
-            # self.edit_object_gui_new("station",station_index,all_parameters=True)
             if new_station:
                 self.edit_object_gui_new("station",(len(self.station_list)-1),all_parameters=True)
             else:
@@ -2203,7 +2162,6 @@ class Catalogue_gui:
             accessory_index = int(widget_tier[3:5])
             window = ToplevelWindow(self.root,[self.controller_database,self.controller_notes_database],callback_edited_controller,self.controller_object_list,[self.accessory_database,self.whole_accessory_database,self.accessory_notes_database])
             window.new_controller_window(childroot=None,controller=self.controller_object_list[controller_index],edit=True,accessory_index = accessory_index,only_accessory=True)
-        
         #refresh
         self.make_project_widgets()
 
@@ -2278,9 +2236,6 @@ class Catalogue_gui:
                 export_path.insert(0, str(output[1]))
                 add_colored_line(console,"Byla vložena cesta pro uložení","green",None,True)
             print(output[0])
-            # child_root.grab_set()
-            # child_root.update()
-            # child_root.update_idletasks()
             child_root.focus()
             child_root.focus_force()
 
@@ -2467,15 +2422,11 @@ class Catalogue_gui:
 
         main_menu_button =          customtkinter.CTkButton(master = main_header_row0, width = 200,height=50,text = "MENU",command =  lambda: self.call_menu(),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
         main_menu_button            .pack(pady = (10,0),padx =(20,0),anchor = "s",side = "left")
-
-        # self.search_input =         customtkinter.CTkEntry(master = main_header,font=("Arial",20),width=250,height=50,placeholder_text="Zvolený blok",corner_radius=0)
         self.project_name_input =   customtkinter.CTkEntry(master = main_header_row1,font=("Arial",20),width=250,height=50,placeholder_text="Název projektu",corner_radius=0)
         new_station =               customtkinter.CTkButton(master = main_header_row1,text = "Nová stanice",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_manage_widgets("add_line"))
         self.new_device =           customtkinter.CTkButton(master = main_header_row1,text = "Nová kamera",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_manage_widgets("add_object"))
         self.edit_device =          customtkinter.CTkButton(master = main_header_row1,text = "Editovat stanici",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_edit_object())
         self.del_device =           customtkinter.CTkButton(master = main_header_row1,text = "Odebrat stanici",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_delete_object())
-
-        # self.search_input           .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         self.project_name_input     .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         new_station                 .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         self.new_device             .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
@@ -2499,7 +2450,6 @@ class Catalogue_gui:
         button_settings                 .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         self.main_console =             tk.Text(console_frame, wrap="none", height=0, width=180,background="black",font=("Arial",22),state=tk.DISABLED)
         self.main_console               .pack(pady = 10, padx = (10,0),anchor="w",expand=True,side="bottom")
-        # self.search_input.insert("0","00")
 
         column_labels =             customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=50)
         self.project_tree =         customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
@@ -2526,13 +2476,11 @@ class Catalogue_gui:
         self.optic_column       .pack(pady=0,padx=0,fill="y",expand=False,side = "left")
         self.controller_column  .pack(pady=0,padx=0,fill="y",expand=False,side = "left")
         self.accessory_column   .pack(pady=0,padx=0,fill="y",expand=False,side = "left")
-        # self.station_list.append(self.make_new_object("station"))
         self.make_project_widgets()
         add_colored_line(self.main_console,self.download_database_console_input[0],self.download_database_console_input[1],None,True)
         
         def unfocus_entry(e):
             self.root.focus_set()
-        # self.root.bind("<Button-1>",lambda e:unfocus_entry(e))
         self.project_name_input.bind("<Leave>",lambda e:unfocus_entry(e))
         
         def maximalize_window(e):
@@ -2545,7 +2493,6 @@ class Catalogue_gui:
                 self.root.state('normal')
                 self.root.geometry("1600x900")
             else:
-                #self.root.after(0, lambda:self.root.state('zoomed'))
                 self.root.state('zoomed')
 
         self.root.bind("<f>",lambda e: maximalize_window(e))
@@ -2569,8 +2516,6 @@ class Catalogue_gui:
             for camera in self.station_list[station_index]["camera_list"]:
                 station_optics_count = 0
                 accessory_count = 0
-
-                # station_optic_count += len(camera["optics_list"])
                 station_optics_count = len(camera["optics_list"])
                 try:
                     try:
@@ -2612,22 +2557,6 @@ class Catalogue_gui:
                 self.station_list[station_index]["camera_list"][camera_index]["row_count"] = number_of_blocks
 
             return camera_widget_row_growth
-        
-        # elif widget == "optics":
-        #     station_accessory_count = len(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["accessory_list"])
-        #     if station_accessory_count>0:
-        #         station_widget_growth_accessory = ((station_accessory_count*default_widget_height)-default_widget_height)
-            
-        #     self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["row_count"] = station_accessory_count
-        #     return station_widget_growth_accessory
-
-        # elif widget == "controller":
-        #     controller_accessory_count = len(self.controller_object_list[controller_index]["accessory_list"])
-        #     if controller_accessory_count>0:
-        #         controller_widget_growth_accessory = ((controller_accessory_count*default_widget_height)-default_widget_height)
-            
-        #     self.controller_object_list[controller_index]["row_count"] = controller_accessory_count
-        #     return controller_widget_growth_accessory
          
     def make_project_widgets(self):
         self.clear_frame(self.project_column)
@@ -2687,7 +2616,6 @@ class Catalogue_gui:
                     else:
                         controller_tier =  "c" + str(controller_index) #c01-c99
                     self.controller_object_list[controller_index]["detailed_name"] = str(self.controller_object_list[controller_index]["name"]) + "(" + str(self.controller_object_list[controller_index]["type"]) + ")"
-                    # controller_widget_growth = self.check_widget_growth("controller",controller_index=controller_index)
                     controller_color = self.controller_object_list[controller_index]["color"]
                     if controller_color == "": # nebyla zvolena žádná barva
                         controller_color = "#181818"
@@ -2743,7 +2671,6 @@ class Save_excel:
         self.station_list = station_list
         self.controller_list = controller_list
         self.values_start_row = 4
-        # self.excel_file_name = "Katalog_kamerového_vybavení.xlsm"
         self.excel_file_name = excel_name
         if self.excel_file_name == None:
             self.excel_file_name = "Katalog_kamerového_vybavení.xlsm"
@@ -2753,7 +2680,6 @@ class Save_excel:
         self.excel_column_width=50
         self.between_station_rows = []
         self.xlsx_format = False
-        # self.main()
 
     def make_header(self,wb):
         ws = wb["Sheet"]
@@ -2900,7 +2826,6 @@ class Save_excel:
                             iii = 0
                             for accessories in controllers["accessory_list"]:
                                 # nejprve hledam index abych mohl prepisovat přímo celý objekt
-                                # accessory_index = self.controller_list[controller_index]["accessory_list"].index(accessories)
                                 accessory_index = iii
                                 try:
                                     if not (columns[4]+str(row_before_addition+iii)) in self.controller_list[controller_index]["accessory_list"][accessory_index]["excel_position"]:
@@ -2915,11 +2840,6 @@ class Save_excel:
 
                 if len(cameras["optics_list"]) == 0:
                     last_row_optics = last_row_optics + 1
-                
-                # print("cam inc",cam_inc,"length list",len(stations["camera_list"]))
-                # if cam_inc == len(stations["camera_list"])-1:
-                #     check_for_dummy(last_cam = True)
-                # else:
                 check_for_dummy()
 
                 for optics in cameras["optics_list"]:
@@ -3104,7 +3024,6 @@ class Save_excel:
         ws.row_dimensions[1].height = 35
         ws.row_dimensions[2].height = 65
 
-        # cell = f"Projekt: {self.project_name}"
         top_header_fill = PatternFill(start_color="999999", end_color="999999", fill_type="solid")
         ws["B1"] = "Přehled kamerového vybavení"
         ws["B1"].alignment = Alignment(horizontal = "left", vertical = "center")
@@ -3114,14 +3033,12 @@ class Save_excel:
         comment = Comment(comment_text, comment_author)
         if not self.xlsx_format:
             ws['B1'].comment = comment
-        # ws['B1'].fill = top_header_fill
         
         current_date = datetime.now().date()
         date_string = current_date.strftime("%d.%m.%Y")
         ws["B2"] = f"Projekt: {self.project_name}\nDatum: {date_string}"
         ws["B2"].alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
         ws["B2"].font = Font(bold=True,size=20)
-        # ws['B2'].fill = top_header_fill
         
         for columns in self.used_columns:
             for i in range(3,self.excel_rows_used-1):
@@ -3388,9 +3305,6 @@ class Save_excel:
                 add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
                 os.startfile(self.excel_file_name)
                 return
-            # except Exception as e:
-            #     add_colored_line(self.main_console,f"Neočekávaná chyba {e}","red",None,True)
-            #     wb.close()
                 
         elif ".xlsx" in self.excel_file_name:
             self.used_columns = ["A","B","C","D","E","F","G","H","I","J"]
@@ -3399,18 +3313,18 @@ class Save_excel:
             rows_to_merge = self.get_cells_to_merge()
             self.make_header(wb)
 
-            # try:
-            self.merge_cells(wb,merge_list=rows_to_merge)
-            self.fill_values(wb)
-            self.fill_xlsx_column(wb)
-            wb.save(self.excel_file_name)
-            wb.close()
-            add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
-            os.startfile(self.excel_file_name)
-            return
-            # except Exception as e:
-            #     add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}, chyba: {e}","red",None,True)
-            #     wb.close()
+            try:
+                self.merge_cells(wb,merge_list=rows_to_merge)
+                self.fill_values(wb)
+                self.fill_xlsx_column(wb)
+                wb.save(self.excel_file_name)
+                wb.close()
+                add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
+                os.startfile(self.excel_file_name)
+                return
+            except Exception as e:
+                add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}, chyba: {e}","red",None,True)
+                wb.close()
 
 # download = download_database.database(database_filename)
 # Catalogue_gui(root,download.output)

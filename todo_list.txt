@@ -530,11 +530,12 @@ direct editig u oblíbených ip adres (aby to vůbec nelezlo do všech) - hotovo
 
 4:04 PM 8/21/2024
 kdyz pridavam ze vsech do oblibenych a edituju, nedá se na začátek - přidat do nastavení, jako možnost řadit nahoru - hotovo
+přidat tlačítko zrušit u editu a nový projekt v ip setting - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
-přidat tlačítko zrušit u editu a nový projekt v ip setting
-
+mít možnost malovat na obrázky v image browseru - (kruhy, osy)
 
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
