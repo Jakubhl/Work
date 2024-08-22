@@ -536,7 +536,10 @@ ________________________________________________________________________________
 
 
 mít možnost malovat na obrázky v image browseru - (kruhy, osy)
-
+RGB slidery
+nová logika prohlížeče obrázků
+- zapamatovat si předešlou pozici obrázku tu poté vynásobit zoomem při jeho dalším načtení
+- drag image option s hranicema
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon

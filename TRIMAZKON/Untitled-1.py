@@ -62,11 +62,145 @@ import time
 #                 ipv4_addresses.append(match.group(1))
 #                 print(current_interface,match.group(1))
 #                 #ipv4_addresses[current_interface] = match.group(1)
-def filter_input(data):
-    forbidden_formats = [".","xml","xlsm","xlsx"]
-    for formats in forbidden_formats:
-        data = data.replace(formats,"")
-    print(data)
-    return data
+# def filter_input(data):
+#     forbidden_formats = [".","xml","xlsm","xlsx"]
+#     for formats in forbidden_formats:
+#         data = data.replace(formats,"")
+#     print(data)
+#     return data
+# filter_input("blabla.xlsm")
+import customtkinter as ctk
+from PIL import Image, ImageTk
+import tkinter as tk
 
-filter_input("blabla.xlsm")
+class DrawApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Draw Circles and Lines")
+
+        # Create canvas
+        self.canvas = tk.Canvas(root, width=600, height=400, bg="white")
+        self.canvas.pack()
+        self.canvas.update()
+        self.canvas.update_idletasks()
+        self.max_width = self.canvas.winfo_width()
+        self.max_height = self.canvas.winfo_height()
+
+        self.zoom = 2
+
+        # Initialize drawing mode
+        self.draw_mode = "line"  # or "circle"
+
+        # Variables to store the start position of the mouse
+        self.start_x = None
+        self.start_y = None
+
+        # Bind mouse events
+        self.canvas.bind("<Button-1>", self.on_click)
+        self.canvas.bind("<B1-Motion>", self.on_drag)
+        self.canvas.bind("<ButtonRelease-1>", self.on_release)
+
+        # Add buttons to switch between modes
+        self.btn_line = tk.Button(root, text="Draw Line", command=self.set_draw_mode_line)
+        self.btn_line.pack(side=tk.LEFT)
+
+        self.btn_circle = tk.Button(root, text="Draw Circle", command=self.set_draw_mode_circle)
+        self.btn_circle.pack(side=tk.LEFT)
+        self.file_list = []
+        for files in os.listdir("images"):
+            self.file_list.append(files)
+        print(self.file_list)
+
+        self.image_increment = 0
+        def next_image(e):
+            if self.image_increment < len(self.file_list):
+                self.image_increment+=1
+                self.show_image()
+        def previous_image(e):
+            if self.image_increment > 0:
+                self.image_increment-=1
+                self.show_image()
+        def zoom_image(e):
+            direction = -e.delta
+            if direction < 0:
+                self.zoom += 0.5
+                self.show_image()
+            else:
+                self.zoom -= 0.5
+                self.show_image()
+
+        self.root.bind("<Right>",next_image)
+        self.root.bind("<Left>",previous_image)
+        self.root.bind("<MouseWheel>",zoom_image)
+        self.show_image()
+
+    def show_image(self,image_height = None,image_width = None):
+
+        self.image = Image.open("images/"+self.file_list[self.image_increment])
+
+        print(self.image.size)
+        self.canvas.update()
+        self.canvas.update_idletasks()
+        print("frame dim: ",self.canvas.winfo_width(),self.canvas.winfo_height())
+
+        
+        # if image_width == None or image_height == None:
+        image_width, image_height = self.image.size
+
+        if image_width > image_height:
+            image_ration = image_width/image_height
+
+        image_width = self.max_width
+        image_height = int(image_width/image_ration) 
+
+        # resized = self.image.resize(size=(image_width, image_height))
+        zoomed_width = int(image_width*self.zoom)
+        zoomed_height = int(image_height*self.zoom)
+        print("zoomed dim: ",zoomed_width,zoomed_height)
+        resized = self.image.resize(size=(zoomed_width, zoomed_height))
+        print("new image size: ",image_width,image_height)
+        self.tk_image = ImageTk.PhotoImage(resized,size=(image_width,image_width))
+        self.image_id = self.canvas.create_image(0, 0, anchor=tk.NW, image=self.tk_image,tag = "lower")
+
+        self.canvas.tag_lower(self.image_id)
+    def next_image(self):
+        pass
+
+    def set_draw_mode_line(self):
+        self.draw_mode = "line"
+
+    def set_draw_mode_circle(self):
+        self.draw_mode = "circle"
+
+    def on_click(self, event):
+        # Save the start position
+        self.start_x = event.x
+        self.start_y = event.y
+
+    def on_drag(self, event):
+        # Clear the canvas (if you want to see only the final shape)
+        self.canvas.delete("temp_shape")
+
+        if self.draw_mode == "line":
+            # Draw a line from the start position to the current position
+            self.canvas.create_line(self.start_x, self.start_y, event.x, event.y, fill="black", tags="temp_shape")
+        elif self.draw_mode == "circle":
+            # Draw an oval (circle) based on the start position and current position
+            self.canvas.create_oval(self.start_x, self.start_y, event.x, event.y, outline="black", tags="temp_shape")
+
+    def on_release(self, event):
+        # Finalize the shape
+        self.canvas.delete("temp_shape")
+
+        if self.draw_mode == "line":
+            # Draw the final line
+            self.canvas.create_line(self.start_x, self.start_y, event.x, event.y, fill="black")
+        elif self.draw_mode == "circle":
+            # Draw the final circle
+            self.canvas.create_oval(self.start_x, self.start_y, event.x, event.y, outline="black")
+
+# Create the main window and run the application
+root = tk.Tk()
+app = DrawApp(root)
+root.mainloop()
+
