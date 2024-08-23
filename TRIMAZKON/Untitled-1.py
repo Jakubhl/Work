@@ -85,86 +85,144 @@ class DrawApp:
         self.canvas.update_idletasks()
         self.max_width = self.canvas.winfo_width()
         self.max_height = self.canvas.winfo_height()
-
-        self.zoom = 2
-
-        # Initialize drawing mode
-        self.draw_mode = "line"  # or "circle"
-
-        # Variables to store the start position of the mouse
-        self.start_x = None
-        self.start_y = None
-
-        # Bind mouse events
         self.canvas.bind("<Button-1>", self.on_click)
         self.canvas.bind("<B1-Motion>", self.on_drag)
         self.canvas.bind("<ButtonRelease-1>", self.on_release)
-
-        # Add buttons to switch between modes
-        self.btn_line = tk.Button(root, text="Draw Line", command=self.set_draw_mode_line)
-        self.btn_line.pack(side=tk.LEFT)
-
-        self.btn_circle = tk.Button(root, text="Draw Circle", command=self.set_draw_mode_circle)
-        self.btn_circle.pack(side=tk.LEFT)
+        self.zoom = 1
+        self.draw_mode = "line"  # or "circle"
+        self.start_x = None
+        self.start_y = None
+        self.last_image_x = 0
+        self.last_image_y = 0
+        self.previous_zoomed_x = 0
+        self.previous_zoomed_y = 0
+        self.previous_zoom = 0
         self.file_list = []
         for files in os.listdir("images"):
             self.file_list.append(files)
-        print(self.file_list)
-
         self.image_increment = 0
+
+        self.btn_line = tk.Button(root, text="Draw Line", command=self.set_draw_mode_line)
+        self.btn_line.pack(side=tk.LEFT)
+        self.btn_circle = tk.Button(root, text="Draw Circle", command=self.set_draw_mode_circle)
+        self.btn_circle.pack(side=tk.LEFT)
+
         def next_image(e):
+
             if self.image_increment < len(self.file_list):
                 self.image_increment+=1
                 self.show_image()
+
         def previous_image(e):
             if self.image_increment > 0:
                 self.image_increment-=1
                 self.show_image()
+
         def zoom_image(e):
+            self.previous_zoom = self.zoom 
             direction = -e.delta
             if direction < 0:
                 self.zoom += 0.5
-                self.show_image()
             else:
                 self.zoom -= 0.5
-                self.show_image()
+
+            if direction < 0:
+                step_size = 100*self.zoom 
+                #--------priblizuju s kurzorem napravo--------
+                if e.x > self.image_width/2 + 0.1*self.max_width:
+                    print("right")
+                    # if e.x > 0.6*self.max_width:
+                    #     step_size = 50
+                    # if e.x > 0.7*self.max_width:
+                    #     step_size = 100
+                    # if e.x > 0.8*self.max_width:
+                    minus_x_boundary = -self.image_width*self.zoom + self.max_width
+                    # step_size = 100*self.zoom
+                    if (self.last_image_x - step_size) > minus_x_boundary:
+                        self.last_image_x -= step_size
+                    else:
+                        self.last_image_x = minus_x_boundary
+                #--------priblizuju s kurzorem nalevo--------
+                elif e.x < self.image_width/2 - 0.1*self.max_width:
+                    print("left")
+                    # step_size = e.x + (self.image_width/2)
+                    # step_size = 150
+
+                    if self.last_image_x > (self.image_width*self.zoom -self.max_width):
+                    # if self.last_image_x ==0:
+                        self.last_image_x -= step_size
+                    else:
+                        self.last_image_x = 0
+                #--------priblizuju s kurzorem uprostřed--------
+                elif e.x < self.image_width/2 or e.x > self.image_width/2:
+                    print("center")
+                    previous_dimensions = self.image_width*self.previous_zoom 
+                    current_dimensions = self.image_width*self.zoom 
+                    image_growth = max(previous_dimensions-current_dimensions,current_dimensions-previous_dimensions)
+                    self.last_image_x -= image_growth/1.8
+            else:
+                step_size = 100*self.zoom 
+                #--------priblizuju s kurzorem napravo--------
+                if e.x > self.image_width/2 + 0.1*self.max_width:
+                    print("right") 
+                    # minus_x_boundary = -self.image_width*self.zoom + self.max_width
+                    minus_x_boundary = -self.image_width*self.zoom + self.max_width
+                    if (self.last_image_x - step_size) > minus_x_boundary:
+                        self.last_image_x -= step_size
+                    else:
+                        self.last_image_x = minus_x_boundary
+                        
+                #--------priblizuju s kurzorem nalevo--------
+                elif e.x < self.image_width/2 - 0.1*self.max_width:
+                    print("left")
+                    if self.last_image_x > (self.image_width*self.zoom -self.max_width):
+                        self.last_image_x -= step_size
+                    else:
+                        self.last_image_x = 0
+
+                #--------priblizuju s kurzorem uprostřed--------
+                elif e.x < self.image_width/2 or e.x > self.image_width/2:
+                    print("center")
+                    previous_dimensions = self.image_width*self.previous_zoom 
+                    current_dimensions = self.image_width*self.zoom 
+                    image_growth = max(previous_dimensions-current_dimensions,current_dimensions-previous_dimensions)
+                    self.last_image_x += image_growth/1.8
+            
+            self.show_image()
 
         self.root.bind("<Right>",next_image)
         self.root.bind("<Left>",previous_image)
         self.root.bind("<MouseWheel>",zoom_image)
         self.show_image()
 
-    def show_image(self,image_height = None,image_width = None):
-
+    
+    def show_image(self):
         self.image = Image.open("images/"+self.file_list[self.image_increment])
+        print("image size: ",self.image.size)
 
-        print(self.image.size)
         self.canvas.update()
         self.canvas.update_idletasks()
-        print("frame dim: ",self.canvas.winfo_width(),self.canvas.winfo_height())
 
-        
-        # if image_width == None or image_height == None:
-        image_width, image_height = self.image.size
+        self.image_width, image_height = self.image.size
+        if self.image_width > image_height:
+            image_ration = self.image_width/image_height
+        self.image_width = self.max_width
+        image_height = int(self.image_width/image_ration) 
 
-        if image_width > image_height:
-            image_ration = image_width/image_height
+        self.zoomed_width = int(self.image_width*self.zoom)
+        self.zoomed_height = int(image_height*self.zoom)
+        self.previous_zoomed_x = int(self.image_width*self.previous_zoom)
+        self.previous_zoomed_y = int(image_height*self.previous_zoom)
 
-        image_width = self.max_width
-        image_height = int(image_width/image_ration) 
+        resized = self.image.resize(size=(self.zoomed_width, self.zoomed_height))
+        self.tk_image = ImageTk.PhotoImage(resized)
 
-        # resized = self.image.resize(size=(image_width, image_height))
-        zoomed_width = int(image_width*self.zoom)
-        zoomed_height = int(image_height*self.zoom)
-        print("zoomed dim: ",zoomed_width,zoomed_height)
-        resized = self.image.resize(size=(zoomed_width, zoomed_height))
-        print("new image size: ",image_width,image_height)
-        self.tk_image = ImageTk.PhotoImage(resized,size=(image_width,image_width))
-        self.image_id = self.canvas.create_image(0, 0, anchor=tk.NW, image=self.tk_image,tag = "lower")
-
+        self.image_id = self.canvas.create_image(self.last_image_x, self.last_image_y, anchor=tk.NW, image=self.tk_image,tag = "lower")
         self.canvas.tag_lower(self.image_id)
-    def next_image(self):
-        pass
+
+        print("frame dim: ",self.canvas.winfo_width(),self.canvas.winfo_height())
+        print("zoomed dim: ",self.zoomed_width,self.zoomed_height)
+        print("new image size: ",self.image_width,image_height)
 
     def set_draw_mode_line(self):
         self.draw_mode = "line"

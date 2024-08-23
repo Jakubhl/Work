@@ -532,14 +532,24 @@ direct editig u oblíbených ip adres (aby to vůbec nelezlo do všech) - hotovo
 kdyz pridavam ze vsech do oblibenych a edituju, nedá se na začátek - přidat do nastavení, jako možnost řadit nahoru - hotovo
 přidat tlačítko zrušit u editu a nový projekt v ip setting - hotovo
 
+2:06 PM 8/23/2024
+- zapamatovat si předešlou pozici obrázku tu poté vynásobit zoomem při jeho dalším načtení  hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 mít možnost malovat na obrázky v image browseru - (kruhy, osy)
 RGB slidery
 nová logika prohlížeče obrázků
-- zapamatovat si předešlou pozici obrázku tu poté vynásobit zoomem při jeho dalším načtení
+
 - drag image option s hranicema
+- doladit oddalovani - museji byt 2 boundary
+
+- ip setting nechytne nepersistentní disk
+- v ip setting dodělat možnost smazat projekt v editu
+- dotazování zda skutečně smazat - mít možnost odvolit
+- kolečkem přepínat projekty v edit window - nebo šipkama - nebo shiftem jich vybrat více
+
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon
