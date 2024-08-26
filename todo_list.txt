@@ -535,20 +535,25 @@ přidat tlačítko zrušit u editu a nový projekt v ip setting - hotovo
 2:06 PM 8/23/2024
 - zapamatovat si předešlou pozici obrázku tu poté vynásobit zoomem při jeho dalším načtení  hotovo
 
+1:13 PM 8/26/2024
+opraveno první zapisování nového parametru do excelu (nastavení ip setting)
+- ip setting nechytne nepersistentní disk - hotovo
+- při odpojení disku vložit ten nakliknutý - hotovo
+- kolečkem přepínat projekty v edit window - nebo šipkama- hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 mít možnost malovat na obrázky v image browseru - (kruhy, osy)
 RGB slidery
 nová logika prohlížeče obrázků
-
 - drag image option s hranicema
 - doladit oddalovani - museji byt 2 boundary
 
-- ip setting nechytne nepersistentní disk
 - v ip setting dodělat možnost smazat projekt v editu
 - dotazování zda skutečně smazat - mít možnost odvolit
-- kolečkem přepínat projekty v edit window - nebo šipkama - nebo shiftem jich vybrat více
+- doladit statusy oblíbenosti při přepínání projektů
+- shiftem/ controlem vybrat více projektů
+- tlačítko delete
 
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
