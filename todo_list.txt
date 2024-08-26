@@ -540,6 +540,8 @@ opraveno první zapisování nového parametru do excelu (nastavení ip setting)
 - ip setting nechytne nepersistentní disk - hotovo
 - při odpojení disku vložit ten nakliknutý - hotovo
 - kolečkem přepínat projekty v edit window - nebo šipkama- hotovo
+- doladit statusy oblíbenosti při přepínání projektů - hotovo
+- v ip setting dodělat možnost smazat projekt v editu - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -549,11 +551,10 @@ nová logika prohlížeče obrázků
 - drag image option s hranicema
 - doladit oddalovani - museji byt 2 boundary
 
-- v ip setting dodělat možnost smazat projekt v editu
 - dotazování zda skutečně smazat - mít možnost odvolit
-- doladit statusy oblíbenosti při přepínání projektů
 - shiftem/ controlem vybrat více projektů
-- tlačítko delete
+- bind tlačítka delete
+- blbne pořadí když uložit...
 
 
 ??? Koumu: admin práva, online auto aktualizace nové verze

@@ -779,14 +779,16 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 add_colored_line(self.main_console,f"Projekt: {project_name} úspěšně pozměněn","green",None,True)
 
     def delete_project(self,wanted_project=None,silence=None,button_trigger = False):
+        project_found = False
+
         def proceed(window = True):
             nonlocal wanted_project
             nonlocal silence
+            nonlocal project_found
             remove_favourite_as_well = False
             if wanted_project == None:
                 self.read_excel_data()
                 wanted_project = str(self.search_input.get())
-            project_found = False
             workbook = load_workbook(self.excel_file_path)
             if self.show_favourite:
                 excel_worksheet = "ip_adress_fav_list"
@@ -831,6 +833,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         if self.last_project_name.replace(" ","") == "":
             add_colored_line(self.main_console,"Nejprve vyberte projekt (nakliknout levým na parametry daného projektu nebo pravým na tlačíko projektu)","orange",None,True)
             return
+        elif wanted_project == None:
+            wanted_project = self.last_project_name
 
         child_root = customtkinter.CTkToplevel()
         self.opened_window = child_root
@@ -852,6 +856,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         child_root.grab_set()
         child_root.focus()
         child_root.focus_force()
+        child_root.wait_window()
+        return project_found
 
     def delete_project_disk(self,button_trigger = False):
         wanted_project = str(self.search_input.get())
@@ -964,29 +970,47 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
         def switch_up():
             print("up ",self.last_project_id)
-            self.last_project_id += 1
-            if self.last_project_id > len(self.all_rows)-1:
-                self.last_project_id = 0
-
-            self.check_given_input(given_data=self.all_rows[self.last_project_id][0])
-            self.copy_previous_project()
-
-            print(self.last_project_name)
-        def switch_down():
-            print("down ",self.last_project_id)
             self.last_project_id -= 1
             if self.last_project_id < 0:
                 self.last_project_id = len(self.all_rows)-1
                 
             self.check_given_input(given_data=self.all_rows[self.last_project_id][0])
             self.copy_previous_project()
+            refresh_favourite_status()
 
-            nonlocal child_root
-            child_root.update()
-            child_root.update_idletasks()
+        def switch_down():
+            print("down ",self.last_project_id)
+            self.last_project_id += 1
+            if self.last_project_id > len(self.all_rows)-1:
+                self.last_project_id = 0
+
+            self.check_given_input(given_data=self.all_rows[self.last_project_id][0])
+            self.copy_previous_project()
+            refresh_favourite_status()
 
         def del_project():
-            print("deleting")
+            nonlocal child_root
+            result = self.delete_project(button_trigger=True)
+            print(result)
+            if result:
+                print("deleting ", self.all_rows[self.last_project_id][0])
+                switch_up()
+            else:
+                print("aborted")
+
+            child_root.focus()
+            child_root.focus_force()
+            child_root.grab_set()
+
+        def refresh_favourite_status():
+            if self.is_project_favourite(self.last_project_id):
+                self.make_project_favourite = True #init hodnota
+                self.make_fav_label.configure(text = "Oblíbený ❤️",font=("Arial",22))
+                self.make_fav_btn.configure(text = "🐘",font=("Arial",38),text_color = "pink")
+            else:
+                self.make_project_favourite = False #init hodnota
+                self.make_fav_label.configure(text = "Neoblíbený",font=("Arial",22))
+                self.make_fav_btn.configure(text = "❌",font=("Arial",28),text_color = "red")
 
         child_root = customtkinter.CTkToplevel()
         self.opened_window = child_root
@@ -1015,23 +1039,13 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.IP_adress_input = customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0)
         mask =                 customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Maska: ",font=("Arial",20,"bold"))
         self.mask_input =      customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0)
-        copy_check =            customtkinter.CTkButton(master = child_root,font=("Arial",20),width=250,height=30,corner_radius=0,text="Kopírovat předchozí projekt",command= lambda: self.copy_previous_project())
-        del_project_btn =           customtkinter.CTkButton(master = child_root,font=("Arial",20),width=250,height=30,corner_radius=0,text="Smazat tento projekt",command= lambda: del_project(),fg_color="red")
+        copy_check =           customtkinter.CTkButton(master = child_root,font=("Arial",20),width=250,height=30,corner_radius=0,text="Kopírovat předchozí projekt",command= lambda: self.copy_previous_project())
+        del_project_btn =      customtkinter.CTkButton(master = child_root,font=("Arial",20),width=250,height=30,corner_radius=0,text="Smazat tento projekt",command= lambda: del_project(),fg_color="red")
         fav_status =           customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Status oblíbenosti: ",font=("Arial",20,"bold"))
-        fav_frame =             customtkinter.CTkFrame(master=child_root,corner_radius=0,border_width=0,height=50,width=200,fg_color="#353535")
-        self.make_fav_label =   customtkinter.CTkLabel(master = fav_frame, width = 20,height=30)
-        self.make_fav_btn =     customtkinter.CTkLabel(master = fav_frame, width = 50,height=50)
-        
-        # if edit:
-        if self.is_project_favourite(self.last_project_id):
-            self.make_project_favourite = True #init hodnota
-            self.make_fav_label.configure(text = "Oblíbený ❤️",font=("Arial",22))
-            self.make_fav_btn.configure(text = "🐘",font=("Arial",38),text_color = "pink")
-        else:
-            self.make_project_favourite = False #init hodnota
-            self.make_fav_label.configure(text = "Neoblíbený",font=("Arial",22))
-            self.make_fav_btn.configure(text = "❌",font=("Arial",28),text_color = "red")
-
+        fav_frame =            customtkinter.CTkFrame(master=child_root,corner_radius=0,border_width=0,height=50,width=200,fg_color="#353535")
+        self.make_fav_label =  customtkinter.CTkLabel(master = fav_frame, width = 20,height=30)
+        self.make_fav_btn =    customtkinter.CTkLabel(master = fav_frame, width = 50,height=50)
+        refresh_favourite_status()
         notes =                customtkinter.CTkLabel(master = child_root, width = 60,height=30,text = "Poznámky: ",font=("Arial",20,"bold"))
         self.notes_input =     customtkinter.CTkTextbox(master = child_root,font=("Arial",20),width=500,height=280)
         self.console =         tk.Text(child_root, wrap="none", height=0, width=45,background="black",font=("Arial",14),state=tk.DISABLED)
@@ -1518,7 +1532,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             
         except Exception:
             return False
-
 
     def refresh_ip_statuses(self):
         def unbind_connected_ip(widget,frame):
