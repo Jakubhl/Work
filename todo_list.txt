@@ -542,6 +542,18 @@ opraveno první zapisování nového parametru do excelu (nastavení ip setting)
 - kolečkem přepínat projekty v edit window - nebo šipkama- hotovo
 - doladit statusy oblíbenosti při přepínání projektů - hotovo
 - v ip setting dodělat možnost smazat projekt v editu - hotovo
+
+8:44 AM 8/27/2024
+- dotazování zda skutečně smazat - mít možnost odvolit - hotovo
+- bind tlačítka delete - hotovo
+- dodělat obdobný edit i u disků - hotovo
+- popisy oken u editu - hotovo
+
+12:27 PM 9/9/2024
+- udělat bin složku - dodělat - hotovo
+- uložit nastavení odvoleb mazání - hotovo
+- nastavení odvolby dotazování i u disků - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -551,10 +563,16 @@ nová logika prohlížeče obrázků
 - drag image option s hranicema
 - doladit oddalovani - museji byt 2 boundary
 
-- dotazování zda skutečně smazat - mít možnost odvolit
-- shiftem/ controlem vybrat více projektů
-- bind tlačítka delete
-- blbne pořadí když uložit...
+
+- shiftem/ controlem vybrat více projektů navigace šipkama...
+
+
+- upravit bin složku na vracení provedených změn
+
+
+
+catalogue - upravit hlavičku, nastavit split dokumentu
+
 
 
 ??? Koumu: admin práva, online auto aktualizace nové verze

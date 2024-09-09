@@ -181,6 +181,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.ip_frame_list = []
         self.disk_letter_frame_list = []
         self.make_edited_project_first = True
+        self.deletion_behav = 100
+        self.bin_projects = self.manage_bin(flag="read_sheet")
+        print(self.bin_projects)
+
         def call_main(what:str):
             try:
                 if what == "disk":
@@ -198,6 +202,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             - (notes_behav) default chování poznámek
             - (mapping_cond) disk persistent - yes/ no
             - (make_first_behav) = chování při editu
+            - (delete_behav) = statusy odvolby dotazování při mazání
             """
             if param == "disk_behav":
                 ws['B' + str(6)] = 0
@@ -217,6 +222,11 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             elif param == "make_first_behav":
                 ws['B' + str(9)] = 1
                 ws['A' + str(9)] = "automaticky přesouvat upravené projekty na začátek"
+                wb.save(self.excel_file_path)
+                print('inserting new parameter to excel')
+            elif param == "delete_behav":
+                ws['B' + str(10)] = 100
+                ws['A' + str(10)] = "statusy odvolby dotazování při mazání"
                 wb.save(self.excel_file_path)
                 print('inserting new parameter to excel')
 
@@ -268,6 +278,12 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     self.make_edited_project_first = True
                 else:
                     self.make_edited_project_first = False
+            
+            value_check = worksheet['B' + str(10)].value
+            if value_check is None or str(value_check) == "":
+                insert_new_excel_param(workbook,worksheet,param="delete_behav")
+            else:
+                self.deletion_behav = int(worksheet['B' + str(10)].value)
 
             def_show_disk = worksheet['B' + str(4)].value
             workbook.close()
@@ -301,6 +317,99 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 widget.unbind("<Button-1>")
                 widget.unbind("<Button-3>")
                 widget.destroy()
+
+    def manage_bin(self,flag="",parameters=[],wb=None):
+        """
+        First_row in bin worksheet = last deleted ip\n
+        Second_row in bin worksheet = last deleted disk\n
+        flag:\n
+        - read_sheet
+        - save_project_ip
+        - save_project_disk
+        - load_deleted_ip
+        - load_deleted_disk
+        """
+        bin_worksheet = "projects_bin2"
+
+        if flag == "read_sheet":
+            wb = load_workbook(self.excel_file_path)
+            if not bin_worksheet in wb.sheetnames:
+                ws = wb.create_sheet(title=bin_worksheet)
+                ws.sheet_state = "hidden"
+                wb.save(self.excel_file_path)
+                wb.close()
+                print("adding new bin sheet to excel")
+                return []
+            else:
+                ws = wb[bin_worksheet]
+                row_data_ip = list(ws.iter_rows(min_row=1, max_row=1, values_only=True))[0]
+                row_data_disk = list(ws.iter_rows(min_row=2, max_row=2, values_only=True))[0]
+                wb.close()
+                return [list(row_data_ip),list(row_data_disk)]
+
+        elif flag == "save_project_ip":
+            if wb == None:
+                return False
+            self.save_excel_data(parameters[0],parameters[1],parameters[2],parameters[3],force_row_to_print=1,force_ws=bin_worksheet,wb_given=wb)
+            self.bin_projects[0] = [parameters[0],parameters[1],parameters[2],parameters[3]]
+            self.undo_button.configure(state = "normal")
+
+        elif flag == "save_project_disk":
+            if wb == None:
+                return False
+            self.save_excel_data_disk(parameters[0],parameters[1],parameters[2],parameters[3],parameters[4],parameters[5],force_row_to_print=2,force_ws=bin_worksheet,wb_given=wb)
+            self.bin_projects[1] = [parameters[0],parameters[1],parameters[2],parameters[3],parameters[4],parameters[5]]
+            self.undo_button.configure(state = "normal")
+        
+        elif flag == "load_deleted_ip":
+            wb = load_workbook(self.excel_file_path)
+            ws = wb[bin_worksheet]
+            row_data_ip = list(ws.iter_rows(min_row=1, max_row=1, values_only=True))[0]
+
+            print("\nrow data ip: ",row_data_ip,"\n")
+
+            project_name = row_data_ip[0]
+            if project_name in self.project_list:
+                add_colored_line(self.main_console,f"Jméno projektu: {project_name} je již používané, nelze ho tedy obnovit","red",None,True)
+                wb.close()
+                return
+            
+            self.bin_projects[0] = []
+            self.save_excel_data(project_name,row_data_ip[1],row_data_ip[2],row_data_ip[3],only_edit=True,force_row_to_print=len(self.all_rows)+1,fav_status=0,force_ws="ip_address_list")
+            add_colored_line(self.main_console,f"Projekt: {project_name} byl úspěšně obnoven","green",None,True)
+            self.make_project_cells()
+            self.undo_button.configure(state = "disabled")
+            ws.delete_rows(1)
+            wb.save(self.excel_file_path)
+            wb.close()
+
+        elif flag == "load_deleted_disk":
+            wb = load_workbook(self.excel_file_path)
+            ws = wb[bin_worksheet]
+            row_data_disk = list(ws.iter_rows(min_row=2, max_row=2, values_only=True))[0]
+
+            print("\nrow data disk: ",row_data_disk,"\n")
+
+            project_name = row_data_disk[0]
+            if project_name in self.disk_project_list:
+                add_colored_line(self.main_console,f"Jméno projektu: {project_name} je již používané, nelze ho tedy obnovit","red",None,True)
+                wb.close()
+                return
+            
+            self.bin_projects[1] = []
+            wb.save(self.excel_file_path)
+            if len(row_data_disk) <6:
+                notes = ""
+            else:
+                notes = row_data_disk[5]
+            self.save_excel_data_disk(project_name,row_data_disk[1],row_data_disk[2],row_data_disk[3],row_data_disk[4],notes)
+
+            add_colored_line(self.main_console,f"Projekt: {project_name} byl úspěšně obnoven","green",None,True)
+            self.make_project_cells_disk()
+            self.undo_button.configure(state = "disabled")
+            ws.delete_rows(2)
+            wb.save(self.excel_file_path)
+            wb.close()
 
     def fill_interfaces(self):
         """
@@ -399,8 +508,12 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.default_disk_status_behav = int(worksheet['B' + str(6)].value)
         workbook.close()
                      
-    def save_excel_data(self,project_name,IP_adress,mask,notes,only_edit = None,force_row_to_print=None,fav_status = None,force_ws = None):
-        workbook = load_workbook(self.excel_file_path)
+    def save_excel_data(self,project_name,IP_adress,mask,notes,only_edit = None,force_row_to_print=None,fav_status = None,force_ws = None,wb_given = None):
+        if wb_given == None:
+            workbook = load_workbook(self.excel_file_path)
+        else:
+            workbook = wb_given
+
         if self.show_favourite:
             excel_worksheet = "ip_adress_fav_list"
         else:
@@ -408,6 +521,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         if force_ws != None:
             excel_worksheet = force_ws
         worksheet = workbook[excel_worksheet]
+
         # excel je od jednicky...
         if force_row_to_print == None:
             row_to_print = int(len(self.all_rows)) +1
@@ -416,7 +530,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 row_to_print = (len(self.all_rows)- self.last_project_id)
         else:
             row_to_print = force_row_to_print
-        if notes.replace(" ","") == "" or notes == None:
+        if notes == None or notes.replace(" ","") == "":
             notes = ""
         #A = nazev projektu
         worksheet['A' + str(row_to_print)] = project_name
@@ -429,13 +543,23 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         #E = oblibenost
         if fav_status != None:
             worksheet['E' + str(row_to_print)] = fav_status
+        else:
+            worksheet['E' + str(row_to_print)] = 0
 
         workbook.save(filename=self.excel_file_path)
-        workbook.close()
+        if wb_given == None:
+            workbook.close()
 
-    def save_excel_data_disk(self,project_name,disk_letter,ftp_address,username,password,notes,only_edit = None,force_row_to_print=None):
-        workbook = load_workbook(self.excel_file_path)
-        worksheet = workbook["disk_list"]
+    def save_excel_data_disk(self,project_name,disk_letter,ftp_address,username,password,notes,only_edit = None,force_row_to_print=None,force_ws = None,wb_given = None):
+        if wb_given == None:
+            workbook = load_workbook(self.excel_file_path)
+        else:
+            workbook = wb_given
+
+        if force_ws == None:
+            worksheet = workbook["disk_list"]
+        else:
+            worksheet = workbook[force_ws]
         # excel je od jednicky...
         if force_row_to_print == None:
             row_to_print = int(len(self.disk_all_rows)) +1
@@ -458,7 +582,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         worksheet['F' + str(row_to_print)] = notes
 
         workbook.save(filename=self.excel_file_path)
-        workbook.close()
+        if wb_given == None:
+            workbook.close()
 
     def get_notes(self):
         notes_legit_rows = []
@@ -648,7 +773,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             elif only_edit:
                 # kdyz edituji muze mit projekt jiz prideleny status
                 current_fav_status = self.is_project_favourite(self.last_project_id)
-
                 if make_fav and current_fav_status == 0:
                     # zaskrtnuto oblibene + nebyl oblibeny  = ZMENA:
                     row_index_list = get_both_row_indexes(new_project=True)
@@ -778,7 +902,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 self.make_project_cells_disk()
                 add_colored_line(self.main_console,f"Projekt: {project_name} úspěšně pozměněn","green",None,True)
 
-    def delete_project(self,wanted_project=None,silence=None,button_trigger = False):
+    def delete_project(self,wanted_project=None,silence=None,button_trigger = False,flag=""):
         project_found = False
 
         def proceed(window = True):
@@ -799,6 +923,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             for i in range(0,len(self.project_list)):
                 if self.project_list[i] == wanted_project and len(str(self.project_list[i])) == len(str(wanted_project)) and project_found == False:
                     row_index = self.project_list.index(wanted_project)
+                    row_data = self.all_rows[row_index]
+                    self.manage_bin(flag="save_project_ip",parameters=row_data,wb=workbook)
                     worksheet.delete_rows(len(self.all_rows)-row_index)
                     workbook.save(self.excel_file_path)
                     project_found = True
@@ -830,6 +956,14 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             proceed(window=False)
             return
 
+        if flag == "main_menu":
+            if self.deletion_behav == 110 or self.deletion_behav == 111:
+                proceed(window=False)
+                return
+        if self.deletion_behav == 101 or self.deletion_behav == 111:
+            proceed(window=False)
+            return
+        
         if self.last_project_name.replace(" ","") == "":
             add_colored_line(self.main_console,"Nejprve vyberte projekt (nakliknout levým na parametry daného projektu nebo pravým na tlačíko projektu)","orange",None,True)
             return
@@ -849,7 +983,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         proceed_label   .pack(pady=(15,0),padx=10,expand=False,side = "top")
         button_no       .pack(pady = 5, padx = 10,anchor="w",expand=False,side="right")
         button_yes      .pack(pady = 5, padx = 10,anchor="w",expand=False,side="right")
-
         self.root.bind("<Button-1>",lambda e: child_root.destroy(),"+")
         child_root.update()
         child_root.update_idletasks()
@@ -859,18 +992,25 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         child_root.wait_window()
         return project_found
 
-    def delete_project_disk(self,button_trigger = False):
-        wanted_project = str(self.search_input.get())
+    def delete_project_disk(self,button_trigger = False,wanted_project=None,flag=""):
+        # if wanted_project == None:
+        #     wanted_project = str(self.search_input.get())
+        project_found = False
 
         def proceed(window = True):
+            nonlocal project_found
             nonlocal wanted_project
-            self.read_excel_data()
-            project_found = False
+            if wanted_project == None:
+                self.read_excel_data()
+                wanted_project = str(self.search_input.get())
+            # self.read_excel_data()
             workbook = load_workbook(self.excel_file_path)
             if wanted_project.replace(" ","") != "":
                 for i in range(0,len(self.disk_project_list)):
                     if self.disk_project_list[i] == wanted_project and len(str(self.disk_project_list[i])) == len(str(wanted_project)):
                         row_index = self.disk_project_list.index(wanted_project)
+                        row_data = self.disk_all_rows[row_index]
+                        self.manage_bin(flag="save_project_disk",parameters=row_data,wb=workbook)
                         worksheet = workbook["disk_list"]
                         worksheet.delete_rows(len(self.disk_all_rows)-row_index)
                         workbook.save(self.excel_file_path)
@@ -895,9 +1035,19 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             proceed(window=False)
             return
 
-        if wanted_project.replace(" ","") == "":
+        if flag == "main_menu":
+            if self.deletion_behav == 110 or self.deletion_behav == 111:
+                proceed(window=False)
+                return
+        if self.deletion_behav == 101 or self.deletion_behav == 111:
+            proceed(window=False)
+            return
+
+        if self.last_project_name.replace(" ","") == "":
             add_colored_line(self.main_console,"Nejprve vyberte projekt (nakliknout levým na parametry daného projektu nebo pravým na tlačíko projektu)","orange",None,True)
             return
+        elif wanted_project == None:
+            wanted_project = self.last_project_name
 
         child_root = customtkinter.CTkToplevel()
         self.opened_window = child_root
@@ -919,6 +1069,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         child_root.grab_set()
         child_root.focus()
         child_root.focus_force()
+        child_root.wait_window()
+        return project_found
 
     def copy_previous_project(self,disk=None):
         if self.last_project_name == "":
@@ -977,6 +1129,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.check_given_input(given_data=self.all_rows[self.last_project_id][0])
             self.copy_previous_project()
             refresh_favourite_status()
+            refresh_title()
 
         def switch_down():
             print("down ",self.last_project_id)
@@ -987,13 +1140,13 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.check_given_input(given_data=self.all_rows[self.last_project_id][0])
             self.copy_previous_project()
             refresh_favourite_status()
+            refresh_title()
 
         def del_project():
             nonlocal child_root
             result = self.delete_project(button_trigger=True)
             print(result)
             if result:
-                print("deleting ", self.all_rows[self.last_project_id][0])
                 switch_up()
             else:
                 print("aborted")
@@ -1012,17 +1165,19 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 self.make_fav_label.configure(text = "Neoblíbený",font=("Arial",22))
                 self.make_fav_btn.configure(text = "❌",font=("Arial",28),text_color = "red")
 
+        def refresh_title():
+            if edit:
+                child_root.title("Editovat projekt: "+self.last_project_name)
+            else:
+                child_root.title("Nový projekt")
+
         child_root = customtkinter.CTkToplevel()
         self.opened_window = child_root
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
         child_root.geometry(f"520x750+{x+50}+{y+80}")
         child_root.after(200, lambda: child_root.iconbitmap(resource_path(self.app_icon)))
-        if edit:
-            child_root.title("Editovat projekt: "+self.last_project_name)
-        else:
-            child_root.title("Nový projekt")
-        
+        refresh_title()
         project_name =    customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Název projektu: ",font=("Arial",20,"bold"))
         self.name_input = customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0)
         project_selection_label = customtkinter.CTkLabel(master = child_root, width = 200,height=30,text = "Přepnout projekt: ",font=("Arial",20,"bold"))
@@ -1060,7 +1215,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             project_selection_label.grid(column = 0,row=0,padx=265,sticky = tk.W)
             project_switch_frame.   grid(row=1,column=0,padx=320,sticky=tk.W,rowspan=4)
         else:
-            copy_check.             grid(column = 0,row=0,pady = 5,padx =240,sticky = tk.W)
+            copy_check.             grid(column = 0,row=8,pady = 5,padx =240,sticky = tk.W)
         self.name_input.        grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
         IP_adress.              grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
         self.IP_adress_input.   grid(column = 0,row=3,pady = 5,padx =10,sticky = tk.W)
@@ -1068,7 +1223,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.mask_input.        grid(column = 0,row=5,pady = 5,padx =10,sticky = tk.W)
         fav_status.             grid(column = 0,row=6,pady = 5,padx =10,sticky = tk.W)
         if edit:
-            del_project_btn.grid(column = 0,row=6,pady = 5,padx =240,sticky = tk.W)
+            del_project_btn.grid(column = 0,row=8,pady = 5,padx =240,sticky = tk.W)
         fav_frame.              grid(column = 0,row=7,padx= 10,sticky=tk.W)
         fav_frame.              grid_propagate(0)
         self.make_fav_btn.      grid(column=0,row=0,pady = 0,padx =0,sticky = tk.W)
@@ -1099,19 +1254,73 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.root.bind("<Button-1>",lambda e: child_root.destroy(),"+")
 
     def add_new_project_disk(self,edit = None):
+        def mouse_wheel_change(e):
+            if -e.delta < 0:
+                switch_up()
+            else:
+                switch_down()
+
+        def switch_up():
+            print("up ",self.last_project_id)
+            self.last_project_id -= 1
+            if self.last_project_id < 0:
+                self.last_project_id = len(self.disk_all_rows)-1
+                
+            self.check_given_input(given_data=self.disk_all_rows[self.last_project_id][0])
+            self.copy_previous_project(disk=True)
+            refresh_title()
+
+        def switch_down():
+            print("down ",self.last_project_id)
+            self.last_project_id += 1
+            if self.last_project_id > len(self.disk_all_rows)-1:
+                self.last_project_id = 0
+
+            self.check_given_input(given_data=self.disk_all_rows[self.last_project_id][0])
+            self.copy_previous_project(disk=True)
+            refresh_title()
+
+        def del_project():
+            nonlocal child_root
+            result = self.delete_project_disk(button_trigger=True)
+            print(result)
+            if result:
+                switch_up()
+            else:
+                print("aborted")
+
+            child_root.focus()
+            child_root.focus_force()
+            child_root.grab_set()
+        
+        def refresh_title():
+            if edit == None:
+                child_root.title("Nový projekt")
+            else:
+                child_root.title("Editovat projekt: "+self.last_project_name)
+
         child_root = customtkinter.CTkToplevel()
         child_root.after(200, lambda: child_root.iconbitmap(resource_path(self.app_icon)))
         self.opened_window = child_root
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
-        child_root.geometry(f"520x800+{x+50}+{y+100}")
-        if edit == None:
-            child_root.title("Nový projekt")
-        else:
-            child_root.title("Editovat projekt: "+self.last_project_name)
-
+        child_root.geometry(f"520x820+{x+50}+{y+100}")
+        refresh_title()
         project_name =              customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Název projektu: ",font=("Arial",20,"bold"))
-        copy_check =                customtkinter.CTkButton(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0,text="Kopírovat předchozí projekt",command= lambda: self.copy_previous_project(True))
+        project_selection_label = customtkinter.CTkLabel(master = child_root, width = 200,height=30,text = "Přepnout projekt: ",font=("Arial",20,"bold"))
+        project_switch_frame =  customtkinter.CTkFrame(master=child_root,corner_radius=0,border_width=0,height=140,width=80)
+        project_up =            customtkinter.CTkButton(master = project_switch_frame,font=("Arial",25,"bold"),width=60,height=60,corner_radius=0,text="↑",command= lambda: switch_up())
+        project_down =          customtkinter.CTkButton(master = project_switch_frame,font=("Arial",25,"bold"),width=60,height=60,corner_radius=0,text="↓",command= lambda: switch_down())
+        project_switch_frame.   grid_propagate(0)
+        project_up              .grid(column = 0,row=0,pady = (5,0),padx =10)
+        project_down            .grid(column = 0,row=1,pady = 5,padx =10)
+        project_switch_frame.   bind("<MouseWheel>",lambda e: mouse_wheel_change(e))
+        project_up.             bind("<MouseWheel>",lambda e: mouse_wheel_change(e))
+        project_down.           bind("<MouseWheel>",lambda e: mouse_wheel_change(e))
+
+        copy_check =                customtkinter.CTkButton(master = child_root,font=("Arial",20),width=250,height=30,corner_radius=0,text="Kopírovat předchozí projekt",command= lambda: self.copy_previous_project(True))
+        del_project_btn =           customtkinter.CTkButton(master = child_root,font=("Arial",20),width=250,height=30,corner_radius=0,text="Smazat tento projekt",command= lambda: del_project(),fg_color="red")
+
         self.name_input =           customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0)
         disk_letter =               customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Písmeno disku: ",font=("Arial",20,"bold"))
         self.disk_letter_input =    customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0)
@@ -1129,10 +1338,13 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         else:
             save_button =  customtkinter.CTkButton(master = child_root, width = 200,height=40,text = "Uložit", command = lambda: self.save_new_project_data_disk(child_root,True),font=("Arial",20,"bold"),corner_radius=0)
         exit_button =  customtkinter.CTkButton(master = child_root, width = 200,height=40,text = "Zrušit", command = lambda: child_root.destroy(),font=("Arial",20,"bold"),corner_radius=0)
-
         project_name.           grid(column = 0,row=0,pady = 5,padx =10,sticky = tk.W)
         if edit != True:
-            copy_check.             grid(column = 0,row=0,pady = 5,padx =230,sticky = tk.W)
+            copy_check.             grid(column = 0,row=10,pady = 5,padx =240,sticky = tk.W)
+        if edit:
+            project_selection_label.grid(column = 0,row=0,pady = 5,padx =265,sticky = tk.W)
+            project_switch_frame.grid(column = 0,row=1,pady = 5,padx =320,sticky = tk.W,rowspan = 4)
+            del_project_btn.    grid(column = 0,row=10,pady = 5,padx =240,sticky = tk.W)
         self.name_input.        grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
         disk_letter.            grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
         self.disk_letter_input. grid(column = 0,row=3,pady = 5,padx =10,sticky = tk.W)
@@ -2320,32 +2532,42 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         change_def_notes_behav\n
         change_mapping_cond\n
         change_make_first_behav\n
+        delete_behav\n
         """
+
+        parameter_row_mapping = {
+        "change_def_conn_option": 1,
+        "new_conn_options": 2,
+        "change_def_ip_window": 3,
+        "change_def_main_window": 4,
+        "change_def_window_size": 5,
+        "change_def_disk_behav": 6,
+        "change_def_notes_behav": 7,
+        "change_mapping_cond": 8,
+        "change_make_first_behav": 9,
+        "delete_behav": 10
+        }
+
+        row = parameter_row_mapping.get(parameter)
+        if row is None:
+            print(f"Invalid parameter: {parameter}")
+            return
+        
         workbook = load_workbook(self.excel_file_path)
         worksheet = workbook["Settings"]
-        if parameter == "change_def_conn_option":
-            row = 1
-        elif parameter == "new_conn_options":
-            row = 2
-        elif parameter == "change_def_ip_window":
-            row = 3
-        elif parameter == "change_def_main_window":
-            row = 4
-        elif parameter == "change_def_window_size":
-            row = 5
-        elif parameter == "change_def_disk_behav":
-            row = 6
-        elif parameter == "change_def_notes_behav":
-            row = 7
-        elif parameter == "change_mapping_cond":
-            row = 8
-        elif parameter == "change_make_first_behav":
-            row = 9
         worksheet['B' + str(row)] = status
         workbook.save(filename=self.excel_file_path)
         workbook.close()
 
     def show_favourite_toggle(self,keep_search_input = False,determine_status = None): # hlavni prepinaci tlacitko oblibene/ neoblibene
+        def get_none_count(array_given):
+            none_count = 0
+            for items in array_given:
+                if items == None:
+                    none_count += 1
+
+            return none_count
+        
         if self.show_favourite and (determine_status == None or determine_status == "all"):
             self.show_favourite = False
             window_status = 0
@@ -2367,11 +2589,17 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 self.read_excel_data()
                 self.check_given_input() #check ve druhem prostredi
                 self.make_project_cells(no_read=True)
-            self.button_remove_main.configure(command = lambda: self.delete_project(button_trigger=True))
+            self.button_remove_main.configure(command = lambda: self.delete_project(button_trigger=True,flag="main_menu"))
             self.save_setting_parameter(parameter="change_def_ip_window",status=window_status)
             self.button_switch_favourite_ip. configure(fg_color="black")
             self.button_switch_all_ip.       configure(fg_color="#212121")
-            self.button_remove_main.         configure(text="Smazat projekt")
+            self.button_remove_main.         configure(text="Smazat")
+            # poznámky mohou být None...
+            print("trubac",self.bin_projects[0])
+            if get_none_count(self.bin_projects[0]) < 2 and len(self.bin_projects[0]) > 3:
+                self.undo_button.configure(state = "normal")
+            else:
+                self.undo_button.configure(state = "disabled")
 
         elif self.show_favourite == False and (determine_status == None or determine_status == "fav"):
             # favourite window
@@ -2399,7 +2627,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.save_setting_parameter(parameter="change_def_ip_window",status=window_status)
             self.button_switch_favourite_ip. configure(fg_color="#212121")
             self.button_switch_all_ip.       configure(fg_color="black")
-            self.button_remove_main.         configure(text="Odebrat projekt")
+            self.button_remove_main.         configure(text="Odebrat")
+            self.undo_button.                configure(state = "disabled")
 
     def refresh_interfaces(self,all = False):
         """
@@ -2468,53 +2697,74 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 self.make_edited_project_first = True
                 self.save_setting_parameter(parameter="change_make_first_behav",status=1)
 
+        def delete_behav():
+            if int(checkbox5.get()) == 0 and int(checkbox6.get()) == 0:
+                self.deletion_behav = 100
+                self.save_setting_parameter(parameter="delete_behav",status=self.deletion_behav)
+            elif int(checkbox5.get()) == 0 and int(checkbox6.get()) == 1:
+                self.deletion_behav = 101
+                self.save_setting_parameter(parameter="delete_behav",status=self.deletion_behav)
+            elif int(checkbox5.get()) == 1 and int(checkbox6.get()) == 0:
+                self.deletion_behav = 110
+                self.save_setting_parameter(parameter="delete_behav",status=self.deletion_behav)
+            elif int(checkbox5.get()) == 1 and int(checkbox6.get()) == 1:
+                self.deletion_behav = 111
+                self.save_setting_parameter(parameter="delete_behav",status=self.deletion_behav)
+
         child_root = customtkinter.CTkToplevel()
         self.opened_window = child_root
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
         if ip_window:
-            child_root.geometry(f"580x280+{x+350}+{y+180}")
+            child_root.geometry(f"580x400+{x+350}+{y+180}")
         else:
-            child_root.geometry(f"620x490+{x+350}+{y+180}")
+            child_root.geometry(f"620x580+{x+350}+{y+180}")
 
         child_root.after(200, lambda: child_root.iconbitmap(resource_path(self.app_icon)))
         child_root.title("Nastavení")
         main_frame =    customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
-        label =         customtkinter.CTkLabel(master = main_frame, width = 100,height=40,text = "- Chování poznámek (editovatelné/ needitovatelné)",font=("Arial",20,"bold"))
+        label =         customtkinter.CTkLabel(master = main_frame, width = 100,height=40,text = "- Chování poznámek (editovatelné/ needitovatelné):",font=("Arial",20,"bold"))
         checkbox =      customtkinter.CTkCheckBox(master = main_frame, text = "Přímo zapisovat a ukládat do poznámek na úvodní obrazovce",font=("Arial",16,"bold"),command=lambda: save_new_behav_notes())
         label.          pack(pady = 10,padx=10,side="top",anchor = "w")
         checkbox.       pack(pady = 10,padx=10,side="top",anchor = "w")
 
         main_frame2 =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
-        label2 =        customtkinter.CTkLabel(master = main_frame2, width = 100,height=40,text = "- Chování při vstupu do menu \"Síťové disky\"",font=("Arial",20,"bold"))
+        label2 =        customtkinter.CTkLabel(master = main_frame2, width = 100,height=40,text = "- Chování při vstupu do menu \"Síťové disky\":",font=("Arial",20,"bold"))
         checkbox2 =     customtkinter.CTkCheckBox(master = main_frame2, text = "Při spuštění aktualizovat statusy disků",font=("Arial",16,"bold"),command=lambda: save_new_behav_disk())
         label2.         pack(pady = 10,padx=10,side="top",anchor = "w")
         checkbox2.      pack(pady = 10,padx=10,side="top",anchor = "w")
 
         main_frame3 =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
-        label3 =        customtkinter.CTkLabel(master = main_frame3, width = 100,height=40,text = "- Nastavení mapování disků",font=("Arial",20,"bold"))
+        label3 =        customtkinter.CTkLabel(master = main_frame3, width = 100,height=40,text = "- Nastavení mapování disků:",font=("Arial",20,"bold"))
         checkbox3 =     customtkinter.CTkCheckBox(master = main_frame3, text = "Automaticky připojovat po restartu PC",font=("Arial",16,"bold"),command=lambda: save_new_disk_map_cond())
-
         frame_drive1 =  customtkinter.CTkFrame(master=main_frame3,corner_radius=0,fg_color="#212121")
         drive_color1 =  customtkinter.CTkFrame(master=frame_drive1,corner_radius=0,width = 30,height = 30,fg_color="green")
-        drive_label1 =  customtkinter.CTkLabel(master = frame_drive1, width = 100,height=40,text = "= disk je online, persistentní (po vypnutí bude znovu načten)",font=("Arial",20))
-        drive_color1.   pack(pady = (5,0),padx=10,side="left",anchor = "w")
-        drive_label1.   pack(pady = (5,0),padx=0,side="left",anchor = "w")
+        drive_label1 =  customtkinter.CTkLabel(master = frame_drive1, width = 100,height=40,text = "= disk je online, persistentní (po vypnutí bude znovu načten)",font=("Arial",18))
+        drive_color1.   pack(pady = (2,0),padx=10,side="left",anchor = "w")
+        drive_label1.   pack(pady = (2,0),padx=0,side="left",anchor = "w")
         frame_drive2 =  customtkinter.CTkFrame(master=main_frame3,corner_radius=0,fg_color="#212121")
         drive_color2 =  customtkinter.CTkFrame(master=frame_drive2,corner_radius=0,width = 30,height = 30,fg_color="#00CED1")
-        drive_label2 =  customtkinter.CTkLabel(master = frame_drive2, width = 100,height=40,text = "= disk je online, nepersistentní (bude odpojen po vypnutí)",font=("Arial",20))
-        drive_color2.   pack(pady = (5,0),padx=10,side="left",anchor = "w")
-        drive_label2.   pack(pady = (5,0),padx=0,side="left",anchor = "w")
+        drive_label2 =  customtkinter.CTkLabel(master = frame_drive2, width = 100,height=40,text = "= disk je online, nepersistentní (bude odpojen po vypnutí)",font=("Arial",18))
+        drive_color2.   pack(pady = (2,0),padx=10,side="left",anchor = "w")
+        drive_label2.   pack(pady = (2,0),padx=0,side="left",anchor = "w")
         label3.         pack(pady = 10,padx=10,side="top",anchor = "w")
         checkbox3.      pack(pady = 10,padx=10,side="top",anchor = "w")
         frame_drive1.   pack(pady = 0,padx=0,side="top",anchor = "w",fill="x")
         frame_drive2.   pack(pady = 0,padx=0,side="top",anchor = "w",fill="x")
         
         main_frame4 =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
-        label4 =        customtkinter.CTkLabel(master = main_frame4, width = 100,height=40,text = "- Nastavení chování při editaci projektů",font=("Arial",20,"bold"))
+        label4 =        customtkinter.CTkLabel(master = main_frame4, width = 100,height=40,text = "- Nastavení chování při editaci projektů:",font=("Arial",20,"bold"))
         checkbox4 =     customtkinter.CTkCheckBox(master = main_frame4, text = "Automaticky přesouvat editovaný projekt na začátek",font=("Arial",16,"bold"),command=lambda: change_make_first_behav())
         label4.         pack(pady = 10,padx=10,side="top",anchor = "w")
         checkbox4.      pack(pady = 10,padx=10,side="top",anchor = "w")
+
+        main_frame5 =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
+        label5 =        customtkinter.CTkLabel(master = main_frame5, width = 100,height=40,text = "- Odvolit dotazování při mazání:",font=("Arial",20,"bold"))
+        checkbox5 =     customtkinter.CTkCheckBox(master = main_frame5, text = "Odvolit v hlavním okně",font=("Arial",16,"bold"),command=lambda: delete_behav())
+        checkbox6 =     customtkinter.CTkCheckBox(master = main_frame5, text = "Odvolit při editu",font=("Arial",16,"bold"),command=lambda: delete_behav())
+        label5.         pack(pady = 10,padx=10,side="top",anchor = "w")
+        checkbox5.      pack(pady = 0,padx=10,side="top",anchor = "w")
+        checkbox6.      pack(pady = (5,5),padx=10,side="top",anchor = "w")
 
         close_frame =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
         button_close =  customtkinter.CTkButton(master = close_frame, width = 150,height=40,text = "Zavřít",command = child_root.destroy,font=("Arial",20,"bold"),corner_radius=0)
@@ -2523,12 +2773,14 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         if ip_window:
             main_frame.     pack(expand=False,fill="x",side="top")
             main_frame4.    pack(expand=False,fill="x",side="top")
+            main_frame5.    pack(expand=False,fill="x",side="top")
             close_frame.    pack(expand=True,fill="both",side="top")
             
         else: #disk window...
             main_frame.     pack(expand=False,fill="x",side="top")
             main_frame2.    pack(expand=False,fill="x",side="top")
             main_frame3.    pack(expand=False,fill="x",side="top")
+            main_frame5.    pack(expand=False,fill="x",side="top")
             close_frame.    pack(expand=True,fill="both",side="top")
 
         if self.default_note_behav == 1:
@@ -2543,6 +2795,11 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         if self.mapping_condition == 1 and ip_window == False:
             checkbox3.select()
 
+        if self.deletion_behav == 110 or self.deletion_behav == 111:
+            checkbox5.select()
+        if self.deletion_behav == 101 or self.deletion_behav == 111:
+            checkbox6.select()
+
         child_root.update()
         child_root.update_idletasks()
         child_root.focus()
@@ -2550,6 +2807,15 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.root.bind("<Button-1>",lambda e: child_root.destroy(),"+")
 
     def create_widgets(self,fav_status = None,init=None,excel_load_error = False):
+        
+        def get_none_count(array_given):
+            none_count = 0
+            for items in array_given:
+                if items == None:
+                    none_count += 1
+
+            return none_count
+        
         if not excel_load_error:
             if init:
                 if self.window_mode == "max":
@@ -2591,19 +2857,27 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.search_input =         customtkinter.CTkEntry(master = main_widgets,font=("Arial",20),width=160,height=40,placeholder_text="Název projektu",corner_radius=0)
         button_search =             customtkinter.CTkButton(master = main_widgets, width = 150,height=40,text = "Vyhledat",command =  lambda: self.make_project_first("search"),font=("Arial",20,"bold"),corner_radius=0)
         self.button_add_main =      customtkinter.CTkButton(master = main_widgets, width = 150,height=40,text = "Nový projekt", command = lambda: self.add_new_project(),font=("Arial",20,"bold"),corner_radius=0)
-        self.button_remove_main =   customtkinter.CTkButton(master = main_widgets, width = 150,height=40,text = "Smazat projekt", command =  lambda: self.delete_project(button_trigger=True),font=("Arial",20,"bold"),corner_radius=0)
+        self.button_remove_main =   customtkinter.CTkButton(master = main_widgets, width = 100,height=40,text = "Smazat", command =  lambda: self.delete_project(button_trigger=True,flag="main_menu"),font=("Arial",20,"bold"),corner_radius=0)
+        self.undo_button =          customtkinter.CTkButton(master = main_widgets, width = 50,height=40,text = "⎌", command =  lambda: self.manage_bin(flag="load_deleted_ip"),font=("",28,"bold"),corner_radius=0,border_width=1,text_color="red")
         self.button_edit_main =     customtkinter.CTkButton(master = main_widgets, width = 160,height=40,text = "Editovat projekt",command =  lambda: self.edit_project(),font=("Arial",20,"bold"),corner_radius=0)
         button_make_first =         customtkinter.CTkButton(master = main_widgets, width = 200,height=40,text = "Přesunout na začátek",command =  lambda: self.make_project_first(),font=("Arial",20,"bold"),corner_radius=0)
         button_settings_behav =     customtkinter.CTkButton(master = main_widgets, width = 40,height=40,text="⚙️",command =  lambda: self.setting_window(ip_window=True),font=("",22),corner_radius=0)
         
         if self.show_favourite:
-            self.button_remove_main.         configure(text="Odebrat projekt")
-            self.button_switch_favourite_ip. configure(fg_color="#212121")
-            self.button_switch_all_ip.       configure(fg_color="black")
+            self.button_remove_main.            configure(text="Odebrat")
+            self.button_switch_favourite_ip.    configure(fg_color="#212121")
+            self.button_switch_all_ip.          configure(fg_color="black")
+            self.undo_button.                   configure(state = "disabled")
         else:
-            self.button_remove_main.         configure(text="Smazat projekt")
-            self.button_switch_favourite_ip. configure(fg_color="black")
-            self.button_switch_all_ip.       configure(fg_color="#212121")
+            self.button_remove_main.            configure(text="Smazat")
+            self.button_switch_favourite_ip.    configure(fg_color="black")
+            self.button_switch_all_ip.          configure(fg_color="#212121")
+            # poznámky mohou být None
+            if get_none_count(self.bin_projects[0]) < 2 and len(self.bin_projects[0]) == 5:
+                self.undo_button.               configure(state = "normal")
+            else:
+                self.undo_button.               configure(state = "disabled")
+
 
         connect_label =         customtkinter.CTkLabel(master = main_widgets, width = 100,height=40,text = "Připojení: ",font=("Arial",20,"bold"))
         self.drop_down_options = customtkinter.CTkOptionMenu(master = main_widgets,width=200,height=40,font=("Arial",20,"bold"),corner_radius=0,command=  self.option_change)
@@ -2620,22 +2894,23 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.button_switch_favourite_ip.pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
         button_switch_disk.             pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
         image_logo.                     pack(pady = 0,padx =(15,0),anchor = "e",side = "right",ipadx = 20,ipady = 10,expand=False)
-        project_label.              grid(column = 0,row=0,pady = 5,padx =0,sticky = tk.W)
-        self.search_input.          grid(column = 0,row=0,pady = 5,padx =90,sticky = tk.W)
-        button_search.              grid(column = 0,row=0,pady = 5,padx =255,sticky = tk.W)
-        self.button_add_main.       grid(column = 0,row=0,pady = 5,padx =410,sticky = tk.W)
-        self.button_remove_main.    grid(column = 0,row=0,pady = 5,padx =565,sticky = tk.W)
-        self.button_edit_main.      grid(column = 0,row=0,pady = 5,padx =720,sticky = tk.W)
-        button_make_first.          grid(column = 0,row=0,pady = 5,padx =885,sticky = tk.W)
-        button_settings_behav.      grid(column = 0,row=0,pady = 5,padx =1100,sticky = tk.W)
-        connect_label.              grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
-        self.drop_down_options.     grid(column = 0,row=1,pady = 0,padx =110,sticky = tk.W)
-        button_settings.            grid(column = 0,row=1,pady = 0,padx =315,sticky = tk.W)
-        button_dhcp.                grid(column = 0,row=1,pady = 0,padx =360,sticky = tk.W)
-        static_label.               grid(column = 0,row=1,pady = 0,padx =470,sticky = tk.W)
-        self.static_label2.         grid(column = 0,row=1,pady = 0,padx =540,sticky = tk.W,ipadx = 10,ipady = 2)
-        online_label.               grid(column = 0,row=1,pady = 0,padx =725,sticky = tk.W)
-        self.online_list.           grid(column = 0,row=1,pady = 0,padx =805,sticky = tk.W)
+        project_label.                  grid(column = 0,row=0,pady = 5,padx =0,sticky = tk.W)
+        self.search_input.              grid(column = 0,row=0,pady = 5,padx =90,sticky = tk.W)
+        button_search.                  grid(column = 0,row=0,pady = 5,padx =255,sticky = tk.W)
+        self.button_add_main.           grid(column = 0,row=0,pady = 5,padx =410,sticky = tk.W)
+        self.button_remove_main.        grid(column = 0,row=0,pady = 5,padx =565,sticky = tk.W)
+        self.undo_button.               grid(column = 0,row=0,pady = 5,padx =665,sticky = tk.W)
+        self.button_edit_main.          grid(column = 0,row=0,pady = 5,padx =720,sticky = tk.W)
+        button_make_first.              grid(column = 0,row=0,pady = 5,padx =885,sticky = tk.W)
+        button_settings_behav.          grid(column = 0,row=0,pady = 5,padx =1100,sticky = tk.W)
+        connect_label.                  grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
+        self.drop_down_options.         grid(column = 0,row=1,pady = 0,padx =110,sticky = tk.W)
+        button_settings.                grid(column = 0,row=1,pady = 0,padx =315,sticky = tk.W)
+        button_dhcp.                    grid(column = 0,row=1,pady = 0,padx =360,sticky = tk.W)
+        static_label.                   grid(column = 0,row=1,pady = 0,padx =470,sticky = tk.W)
+        self.static_label2.             grid(column = 0,row=1,pady = 0,padx =540,sticky = tk.W,ipadx = 10,ipady = 2)
+        online_label.                   grid(column = 0,row=1,pady = 0,padx =725,sticky = tk.W)
+        self.online_list.               grid(column = 0,row=1,pady = 0,padx =805,sticky = tk.W)
 
         self.main_console.grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
         self.refresh_interfaces()
@@ -2690,11 +2965,34 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             if not ".!ctkscrollableframe" in str(self.root.focus_get()) and not ".!ctktoplevel" in str(self.root.focus_get()):
                 #odebrat focus
                 self.clicked_on_project("",None,None,None,flag="unfocus")
+                return
+            
         self.root.bind("<Button-1>",lambda e: call_unfocus(),"+")
 
+        self.selected_list = []
+        def multi_select():
+            # self.selected_list = []
+            # def add_to_list():
+            self.selected_list.append(self.last_project_id)
+            print(self.selected_list)
+            # add_to_list()
+            # self.root.bind("<Control-Button-1>",lambda e: add_to_list())
+        def control_release():
+            self.selected_list = [] 
+
+        self.root.bind("<Control-Button-1>",lambda e: multi_select())
+        self.root.bind("<KeyRelease-Control_L>",lambda e: control_release())
+        self.root.bind("<Delete>",lambda e: self.delete_project(button_trigger=True,flag="main_menu"))
         self.root.mainloop()
 
     def create_widgets_disk(self,init=None):
+        def get_none_count(array_given):
+            none_count = 0
+            for items in array_given:
+                if items == None:
+                    none_count += 1
+            return none_count
+        
         if init:
             if self.window_mode == "max":
                 self.save_setting_parameter(parameter="change_def_window_size",status=1)
@@ -2721,7 +3019,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.search_input =     customtkinter.CTkEntry(master = main_widgets,font=("Arial",20),width=160,height=40,placeholder_text="Název projektu",corner_radius=0)
         button_search =         customtkinter.CTkButton(master = main_widgets, width = 150,height=40,text = "Vyhledat",command =  lambda: self.make_project_first_disk("search"),font=("Arial",20,"bold"),corner_radius=0)
         button_add =            customtkinter.CTkButton(master = main_widgets, width = 150,height=40,text = "Nový projekt", command = lambda: self.add_new_project_disk(),font=("Arial",20,"bold"),corner_radius=0)
-        button_remove =         customtkinter.CTkButton(master = main_widgets, width = 150,height=40,text = "Smazat projekt", command =  lambda: self.delete_project_disk(button_trigger=True),font=("Arial",20,"bold"),corner_radius=0)
+        button_remove =         customtkinter.CTkButton(master = main_widgets, width = 100,height=40,text = "Smazat", command =  lambda: self.delete_project_disk(button_trigger=True,flag="main_menu"),font=("Arial",20,"bold"),corner_radius=0)
+        self.undo_button =      customtkinter.CTkButton(master = main_widgets, width = 50,height=40,text = "⎌", command =  lambda: self.manage_bin(flag="load_deleted_disk"),font=("",28,"bold"),corner_radius=0,border_width=1,text_color="red")
         button_edit =           customtkinter.CTkButton(master = main_widgets, width = 160,height=40,text = "Editovat projekt",command =  lambda: self.edit_project(),font=("Arial",20,"bold"),corner_radius=0)
         button_make_first =     customtkinter.CTkButton(master = main_widgets, width = 250,height=40,text = "Přesunout na začátek",command =  lambda: self.make_project_first_disk(),font=("Arial",20,"bold"),corner_radius=0)
         button_settings =       customtkinter.CTkButton(master = main_widgets, width = 40,height=40,text="⚙️",command =  lambda: self.setting_window(),font=("",22),corner_radius=0)
@@ -2730,7 +3029,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.refresh_btn =      customtkinter.CTkButton(master = main_widgets, width = 200,height=40,text = "Refresh statusů",command =  lambda: self.refresh_disk_statuses(),font=("Arial",20,"bold"),corner_radius=0)
         as_admin_label =        customtkinter.CTkLabel(master = main_widgets,text = "",font=("Arial",20,"bold"))
         self.main_console =     tk.Text(main_widgets, wrap="none", height=0, width=180,background="black",font=("Arial",22),state=tk.DISABLED)
-
         main_menu_button.          pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
         button_switch_all_ip.      pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
         button_switch_favourite_ip.pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
@@ -2741,6 +3039,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         button_search.      grid(column = 0,row=0,pady = 5,padx =255,sticky = tk.W)
         button_add.         grid(column = 0,row=0,pady = 5,padx =410,sticky = tk.W)
         button_remove.      grid(column = 0,row=0,pady = 5,padx =565,sticky = tk.W)
+        self.undo_button.   grid(column = 0,row=0,pady = 5,padx =665,sticky = tk.W)
         button_edit.        grid(column = 0,row=0,pady = 5,padx =720,sticky = tk.W)
         button_make_first.  grid(column = 0,row=0,pady = 5,padx =885,sticky = tk.W)
         button_settings.    grid(column = 0,row=0,pady = 5,padx =1140,sticky = tk.W)
@@ -2750,6 +3049,12 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         as_admin_label.     grid(column = 0,row=1,pady = 5,padx =675,sticky = tk.W)
         self.main_console.grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
         self.option_change("",only_console=True)
+
+        # poznámky, username, password mohou být None
+        if get_none_count(self.bin_projects[1]) < 4 and len(self.bin_projects[1]) > 2:
+            self.undo_button.configure(state = "normal")
+        else:
+            self.undo_button.configure(state = "disabled")
         
         def is_admin():
             try:
@@ -2800,6 +3105,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 self.clicked_on_project("",None,None,None,flag="unfocus")
         self.root.bind("<Button-1>",lambda e: call_unfocus(),"+")
 
+        self.root.bind("<Delete>",lambda e: self.delete_project_disk(button_trigger=True,flag="main_menu"))
         self.root.update()
         self.make_project_cells_disk()
         self.root.mainloop()
