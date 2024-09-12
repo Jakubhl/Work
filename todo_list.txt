@@ -554,6 +554,8 @@ opraveno první zapisování nového parametru do excelu (nastavení ip setting)
 - uložit nastavení odvoleb mazání - hotovo
 - nastavení odvolby dotazování i u disků - hotovo
 
+8:15 AM 9/10/2024
+- duplikat - persistent a nonpersistent - opraveno
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -574,6 +576,8 @@ nová logika prohlížeče obrázků
 catalogue - upravit hlavičku, nastavit split dokumentu
 
 
+
+trimazkon prohlizec - corrupted obrázky shodí celou aplikaci
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon
