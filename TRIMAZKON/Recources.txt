@@ -4,7 +4,7 @@ bmp,png
 Podporované typy souborů u možností mazání:
 jpg,bmp,png,ifz
 Základní cesta k souborům:
-C:/Users/jakub.hlavacek.local/Pictures/Screenshots/
+D:/image/
 Základní množství ponechaných souborů:
 998
 Základní cutoff date:
@@ -40,9 +40,9 @@ Nastavení prohlížeče obrázků: (1. zvolená možnost, 2. krok přibližová
 Zobrazit changelog?
 ne
 Zobrazovat v prohlížeči obrázků film obrázků?
-ne
+ano
 Kolik obrázků ve filmu obrázků zobrazovat na každé straně?
-5
+13
 Default název pro sharepoint databázi:
 Sharepoint_databaze.xlsx
 Default název pro excel (Katalog):

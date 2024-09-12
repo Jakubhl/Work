@@ -143,4 +143,19 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     TRIMAZKON:
     - Odolnost proti chybějícím config souborům
     - Opravy chybových hlášení\n"""
+        ," Verze 3.8.0 (12.9.2024)"
+        ,
+    """ 
+    IP setting:
+    - oprava ukládání konfigurace nastavení
+    - rozlišování persistent/ nepersistent disků
+    - projekty lze nově přepínat v okně editu
+    - nově lze mazat projekty v okně editu
+    - nově možnost odvolit dotazovaní při mazání
+    - bind tlačítka delete
+    - lze vrátit posledně smazaný projekt
+    - tlačítkem ctrl lze vybrat více projektů najednou
+    - lze mazat více projektů najednou
+    Prohlížeč obrázků
+    - Ochrana před poškozenými soubory\n"""
 ]

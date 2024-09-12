@@ -556,6 +556,13 @@ opraveno první zapisování nového parametru do excelu (nastavení ip setting)
 
 8:15 AM 9/10/2024
 - duplikat - persistent a nonpersistent - opraveno
+
+10:27 AM 9/12/2024
+- prepinani mezi ip, disk smazat remembered projects - hotovo
+- controlem vybrat více projektů - hotovo
+- multi mazání - hotovo
+- trimazkon prohlizec - corrupted obrázky shodí celou aplikaci - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -566,18 +573,17 @@ nová logika prohlížeče obrázků
 - doladit oddalovani - museji byt 2 boundary
 
 
-- shiftem/ controlem vybrat více projektů navigace šipkama...
+- shiftem vybrat více projektů
+- navigace šipkama
 
 
-- upravit bin složku na vracení provedených změn
+- upravit bin složku na vracení provedených změn (ulozit current name a vse pred zmenami)
 
 
 
 catalogue - upravit hlavičku, nastavit split dokumentu
 
 
-
-trimazkon prohlizec - corrupted obrázky shodí celou aplikaci
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon

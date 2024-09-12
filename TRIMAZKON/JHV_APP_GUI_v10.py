@@ -56,7 +56,7 @@ customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 root=customtkinter.CTk()
 root.geometry("1200x900")
-root.title("TRIMAZKON v_3.7.7")
+root.title("TRIMAZKON v_3.8.0")
 root.wm_iconbitmap(resource_path(app_icon))
 
 def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
@@ -1238,15 +1238,33 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         -vstupními daty jsou informace o pozici obrázku v poli se všemi obrázky
         -přepočítávání rotace
         """
+        def corrupted_image_handling():
+            with Image.open(resource_path("images/loading3.png")) as opened_image:
+                rotated_image = opened_image.rotate(180,expand=True)
+
+            error_image = customtkinter.CTkImage(rotated_image,size = (800,800))
+            if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
+                self.images.configure(image = error_image)
+                self.images.image = error_image
+                self.images.update_idletasks()
+                self.main_frame.update()
+
+        
         if len(self.all_images) != 0:
             if direct_path == None:
                 image_to_show = self.all_images[increment_of_image]
             else:
                 image_to_show = direct_path
 
-            with Image.open(image_to_show) as opened_image:
-                rotated_image = opened_image.rotate(self.rotation_angle,expand=True)
-                width,height = rotated_image.size
+            try:
+                with Image.open(image_to_show) as opened_image:
+                    rotated_image = opened_image.rotate(self.rotation_angle,expand=True)
+                    width,height = rotated_image.size
+            except Exception as e:
+                error_message = f"Obrázek: {image_to_show} je poškozen"
+                print(error_message)
+                corrupted_image_handling()
+                return error_message
 
             if self.chosen_option == 1:
                 dimensions = self.calc_current_format(width,height)
@@ -1268,31 +1286,36 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
 
                 if only_refresh == None:
                     def open_image(increment_of_image_given,position):
-                        if self.ifz_located == None:
-                            increment_of_image = increment_of_image_given + position
-                            number_of_found_images = len(self.all_images)
-                            if increment_of_image < 0:
-                                increment_of_image = number_of_found_images + increment_of_image
+                        try:
+                            if self.ifz_located == None:
+                                increment_of_image = increment_of_image_given + position
+                                number_of_found_images = len(self.all_images)
+                                if increment_of_image < 0:
+                                    increment_of_image = number_of_found_images + increment_of_image
 
-                            elif increment_of_image > number_of_found_images-1:
-                                increment_of_image = 0 + (increment_of_image-number_of_found_images)
+                                elif increment_of_image > number_of_found_images-1:
+                                    increment_of_image = 0 + (increment_of_image-number_of_found_images)
 
-                            if len(self.all_images) > abs(increment_of_image):
-                                image_to_show = self.all_images[increment_of_image]
+                                if len(self.all_images) > abs(increment_of_image):
+                                    image_to_show = self.all_images[increment_of_image]
+                                    with Image.open(image_to_show) as current_image:
+
+                                        opened_image = current_image.rotate(self.rotation_angle,expand=True)
+                                    return opened_image
+                                else:
+                                    return False
+                            elif self.ifz_located == True:
+                                converted_images_index = (position * self.ifz_count) #+ self.increment_of_ifz_image
+                                image_to_show = self.converted_images[converted_images_index + self.increment_of_ifz_image]
                                 with Image.open(image_to_show) as current_image:
-
                                     opened_image = current_image.rotate(self.rotation_angle,expand=True)
-                                return opened_image
-                            else:
-                                return False
-                        elif self.ifz_located == True:
-                            converted_images_index = (position * self.ifz_count) #+ self.increment_of_ifz_image
-                            image_to_show = self.converted_images[converted_images_index + self.increment_of_ifz_image]
-                            with Image.open(image_to_show) as current_image:
-                                opened_image = current_image.rotate(self.rotation_angle,expand=True)
 
-                            return opened_image
-                        
+                                return opened_image
+                        except Exception as e:
+                            error_message = f"Obrázek: {image_to_show} je poškozen"
+                            print(error_message)
+                            return False
+
                     image_film_dimensions = [80,80]
                     half_image_queue = int(len(self.image_queue)/2)
 
@@ -1348,18 +1371,20 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.increment_of_image = 0
             
             if self.ifz_located == None:
-                self.view_image(self.increment_of_image)
+                load_status = self.view_image(self.increment_of_image)
             else:
                 self.convert_files()
                 center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
-                self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image])
+                load_status = self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image])
             
             if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
                 self.current_image_num.configure(text ="/" + str(len(self.all_images)))
                 self.changable_image_num.delete("0","100")
                 self.changable_image_num.insert("0", str(self.increment_of_image+1))
                 if silent == False:
-                    if self.name_or_path.get() == 1:
+                    if load_status != None:
+                        add_colored_line(self.console,load_status,"orange",None,True)
+                    elif self.name_or_path.get() == 1:
                         only_name = str(self.all_images[self.increment_of_image]).split("/")
                         only_name = only_name[int(len(only_name))-1]
                         add_colored_line(self.console,str(only_name),"white",None,True)
@@ -1379,12 +1404,14 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.increment_of_ifz_image = 0
 
             center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
-            self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],True)
+            load_status = self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],True)
             if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
                 self.current_image_num_ifz.configure(text ="/" + str(self.ifz_count))
                 self.changable_image_num_ifz.delete("0","100")
                 self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
-                if self.name_or_path.get() == 1:
+                if load_status != None:
+                    add_colored_line(self.console,load_status,"orange",None,True)
+                elif self.name_or_path.get() == 1:
                     only_name = str(self.converted_images[center_image_index + self.increment_of_ifz_image]).split("/")
                     only_name = only_name[int(len(only_name))-1]
                     add_colored_line(self.console,str(only_name),"white",None,True)
@@ -1404,21 +1431,22 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.increment_of_image = number_of_found_images -1
             
             if self.ifz_located == None:
-                self.view_image(self.increment_of_image)
+                load_status = self.view_image(self.increment_of_image)
             else:
                 self.convert_files()
                 center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
-                self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image])
+                load_status = self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image])
             self.current_image_num.configure(text = "/" + str(len(self.all_images)))
             self.changable_image_num.delete("0","100")
             self.changable_image_num.insert("0", str(self.increment_of_image+1))
-            if self.name_or_path.get() == 1:
+            if load_status != None:
+                add_colored_line(self.console,load_status,"orange",None,True)
+            elif self.name_or_path.get() == 1:
                 only_name = str(self.all_images[self.increment_of_image]).split("/")
                 only_name = only_name[int(len(only_name))-1]
                 add_colored_line(self.console,str(only_name),"white",None,True)
             else:
                 add_colored_line(self.console,str(self.all_images[self.increment_of_image]),"white",None,True)
-
 
             self.current_image_num_ifz.configure(text ="/" + str(self.ifz_count))
             self.changable_image_num_ifz.delete("0","100")
@@ -1433,12 +1461,14 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.increment_of_ifz_image = number_of_found_images -1     
             
             center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
-            self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],True)
+            load_status = self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],True)
             if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
                 self.current_image_num_ifz.configure(text ="/" + str(self.ifz_count))
                 self.changable_image_num_ifz.delete("0","100")
                 self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
-                if self.name_or_path.get() == 1:
+                if load_status != None:
+                    add_colored_line(self.console,load_status,"orange",None,True)
+                elif self.name_or_path.get() == 1:
                     only_name = str(self.converted_images[self.increment_of_ifz_image]).split("/")
                     only_name = only_name[int(len(only_name))-1]
                     add_colored_line(self.console,str(only_name),"white",None,True)
