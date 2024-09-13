@@ -191,7 +191,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.remember_to_change_back = []
         self.control_pressed = False
         self.edited_project_name = None
-        self.edited_project_fav_status = 0
+        self.edited_project_id = 0
 
         def call_main(what:str):
             try:
@@ -343,7 +343,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
             if flag == "save_project_ip":
                 excel_row = 1
-                print("excel_row ",excel_row)
                 if wb == None:
                     return False
                 self.undo_button.configure(state = "normal")
@@ -352,8 +351,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
             elif flag == "save_edited_ip":
                 excel_row = 3
-                print("excel_row ",excel_row)
-
                 self.undo_edit.configure(state = "normal")
                 self.save_excel_data(parameters[0],parameters[1],parameters[2],parameters[3],force_row_to_print=excel_row,force_ws=bin_worksheet,wb_given=wb,fav_status=parameters[4])
                 self.bin_projects[2] = [parameters[0],parameters[1],parameters[2],parameters[3],parameters[4]]
@@ -428,7 +425,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             not_edited_data_ip = list(ws.iter_rows(min_row=3, max_row=3, values_only=True))[0]
 
             print("\nrow data ip: ",not_edited_data_ip,"\n")
-            # project_name = not_edited_data_ip[0]
             if self.edited_project_name not in self.project_list:
                 add_colored_line(self.main_console,f"Jméno projektu: {self.edited_project_name} nenalezeno, nelze ho tedy obnovit","red",None,True)
                 wb.close()
@@ -439,22 +435,25 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             ws.delete_rows(3)
             wb.save(self.excel_file_path)
             wb.close()
-
-            print("trutudu: ",self.edited_project_fav_status,not_edited_data_ip[4])
-
-            if not_edited_data_ip[4] == 1:
+            make_fav = False
+            if not_edited_data_ip[4] == 1 or not_edited_data_ip[4] == True:
                 make_fav = True
-            elif not_edited_data_ip[4] == 0:
+            elif not_edited_data_ip[4] == 0 or not_edited_data_ip[4] == False:
                 make_fav = False
-            
 
             param = [not_edited_data_ip[0],not_edited_data_ip[1],not_edited_data_ip[2],not_edited_data_ip[3]]
+            print("save parameters",param)
             for i in range(0,len(param)):
                 if param[i] == None:
                     param[i] = ""
 
+            self.last_project_name = self.edited_project_name
+            self.last_project_id = self.edited_project_id
             self.save_new_project_data(None,only_edit = True,make_fav=make_fav,bin_manage=True,param=param)
-            add_colored_line(self.main_console,f"U projektu: {self.edited_project_name} (původně: {not_edited_data_ip[0]}) byly odebrány provedené změny","green",None,True)
+            if self.edited_project_name != not_edited_data_ip[0]:
+                add_colored_line(self.main_console,f"U projektu: {self.edited_project_name} (původně: {not_edited_data_ip[0]}) byly odebrány provedené změny","green",None,True)
+            else:
+                add_colored_line(self.main_console,f"U projektu: {self.edited_project_name} byly odebrány provedené změny","green",None,True)
             self.make_project_cells()
 
         mapping_logic = {
@@ -700,7 +699,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 self.show_favourite = True
                 self.read_excel_data()
                 # z tohoto prostředí smažu
-                self.delete_project(wanted_project=selected_project[0],silence=True)
+                self.delete_project(wanted_project=selected_project[0],silence=True,del_favourite = True)
                 # přepnutí zpět
                 self.show_favourite = False
                 self.read_excel_data()
@@ -755,6 +754,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             - if not found returns "no data"\n
             """
             wanted_project = self.last_project_name
+            print("\n wanted",wanted_project)
             def find_project_index(wanted_project,new_fav_status):
                 index_of_project = "no data"
                 try:
@@ -795,6 +795,12 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             else:
                 self.show_favourite = True
                 self.read_excel_data()
+
+        def save_history_data():
+            if not bin_manage:
+                self.edited_project_name = project_name
+                self.edited_project_id = self.last_project_id
+                self.manage_bin("save_edited_ip",parameters=[self.last_project_name,self.last_project_ip,self.last_project_mask,self.last_project_notes,current_fav_status])
 
         if param == []:
             project_name = str(self.name_input.get())
@@ -842,7 +848,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             elif only_edit:
                 # kdyz edituji muze mit projekt jiz prideleny status
                 current_fav_status = self.is_project_favourite(self.last_project_id)
-                previous_fav_status = current_fav_status
+                # previous_fav_status = current_fav_status
 
                 if make_fav and current_fav_status == 0:
                     # zaskrtnuto oblibene + nebyl oblibeny  = ZMENA:
@@ -857,7 +863,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     add_colored_line(self.main_console,status_text,"green",None,True)
 
                     edited_project = [project_name,IP_adress,mask,notes,1]
-                    if self.make_edited_project_first:
+                    if self.make_edited_project_first and not bin_manage:
+                        save_history_data()
                         self.make_project_first(purpouse="silent",make_cells=False,project=edited_project)
 
                     current_fav_status = 1
@@ -893,7 +900,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     add_colored_line(self.main_console,status_text,"green",None,True)
 
                     edited_project = [project_name,IP_adress,mask,notes,0]
-                    if self.make_edited_project_first:
+                    if self.make_edited_project_first and not bin_manage:
+                        save_history_data()
                         if not self.show_favourite:
                             self.make_project_first(purpouse="silent",make_cells=False,project=edited_project)
 
@@ -916,6 +924,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
                     edited_project = [project_name,IP_adress,mask,notes,current_fav_status]
                     if self.make_edited_project_first and not bin_manage:
+                        save_history_data()
                         self.make_project_first(purpouse="silent",make_cells=False,project=edited_project)
                         # promítnout změny i do druhého menu:
                         switch_database()
@@ -926,7 +935,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     # neni zaskrtnuto oblibene + nebyl oblibeny = BEZ ZMENY
                     row_index_list = get_both_row_indexes()
                     print("pozmenen 2",row_index_list)
-                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[0],fav_status=current_fav_status,force_ws="ip_address_list")
+                    if row_index_list[0] != "no data":
+                        self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[0],fav_status=current_fav_status,force_ws="ip_address_list")
                     
                     if self.last_project_name != project_name:
                         status_text = f"Projekt: {self.last_project_name} (nově: {project_name}) úspěšně pozměněn"
@@ -935,20 +945,17 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     add_colored_line(self.main_console,status_text,"green",None,True)
 
                     edited_project = [project_name,IP_adress,mask,notes,current_fav_status]
-                    if self.make_edited_project_first:
+                    if self.make_edited_project_first and not bin_manage:
+                        save_history_data()
                         self.make_project_first(purpouse="silent",make_cells=False,project=edited_project)
-                
-                print("current fav status:",current_fav_status)
 
+                if not self.make_edited_project_first:
+                    save_history_data()
                 if not bin_manage:
-                    self.edited_project_name = project_name
-                    self.edited_project_fav_status = current_fav_status
-                    self.manage_bin("save_edited_ip",parameters=[self.last_project_name,self.last_project_ip,self.last_project_mask,self.last_project_notes,previous_fav_status])
-                    # self.manage_bin("save_edited_ip",parameters=[project_name,IP_adress,mask,notes,previous_fav_status])
                     if  child_root != None:
                         child_root.destroy()
                     self.make_project_cells()
-    
+
     def save_new_project_data_disk(self,child_root,only_edit = None):
         project_name =  str(self.name_input.get())
         disk_letter =   str(self.disk_letter_input.get())
@@ -986,7 +993,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 self.make_project_cells_disk()
                 add_colored_line(self.main_console,f"Projekt: {project_name} úspěšně pozměněn","green",None,True)
 
-    def delete_project(self,wanted_project=None,silence=None,button_trigger = False,flag=""):
+    def delete_project(self,wanted_project=None,silence=None,button_trigger = False,flag="",del_favourite=False):
         project_found = False
         name_list = [] 
 
@@ -1032,7 +1039,9 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 if self.project_list[i] == wanted_project and len(str(self.project_list[i])) == len(str(wanted_project)) and project_found == False:
                     row_index = self.project_list.index(wanted_project)
                     row_data = self.all_rows[row_index]
-                    self.manage_bin(flag="save_project_ip",parameters=row_data,wb=workbook)
+                    if not self.show_favourite:
+                        # když mažu z oblíbených, tak neukládám historii
+                        self.manage_bin(flag="save_project_ip",parameters=row_data,wb=workbook)
                     worksheet.delete_rows(len(self.all_rows)-row_index)
                     workbook.save(self.excel_file_path)
                     project_found = True
@@ -1054,7 +1063,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     add_colored_line(self.main_console,f"Zadaný projekt: {wanted_project} nebyl nalezen","red",None,True)
 
             # zresetuj i v pripade silence...
-            elif project_found and not multiple_status:
+            elif project_found and not multiple_status and not del_favourite:
                 self.make_project_cells() #refresh = cele zresetovat, jine: id, poradi...
 
             if remove_favourite_as_well:

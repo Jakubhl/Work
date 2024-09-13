@@ -563,6 +563,8 @@ opraveno první zapisování nového parametru do excelu (nastavení ip setting)
 - multi mazání - hotovo
 - trimazkon prohlizec - corrupted obrázky shodí celou aplikaci - hotovo
 
+10:18 AM 9/13/2024
+- upravit bin složku na vracení provedených změn (ulozit current name a vse pred zmenami) - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -575,10 +577,6 @@ nová logika prohlížeče obrázků
 
 - shiftem vybrat více projektů
 - navigace šipkama
-
-
-- upravit bin složku na vracení provedených změn (ulozit current name a vse pred zmenami)
-
 
 
 catalogue - upravit hlavičku, nastavit split dokumentu
