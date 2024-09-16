@@ -565,6 +565,13 @@ opraveno první zapisování nového parametru do excelu (nastavení ip setting)
 
 10:18 AM 9/13/2024
 - upravit bin složku na vracení provedených změn (ulozit current name a vse pred zmenami) - hotovo
+
+8:13 AM 9/16/2024
+chyba - u read sheet - když chybí konfigurační excel - hotovo
+když restart - vymazat nebo načíst edited name - hotovo
+když změna přímo v poznámkách - registrovat změnu - hotovo
+když změna přímo v poznámkách - registrovat změnu - u disků - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -575,11 +582,9 @@ nová logika prohlížeče obrázků
 - doladit oddalovani - museji byt 2 boundary
 
 
-- shiftem vybrat více projektů
-- navigace šipkama
-
 
 catalogue - upravit hlavičku, nastavit split dokumentu
+když zpět do menu - dotázat jestli uloženo
 
 
 

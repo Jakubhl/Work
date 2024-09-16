@@ -17,7 +17,7 @@ import winreg
 import win32net
 import win32netcon
 
-testing_mode = True
+testing_mode = False
 if testing_mode:
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")
@@ -184,14 +184,15 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.disk_letter_frame_list = []
         self.make_edited_project_first = True
         self.deletion_behav = 100
-        self.bin_projects = self.manage_bin(flag="read_sheet")
-        print(self.bin_projects)
         self.selected_list = []
         self.selected_list_disk = []
         self.remember_to_change_back = []
         self.control_pressed = False
         self.edited_project_name = None
-        self.edited_project_id = 0
+        self.edited_project_name_disk = None
+        self.bin_projects = [[None],[None],[None],[None]]
+        self.changed_notes = []
+        self.changed_notes_disk = []
 
         def call_main(what:str):
             try:
@@ -275,6 +276,9 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             def_show_disk = worksheet['B' + str(4)].value
             workbook.close()
 
+            self.bin_projects = self.manage_bin(flag="read_sheet")
+            print(self.bin_projects)
+
             if int(def_show_disk) == 1:
                 call_main("disk")
             else:
@@ -317,9 +321,19 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         - load_deleted_disk
         - save_edited_ip
         - load_edited_ip
+        - save_edited_disk
+        - load_edited_disk
+        - change_notes_back
+        - change_notes_back_disk
         """
         bin_worksheet = "projects_bin2"
-
+        def get_none_count(array_given):
+            none_count = 0
+            for items in array_given:
+                if items == None:
+                    none_count += 1
+            return none_count
+        
         def read_sheet():
             wb = load_workbook(self.excel_file_path)
             if not bin_worksheet in wb.sheetnames:
@@ -328,19 +342,21 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 wb.save(self.excel_file_path)
                 wb.close()
                 print("adding new bin sheet to excel")
-                return [[None],[None]]
+                return [[None],[None],[None],[None]]
             else:
                 ws = wb[bin_worksheet]
                 row_data_ip = list(ws.iter_rows(min_row=1, max_row=1, values_only=True))[0]
                 row_data_disk = list(ws.iter_rows(min_row=2, max_row=2, values_only=True))[0]
-                row_data_ip_edited = list(ws.iter_rows(min_row=3, max_row=3, values_only=True))[0]
-                row_data_disk_edited = list(ws.iter_rows(min_row=4, max_row=4, values_only=True))[0]
+                # row_data_ip_edited = list(ws.iter_rows(min_row=3, max_row=3, values_only=True))[0]
+                # row_data_disk_edited = list(ws.iter_rows(min_row=4, max_row=4, values_only=True))[0]
                 wb.close()
-                return [list(row_data_ip),list(row_data_disk),list(row_data_ip_edited),list(row_data_disk_edited)]
+                # return [list(row_data_ip),list(row_data_disk),list(row_data_ip_edited),list(row_data_disk_edited)]
+                # provedene zmeny pri spusteni programu nanacitam:
+                return [list(row_data_ip),list(row_data_disk),[None],[None]]
             
         def save_project_ip():
             nonlocal wb
-
+            # saving after deleting:
             if flag == "save_project_ip":
                 excel_row = 1
                 if wb == None:
@@ -348,10 +364,11 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 self.undo_button.configure(state = "normal")
                 self.save_excel_data(parameters[0],parameters[1],parameters[2],parameters[3],force_row_to_print=excel_row,force_ws=bin_worksheet,wb_given=wb)
                 self.bin_projects[0] = [parameters[0],parameters[1],parameters[2],parameters[3]]
-
+            # saving after editing:
             elif flag == "save_edited_ip":
                 excel_row = 3
-                self.undo_edit.configure(state = "normal")
+                self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="load_edited_ip"))
+                print("saving changes to excel: ",parameters)
                 self.save_excel_data(parameters[0],parameters[1],parameters[2],parameters[3],force_row_to_print=excel_row,force_ws=bin_worksheet,wb_given=wb,fav_status=parameters[4])
                 self.bin_projects[2] = [parameters[0],parameters[1],parameters[2],parameters[3],parameters[4]]
 
@@ -362,6 +379,76 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.save_excel_data_disk(parameters[0],parameters[1],parameters[2],parameters[3],parameters[4],parameters[5],force_row_to_print=2,force_ws=bin_worksheet,wb_given=wb)
             self.bin_projects[1] = [parameters[0],parameters[1],parameters[2],parameters[3],parameters[4],parameters[5]]
             self.undo_button.configure(state = "normal")
+        
+        def save_edited_disk():
+            self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="load_edited_disk"))
+            print("saving: ",parameters)
+            self.save_excel_data_disk(parameters[0],parameters[1],parameters[2],parameters[3],parameters[4],parameters[5],force_row_to_print=4,force_ws=bin_worksheet,wb_given=wb)
+            self.bin_projects[3] = [parameters[0],parameters[1],parameters[2],parameters[3],parameters[4],parameters[5]]
+
+        def change_notes_back():
+            print("loading back: ",self.changed_notes)    
+        
+            def save_changed_notes(notes,row):
+                workbook = load_workbook(self.excel_file_path)
+
+                def find_notes_in_whole_list(row,new_fav_status):
+                    index_of_project = "no data"
+                    try:
+                        wanted_project = self.all_rows[row][0]
+                        self.show_favourite = new_fav_status
+                        self.read_excel_data()
+                        for i in range(0,len(self.all_rows)):
+                            if self.all_rows[i][0] == wanted_project:
+                                index_of_project = i
+                                break
+                        return index_of_project
+                    except Exception as err:
+                        print(err)
+                        return "no data"
+
+                def save_to_workbook(notes,row,excel_worksheet):
+                    nonlocal workbook
+                    worksheet = workbook[excel_worksheet]
+                    worksheet['D' + str(len(self.all_rows)-row)] = notes
+
+                if self.show_favourite:
+                    save_to_workbook(notes,row,"ip_adress_fav_list")
+                    #kontrola pro druhé prostředí
+                    index_of_project = find_notes_in_whole_list(row,new_fav_status = False)
+                    print("index",index_of_project)
+                    if str(index_of_project) != "no data":
+                        save_to_workbook(notes,index_of_project,"ip_address_list")
+                    self.show_favourite = True
+                else:
+                    save_to_workbook(notes,row,"ip_address_list")
+                    #kontrola pro druhé prostředí
+                    index_of_project = find_notes_in_whole_list(row,new_fav_status = True)
+                    print("index",index_of_project)
+                    if str(index_of_project) != "no data":
+                        save_to_workbook(notes,index_of_project,"ip_adress_fav_list")
+                    self.show_favourite = False
+
+                workbook.save(filename=self.excel_file_path)
+                workbook.close()
+                self.read_excel_data()
+            
+            project_name = self.changed_notes[0]
+            notes_before = self.changed_notes[1]
+            id = None
+            for i in range(0,len(self.all_rows)):
+                if self.all_rows[i][0] == project_name:
+                    id = i
+
+            save_changed_notes(notes_before,id)
+            add_colored_line(self.main_console,f"Poznámky u projektu: {project_name} byly úspěšně obnoveny","green",None,True)
+            self.make_project_cells()
+
+            if get_none_count(self.bin_projects[2]) < 2 and len(self.bin_projects[2]) == 5:
+                self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="load_edited_ip"))
+            else:
+                self.undo_edit.configure(state = "disabled")
+            self.changed_notes = []
 
         def load_deleted_ip():
             """
@@ -442,19 +529,80 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 make_fav = False
 
             param = [not_edited_data_ip[0],not_edited_data_ip[1],not_edited_data_ip[2],not_edited_data_ip[3]]
-            print("save parameters",param)
             for i in range(0,len(param)):
                 if param[i] == None:
                     param[i] = ""
 
             self.last_project_name = self.edited_project_name
-            self.last_project_id = self.edited_project_id
             self.save_new_project_data(None,only_edit = True,make_fav=make_fav,bin_manage=True,param=param)
             if self.edited_project_name != not_edited_data_ip[0]:
                 add_colored_line(self.main_console,f"U projektu: {self.edited_project_name} (původně: {not_edited_data_ip[0]}) byly odebrány provedené změny","green",None,True)
             else:
                 add_colored_line(self.main_console,f"U projektu: {self.edited_project_name} byly odebrány provedené změny","green",None,True)
             self.make_project_cells()
+
+        def change_notes_back_disk():
+            print("loading back: ",self.changed_notes_disk)    
+        
+            def save_changed_notes(notes,row):
+                workbook = load_workbook(self.excel_file_path)
+                worksheet = workbook["disk_list"]
+                worksheet['F' + str(len(self.disk_all_rows)-row)] = notes
+                workbook.save(filename=self.excel_file_path)
+                workbook.close()
+            
+            project_name = self.changed_notes_disk[0]
+            notes_before = self.changed_notes_disk[1]
+            id = None
+            for i in range(0,len(self.disk_all_rows)):
+                if self.disk_all_rows[i][0] == project_name:
+                    id = i
+
+            save_changed_notes(notes_before,id)
+            add_colored_line(self.main_console,f"Poznámky u projektu: {project_name} byly úspěšně obnoveny","green",None,True)
+            self.make_project_cells_disk()
+
+            if get_none_count(self.bin_projects[3]) < 4 and len(self.bin_projects[3]) == 6:
+                self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="load_edited_disk"))
+            else:
+                self.undo_edit.configure(state = "disabled")
+            self.changed_notes_disk = []
+
+        def load_edited_disk():
+            wb = load_workbook(self.excel_file_path)
+            ws = wb[bin_worksheet]
+            not_edited_data_disk = list(ws.iter_rows(min_row=4, max_row=4, values_only=True))[0]
+
+            print("\nrow data disk: ",not_edited_data_disk,"\n")
+            if self.edited_project_name_disk not in self.disk_project_list:
+                add_colored_line(self.main_console,f"Jméno projektu: {self.edited_project_name_disk} nenalezeno, nelze ho tedy obnovit","red",None,True)
+                wb.close()
+                return
+            
+            self.bin_projects[3] = []
+            self.undo_edit.configure(state = "disabled")
+            ws.delete_rows(3)
+            wb.save(self.excel_file_path)
+            wb.close()
+
+            param = [not_edited_data_disk[0],not_edited_data_disk[1],not_edited_data_disk[2],not_edited_data_disk[3],not_edited_data_disk[4],not_edited_data_disk[5]]
+            for i in range(0,len(param)):
+                if param[i] == None:
+                    param[i] = ""
+
+            id = None
+            for i in range(0,len(self.disk_all_rows)):
+                if self.edited_project_name_disk == self.disk_all_rows[i][0]:
+                    id = i
+            
+            self.save_excel_data_disk(param[0],param[1],param[2],param[3],param[4],param[5],
+                                      force_row_to_print=len(self.disk_all_rows)-id)
+
+            if self.edited_project_name_disk != param[0]:
+                add_colored_line(self.main_console,f"U projektu: {self.edited_project_name_disk} (původně: {param[0]}) byly odebrány provedené změny","green",None,True)
+            else:
+                add_colored_line(self.main_console,f"U projektu: {self.edited_project_name_disk} byly odebrány provedené změny","green",None,True)
+            self.make_project_cells_disk()
 
         mapping_logic = {
             "read_sheet": read_sheet,
@@ -464,6 +612,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             "load_deleted_disk": load_deleted_disk,
             "save_edited_ip": save_project_ip,
             "load_edited_ip": load_edited_ip,
+            "change_notes_back": change_notes_back,
+            "save_edited_disk": save_edited_disk,
+            "load_edited_disk": load_edited_disk,
+            "change_notes_back_disk": change_notes_back_disk,
         }
 
         output = mapping_logic[flag]()  # This will call the corresponding function
@@ -601,6 +753,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         worksheet['D' + str(row_to_print)] = notes
         #E = oblibenost
         if fav_status != None:
+            if fav_status == True:
+                fav_status = 1
             worksheet['E' + str(row_to_print)] = fav_status
         else:
             worksheet['E' + str(row_to_print)] = 0
@@ -799,8 +953,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         def save_history_data():
             if not bin_manage:
                 self.edited_project_name = project_name
-                self.edited_project_id = self.last_project_id
-                self.manage_bin("save_edited_ip",parameters=[self.last_project_name,self.last_project_ip,self.last_project_mask,self.last_project_notes,current_fav_status])
+                self.manage_bin("save_edited_ip",parameters=[self.last_project_name,self.last_project_ip,self.last_project_mask,self.last_project_notes,previous_fav_status])
 
         if param == []:
             project_name = str(self.name_input.get())
@@ -812,9 +965,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         else:
             project_name = param[0]
             IP_adress = param[1]
-            # IP_adress = self.check_ip_and_mask(IP_adress)
             mask = param[2]
-            # mask = self.check_ip_and_mask(mask)
             notes = param[3]
             
         errors = 0
@@ -847,12 +998,25 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
             elif only_edit:
                 # kdyz edituji muze mit projekt jiz prideleny status
-                current_fav_status = self.is_project_favourite(self.last_project_id)
-                # previous_fav_status = current_fav_status
+                if not bin_manage:
+                    current_fav_status = self.is_project_favourite(self.last_project_id)
+                else:
+                    id = 0
+                    for i in range(0,len(self.all_rows)):
+                        if self.all_rows[i][0] == self.last_project_name:
+                            id = i
+                    print("last project name", self.last_project_name,"id: ",id)
+
+                    current_fav_status = self.is_project_favourite(id)
+                    self.last_project_id = id
+
+                print("current fav status: ",current_fav_status)
+                previous_fav_status = current_fav_status
 
                 if make_fav and current_fav_status == 0:
                     # zaskrtnuto oblibene + nebyl oblibeny  = ZMENA:
                     row_index_list = get_both_row_indexes(new_project=True)
+                    print("pridan do oblibenych", row_index_list)
                     self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[1]+1,fav_status=1,force_ws="ip_adress_fav_list")
                     self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=None,fav_status=1)
 
@@ -861,13 +1025,12 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     else:
                         status_text = f"Projekt: {self.last_project_name} úspěšně pozměněn a přidán do oblíbených"
                     add_colored_line(self.main_console,status_text,"green",None,True)
+                    current_fav_status = 1
 
                     edited_project = [project_name,IP_adress,mask,notes,1]
                     if self.make_edited_project_first and not bin_manage:
                         save_history_data()
                         self.make_project_first(purpouse="silent",make_cells=False,project=edited_project)
-
-                    current_fav_status = 1
 
                 elif make_fav == False and current_fav_status == 1:
                     # neni zaskrtnuto oblibene + je jiz oblibeny = ZMENA
@@ -900,12 +1063,12 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     add_colored_line(self.main_console,status_text,"green",None,True)
 
                     edited_project = [project_name,IP_adress,mask,notes,0]
+                    current_fav_status = 0
+
                     if self.make_edited_project_first and not bin_manage:
                         save_history_data()
                         if not self.show_favourite:
                             self.make_project_first(purpouse="silent",make_cells=False,project=edited_project)
-
-                    current_fav_status = 0
 
                 elif make_fav and current_fav_status == 1:
                     # zaskrtnuto oblibene + je jiz oblibeny = BEZ ZMENY
@@ -957,11 +1120,11 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     self.make_project_cells()
 
     def save_new_project_data_disk(self,child_root,only_edit = None):
-        project_name =  str(self.name_input.get())
-        disk_letter =   str(self.disk_letter_input.get())
-        ftp_address =   str(self.FTP_adress_input.get())
-        username =      str(self.username_input.get())
-        password =      str(self.password_input.get())
+        project_name = str(self.name_input.get())
+        disk_letter =  str(self.disk_letter_input.get())
+        ftp_address =  str(self.FTP_adress_input.get())
+        username =     str(self.username_input.get())
+        password =     str(self.password_input.get())
 
         notes = self.get_notes()
         errors = 0
@@ -986,12 +1149,22 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             else:
                 self.save_excel_data_disk(project_name,disk_letter,ftp_address,username,password,notes,True)
             child_root.destroy()
+
             if only_edit == None:
                 self.make_project_cells_disk()
                 add_colored_line(self.main_console,f"Přidán nový projekt: {project_name}","green",None,True)
             else: #musi byt proveden reset
+                self.edited_project_name_disk = project_name
+                # self.manage_bin("save_edited_disk",parameters=[project_name,disk_letter,ftp_address,username,password,notes])
+                self.manage_bin("save_edited_disk",parameters=[self.last_project_name,self.last_project_disk_letter,self.last_project_ftp,
+                                                               self.last_project_username,self.last_project_password,self.last_project_notes])
                 self.make_project_cells_disk()
-                add_colored_line(self.main_console,f"Projekt: {project_name} úspěšně pozměněn","green",None,True)
+
+                if self.last_project_name != project_name:
+                    status_text = f"Projekt: {self.last_project_name} (nově: {project_name}) úspěšně pozměněn"
+                else:
+                    status_text = f"Projekt: {self.last_project_name} úspěšně pozměněn"
+                add_colored_line(self.main_console,status_text,"green",None,True)
 
     def delete_project(self,wanted_project=None,silence=None,button_trigger = False,flag="",del_favourite=False):
         project_found = False
@@ -2063,6 +2236,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 if str(widget) != str(self.last_selected_notes_widget) + ".!ctktextbox":
                     widget.configure(state = "normal")
                     if notes_before != notes_after:
+                        self.changed_notes = [self.all_rows[row_of_widget][0],notes_before]
+                        self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="change_notes_back"))
                         self.all_rows[row_of_widget][3] = notes_after
                         save_changed_notes(notes_after,row_of_widget)
 
@@ -2076,9 +2251,11 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                         widget.configure(state = "disabled")
                     self.root.focus_set() # unfocus widget
                 else:
-                    # jinak pouze ulož změny
+                    # jinak pouze ulož změny (když je dvakrát nakliknuto to samé)
                     if notes_before != notes_after:
                         self.all_rows[row_of_widget][3] = notes_after
+                        self.changed_notes = [self.all_rows[row_of_widget][0],notes_before]
+                        self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="change_notes_back"))
                         save_changed_notes(notes_after,row_of_widget)
                     self.root.focus_set() # unfocus widget
                     
@@ -2276,6 +2453,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     if notes_before != notes_after:
                         widget.configure(state = "normal")
                         self.disk_all_rows[row_of_widget][5] = notes_after
+                        self.changed_notes_disk = [self.disk_all_rows[row_of_widget][0],notes_before]
+                        self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="change_notes_back_disk"))
                         save_changed_notes(notes_after,row_of_widget)
 
                     if "\n" in self.disk_all_rows[row_of_widget][5]:
@@ -2291,6 +2470,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     # jinak pouze ulož změny
                     if notes_before != notes_after:
                         self.disk_all_rows[row_of_widget][5] = notes_after
+                        self.changed_notes_disk = [self.disk_all_rows[row_of_widget][0],notes_before]
+                        self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="change_notes_back_disk"))
                         save_changed_notes(notes_after,row_of_widget)
                     self.root.focus_set() # unfocus widget
 
@@ -3067,12 +3248,13 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.button_remove_main.            configure(text="Smazat")
             self.button_switch_favourite_ip.    configure(fg_color="black")
             self.button_switch_all_ip.          configure(fg_color="#212121")
-            # poznámky mohou být None
+            # poznámky mohou být None (delete undo)
             if get_none_count(self.bin_projects[0]) < 2 and len(self.bin_projects[0]) == 5:
                 self.undo_button.configure(state = "normal")
             else:
                 self.undo_button.configure(state = "disabled")
 
+        # edit undo
         if get_none_count(self.bin_projects[2]) < 2 and len(self.bin_projects[2]) == 5:
             self.undo_edit.configure(state = "normal")
         else:
@@ -3223,7 +3405,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         button_add =            customtkinter.CTkButton(master = main_widgets, width = 150,height=40,text = "Nový projekt", command = lambda: self.add_new_project_disk(),font=("Arial",20,"bold"),corner_radius=0)
         button_remove =         customtkinter.CTkButton(master = main_widgets, width = 100,height=40,text = "Smazat", command =  lambda: self.delete_project_disk(button_trigger=True,flag="main_menu"),font=("Arial",20,"bold"),corner_radius=0)
         self.undo_button =      customtkinter.CTkButton(master = main_widgets, width = 50,height=40,text = "⎌", command =  lambda: self.manage_bin(flag="load_deleted_disk"),font=("",28,"bold"),corner_radius=0,border_width=1,text_color="red")
-        button_edit =           customtkinter.CTkButton(master = main_widgets, width = 160,height=40,text = "Editovat projekt",command =  lambda: self.edit_project(),font=("Arial",20,"bold"),corner_radius=0)
+        button_edit =           customtkinter.CTkButton(master = main_widgets, width = 110,height=40,text = "Editovat",command =  lambda: self.edit_project(),font=("Arial",20,"bold"),corner_radius=0)
+        self.undo_edit =        customtkinter.CTkButton(master = main_widgets, width = 50,height=40,text = "⎌", command =  lambda: self.manage_bin(flag="load_edited_disk"),font=("",28,"bold"),corner_radius=0,border_width=1,text_color="red")
         button_make_first =     customtkinter.CTkButton(master = main_widgets, width = 250,height=40,text = "Přesunout na začátek",command =  lambda: self.make_project_first_disk(),font=("Arial",20,"bold"),corner_radius=0)
         button_settings =       customtkinter.CTkButton(master = main_widgets, width = 40,height=40,text="⚙️",command =  lambda: self.setting_window(),font=("",22),corner_radius=0)
         delete_disk =           customtkinter.CTkButton(master = main_widgets, width = 250,height=40,text = "Odpojit síťový disk",command =  lambda: self.delete_disk_option_menu(),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
@@ -3243,6 +3426,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         button_remove.      grid(column = 0,row=0,pady = 5,padx =565,sticky = tk.W)
         self.undo_button.   grid(column = 0,row=0,pady = 5,padx =665,sticky = tk.W)
         button_edit.        grid(column = 0,row=0,pady = 5,padx =720,sticky = tk.W)
+        self.undo_edit.     grid(column = 0,row=0,pady = 5,padx =830,sticky = tk.W)
         button_make_first.  grid(column = 0,row=0,pady = 5,padx =885,sticky = tk.W)
         button_settings.    grid(column = 0,row=0,pady = 5,padx =1140,sticky = tk.W)
         delete_disk.        grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
@@ -3251,6 +3435,11 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         as_admin_label.     grid(column = 0,row=1,pady = 5,padx =675,sticky = tk.W)
         self.main_console.grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
         self.option_change("",only_console=True)
+
+        if get_none_count(self.bin_projects[3]) < 4 and len(self.bin_projects[3]) == 6:
+            self.undo_edit.configure(state = "normal")
+        else:
+            self.undo_edit.configure(state = "disabled")
 
         # poznámky, username, password mohou být None
         if get_none_count(self.bin_projects[1]) < 4 and len(self.bin_projects[1]) > 2:
