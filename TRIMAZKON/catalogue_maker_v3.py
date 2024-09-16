@@ -16,13 +16,15 @@ import xml.etree.ElementTree as ET
 import sys
 import threading
 
-# customtkinter.set_appearance_mode("dark")
-# customtkinter.set_default_color_theme("dark-blue")
-# root=customtkinter.CTk()
-# root.geometry("1200x900")
-# root.title("Catalogue maker v3.0")
-# database_filename  = "Sharepoint_databaze.xlsx"
-# root.state('zoomed')
+testing = False
+if testing:
+    customtkinter.set_appearance_mode("dark")
+    customtkinter.set_default_color_theme("dark-blue")
+    root=customtkinter.CTk()
+    root.geometry("1200x900")
+    root.title("Catalogue maker v3.0")
+    database_filename  = "Sharepoint_databaze.xlsx"
+    root.state('zoomed')
 
 def add_colored_line(text_widget, text, color,font=None,delete_line = None):
     """
@@ -779,7 +781,7 @@ class ToplevelWindow:
             nonlocal export_path
             path_inserted = export_path.get()
             file_name = export_name.get()
-            callback_save_last_file(file_name,path_inserted)
+            callback_save_last_file(file_name,path_inserted,None)
             # samotne ukladani vsech dat:
             save_prog = Save_prog_metadata(station_list=station_list,project_name=project_name,controller_database=self.custom_controller_database,console=console,xml_file_path=final_path)
             save_prog.store_xml_data()
@@ -813,7 +815,7 @@ class ToplevelWindow:
                     callback(received_data)
                     # ulozit posledně načtený soubor
                     file_name = export_name.get()
-                    callback_save_last_file(file_name,path_inserted)
+                    callback_save_last_file(file_name,path_inserted,None)
                     window.destroy()
                 except Exception:
                     add_colored_line(main_console,f"Soubor .xml je neplatný: {final_path}","red",None,True)
@@ -2319,7 +2321,7 @@ class Catalogue_gui:
         self.make_project_widgets()
 
     def call_save_metadata_gui(self):
-        def callback_save_last_input(filename,path_inserted,path_to_save=None):
+        def callback_save_last_input(filename,path_inserted,path_to_save):
             if filename != None:
                 self.last_xml_filename = filename
             if path_inserted != None:
@@ -2670,7 +2672,7 @@ class Save_excel:
         self.project_name = project_name
         self.station_list = station_list
         self.controller_list = controller_list
-        self.values_start_row = 4
+        self.values_start_row = 6
         self.excel_file_name = excel_name
         if self.excel_file_name == None:
             self.excel_file_name = "Katalog_kamerového_vybavení.xlsm"
@@ -2684,17 +2686,23 @@ class Save_excel:
     def make_header(self,wb):
         ws = wb["Sheet"]
         if self.xlsx_format:
-            ws["A3"] = "Stanice"
-            ws["C3"] = "Kamera"
-            ws["E3"] = "Optika"
-            ws["G3"] = "Kontrolery"
-            ws["I3"] = "Příslušenství"
+            ws["A"+str(self.values_start_row-1)] = "Stanice"
+            ws["C"+str(self.values_start_row-1)] = "Kamera"
+            ws["E"+str(self.values_start_row-1)] = "Optika"
+            ws["G"+str(self.values_start_row-1)] = "Kontrolery"
+            ws["I"+str(self.values_start_row-1)] = "Příslušenství"
+
         else:
-            ws["A3"] = "Stanice"
-            ws["B3"] = "Kamera"
-            ws["C3"] = "Optika"
-            ws["D3"] = "Kontrolery"
-            ws["E3"] = "Příslušenství"
+            ws["A"+str(self.values_start_row-1)] = "Stanice"
+            ws["B"+str(self.values_start_row-1)] = "Kamera"
+            ws["C"+str(self.values_start_row-1)] = "Optika"
+            ws["D"+str(self.values_start_row-1)] = "Kontrolery"
+            ws["E"+str(self.values_start_row-1)] = "Příslušenství"
+
+        ws["D"+str(1)] = "Číslo dokumentu:"
+        ws["D"+str(2)] = "Verze dokumentu:"
+        ws["E"+str(2)] = "AA"
+        ws["D"+str(3)] = "Datum uvolnění:\n(dd.mm.rrrr)"
 
         image = Image(resource_path("images/jhv_logo2.png"))
         ws.add_image(image,"A1")
@@ -2846,9 +2854,7 @@ class Save_excel:
                     optics_index = self.station_list[station_index]["camera_list"][camera_index]["optics_list"].index(optics)
                     self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["excel_position"] = columns[2]+str(last_row_optics)
                     last_row_optics = last_row_optics + 1
-
                 cam_inc+=1
-
                 
             self.between_station_rows.append(last_row_cam)
             #radek mezera mezi kazdou stanici
@@ -2876,14 +2882,16 @@ class Save_excel:
             rows_to_merge.append(f"E{line}:F{line}")
             rows_to_merge.append(f"G{line}:H{line}")
             rows_to_merge.append(f"I{line}:J{line}")
+
         # grafika header:
-        rows_to_merge.append("A1:A2")
-        if self.xlsx_format:
-            rows_to_merge.append("B1:J1")
-            rows_to_merge.append("B2:J2")
-        else:
-            rows_to_merge.append("B1:E1")
-            rows_to_merge.append("B2:E2")
+        rows_to_merge.append("A1:A3")
+        rows_to_merge.append("B1:C3")
+
+        # if self.xlsx_format:
+            # rows_to_merge.append("B1:J3")
+            # rows_to_merge.append("B2:J2")
+        # else:
+            # rows_to_merge.append("B2:E2")
 
         return rows_to_merge
 
@@ -3021,13 +3029,42 @@ class Save_excel:
             top=Side(style='thin'),
             bottom=Side(style='thin')
         )
+        thick_border = Border(
+            left=Side(style='thick'),
+            right=Side(style='thick'),
+            top=Side(style='thick'),
+            bottom=Side(style='thick')
+        )
         ws.row_dimensions[1].height = 35
-        ws.row_dimensions[2].height = 65
+        ws.row_dimensions[2].height = 35
+        ws.row_dimensions[3].height = 35
 
-        top_header_fill = PatternFill(start_color="999999", end_color="999999", fill_type="solid")
-        ws["B1"] = "Přehled kamerového vybavení"
-        ws["B1"].alignment = Alignment(horizontal = "left", vertical = "center")
+        # Nadpis
+        top_header_fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
+        if self.project_name == None or self.project_name == "":
+            ws["B1"] = "Přehled kamerového vybavení"
+        else:
+            ws["B1"] = f"Přehled kamerového vybavení\nprojektu: {self.project_name}"
+        ws["B1"].alignment = Alignment(horizontal = "center", vertical = "center",wrap_text=True)
         ws["B1"].font = Font(bold=True,size=25)
+        ws["B1"].fill = top_header_fill
+        # doplnujici info v hlavičce:
+        info_letter1 = "D"
+        info_letter2 = "E"
+        for i in range(0,3):
+            ws[info_letter1+str(i+1)].fill = top_header_fill
+            ws[info_letter1+str(i+1)].alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True,shrink_to_fit=True,justifyLastLine=True)
+            ws[info_letter1+str(i+1)].font = bold_font
+            ws[info_letter2+str(i+1)].fill = top_header_fill
+            ws[info_letter2+str(i+1)].alignment = Alignment(horizontal = "center", vertical = "center",wrap_text=True,shrink_to_fit=True,justifyLastLine=True)
+            ws[info_letter2+str(i+1)].font = regular_font
+
+            ws["A"+str(i+1)].border = thin_border
+            ws["B"+str(i+1)].border = thin_border
+            ws["C"+str(i+1)].border = thin_border
+            ws[info_letter1+str(i+1)].border = thin_border
+            ws[info_letter2+str(i+1)].border = thin_border
+
         comment_text = "Pravým klikem na buňky v tabulce zobrazíte podrobnosti"
         comment_author = "TRIMAZKON"
         comment = Comment(comment_text, comment_author)
@@ -3036,19 +3073,16 @@ class Save_excel:
         
         current_date = datetime.now().date()
         date_string = current_date.strftime("%d.%m.%Y")
-        ws["B2"] = f"Projekt: {self.project_name}\nDatum: {date_string}"
-        ws["B2"].alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
-        ws["B2"].font = Font(bold=True,size=20)
+        ws[info_letter2 + "3"] = date_string
         
         for columns in self.used_columns:
-            for i in range(3,self.excel_rows_used-1):
+            for i in range((self.values_start_row-1),self.excel_rows_used-1):
                 ws.column_dimensions[columns].width = self.excel_column_width
                 cell = ws[columns + str(i)]
-                # cell.alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
                 cell.alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True,shrink_to_fit=True,justifyLastLine=True)
                 cell.border = thin_border
 
-                if i == 3: # nadpisy sloupců
+                if i == (self.values_start_row-1): # nadpisy sloupců
                     header_fill = PatternFill(start_color="636363", end_color="636363", fill_type="solid")
                     cell.font = bold_font_white
                     cell.alignment = Alignment(horizontal = "center", vertical = "center")
@@ -3057,7 +3091,7 @@ class Save_excel:
                     cell.font = regular_font
                 
                 # Názvy stanic:
-                if columns == "A" and i != 3:
+                if columns == "A" and i != (self.values_start_row-1):
                     cell.font = bold_font
 
         # fill the empty rows between stations:
@@ -3321,12 +3355,12 @@ class Save_excel:
                 wb.close()
                 add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
                 os.startfile(self.excel_file_name)
-                return
             except Exception as e:
                 add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}, chyba: {e}","red",None,True)
                 wb.close()
 
 # download = download_database.database(database_filename)
 # Catalogue_gui(root,download.output)
-# Catalogue_gui(root,"testing - stahování vypnuto","","max",database_filename=database_filename)
-# root.mainloop()
+if testing:
+    Catalogue_gui(root,"testing - stahování vypnuto","","max",database_filename=database_filename)
+    root.mainloop()

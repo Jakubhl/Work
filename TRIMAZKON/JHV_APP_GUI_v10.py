@@ -388,6 +388,7 @@ def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do 
 
         elif which_parameter == "catalogue_data":
             try:
+                print("writing... ",input_data,len(input_data))
                 lines[46] = lines[46].replace("\n","")
                 lines[46] = str(input_data[5])+"\n"
                 lines[48] = lines[48].replace("\n","")
@@ -4461,7 +4462,7 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
         self.root = root
         self.database_downloaded = menu.database_downloaded
         # automatic download bypass:
-        # self.database_downloaded = True
+        self.database_downloaded = True
         self.database_filename  = "Sharepoint_databaze.xlsx"
         self.default_excel_filename = "Katalog_kamerového_vybavení"
         self.default_xml_file_name = "_metadata_catalogue"

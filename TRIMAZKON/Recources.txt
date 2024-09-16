@@ -54,4 +54,4 @@ Defaultní chování suboken (Katalog):
 Defaultní přípona exportu (Katalog):
 xlsm
 Defaultní cesta katalog:
-C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/
+C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/

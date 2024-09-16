@@ -571,6 +571,9 @@ chyba - u read sheet - když chybí konfigurační excel - hotovo
 když restart - vymazat nebo načíst edited name - hotovo
 když změna přímo v poznámkách - registrovat změnu - hotovo
 když změna přímo v poznámkách - registrovat změnu - u disků - hotovo
+- release verze 3.8.0
+catalogue - upravit hlavičku podle vzoru - hotovo
+
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -583,8 +586,9 @@ nová logika prohlížeče obrázků
 
 
 
-catalogue - upravit hlavičku, nastavit split dokumentu
-když zpět do menu - dotázat jestli uloženo
+
+
+catalogue - když zpět do menu - dotázat jestli uloženo
 
 
 
