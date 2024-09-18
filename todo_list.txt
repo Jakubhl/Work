@@ -574,6 +574,8 @@ když změna přímo v poznámkách - registrovat změnu - u disků - hotovo
 - release verze 3.8.0
 catalogue - upravit hlavičku podle vzoru - hotovo
 
+10:50 AM 9/17/2024
+catalogue - když zpět do menu - ověřit změny a dotázat jestli uložit - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -584,11 +586,8 @@ nová logika prohlížeče obrázků
 - drag image option s hranicema
 - doladit oddalovani - museji byt 2 boundary
 
+- udělat si rastr, kde je myš
 
-
-
-
-catalogue - když zpět do menu - dotázat jestli uloženo
 
 
 

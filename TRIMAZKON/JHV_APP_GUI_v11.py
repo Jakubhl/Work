@@ -682,7 +682,6 @@ class main_menu:
                 self.call_view_option(IB_as_def_browser_path,selected_image)
 
         self.root.mainloop()
-        self.call_view_option()
 
 class Image_browser: # Umožňuje procházet obrázky a přitom například vybrané přesouvat do jiné složky
     """
@@ -752,6 +751,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.ifz_count = 1
         self.count_of_ifz_images_defined = False
         self.name_hide_index = 0
+        self.main_image = None
         self.create_widgets()
         self.interrupt = self.interrupt_viewing(self)
         
@@ -1213,10 +1213,10 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         new_height = new_height * zoom
         new_width = new_width * zoom
         
-        self.images.update_idletasks()
+        # self.images.update_idletasks()
         self.main_frame.update_idletasks()
-        x = self.images.winfo_x()
-        y = self.images.winfo_y()
+        x = self.main_frame.winfo_x()
+        y = self.main_frame.winfo_y()
           
         new_scroll_region = (x,
                             y,
@@ -1225,7 +1225,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                             )
         self.main_frame.configure(scrollregion=new_scroll_region)
 
-        self.images.update_idletasks()
+        # self.images.update_idletasks()
         self.main_frame.update_idletasks()
         
         self.previous_height = new_height
@@ -1243,15 +1243,14 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         def corrupted_image_handling():
             with Image.open(resource_path("images/loading3.png")) as opened_image:
                 rotated_image = opened_image.rotate(180,expand=True)
-
-            error_image = customtkinter.CTkImage(rotated_image,size = (800,800))
+            resized = rotated_image.resize(size=(800,800))
+            error_image = ImageTk.PhotoImage(resized)
             if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
-                self.images.configure(image = error_image)
-                self.images.image = error_image
-                self.images.update_idletasks()
+                self.main_frame.delete("lower")
+                self.main_image = self.main_frame.create_image(0, 0, anchor=tk.NW, image=error_image,tag ="raise")
+                self.main_frame.tag_lower(self.main_image)
                 self.main_frame.update()
 
-        
         if len(self.all_images) != 0:
             if direct_path == None:
                 image_to_show = self.all_images[increment_of_image]
@@ -1272,11 +1271,16 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 dimensions = self.calc_current_format(width,height)
             else:
                 dimensions = self.sliders_calc_current_format(width,height)
-            displayed_image = customtkinter.CTkImage(rotated_image,size = (dimensions[0],dimensions[1]))
+            # displayed_image = customtkinter.CTkImage(rotated_image,size = (dimensions[0],dimensions[1]))
+
+
+            resized = rotated_image.resize(size=(int(dimensions[0]),int(dimensions[1])))
+            self.tk_image = ImageTk.PhotoImage(resized)
+
+
             if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
-                self.images.configure(image = displayed_image)
-                self.images.image = displayed_image
-                self.images.update_idletasks()
+                self.main_image = self.main_frame.create_image(0, 0, anchor=tk.NW, image=self.tk_image,tag = "lower")
+                self.main_frame.tag_lower(self.main_image)
                 self.main_frame.update()
 
             if self.image_film == True: #refreshujeme pouze stredovy obrazek jinak i okolni
@@ -1634,14 +1638,30 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
     def on_vertical_scroll(self,*args): # pohyb obrázkem v závislosti na vertikálním slideru
         zoom = self.zoom_slider.get()/100
         if len(args) == 2:
-            new_y_coordinate = args[1]
-            self.images.place_configure(rely=-new_y_coordinate*zoom)
+            relative_y = float(args[1])
+            print("y",*args)
+            canvas_height = self.main_frame.winfo_height()  # Get the actual canvas width
+            image_heigth = self.tk_image.height()  # Get the actual image width
+            new_y_coordinate = relative_y * (canvas_height - image_heigth * zoom)
+            current_coords = self.main_frame.coords(self.main_image)
+            print("current_coords: ",current_coords)
+            self.main_frame.coords(self.main_image,current_coords[0],current_coords[1]+args[1])
+            self.main_frame.update()
 
     def on_horizontal_scroll(self,*args): # pohyb obrázkem v závislosti na horizontálním slideru
         zoom = self.zoom_slider.get()/100
         if len(args) == 2:
-            new_x_coordinate = args[1]
-            self.images.place_configure(relx=-new_x_coordinate*zoom)
+            relative_x = float(args[1])
+            print("x",*args)
+            canvas_width = self.main_frame.winfo_width()  # Get the actual canvas width
+            image_width = self.tk_image.width()  # Get the actual image width
+            new_x_coordinate = relative_x * (canvas_width - image_width * zoom)
+
+            current_coords = self.main_frame.coords(self.main_image)
+            print("current_coords: ",current_coords)
+
+            self.main_frame.coords(self.main_image,current_coords[0]-10,current_coords[1])
+            self.main_frame.update()
 
     def refresh_console_setting(self):
         if self.name_or_path.get() == 1:
@@ -1661,6 +1681,135 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
                 add_colored_line(self.console,str(self.converted_images[center_image_index + self.increment_of_ifz_image]),"white",None,True)
 
+
+
+    def switch_drawing_mode(self,operation):
+        """
+        Making binds to canvas\n
+        Operation:
+        - "drawing"
+        - "image"
+        """
+        self.released = False
+        self.draw_mode = "line"
+        self.start_x = 0
+        self.start_y = 0
+
+        self.main_frame.unbind("<Button-1>")
+        self.main_frame.unbind("<B1-Motion>")
+        self.main_frame.unbind("<ButtonRelease-1>")
+        self.main_frame.unbind("<Motion>")
+
+        def bind_drawing():
+            def on_click(event):
+                # Save the start position
+                self.start_x = event.x
+                self.start_y = event.y
+
+            def on_drag(event):
+                # Clear the canvas (if you want to see only the final shape)
+                self.main_frame.delete("temp_shape")
+
+                if self.draw_mode == "line":
+                    # Draw a line from the start position to the current position
+                    self.main_frame.create_line(self.start_x, self.start_y, event.x, event.y, fill="black", tags="temp_shape")
+                elif self.draw_mode == "circle":
+                    # Draw an oval (circle) based on the start position and current position
+                    self.main_frame.create_oval(self.start_x, self.start_y, event.x, event.y, outline="black", tags="temp_shape")
+
+            def on_release(event):
+                # Finalize the shape
+                self.main_frame.delete("temp_shape")
+
+                if self.draw_mode == "line":
+                    # Draw the final line
+                    self.main_frame.create_line(self.start_x, self.start_y, event.x, event.y, fill="black")
+                elif self.draw_mode == "circle":
+                    # Draw the final circle
+                    self.main_frame.create_oval(self.start_x, self.start_y, event.x, event.y, outline="black")
+            
+            self.main_frame.bind("<Button-1>", on_click)
+            self.main_frame.bind("<B1-Motion>", on_drag)
+            self.main_frame.bind("<ButtonRelease-1>", on_release)
+
+        def bind_image_dragging():
+            def mouse_clicked(e):
+                self.main_frame.focus_set()
+                self.released = False
+                x,y = e.x,e.y
+                self.horizontal_scrollbar.update_idletasks()
+                self.vertical_scrollbar.update_idletasks()
+
+                current_coords = self.main_frame.coords(self.main_image)
+
+                def get_direction(e):
+                    option = ""
+                    if abs(max(e.x,x)-min(e.x,x)) > abs(max(e.y,y)-min(e.y,y)):
+                        option = "horizontal"
+                    else:
+                        option = "vertical"
+                    if option == "horizontal":
+                        if e.x > x:
+                            #right
+                            current_horizontal_value = self.horizontal_scrollbar.get()
+                            if (current_horizontal_value[0] - 0.01) >= 0.00:
+                                args_tuple_h = (0,current_horizontal_value[0]-0.01)
+                                self.on_horizontal_scroll(*args_tuple_h)
+                                self.horizontal_scrollbar.set(current_horizontal_value[0]-0.01,current_horizontal_value[1]-0.01)      
+                        else:
+                            #left
+                            current_horizontal_value = self.horizontal_scrollbar.get()
+                            if (current_horizontal_value[1] + 0.01) <= 1.00:
+                                args_tuple_h = (0,current_horizontal_value[0]+0.01)
+                                self.on_horizontal_scroll(*args_tuple_h)
+                                self.horizontal_scrollbar.set(current_horizontal_value[0]+0.01,current_horizontal_value[1]+0.01)
+
+                    if option == "vertical":
+                        if e.y > y:
+                            #down
+                            print("down")
+                            current_vertical_value = self.vertical_scrollbar.get()
+                            if (current_coords[1] + 10) >= 0:
+                                args_tuple_v = (0,+10)
+                                self.on_vertical_scroll(*args_tuple_v)
+
+                            if (current_vertical_value[0] - 0.01) <= 1.00:
+                                self.vertical_scrollbar.set(current_vertical_value[0]-0.01,current_vertical_value[1]-0.01)
+                        else:
+                            #up
+                            print("up")
+
+                            current_vertical_value = self.vertical_scrollbar.get()
+                            if (current_coords[1] - 10) > self.main_frame.winfo_height()-self.tk_image.height():
+                                args_tuple_v = (0,-10)
+                                self.on_vertical_scroll(*args_tuple_v)
+
+                            if (current_vertical_value[1] + 0.01) <= 1.00:
+                                self.vertical_scrollbar.set(current_vertical_value[0]+0.01,current_vertical_value[1]+0.01)
+
+                    self.horizontal_scrollbar.update_idletasks()
+                    self.vertical_scrollbar.update_idletasks()
+                    return
+
+                self.main_frame.bind("<Motion>", get_direction)
+                if self.released == True:
+                    return
+
+                def end_func(e):
+                    self.main_frame.unbind("<Motion>")
+                    self.main_frame.unbind("<ButtonRelease-1>")
+                    self.released = True
+                    return
+
+                self.main_frame.bind("<ButtonRelease-1>",end_func)
+            self.main_frame.bind("<Button-1>",mouse_clicked)
+
+        if operation == "drawing":
+            bind_drawing()
+
+        elif operation == "image":
+            bind_image_dragging()
+
     def create_widgets(self): # Vytvoření veškerých widgets (MAIN image browseru)
         def call_setting_window():
             if self.ifz_located == True:
@@ -1671,7 +1820,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         
         self.frame_with_path =          customtkinter.CTkFrame(master=self.root,height = 200,corner_radius=0)
         self.background_frame =         customtkinter.CTkFrame(master=self.root,corner_radius=0)
-        self.main_frame =               customtkinter.CTkCanvas(master=self.background_frame,background="black",highlightthickness=0)
+        # self.main_frame =               customtkinter.CTkCanvas(master=self.background_frame,background="black",highlightthickness=0)
+        self.main_frame =               tk.Canvas(master=self.background_frame,bg="black",highlightthickness=0)
         self.image_film_frame_left =    customtkinter.CTkFrame(master=self.root,height = 100,corner_radius=0)
         self.image_film_frame_center =  customtkinter.CTkFrame(master=self.root,height = 100,width = 200,corner_radius=0)
         self.image_film_frame_right =   customtkinter.CTkFrame(master=self.root,height = 100,corner_radius=0)
@@ -1699,6 +1849,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         tree         =                  customtkinter.CTkButton(master = self.frame_with_path, width = 120,height=30,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",16,"bold"))
         button_save_path =              customtkinter.CTkButton(master = self.frame_with_path,width=100,height=30, text = "Uložit cestu", command = lambda: save_path(self.console,self.path_set.get()),font=("Arial",16,"bold"))        
         button_open_setting =           customtkinter.CTkButton(master = self.frame_with_path,width=30,height=30, text = "⚙️", command = lambda: call_setting_window(),font=("",16))
+        button_drawing =           customtkinter.CTkButton(master = self.frame_with_path,width=200,height=30, text = "draw", command = lambda: self.switch_drawing_mode("drawing"),font=("Arial",16,"bold"))
 
         self.name_or_path =             customtkinter.CTkCheckBox(master = self.frame_with_path,font=("Arial",16), text = "Název/cesta",command= lambda: self.refresh_console_setting())
         self.console =                  tk.Text(self.frame_with_path, wrap="none", height=0, width=180,background="black",font=("Arial",14),state=tk.DISABLED)
@@ -1735,6 +1886,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         tree.                       grid(column = 0,row=0,pady = 5,padx =945,sticky = tk.W)
         button_save_path.           grid(column = 0,row=0,pady = 5,padx =1070,sticky = tk.W)
         button_open_setting.        grid(column = 0,row=0,pady = 5,padx =1180,sticky = tk.W)
+        button_drawing.        grid(column = 0,row=0,pady = 5,padx =1220,sticky = tk.W)
         self.name_or_path.          grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
         self.console.               grid(column = 0,row=1,pady = 5,padx =160,sticky = tk.W)
         button_back.                grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
@@ -1762,9 +1914,13 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         button_move.                grid(column = 0,row=2,pady = 5,padx =1065,sticky = tk.W)#85
         button_delete.              grid(column = 0,row=2,pady = 5,padx =1150,sticky = tk.W)#85
 
-        self.images = customtkinter.CTkLabel(master = self.main_frame,text = "")
-        self.images.place(x=5,y=5)
+        # self.images = customtkinter.CTkLabel(master = self.main_frame,text = "")
+        # self.images.place(x=5,y=5)
+        # self.canvas = tk.Canvas(root, bg="white")
+        # self.canvas.pack(expand=True,fill="both")
         self.name_or_path.select()
+
+        self.switch_drawing_mode("image")
 
         def jump_to_image(e):
             if self.changable_image_num.get().isdigit():
@@ -1923,7 +2079,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         #Funkce kolecka mysi: priblizovat nebo posouvat vpred/ vzad
         def mouse_wheel1(e): # priblizovat
             direction = -e.delta
-            self.images.update_idletasks()
+            self.main_frame.update_idletasks()
             self.zoom_slider.update_idletasks()
 
             #for i in range(0,int(self.zoom_increment/5)):
@@ -1961,7 +2117,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             else:
                 self.next_image()
 
-        self.images.bind("<MouseWheel>",mouse_wheel1)
+        self.main_frame.bind("<MouseWheel>",mouse_wheel1)
         self.frame_with_path.bind("<MouseWheel>",mouse_wheel2)
         self.console.bind("<MouseWheel>",mouse_wheel2)
         if self.image_film == True:
@@ -1971,68 +2127,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             self.images_film_center.bind("<MouseWheel>",mouse_wheel2)
         self.unbind_list.append("<MouseWheel>")
         
-        self.released = False
-        def mouse_clicked(e):
-            self.images.focus_set()
-            self.released = False
-            x,y = e.x,e.y
-            self.horizontal_scrollbar.update_idletasks()
-            self.vertical_scrollbar.update_idletasks()
-            def get_direction(e):
-                option = ""
-                if abs(max(e.x,x)-min(e.x,x)) > abs(max(e.y,y)-min(e.y,y)):
-                    option = "horizontal"
-                else:
-                    option = "vertical"
-                if option == "horizontal":
-                    if e.x > x:
-                        #right
-                        current_horizontal_value = self.horizontal_scrollbar.get()
-                        if (current_horizontal_value[0] - 0.01) >= 0.00:
-                            args_tuple_h = (0,current_horizontal_value[0]-0.01)
-                            self.on_horizontal_scroll(*args_tuple_h)
-                            self.horizontal_scrollbar.set(current_horizontal_value[0]-0.01,current_horizontal_value[1]-0.01)      
-                    else:
-                        #left
-                        current_horizontal_value = self.horizontal_scrollbar.get()
-                        if (current_horizontal_value[1] + 0.01) <= 1.00:
-                            args_tuple_h = (0,current_horizontal_value[0]+0.01)
-                            self.on_horizontal_scroll(*args_tuple_h)
-                            self.horizontal_scrollbar.set(current_horizontal_value[0]+0.01,current_horizontal_value[1]+0.01)
-
-                if option == "vertical":
-                    if e.y > y:
-                        #down
-                        current_vertical_value = self.vertical_scrollbar.get()
-                        if (current_vertical_value[0] - 0.01) >= 0.00:
-                            args_tuple_v = (0,current_vertical_value[0]-0.01)
-                            self.on_vertical_scroll(*args_tuple_v)
-                            self.vertical_scrollbar.set(current_vertical_value[0]-0.01,current_vertical_value[1]-0.01)
-                    else:
-                        #up
-                        current_vertical_value = self.vertical_scrollbar.get()
-                        if (current_vertical_value[1] + 0.01) <= 1.00:
-                            args_tuple_v = (0,current_vertical_value[0]+0.01)
-                            self.on_vertical_scroll(*args_tuple_v)
-                            self.vertical_scrollbar.set(current_vertical_value[0]+0.01,current_vertical_value[1]+0.01)
-
-                self.horizontal_scrollbar.update_idletasks()
-                self.vertical_scrollbar.update_idletasks()
-                return
-
-            self.images.bind("<Motion>", get_direction)
-            if self.released == True:
-                return
-
-            def end_func(e):
-                self.images.unbind("<Motion>")
-                self.images.unbind("<ButtonRelease-1>")
-                self.released = True
-                return
-
-            self.images.bind("<ButtonRelease-1>",end_func)
-        self.images.bind("<Button-1>",mouse_clicked)
-
         def maximalize_window(e):
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
             if focused_entry_widget(): # pokud nabindovane pismeno neni vepisovano do entry widgetu
@@ -2048,7 +2142,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         def save_path_enter_btn(e):
             self.root.focus_set()
             self.start(self.path_set.get())
-            
         self.path_set.bind("<Return>",save_path_enter_btn)
 
         #kdyz je vyuzit TRIMAZKON, jako vychozi prohlizec obrazku
@@ -4508,3 +4601,4 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
 
 menu = main_menu(root)
 menu.menu(initial=True)
+

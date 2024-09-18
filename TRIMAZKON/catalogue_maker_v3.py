@@ -313,13 +313,14 @@ class Save_prog_metadata:
         return project_name
     
 class ToplevelWindow:
-    def __init__(self,root,controller_databases = [[],[]],callback = None,custom_controller_database = [],accessory_databases=[[],[],[]]):
+    def __init__(self,root,controller_databases = [[],[]],callback = None,custom_controller_database = [],accessory_databases=[[],[],[]],changes_check = False):
         self.controller_database = controller_databases[0]
         self.controller_notes_database = controller_databases[1]
         self.custom_controller_database = custom_controller_database
         self.accessory_database = accessory_databases[0]
         self.whole_accessory_database = accessory_databases[1]
         self.accessory_notes_database = accessory_databases[2]
+        self.changes_check = changes_check
         self.root = root
         self.callback_function = callback
         self.x = self.root.winfo_rootx()
@@ -358,6 +359,37 @@ class ToplevelWindow:
         self.root.bind("<Button-1>",lambda e: window.destroy())
         window.grab_set()
         window.focus_force()
+
+    def save_check(self,menu_callback,save_metadata_callback):
+        if self.changes_check == False:
+            print("no changes made after last save")
+            menu_callback()
+            return
+        
+        window = customtkinter.CTkToplevel()
+        window.geometry(f"650x130+{self.x+80}+{self.y+150}")
+        window.after(200, lambda: window.iconbitmap(app_icon_path))
+        window.title("Upozornění")
+
+        def clicked_save():
+            print("saving")
+            window.destroy()
+            save_metadata_callback(True)
+        
+        def clicked_cancel():
+            print("cancelling")
+            window.destroy()
+            menu_callback()
+
+        proceed_label = customtkinter.CTkLabel(master = window,text = "Nemáte uložený rozpracovaný projekt",font=("Arial",22,"bold"),justify = "left",anchor="w")
+        button_yes =    customtkinter.CTkButton(master = window,text = "Uložit",font=("Arial",20,"bold"),width = 180,height=40,corner_radius=0,command=lambda: clicked_save())
+        button_no =     customtkinter.CTkButton(master = window,text = "Neukládat",font=("Arial",20,"bold"),width = 180,height=40,corner_radius=0,command=lambda:  clicked_cancel())
+        proceed_label   .pack(pady=(15,0),padx=10,expand=False,side = "top",anchor="w")
+        button_no       .pack(pady = 5, padx = 10,anchor="w",expand=False,side="right")
+        button_yes      .pack(pady = 5, padx = 10,anchor="w",expand=False,side="right")
+        window.grab_set()
+        window.focus_force()
+        window.wait_window()
 
     def new_controller_window(self,childroot,controller = None,edit = False,accessory_index =0,only_accessory=False):
         """
@@ -720,7 +752,7 @@ class ToplevelWindow:
         window.focus_force()
         window.focus()
 
-    def save_prog_options_window(self,main_console,station_list,project_name,callback,callback_save_last_file,last_file = None,last_path = "",default_xml_file_name="_metadata_catalogue",default_path = ""):
+    def save_prog_options_window(self,main_console,station_list,project_name,callback,callback_save_last_file,last_file = None,last_path = "",default_xml_file_name="_metadata_catalogue",default_path = "",exit_status = False):
         """
         okno s možnostmi uložení rozdělaného projektu
         """
@@ -738,24 +770,21 @@ class ToplevelWindow:
                 subwindow.destroy()
             subwindow = customtkinter.CTkToplevel()
             subwindow.after(200, lambda: subwindow.iconbitmap(app_icon_path))
-            subwindow.geometry(f"900x110+{self.x+200}+{self.y+50}")
+            subwindow.geometry(f"700x150+{self.x+200}+{self.y+50}")
             subwindow.title("Potvrdit přepsání souboru")
-            main_frame = customtkinter.CTkFrame(master = subwindow,corner_radius=0)
-            export_label = customtkinter.CTkLabel(master = main_frame,text = "V zadané cestě se soubor s tímto názvem již vyskytuje, přepsat?",font=("Arial",22,"bold"),justify = "left",text_color="orange")
-            button_frame = customtkinter.CTkFrame(master = main_frame,corner_radius=0)
-            button_yes = customtkinter.CTkButton(master = button_frame,text = "Ano",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command = lambda: call_save(final_path))
-            button_no = customtkinter.CTkButton(master = button_frame,text = "Ne",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command = lambda: subwindow.destroy())
-            main_frame.pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left")
-            export_label.pack(pady = 0, padx = 0,fill="x",anchor="w",expand=False,side="top")
-            button_frame.pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="bottom")
-            button_yes.pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
-            button_no.pack(pady = 10, padx = (10,0),expand=False,side="right",anchor = "e")
+            export_label = customtkinter.CTkLabel(master = subwindow,text = "V zadané cestě se soubor s tímto názvem již vyskytuje, přepsat?",font=("Arial",22,"bold"),justify = "left",text_color="orange")
+            button_yes = customtkinter.CTkButton(master = subwindow,text = "Ano",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command = lambda: call_save(final_path))
+            button_no = customtkinter.CTkButton(master = subwindow,text = "Ne",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command = lambda: subwindow.destroy())
+            export_label    .pack(pady=(15,0),padx=10,expand=False,side = "top",anchor="w")           
+            button_no       .pack(pady = 5, padx = 10,anchor="w",expand=False,side="right")
+            button_yes      .pack(pady = 5, padx = 10,anchor="w",expand=False,side="right")
             subwindow.update()
             subwindow.update_idletasks()
             subwindow.focus_force()
             subwindow.focus()
+            subwindow.grab_set()
 
-        def close_window(window):
+        def close_window(window,button = None):
             nonlocal subwindow
             try:
                 if subwindow.winfo_exists():
@@ -763,6 +792,8 @@ class ToplevelWindow:
             except Exception:
                 pass
             window.destroy()
+            if button:
+                callback_save_last_file(None,None,None)
 
         def create_path(path_inserted):
             nonlocal export_name
@@ -781,12 +812,12 @@ class ToplevelWindow:
             nonlocal export_path
             path_inserted = export_path.get()
             file_name = export_name.get()
-            callback_save_last_file(file_name,path_inserted,None)
             # samotne ukladani vsech dat:
             save_prog = Save_prog_metadata(station_list=station_list,project_name=project_name,controller_database=self.custom_controller_database,console=console,xml_file_path=final_path)
             save_prog.store_xml_data()
             add_colored_line(main_console,f"Data úspěšně uložena do: {final_path}","green",None,True)
             close_window(window)
+            callback_save_last_file(file_name,path_inserted,None,True)
 
         def call_save_file(window):
             nonlocal console
@@ -815,7 +846,7 @@ class ToplevelWindow:
                     callback(received_data)
                     # ulozit posledně načtený soubor
                     file_name = export_name.get()
-                    callback_save_last_file(file_name,path_inserted,None)
+                    callback_save_last_file(file_name,path_inserted,None,True)
                     window.destroy()
                 except Exception:
                     add_colored_line(main_console,f"Soubor .xml je neplatný: {final_path}","red",None,True)
@@ -882,7 +913,7 @@ class ToplevelWindow:
         console =               tk.Text(export_frame, wrap="none", height=0, width=180,background="black",font=("Arial",22),state=tk.DISABLED)
         button_load =           customtkinter.CTkButton(master = export_frame,text = "Nahrát",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: call_load_file(window))
         button_save =           customtkinter.CTkButton(master = export_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: call_save_file(window))
-        button_exit =           customtkinter.CTkButton(master = export_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
+        button_exit =           customtkinter.CTkButton(master = export_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window,True))
         export_frame            .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left")
         export_label            .pack(pady=(15,5),padx=10,anchor="w",expand=False,side="top")
         export_name_frame       .pack(expand=True,side="top",anchor="n",fill="x")
@@ -892,6 +923,9 @@ class ToplevelWindow:
         button_load             .pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
         button_save             .pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
         button_exit             .pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
+
+        if exit_status:
+            button_load.configure(state = "disabled")
 
         checked_last_path = path_check(last_path)
         default_path = path_check(default_path)
@@ -1062,6 +1096,7 @@ class Catalogue_gui:
         self.default_excel_filename = default_excel_name
         self.default_xml_file_name = default_xml_name
         self.default_subwindow_status = default_subwindow_status # 0 = minimalized, 1 = maximalized
+        self.changes_made = False
         self.read_database()
         self.create_main_widgets()
 
@@ -2320,8 +2355,10 @@ class Catalogue_gui:
 
         self.make_project_widgets()
 
-    def call_save_metadata_gui(self):
-        def callback_save_last_input(filename,path_inserted,path_to_save):
+    def call_save_metadata_gui(self,exiting_status = False):
+        def callback_save_last_input(filename,path_inserted,path_to_save,saving = False):
+            nonlocal exiting_status
+
             if filename != None:
                 self.last_xml_filename = filename
             if path_inserted != None:
@@ -2330,8 +2367,14 @@ class Catalogue_gui:
                 self.last_path_input = path_to_save
                 self.path_for_callback = path_to_save
 
+            if saving:
+                print("save was made")
+                self.changes_made = False
+            if exiting_status:
+                self.call_menu()
+
         window = ToplevelWindow(self.root,custom_controller_database=self.controller_object_list)
-        window.save_prog_options_window(self.main_console,self.station_list,self.project_name_input.get(),self.load_metadata_callback,callback_save_last_input,self.last_xml_filename,self.last_path_input,self.default_xml_file_name,self.default_path)
+        window.save_prog_options_window(self.main_console,self.station_list,self.project_name_input.get(),self.load_metadata_callback,callback_save_last_input,self.last_xml_filename,self.last_path_input,self.default_xml_file_name,self.default_path,exit_status = exiting_status)
 
     def create_main_widgets(self):
         def call_manage_widgets(button):
@@ -2405,6 +2448,9 @@ class Catalogue_gui:
             window = ToplevelWindow(self.root)
             window.setting_window(self.default_excel_filename,self.default_xml_file_name,self.default_subwindow_status,apply_changes_callback,self.default_database_filename)
 
+        def call_menu_routine():
+            ToplevelWindow(self.root,changes_check = self.changes_made).save_check(self.call_menu,self.call_save_metadata_gui)
+
         self.clear_frame(self.root)
         main_header =               customtkinter.CTkFrame(master=self.root,corner_radius=0,height=100)
         console_frame=              customtkinter.CTkFrame(master=self.root,corner_radius=0,height=50)
@@ -2422,7 +2468,7 @@ class Catalogue_gui:
         main_header_row2            .pack(pady=(5,0),padx=0,expand=True,fill="x",side = "top",anchor="w")
         console_frame               .pack(pady=0,padx=0,fill="x",expand=False,side = "top")
 
-        main_menu_button =          customtkinter.CTkButton(master = main_header_row0, width = 200,height=50,text = "MENU",command =  lambda: self.call_menu(),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        main_menu_button =          customtkinter.CTkButton(master = main_header_row0, width = 200,height=50,text = "MENU",command = lambda: call_menu_routine(),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
         main_menu_button            .pack(pady = (10,0),padx =(20,0),anchor = "s",side = "left")
         self.project_name_input =   customtkinter.CTkEntry(master = main_header_row1,font=("Arial",20),width=250,height=50,placeholder_text="Název projektu",corner_radius=0)
         new_station =               customtkinter.CTkButton(master = main_header_row1,text = "Nová stanice",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_manage_widgets("add_line"))
@@ -2561,6 +2607,7 @@ class Catalogue_gui:
             return camera_widget_row_growth
          
     def make_project_widgets(self):
+        self.changes_made = True
         self.clear_frame(self.project_column)
         self.clear_frame(self.camera_column)
         self.clear_frame(self.optic_column)

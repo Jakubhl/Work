@@ -77,10 +77,11 @@ class DrawApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Draw Circles and Lines")
+        self.root.state("zoomed")
 
         # Create canvas
-        self.canvas = tk.Canvas(root, width=600, height=400, bg="white")
-        self.canvas.pack()
+        self.canvas = tk.Canvas(root, bg="white")
+        self.canvas.pack(expand=True,fill="both")
         self.canvas.update()
         self.canvas.update_idletasks()
         self.max_width = self.canvas.winfo_width()
@@ -89,6 +90,7 @@ class DrawApp:
         self.canvas.bind("<B1-Motion>", self.on_drag)
         self.canvas.bind("<ButtonRelease-1>", self.on_release)
         self.zoom = 1
+        self.previous_zoom = 1
         self.draw_mode = "line"  # or "circle"
         self.start_x = None
         self.start_y = None
@@ -96,7 +98,6 @@ class DrawApp:
         self.last_image_y = 0
         self.previous_zoomed_x = 0
         self.previous_zoomed_y = 0
-        self.previous_zoom = 0
         self.file_list = []
         for files in os.listdir("images"):
             self.file_list.append(files)
@@ -119,75 +120,119 @@ class DrawApp:
                 self.show_image()
 
         def zoom_image(e):
+            zoom_increment = 0.5
+            step_increment = 200
+            
+    
             self.previous_zoom = self.zoom 
             direction = -e.delta
             if direction < 0:
-                self.zoom += 0.5
+                if int(self.image_width*(self.zoom+zoom_increment)) < self.max_width:
+                    self.last_image_x = 0
+                    self.show_image()
+                    return
+                self.zoom += zoom_increment
             else:
-                self.zoom -= 0.5
+                if int(self.image_width*(self.zoom-zoom_increment)) < self.max_width:
+                    self.last_image_x = 0
+                    self.show_image()
+                    return
+                self.zoom -= zoom_increment
 
-            if direction < 0:
-                step_size = 100*self.zoom 
+            previous_dimensions = self.max_width*self.previous_zoom 
+            current_dimensions = self.max_width*self.zoom
+            image_growth = abs(current_dimensions - previous_dimensions)
+            print(image_growth)
+
+            if e.x < self.max_width/2:
+                mouse_pos_x = (100-((e.x/(self.max_width/2))*100))
+            elif e.x > self.max_width/2:
+                mouse_pos_x = (100-(((self.max_width/2)/e.x)*100))*2
+
+            if direction < 0:  # Zooming in
+                # step_size = (step_increment * (mouse_pos_x/100)) + image_growth/2
+                step_size = (image_growth/2 * (mouse_pos_x/100))
+            else:  # Zooming out
+                step_size = -(step_increment * (mouse_pos_x/100)) + image_growth/2
+
+            # if direction < 0:
+            #     step_size = ((step_increment)) + ((step_increment)* (mouse_pos_x/100))
+            # else:
+            #     step_size = -(((step_increment)) + ((step_increment)* (mouse_pos_x/100)))
+
+            # print("step size: ",step_size)
+            # # step_size = 120 * (self.zoom/2)
+            # # step_size = (mouse_pos_x/100)*(image_growth/2)
+            # # step_size = mouse_pos_x + image_growth/2
+
+            # if direction < 0:
                 #--------priblizuju s kurzorem napravo--------
-                if e.x > self.image_width/2 + 0.1*self.max_width:
-                    print("right")
-                    # if e.x > 0.6*self.max_width:
-                    #     step_size = 50
-                    # if e.x > 0.7*self.max_width:
-                    #     step_size = 100
-                    # if e.x > 0.8*self.max_width:
-                    minus_x_boundary = -self.image_width*self.zoom + self.max_width
-                    # step_size = 100*self.zoom
-                    if (self.last_image_x - step_size) > minus_x_boundary:
-                        self.last_image_x -= step_size
-                    else:
-                        self.last_image_x = minus_x_boundary
-                #--------priblizuju s kurzorem nalevo--------
-                elif e.x < self.image_width/2 - 0.1*self.max_width:
-                    print("left")
-                    # step_size = e.x + (self.image_width/2)
-                    # step_size = 150
+            minus_x_boundary = -self.image_width*self.zoom + self.max_width
 
-                    if self.last_image_x > (self.image_width*self.zoom -self.max_width):
-                    # if self.last_image_x ==0:
-                        self.last_image_x -= step_size
-                    else:
-                        self.last_image_x = 0
-                #--------priblizuju s kurzorem uprostřed--------
-                elif e.x < self.image_width/2 or e.x > self.image_width/2:
-                    print("center")
-                    previous_dimensions = self.image_width*self.previous_zoom 
-                    current_dimensions = self.image_width*self.zoom 
-                    image_growth = max(previous_dimensions-current_dimensions,current_dimensions-previous_dimensions)
-                    self.last_image_x -= image_growth/1.8
-            else:
-                step_size = 100*self.zoom 
-                #--------priblizuju s kurzorem napravo--------
-                if e.x > self.image_width/2 + 0.1*self.max_width:
-                    print("right") 
-                    # minus_x_boundary = -self.image_width*self.zoom + self.max_width
-                    minus_x_boundary = -self.image_width*self.zoom + self.max_width
-                    if (self.last_image_x - step_size) > minus_x_boundary:
-                        self.last_image_x -= step_size
-                    else:
-                        self.last_image_x = minus_x_boundary
-                        
-                #--------priblizuju s kurzorem nalevo--------
-                elif e.x < self.image_width/2 - 0.1*self.max_width:
-                    print("left")
-                    if self.last_image_x > (self.image_width*self.zoom -self.max_width):
-                        self.last_image_x -= step_size
-                    else:
-                        self.last_image_x = 0
-
-                #--------priblizuju s kurzorem uprostřed--------
-                elif e.x < self.image_width/2 or e.x > self.image_width/2:
-                    print("center")
-                    previous_dimensions = self.image_width*self.previous_zoom 
-                    current_dimensions = self.image_width*self.zoom 
-                    image_growth = max(previous_dimensions-current_dimensions,current_dimensions-previous_dimensions)
-                    self.last_image_x += image_growth/1.8
             
+            if e.x > self.image_width/2 + 0.1*self.max_width:
+                print("zoom right")
+                if (self.last_image_x - step_size) > minus_x_boundary:
+                    if (self.last_image_x - step_size) < 0:
+                        self.last_image_x -= step_size
+                    else:
+                        self.last_image_x = 0
+                else:
+                    self.last_image_x = minus_x_boundary
+
+            #--------priblizuju s kurzorem nalevo--------
+            elif e.x < self.image_width/2 - 0.1*self.max_width:
+                print("zoom left")
+                if self.last_image_x + step_size < 0:
+                    if self.last_image_x+ step_size > minus_x_boundary:
+                        self.last_image_x += step_size
+                    else:
+                        self.last_image_x = minus_x_boundary
+                else:
+                    self.last_image_x = 0
+
+            # --------priblizuju s kurzorem uprostřed--------
+            elif e.x < self.image_width/2 or e.x > self.image_width/2:
+                if direction <0:
+                    print("zoom center in")
+                    if self.last_image_x - image_growth/2 > minus_x_boundary:
+                        self.last_image_x -= image_growth/2
+                    else:
+                        self.last_image_x = minus_x_boundary
+
+                else:
+                    print("zoom center out")
+                    if (self.last_image_x + image_growth/2) < 0.0:
+                        self.last_image_x += image_growth/2
+                    else:
+                        self.last_image_x = 0
+
+
+            # else:
+            #     step_size = (100*self.zoom + mouse_pos_x)
+            #     #--------oddaluju s kurzorem napravo--------
+            #     if e.x > self.image_width/2 + 0.1*self.max_width:
+            #         print("right")
+            #         minus_x_boundary = -self.image_width*self.zoom + self.max_width
+            #         if (self.last_image_x - step_size) > minus_x_boundary:
+            #             self.last_image_x -= step_size
+            #         else:
+            #             self.last_image_x = minus_x_boundary
+                        
+            #     #--------oddaluju s kurzorem nalevo--------
+            #     elif e.x < self.image_width/2 - 0.1*self.max_width:
+            #         print("left")
+
+            #         if (self.last_image_x+step_size) > 0:
+            #             self.last_image_x = 0
+            #         else:
+            #             self.last_image_x += step_size
+
+            #     #--------oddaluju s kurzorem uprostřed--------
+            #     elif e.x < self.image_width/2 or e.x > self.image_width/2:
+            #         print("center")
+            #         self.last_image_x += image_growth/2
+
             self.show_image()
 
         self.root.bind("<Right>",next_image)
@@ -198,7 +243,7 @@ class DrawApp:
     
     def show_image(self):
         self.image = Image.open("images/"+self.file_list[self.image_increment])
-        print("image size: ",self.image.size)
+        # print("image size: ",self.image.size)
 
         self.canvas.update()
         self.canvas.update_idletasks()
