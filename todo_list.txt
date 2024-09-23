@@ -577,60 +577,27 @@ catalogue - upravit hlavičku podle vzoru - hotovo
 10:50 AM 9/17/2024
 catalogue - když zpět do menu - ověřit změny a dotázat jestli uložit - hotovo
 
+8:55 AM 9/23/2024
+nová logika přibližování - hotovo
+opravit oddalování - hotovo
+undo šipky - ip setting - hotovo
+optimalizace vyexportovaneho excelu - hotovo
+
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 mít možnost malovat na obrázky v image browseru - (kruhy, osy)
 RGB slidery
-nová logika prohlížeče obrázků
-- drag image option s hranicema
-- doladit oddalovani - museji byt 2 boundary
-
-- udělat si rastr, kde je myš
 
 
+předělat přibližování/ oddalování podle testu, self.last_image_x... (coords)
+
+dodělat nastavení malování
 
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

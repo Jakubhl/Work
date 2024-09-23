@@ -40,9 +40,9 @@ Nastavení prohlížeče obrázků: (1. zvolená možnost, 2. krok přibližová
 Zobrazit changelog?
 ne
 Zobrazovat v prohlížeči obrázků film obrázků?
-ne
+ano
 Kolik obrázků ve filmu obrázků zobrazovat na každé straně?
-13
+8
 Default název pro sharepoint databázi:
 Sharepoint_databaze.xlsx
 Default název pro excel (Katalog):
@@ -52,6 +52,6 @@ _metadata_catalogue
 Defaultní chování suboken (Katalog):
 0
 Defaultní přípona exportu (Katalog):
-xlsm
+xlsx
 Defaultní cesta katalog:
 C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/

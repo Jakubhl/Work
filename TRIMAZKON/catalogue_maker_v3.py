@@ -1098,7 +1098,7 @@ class Catalogue_gui:
         self.default_subwindow_status = default_subwindow_status # 0 = minimalized, 1 = maximalized
         self.changes_made = False
         self.read_database()
-        self.create_main_widgets()
+        self.create_main_widgets(initial=True)
 
     def close_window(self,window):
         window.update_idletasks()
@@ -2376,7 +2376,7 @@ class Catalogue_gui:
         window = ToplevelWindow(self.root,custom_controller_database=self.controller_object_list)
         window.save_prog_options_window(self.main_console,self.station_list,self.project_name_input.get(),self.load_metadata_callback,callback_save_last_input,self.last_xml_filename,self.last_path_input,self.default_xml_file_name,self.default_path,exit_status = exiting_status)
 
-    def create_main_widgets(self):
+    def create_main_widgets(self,initial=False):
         def call_manage_widgets(button):
             widget_tier = ""
             widget_tier = self.current_block_id
@@ -2524,7 +2524,7 @@ class Catalogue_gui:
         self.optic_column       .pack(pady=0,padx=0,fill="y",expand=False,side = "left")
         self.controller_column  .pack(pady=0,padx=0,fill="y",expand=False,side = "left")
         self.accessory_column   .pack(pady=0,padx=0,fill="y",expand=False,side = "left")
-        self.make_project_widgets()
+        self.make_project_widgets(initial = initial)
         add_colored_line(self.main_console,self.download_database_console_input[0],self.download_database_console_input[1],None,True)
         
         def unfocus_entry(e):
@@ -2606,8 +2606,9 @@ class Catalogue_gui:
 
             return camera_widget_row_growth
          
-    def make_project_widgets(self):
-        self.changes_made = True
+    def make_project_widgets(self,initial = False):
+        if not initial:
+            self.changes_made = True
         self.clear_frame(self.project_column)
         self.clear_frame(self.camera_column)
         self.clear_frame(self.optic_column)
@@ -3121,16 +3122,17 @@ class Save_excel:
         current_date = datetime.now().date()
         date_string = current_date.strftime("%d.%m.%Y")
         ws[info_letter2 + "3"] = date_string
+        header_fill = PatternFill(start_color="636363", end_color="636363", fill_type="solid")
         
         for columns in self.used_columns:
+            ws.column_dimensions[columns].width = self.excel_column_width
+            
             for i in range((self.values_start_row-1),self.excel_rows_used-1):
-                ws.column_dimensions[columns].width = self.excel_column_width
                 cell = ws[columns + str(i)]
-                cell.alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True,shrink_to_fit=True,justifyLastLine=True)
+                cell.alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
                 cell.border = thin_border
 
                 if i == (self.values_start_row-1): # nadpisy sloupců
-                    header_fill = PatternFill(start_color="636363", end_color="636363", fill_type="solid")
                     cell.font = bold_font_white
                     cell.alignment = Alignment(horizontal = "center", vertical = "center")
                     cell.fill = header_fill

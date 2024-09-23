@@ -1,8 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<metadata><controllers /><station_list><station><name>Název stanicessssssss</name><inspection_description>- popis inspekce
-</inspection_description><camera_list><camera><type /><controller /><controller_color /><cable /><optics_list><optic><type /><alternative /><accessory_list>[]</accessory_list><description>
-</description></optic></optics_list><description>
-</description><row_count>1</row_count><controller_index>None</controller_index></camera></camera_list><row_count>1</row_count></station><station><name>Název stanice</name><inspection_description>- popis inspekce
-</inspection_description><camera_list><camera><type /><controller /><controller_color /><cable /><optics_list><optic><type /><alternative /><accessory_list>[]</accessory_list><description>
-</description></optic></optics_list><description>
-</description><row_count>1</row_count><controller_index>None</controller_index></camera></camera_list><row_count>1</row_count></station></station_list><project_name /></metadata>
