@@ -4,7 +4,7 @@ bmp,png
 Podporované typy souborů u možností mazání:
 jpg,bmp,png,ifz
 Základní cesta k souborům:
-C:/Users/jakub.hlavacek.local/Pictures/Screenshots/
+C:/Users/kubah/Pictures/Screenshots/
 Základní množství ponechaných souborů:
 998
 Základní cutoff date:

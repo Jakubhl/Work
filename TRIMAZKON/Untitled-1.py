@@ -77,7 +77,7 @@ class DrawApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Draw Circles and Lines")
-        self.root.state("zoomed")
+        # self.root.state("zoomed")
 
         # Create canvas
         self.canvas = tk.Canvas(root, bg="white")
@@ -144,10 +144,17 @@ class DrawApp:
             image_growth = abs(current_dimensions - previous_dimensions)
             print(image_growth)
 
-            if e.x < self.max_width/2:
-                mouse_pos_x = (100-((e.x/(self.max_width/2))*100))
-            elif e.x > self.max_width/2:
-                mouse_pos_x = (100-(((self.max_width/2)/e.x)*100))*2
+            if e.x <= self.max_width/2:
+                mouse_pos_x = 1-(e.x/(self.max_width/2))/2
+            elif e.x >= self.max_width/2:
+                mouse_pos_x = -((e.x/(self.max_width/2))/2)
+
+            if e.y <= self.max_height/2:
+                mouse_pos_y= 1-(e.y/(self.max_height/2))/2
+            elif e.y >= self.max_height/2:
+                mouse_pos_y = -((e.y/(self.max_height/2))/2)
+
+            print("mosuee",mouse_pos_y)
 
             if direction < 0:  # Zooming in
                 # step_size = (step_increment * (mouse_pos_x/100)) + image_growth/2

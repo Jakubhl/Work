@@ -6,7 +6,7 @@ import Sorting_option_v5 as Trideni
 import Deleting_option_v1 as Deleting
 import Converting_option_v3 as Converting
 import catalogue_maker_v3 as Catalogue
-import sharepoint_download as download_database
+# import sharepoint_download as download_database
 import IP_setting_v2 as IP_setting
 import string_database
 from tkinter import filedialog
@@ -752,6 +752,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.drawing_color = "#ffffff"
         self.drawing_thickness = 5
         self.draw_mode = "line"
+        self.x_growth_multiplier = 0.5
+        self.y_growth_multiplier = 0.5
         self.create_widgets()
         self.interrupt = self.interrupt_viewing(self)
         
@@ -1045,6 +1047,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         -vstupními daty jsou šířka a výška obrázku
         -přepočítávání pozicování obrázku a scrollbarů v závislosti na zoomu
         """
+
+
         frame_dimensions = self.get_frame_dimensions()
         self.zoom_slider.update_idletasks()
         zoom = self.zoom_slider.get() / 100
@@ -1052,55 +1056,57 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         image_width = width
         image_height = height
         image_ratio = image_width / image_height
-        # Vmestnani obrazku do velikosti aktualni velikosti ramce podle jeho formatu
-        if image_height > image_width:
-            new_height = frame_height
-            if image_width > frame_width:
-                new_width = int(new_height * image_ratio)
-            else:
-                new_width = frame_width
-                if image_width > frame_width:
-                    new_width = image_width
-                new_height = int(new_width / image_ratio)
 
-        elif image_height < image_width:
-            new_width = frame_width
-
-            if image_height < frame_height:
-                new_height = int(new_width / image_ratio)
-            else:
+        def rescale_image(): # Vmestnani obrazku do velikosti aktualni velikosti ramce podle jeho formatu
+            if image_height > image_width:
                 new_height = frame_height
+                if image_width > frame_width:
+                    new_width = int(new_height * image_ratio)
+                else:
+                    new_width = frame_width
+                    if image_width > frame_width:
+                        new_width = image_width
+                    new_height = int(new_width / image_ratio)
+
+            elif image_height < image_width:
+                new_width = frame_width
+
                 if image_height < frame_height:
-                    new_height = image_height
+                    new_height = int(new_width / image_ratio)
+                else:
+                    new_height = frame_height
+                    if image_height < frame_height:
+                        new_height = image_height
+                    new_width = int(new_height * image_ratio)
+
+            elif image_height == image_width:
+                new_height = frame_height
+                new_width = new_height
+
+            #doublecheck
+            if new_height > frame_height:
+                new_height = frame_height
                 new_width = int(new_height * image_ratio)
+            if new_width > frame_width:
+                new_width = frame_width
+                new_height = int(new_width / image_ratio)
 
-        elif image_height == image_width:
-            new_height = frame_height
-            new_width = new_height
-
-        #doublecheck
-        if new_height > frame_height:
-            new_height = frame_height
-            new_width = int(new_height * image_ratio)
-        if new_width > frame_width:
-            new_width = frame_width
-            new_height = int(new_width / image_ratio)
+            return (new_height,new_width)
         
+        new_height, new_width = rescale_image()
         new_height = new_height * zoom
         new_width = new_width * zoom
         
         self.main_frame.update_idletasks()
         self.main_frame.update()
-        
 
-        if new_width > self.previous_width or new_height > self.previous_height:
-            self.zoom_grow_x = - (max(new_width-self.previous_width,self.previous_width-new_width))
-            self.zoom_grow_y = - (max(new_height-self.previous_height,self.previous_height-new_height))
-        else:
-            self.zoom_grow_x = max(new_width-self.previous_width,self.previous_width-new_width)
-            self.zoom_grow_y = max(new_height-self.previous_height,self.previous_height-new_height)
+        # if new_width > self.previous_width or new_height > self.previous_height:
+        #     self.zoom_grow_x = - (max(new_width-self.previous_width,self.previous_width-new_width))
+        #     self.zoom_grow_y = - (max(new_height-self.previous_height,self.previous_height-new_height))
+        # else:
+        self.zoom_grow_x = max(new_width-self.previous_width,self.previous_width-new_width)
+        self.zoom_grow_y = max(new_height-self.previous_height,self.previous_height-new_height)
         
-        print(self.zoom_grow_x,self.zoom_grow_y)
         self.previous_height = new_height
         self.previous_width = new_width
         self.previous_zoom = zoom
@@ -1123,6 +1129,32 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.main_image = self.main_frame.create_image(0, 0, anchor=tk.NW, image=error_image,tag ="raise")
                 self.main_frame.tag_lower(self.main_image)
                 self.main_frame.update()
+
+        def check_image_growth_boundaries():
+            frame_dimensions = self.get_frame_dimensions()
+            if self.x_growth_multiplier > 0: # tzn. jsme s mysi nalevo 1 sž 0.5
+                if current_coords[0] < 0:
+                    x_coords = current_coords[0]+(self.zoom_grow_x*self.x_growth_multiplier)
+                else:
+                    x_coords = 0
+            else: # -0.5 až 1
+                if current_coords[0] < (frame_dimensions[0] - dimensions[0]):
+                    x_coords = current_coords[0]
+                else:
+                    x_coords = current_coords[0]+(self.zoom_grow_x*self.x_growth_multiplier)
+
+            if self.y_growth_multiplier > 0: # tzn. jsme s mysi nahore 1 sž 0.5
+                if current_coords[1] < 0:
+                    y_coords = current_coords[1]+(self.zoom_grow_y*self.y_growth_multiplier)
+                else:
+                    y_coords = 0
+            else: # -0.5 až 1
+                if current_coords[1] < (frame_dimensions[1] - dimensions[1]):
+                    y_coords = current_coords[1]
+                else:
+                    y_coords = current_coords[1]+(self.zoom_grow_y*self.y_growth_multiplier)
+
+            return (x_coords, y_coords)
 
         if len(self.all_images) != 0:
             if direct_path == None:
@@ -1160,7 +1192,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     self.zoom_grow_x=0
                     self.zoom_grow_y=0
 
-                self.main_image = self.main_frame.create_image(current_coords[0]+self.zoom_grow_x/2, current_coords[1]+self.zoom_grow_y/2,
+                x_coords, y_coords = check_image_growth_boundaries()
+                self.main_image = self.main_frame.create_image(x_coords, y_coords,
                                                                anchor=tk.NW, image=self.tk_image,tag = "lower")
                 self.main_frame.tag_lower(self.main_image)
                 self.main_frame.update()
@@ -1418,9 +1451,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             if self.ifz_located == True:
                 if len(self.converted_images) != 0:
                     center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
-                    self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],True)
+                    self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],True,reset=True)
             else:
-                self.view_image(self.increment_of_image,None,True)
+                self.view_image(self.increment_of_image,None,True,reset=True)
 
     def copy_image(self,path): # Tlačítko Kopír., zkopíruje daný obrázek do složky v dané cestě
         """
@@ -1688,6 +1721,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                         option = "horizontal"
                     else:
                         option = "vertical"
+
                     if option == "horizontal":
                         if e.x > x:
                             #right
@@ -2004,10 +2038,30 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             direction = -e.delta
             self.main_frame.update_idletasks()
             self.zoom_slider.update_idletasks()
+            
+            def get_grow_multiplier_const():
+                frame_dim = self.get_frame_dimensions()
+                frame_width = frame_dim[0]
+                frame_height = frame_dim[1]
 
-            #for i in range(0,int(self.zoom_increment/5)):
+                if e.x <= frame_width/2: # pokud větší, tak budeme růst obrázku přičítat
+                    self.x_growth_multiplier = 1-((e.x/(frame_width/2)))/2
+                elif e.x >= frame_width/2: # pokud větší, tak budeme růst obrázku odečítat
+                    self.x_growth_multiplier = -((e.x/(frame_width/2))/2)
+
+                if e.y <= frame_height/2: # pokud větší, tak budeme růst obrázku přičítat
+                    self.y_growth_multiplier = 1-((e.y/(frame_height/2)))/2
+                elif e.y >= frame_height/2: # pokud větší, tak budeme růst obrázku odečítat
+                    self.y_growth_multiplier = -((e.y/(frame_height/2))/2)
+
+                if direction > 0:
+                    self.x_growth_multiplier = self.x_growth_multiplier *(-1)
+                    self.y_growth_multiplier = self.y_growth_multiplier *(-1)
+            
+            get_grow_multiplier_const()
+            
             if direction < 0:
-                #direction = "in"
+                direction = "in"
                 new_value = self.zoom_slider.get()+self.zoom_increment
                 if self.zoom_slider._to >= new_value:
                     self.zoom_slider.set(new_value)
@@ -2015,7 +2069,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 else:
                     self.zoom_slider.set(self.zoom_slider._to) # pro pripad, ze by zbyvalo mene nez 5 do maxima 
             else:
-                #direction = "out"
+                direction = "out"
                 new_value = self.zoom_slider.get()-self.zoom_increment
                 if self.zoom_slider._from_ <= new_value:
                     self.zoom_slider.set(new_value)
@@ -2030,7 +2084,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     #self.view_image(None,self.converted_images[self.increment_of_ifz_image])  
                 else:
                     self.view_image(self.increment_of_image,None,True)
-            return
+            
+
 
         def mouse_wheel2(e): # posouvat obrazky
             direction = -e.delta
@@ -4511,8 +4566,8 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
             current_window_size = "min"
         
         if not self.database_downloaded:
-            download = download_database.database(self.database_filename)
-            input_message = str(download.output)
+            # download = download_database.database(self.database_filename)
+            # input_message = str(download.output)
             menu.database_downloaded = True
         else:
             input_message = "Datábáze se stáhne znovu až po restartu TRIMAZKONU"
