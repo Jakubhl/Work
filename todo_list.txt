@@ -585,16 +585,26 @@ optimalizace vyexportovaneho excelu - hotovo
 RGB slidery - hotovo
 mít možnost malovat na obrázky v image browseru - (kruhy, osy) - hotovo
 
+5:44 PM 9/28/2024
+předělat přibližování/ oddalování podle testu, self.last_image_x... (coords) - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 
 
 
-předělat přibližování/ oddalování podle testu, self.last_image_x... (coords)
+
 
 dodělat nastavení malování
 
+vrátit oba staré enginy zoomu
+přidat možnost nastavit citlivost posouvani
+přidat možnost namalovat cursor doprostred obrazovky
+kdyz prestane existovat okno nastaveni malovaní - přepnout zpět do dragging modu
+zkusit nastavit otevirani draw setting okna na druhem monitoru když bude připojen
+optimalizovat zoomslider
+aplikace v nastaveni zmen pohne s pozici obrazku
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon

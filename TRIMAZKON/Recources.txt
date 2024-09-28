@@ -35,7 +35,7 @@ Bezpečný mód při procházení subsložek:
 ano
 Nastavení prohlížeče obrázků: (1. zvolená možnost, 2. krok přibližování [%], 3. krok posunu)
 2
-25
+55
 150
 Zobrazit changelog?
 ne

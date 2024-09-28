@@ -754,6 +754,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.draw_mode = "line"
         self.x_growth_multiplier = 0.5
         self.y_growth_multiplier = 0.5
+        self.zoom_direction = "in"
         self.create_widgets()
         self.interrupt = self.interrupt_viewing(self)
         
@@ -1110,6 +1111,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.previous_height = new_height
         self.previous_width = new_width
         self.previous_zoom = zoom
+        print("new_width: ",new_width)
         return [new_width, new_height]
     
     def view_image(self,increment_of_image,direct_path = None,only_refresh=None,reset = False): # Samotné zobrazení obrázku
@@ -1132,27 +1134,33 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
 
         def check_image_growth_boundaries():
             frame_dimensions = self.get_frame_dimensions()
-            if self.x_growth_multiplier > 0: # tzn. jsme s mysi nalevo 1 sž 0.5
-                if current_coords[0] < 0:
-                    x_coords = current_coords[0]+(self.zoom_grow_x*self.x_growth_multiplier)
+            nonlocal current_coords
+            x_growth = self.zoom_grow_x*self.x_growth_multiplier
+            y_growth = self.zoom_grow_y*self.y_growth_multiplier
+            minus_x_boundary = frame_dimensions[0] - dimensions[0]
+            minus_y_boundary = frame_dimensions[1] - dimensions[1]
+
+            if self.x_growth_multiplier > 0: # tzn. jsme s mysi nalevo 1 až 0.5
+                if current_coords[0]+x_growth < 0:
+                    x_coords = current_coords[0]+x_growth
                 else:
                     x_coords = 0
-            else: # -0.5 až 1
-                if current_coords[0] < (frame_dimensions[0] - dimensions[0]):
-                    x_coords = current_coords[0]
+            else: # napravo, -0.5 až -1
+                if current_coords[0]+x_growth < minus_x_boundary:
+                    x_coords = minus_x_boundary
                 else:
-                    x_coords = current_coords[0]+(self.zoom_grow_x*self.x_growth_multiplier)
+                    x_coords = current_coords[0]+x_growth
 
             if self.y_growth_multiplier > 0: # tzn. jsme s mysi nahore 1 sž 0.5
-                if current_coords[1] < 0:
-                    y_coords = current_coords[1]+(self.zoom_grow_y*self.y_growth_multiplier)
+                if current_coords[1]+y_growth < 0:
+                    y_coords = current_coords[1]+y_growth
                 else:
                     y_coords = 0
-            else: # -0.5 až 1
-                if current_coords[1] < (frame_dimensions[1] - dimensions[1]):
-                    y_coords = current_coords[1]
+            else: # -0.5 až -1
+                if current_coords[1]+y_growth < minus_y_boundary:
+                    y_coords = minus_y_boundary
                 else:
-                    y_coords = current_coords[1]+(self.zoom_grow_y*self.y_growth_multiplier)
+                    y_coords = current_coords[1]+y_growth
 
             return (x_coords, y_coords)
 
@@ -1652,7 +1660,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         button_exit = customtkinter.CTkButton(master = window,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
         button_exit.pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
 
-        self.root.bind("<Button-1>",lambda e: close_window(window))
+        # self.root.bind("<Button-1>",lambda e: close_window(window))
         window.update()
         window.update_idletasks()
         window.focus_force()
@@ -1696,7 +1704,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             def on_release(event):
                 # Finalize the shape
                 self.main_frame.delete("temp_shape")
-
                 if self.draw_mode == "line":
                     # Draw the final line
                     self.main_frame.create_line(self.start_x, self.start_y, event.x, event.y, fill=self.drawing_color,tags="drawing",width=self.drawing_thickness)
@@ -2036,32 +2043,34 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         #Funkce kolecka mysi: priblizovat nebo posouvat vpred/ vzad
         def mouse_wheel1(e): # priblizovat
             direction = -e.delta
+
             self.main_frame.update_idletasks()
             self.zoom_slider.update_idletasks()
-            
-            def get_grow_multiplier_const():
-                frame_dim = self.get_frame_dimensions()
-                frame_width = frame_dim[0]
-                frame_height = frame_dim[1]
+            frame_dim = self.get_frame_dimensions()
+            frame_width = frame_dim[0]
+            frame_height = frame_dim[1]
 
-                if e.x <= frame_width/2: # pokud větší, tak budeme růst obrázku přičítat
-                    self.x_growth_multiplier = 1-((e.x/(frame_width/2)))/2
-                elif e.x >= frame_width/2: # pokud větší, tak budeme růst obrázku odečítat
-                    self.x_growth_multiplier = -((e.x/(frame_width/2))/2)
-
-                if e.y <= frame_height/2: # pokud větší, tak budeme růst obrázku přičítat
-                    self.y_growth_multiplier = 1-((e.y/(frame_height/2)))/2
-                elif e.y >= frame_height/2: # pokud větší, tak budeme růst obrázku odečítat
-                    self.y_growth_multiplier = -((e.y/(frame_height/2))/2)
-
+            if e.x <= frame_width/2: # pokud větší, tak budeme růst obrázku přičítat
+                self.x_growth_multiplier = 1-((e.x/(frame_width/2)))/2
+            elif e.x >= frame_width/2: # pokud větší, tak budeme růst obrázku odečítat
+                self.x_growth_multiplier = -((e.x/(frame_width/2))/2)
                 if direction > 0:
                     self.x_growth_multiplier = self.x_growth_multiplier *(-1)
+
+            if e.y <= frame_height/2: # pokud větší, tak budeme růst obrázku přičítat
+                self.y_growth_multiplier = 1-((e.y/(frame_height/2)))/2
+            elif e.y >= frame_height/2: # pokud větší, tak budeme růst obrázku odečítat
+                self.y_growth_multiplier = -((e.y/(frame_height/2))/2)
+                if direction > 0:
                     self.y_growth_multiplier = self.y_growth_multiplier *(-1)
-            
-            get_grow_multiplier_const()
+
+            print("xmul",self.x_growth_multiplier)
+            print("ymul",self.y_growth_multiplier)
+                
             
             if direction < 0:
                 direction = "in"
+                self.zoom_direction = "in"
                 new_value = self.zoom_slider.get()+self.zoom_increment
                 if self.zoom_slider._to >= new_value:
                     self.zoom_slider.set(new_value)
@@ -2070,6 +2079,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     self.zoom_slider.set(self.zoom_slider._to) # pro pripad, ze by zbyvalo mene nez 5 do maxima 
             else:
                 direction = "out"
+                self.zoom_direction = "out"
                 new_value = self.zoom_slider.get()-self.zoom_increment
                 if self.zoom_slider._from_ <= new_value:
                     self.zoom_slider.set(new_value)
