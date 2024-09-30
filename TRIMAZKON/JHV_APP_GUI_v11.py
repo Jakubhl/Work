@@ -1049,7 +1049,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         -přepočítávání pozicování obrázku a scrollbarů v závislosti na zoomu
         """
 
-
         frame_dimensions = self.get_frame_dimensions()
         self.zoom_slider.update_idletasks()
         zoom = self.zoom_slider.get() / 100
@@ -1787,7 +1786,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         elif not self.drag_option_binded:
             bind_image_dragging()
             self.drag_option_binded = True
-
 
     def create_widgets(self): # Vytvoření veškerých widgets (MAIN image browseru)
         def call_setting_window():

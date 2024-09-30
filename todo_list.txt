@@ -588,13 +588,20 @@ mít možnost malovat na obrázky v image browseru - (kruhy, osy) - hotovo
 5:44 PM 9/28/2024
 předělat přibližování/ oddalování podle testu, self.last_image_x... (coords) - hotovo
 
+2:02 PM 9/30/2024
+možnost odebrat controller od kamery přímo - hotovo
+možnost odebrat příslušenství od controlleru přímo - hotovo
+oprava chyb při chybějícím poli kamer či optiky - hotovo
+catalogue - pamatovat si naposledy zvolený kontroler - hotovo
+catalogue - u editace optiky při přepínání kameru zůstává manuální vstup objektivu- hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
-
-
-
-
+catalogue - mít možnost kopírovat předešlý projekt
+calatogue - proc se nepise e s hackem? = špatné kódování...
+catalogue - mít možnost přepnout mezi zobrazovanými daty
+catalogue - možnost ke stanici přiřadit fotku - tlačítko - nový list - načíst fotku
 
 dodělat nastavení malování
 
