@@ -56,7 +56,7 @@ customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 root=customtkinter.CTk()
 root.geometry("1200x900")
-root.title("TRIMAZKON v_3.8.0")
+root.title("TRIMAZKON v_3.8.1")
 root.wm_iconbitmap(resource_path(app_icon))
 
 def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt

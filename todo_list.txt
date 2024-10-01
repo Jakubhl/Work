@@ -595,13 +595,17 @@ oprava chyb při chybějícím poli kamer či optiky - hotovo
 catalogue - pamatovat si naposledy zvolený kontroler - hotovo
 catalogue - u editace optiky při přepínání kameru zůstává manuální vstup objektivu- hotovo
 
+9:37 AM 10/1/2024
+catalogue - možnost zvolit si místo optiky světlo - hotovo
+calatogue - proc se nepise e s hackem? = špatné kódování... - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 catalogue - mít možnost kopírovat předešlý projekt
-calatogue - proc se nepise e s hackem? = špatné kódování...
 catalogue - mít možnost přepnout mezi zobrazovanými daty
 catalogue - možnost ke stanici přiřadit fotku - tlačítko - nový list - načíst fotku
+catalogue - dodělat adaptaci velikosti widgetů v závislosti na detailním zobrazení
 
 dodělat nastavení malování
 
