@@ -5,7 +5,7 @@ from PIL import Image, ImageTk
 import Sorting_option_v5 as Trideni
 import Deleting_option_v1 as Deleting
 import Converting_option_v3 as Converting
-import catalogue_maker_v3 as Catalogue
+import catalogue_maker_v4 as Catalogue
 # import sharepoint_download as download_database
 import IP_setting_v2 as IP_setting
 import string_database

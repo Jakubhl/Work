@@ -14,12 +14,14 @@
         "outputPath": "C:\\Users\\jakub.hlavacek.local\\Desktop\\JHV\\Work\\web_application\\HelloWorldApp\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\jakub.hlavacek.local\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\jakub.hlavacek.local\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
