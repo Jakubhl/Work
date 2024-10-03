@@ -17,7 +17,7 @@ import sys
 import threading
 import math
 
-testing = False
+testing = True
 if testing:
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")
@@ -1121,7 +1121,7 @@ class Catalogue_gui:
         self.default_subwindow_status = default_subwindow_status # 0 = minimalized, 1 = maximalized
         self.changes_made = False
         self.optic_light_option = "optic"
-        self.detailed_view = True
+        self.detailed_view = False
         self.temp_frame_widget = ""
 
         self.widget_list = [] #lists of every widget by station
@@ -1390,7 +1390,7 @@ class Catalogue_gui:
     def make_block(self,master_widget,height,width,fg_color,text,side,dummy_block = False,tier = "",border_color="#636363"):
         if dummy_block:
             dummy_block_widget =    customtkinter.CTkFrame(master=master_widget,corner_radius=0,height=height,width =width-10,fg_color="#212121")
-            dummy_block_widget.     pack(pady = 0,padx =0,expand = False,side = side,anchor="w")
+            dummy_block_widget.     pack(pady = 5,padx =0,expand = False,side = side,anchor="w")
             return dummy_block_widget
         else:
             block_widget =      customtkinter.CTkFrame(master=master_widget,corner_radius=0,fg_color=fg_color,height=height,width =width,border_width= 2,border_color=border_color)
@@ -1479,7 +1479,7 @@ class Catalogue_gui:
         if btn == "add_line": # nova stanice
             new_station = self.make_new_object("station")
             self.station_list.append(new_station)
-            self.make_project_widgets()
+            # self.make_project_widgets()
             self.edit_object("",widget_tier,new_station=True)
             return
         
@@ -1488,28 +1488,31 @@ class Catalogue_gui:
                 station_index = int(widget_tier[:2])
                 station_with_new_camera = self.make_new_object("camera",object_to_edit = self.station_list[station_index])
                 self.station_list[station_index] = station_with_new_camera
-                self.make_project_widgets()
                 if open_edit:
                     self.edit_object("",widget_tier,new_station=False)
+                else:
+                    self.make_project_widgets()
 
         elif len(widget_tier) == 7: #xxxxc01-xxxxc99 kontrolery - tzn. nove prislusenstvi ke kontroleru
             if btn == "add_object":
                 controller_index = int(widget_tier[5:7])
                 controller_with_new_accessories = self.make_new_object("accessory",object_to_edit = self.controller_object_list[controller_index])
                 self.controller_object_list[controller_index] = controller_with_new_accessories
-                # self.make_project_widgets()
                 if open_edit:
                     self.edit_object("",widget_tier,new_station=False)
-        
+                else:
+                    self.make_project_widgets()
+
         elif len(widget_tier) == 4: # 0101-9999 kamery, nove bude pridano: 010101-999999 optika
             if btn == "add_object": # nova optika kamery
                 station_index = int(widget_tier[:2])
                 camera_index = int(widget_tier[2:])
                 camera_with_new_optics = self.make_new_object("optic",object_to_edit = self.station_list[station_index],cam_index = camera_index)
                 self.station_list[station_index] = camera_with_new_optics
-                self.make_project_widgets()
                 if open_edit:
                     self.edit_object("",widget_tier,new_station=False)
+                else:
+                    self.make_project_widgets()
 
         print("widget_tier: ",widget_tier)
 
@@ -1599,7 +1602,7 @@ class Catalogue_gui:
         - optics
         """
 
-        def save_changes(no_window_shut = False):
+        def save_changes(no_window_shut = False,refresh = True):
             if object == "station" or all_parameters:
                 self.station_list[station_index]["name"] = new_name.get()
                 self.station_list[station_index]["inspection_description"] = new_description.get("1.0", tk.END)
@@ -1628,7 +1631,8 @@ class Catalogue_gui:
                 self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"] = alternative_entry.get()
                 self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"] = notes_input2.get("1.0", tk.END)
 
-            self.make_project_widgets() #refresh
+            if refresh:
+                self.make_project_widgets() #refresh
             if not no_window_shut:
                 self.close_window(child_root)
 
@@ -1643,12 +1647,12 @@ class Catalogue_gui:
             station_index += 1
             if station_index < len(self.station_list):
                 station_index -= 1
-                save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                save_changes(no_window_shut=True,refresh=False) # ulozit zmeny pri prepinani jeste u predesle stanice
                 station_index += 1
                 initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
             else: # TLACITKO +:
                 station_index -= 1
-                save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                save_changes(no_window_shut=True,refresh=False) # ulozit zmeny pri prepinani jeste u predesle stanice
                 close_window(child_root)
                 if station_index < 10:
                     widget_tier = "0" + str(station_index)
@@ -1667,7 +1671,7 @@ class Catalogue_gui:
             station_index -= 1
             if station_index > -1:
                 station_index += 1
-                save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                save_changes(no_window_shut=True,refresh=False) # ulozit zmeny pri prepinani jeste u predesle stanice
                 station_index -= 1
                 initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
             else: # aby to neslo zase odznovu:
@@ -1681,7 +1685,7 @@ class Catalogue_gui:
             camera_index += 1
             if camera_index < len(self.station_list[station_index]["camera_list"]):
                 camera_index -= 1
-                save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                save_changes(no_window_shut=True,refresh=False) # ulozit zmeny pri prepinani jeste u predesle stanice
                 camera_index += 1
                 optics_index = 0
                 accessory_index = 0
@@ -1689,7 +1693,7 @@ class Catalogue_gui:
 
             else: # TLACITKO +:
                 camera_index -= 1
-                save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                save_changes(no_window_shut=True,refresh=False) # ulozit zmeny pri prepinani jeste u predesle stanice
                 camera_index += 1
                 optics_index = 0
                 accessory_index = 0
@@ -1710,7 +1714,7 @@ class Catalogue_gui:
             camera_index -= 1
             if camera_index > -1:
                 camera_index += 1
-                save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                save_changes(no_window_shut=True,refresh=False) # ulozit zmeny pri prepinani jeste u predesle stanice
                 camera_index -= 1
                 optics_index = 0
                 accessory_index = 0
@@ -1726,14 +1730,14 @@ class Catalogue_gui:
             optics_index += 1
             if optics_index < len(self.station_list[station_index]["camera_list"][camera_index]["optics_list"]):
                 optics_index -= 1
-                save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                save_changes(no_window_shut=True,refresh=False) # ulozit zmeny pri prepinani jeste u predesle stanice
                 optics_index += 1
                 accessory_index = 0
                 initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
 
             else: # TLACITKO +:
                 optics_index -= 1
-                save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                save_changes(no_window_shut=True,refresh=False) # ulozit zmeny pri prepinani jeste u predesle stanice
                 optics_index += 1
                 
                 if station_index < 10:
@@ -1756,7 +1760,7 @@ class Catalogue_gui:
             optics_index -= 1
             if optics_index > -1:
                 optics_index += 1
-                save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                save_changes(no_window_shut=True,refresh=False) # ulozit zmeny pri prepinani jeste u predesle stanice
                 optics_index -= 1
                 accessory_index = 0
                 initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
@@ -2755,11 +2759,16 @@ class Catalogue_gui:
          
     def make_project_widgets(self,initial = False):
         def found_highest_widget(widget_list):
+            print("camera count = ",len(list(widget_list[1])))
+            print("optics count = ",len(list(widget_list[2])))
+            print("controller count = ",len(list(widget_list[3])))
+            print("accessory count = ",len(list(widget_list[4])))
+
             def get_widget_count():
                 array_lengths = []
                 for i in range(1,len(widget_list)):
-                    array_lengths.append(len(widget_list[i]))
-
+                    if isinstance(widget_list[i],list):
+                        array_lengths.append(len(widget_list[i]))
                 return array_lengths
 
             max_widget_count = max(get_widget_count())
@@ -2780,56 +2789,35 @@ class Catalogue_gui:
                     only_one_height = widget_list[index].winfo_height()
                     return only_one_height
                 
-            def rescale_widgets(heighest_value,index):
-                try:
-                    new_widget_height = 0
-                    if int(len(widget_list[index])) != 0:
-                        new_widget_height = float(heighest_value)/float(len(widget_list[index]))
-                        new_widget_height = math.floor(new_widget_height)
-                        
-                        for i in range(0,len(widget_list[index])):
-                            widget_list[index][i].configure(height = new_widget_height)
-                            widget_list[index][i].update_idletasks()
-                            widget_list[index][i].update()
-                except Exception as e:
-                    widget_list[index].configure(height = heighest_value)
-                    widget_list[index].update_idletasks()
-                    widget_list[index].update()
-
             self.project_column.update_idletasks()
             height_list = []
             widget_list[0].update_idletasks()
             height_list.append(widget_list[0].winfo_height()) #station
             for i in range(1,len(widget_list)):
                 height_list.append(sum_heights(index=i))
-            print(height_list)
             
             heighest_value = max(height_list)
-            if heighest_value < 50:
-                heighest_value = 50
+            # if heighest_value < 50:
+                # heighest_value = 50
 
             for widgets in widget_list:
                 if isinstance(widgets,list):
                     len_of_array = len(widgets)
                     if len_of_array > 0:
                         new_height = heighest_value/ len_of_array
+                        items_count = 0
                         for items in widgets:
-                            items.configure(height=new_height)
+                            items_count += 1
+                            if items == 1:
+                                items.configure(height=new_height)
+                            else:
+                                items.configure(height=new_height-10)
+
                 else:
-                    widgets.configure(height = heighest_value+((max_widget_count-1)*10))
-            # widget_list[0].configure(height = heighest_value)
-            # # widget_list[0].update_idletasks()
-            # # widget_list[0].update()
-
-            # for i in range(1,len(widget_list)):
-            #     rescale_widgets(heighest_value,i)
-
+                    # widgets.configure(height = heighest_value+((max_widget_count-1)*10))
+                    widgets.configure(height = heighest_value)
+            
             print("heighest: ",heighest_value,height_list)
-            # self.project_column.update_idletasks()
-            # self.project_column.update()
-            # self.camera_column.update_idletasks()
-            # self.optic_column.update_idletasks()
-            # self.controller_column.update_idletasks()
             
         if not initial:
             self.changes_made = True
@@ -2860,21 +2848,22 @@ class Catalogue_gui:
                 self.switch_widget_info("",station_tier,station_widget)
             current_st_widget_list.append(station_widget)
 
+
+            camera_widgets = []
+            optics_widgets = []
+            controllers_widgets = []
+            accessory_widgets = []
             # creating cameras ------------------------------------------------------------------------------------------------------------------------------
             if camera_count == 0:
                 dummy_cam =         self.make_block(master_widget=self.camera_column,height=default_height-5+station_widget_growth,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
                 dummy_opt =         self.make_block(master_widget=self.optic_column,height=default_height-5+station_widget_growth,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
                 dummy_controller =  self.make_block(master_widget=self.controller_column,height=default_height-5+station_widget_growth,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
                 dummy_acc =         self.make_block(master_widget=self.accessory_column,height=default_height-5+station_widget_growth,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
-                # current_st_widget_list.append(dummy_cam)
-                # current_st_widget_list.append(dummy_opt)
-                # current_st_widget_list.append(dummy_controller)
-                # current_st_widget_list.append(dummy_acc)
+                camera_widgets.append(dummy_cam)
+                optics_widgets.append(dummy_opt)
+                controllers_widgets.append(dummy_controller)
+                accessory_widgets.append(dummy_acc)
 
-            camera_widgets = []
-            optics_widgets = []
-            controllers_widgets = []
-            accessory_widgets = []
             for x in range(0,camera_count):
                 camera_type = station_camera_list[x]["type"]
                 try:
@@ -2937,19 +2926,19 @@ class Catalogue_gui:
                         
                     if accessory_count == 0:
                         dummy_acc = self.make_block(master_widget=self.accessory_column,height=default_height+camera_widget_growth-5,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
-                        # accessory_widgets.append(dummy_acc)
+                        accessory_widgets.append(dummy_acc)
                 else:
                     
                     dummy_controller = self.make_block(master_widget=self.controller_column,height=default_height+camera_widget_growth-5,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
                     dummy_acc = self.make_block(master_widget=self.accessory_column,height=default_height+camera_widget_growth-5,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
-                    # accessory_widgets.append(dummy_acc)
-                    # controllers_widgets.append(dummy_controller)
+                    accessory_widgets.append(dummy_acc)
+                    controllers_widgets.append(dummy_controller)
                 # creating optics ------------------------------------------------------------------------------------------------------------------------------
 
                 cycle_start_value_opt = 0
                 if optic_count == 0:
                     dummy_opt = self.make_block(master_widget=self.optic_column,height=default_height-5,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
-                    # optics_widgets.append(dummy_opt)
+                    optics_widgets.append(dummy_opt)
                     cycle_start_value_opt = 1
 
                 for y in range(0,optic_count):
@@ -2967,25 +2956,25 @@ class Catalogue_gui:
                     optic_widget = self.make_block(master_widget=self.optic_column,height=default_height,width=self.default_block_width,fg_color="#181818",side = "top",text=optic_type,tier=optic_tier,border_color=widget_border_color)
                     if self.detailed_view:
                         self.switch_widget_info("",optic_tier,optic_widget)
-                        optics_widgets.append(optic_widget)
+                    optics_widgets.append(optic_widget)
 
                 # doplneni prazdnych mist
                 if (optic_count-accessory_count) < 0:
                     for _ in range(cycle_start_value_opt,-(optic_count-accessory_count)):
                         dummy_opt = self.make_block(master_widget=self.optic_column,height=default_height-5,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
-                        # optics_widgets.append(dummy_opt)
+                        optics_widgets.append(dummy_opt)
 
                 if (optic_count-accessory_count) > 0 and accessory_count > 0:
                     for _ in range(0,(optic_count-accessory_count)):
                         dummy_acc = self.make_block(master_widget=self.accessory_column,height=default_height-5,width=self.default_block_width,fg_color="#181818",side = "top",text="",dummy_block=True)
-                        # accessory_widgets.append(dummy_acc)
+                        accessory_widgets.append(dummy_acc)
 
             current_st_widget_list.append(camera_widgets)
             current_st_widget_list.append(optics_widgets)
             current_st_widget_list.append(controllers_widgets)
             current_st_widget_list.append(accessory_widgets)
-            if self.detailed_view:
-                found_highest_widget(current_st_widget_list)
+            # if self.detailed_view:
+            found_highest_widget(current_st_widget_list)
 
 class Save_excel:
     def __init__(self,root,station_list,project_name,excel_name,controller_list,console):
@@ -3694,5 +3683,5 @@ class Save_excel:
 # download = download_database.database(database_filename)
 # Catalogue_gui(root,download.output)
 if testing:
-    Catalogue_gui(root,"testing - stahování vypnuto","","max",database_filename=database_filename)
+    Catalogue_gui(root,"testing - stahování vypnuto","","max",database_filename,"excel_testing","xml_testing",0,"xlsm","")
     root.mainloop()

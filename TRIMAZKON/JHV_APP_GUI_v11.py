@@ -1588,8 +1588,12 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             nonlocal current_color_frame
 
             red = int(color_R.get())
+            current_color_val.configure(text = str(red))
             green = int(color_G.get())
+            current_color_val2.configure(text = str(green))
             blue = int(color_B.get())
+            current_color_val3.configure(text = str(blue))
+
             current_color_frame.configure(fg_color = rgb_to_hex((red,green,blue)))
             self.drawing_color = rgb_to_hex((red,green,blue))
 
@@ -1622,28 +1626,53 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
 
 
         
-        slider_frame = customtkinter.CTkFrame(master = window,height=20,corner_radius=0,border_width=1)
-        slider_frame.pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
+        slider_frame =      customtkinter.CTkFrame(master = window,height=20,corner_radius=0,border_width=1)
+        slider_frame.pack(pady=(10,0),padx=5,fill="x",expand=False,side = "left")
 
-        color_R = customtkinter.CTkSlider(master=slider_frame,width=400,height=15,from_=0,to=255,command= lambda e: update_color(e))
-        color_G = customtkinter.CTkSlider(master=slider_frame,width=400,height=15,from_=0,to=255,command= lambda e: update_color(e))
-        color_B = customtkinter.CTkSlider(master=slider_frame,width=400,height=15,from_=0,to=255,command= lambda e: update_color(e))
+        frame_R =           customtkinter.CTkFrame(master = slider_frame,height=20,corner_radius=0,border_width=0)
+        color_label =       customtkinter.CTkLabel(master = frame_R,text = "R: ",justify = "left",font=("Arial",16,"bold"))
+        color_R =           customtkinter.CTkSlider(master=frame_R,width=400,height=15,from_=0,to=255,command= lambda e: update_color(e))
+        current_color_val = customtkinter.CTkLabel(master = frame_R,text = "0",justify = "left",font=("Arial",16,"bold"))
+        color_label.pack(pady=5,padx=5,expand=False,side = "left")
+        color_R.pack(pady=5,padx=5,expand=False,side = "left")
+        current_color_val.pack(pady=5,padx=5,expand=False,side = "left")
+        color_R.set(0.0)
         
-        draw_circle = customtkinter.CTkCheckBox(master = slider_frame, text = "Kruh",command = lambda: switch_draw_mode(),font=("Arial",20))
-        draw_line = customtkinter.CTkCheckBox(master = slider_frame, text = "Osa",command = lambda: switch_draw_mode(),font=("Arial",20))
+        frame_G =           customtkinter.CTkFrame(master = slider_frame,height=20,corner_radius=0,border_width=0)
+        color_label =       customtkinter.CTkLabel(master = frame_G,text = "G: ",justify = "left",font=("Arial",16,"bold"))
+        color_G =           customtkinter.CTkSlider(master=frame_G,width=400,height=15,from_=0,to=255,command= lambda e: update_color(e))
+        current_color_val2 = customtkinter.CTkLabel(master = frame_G,text = "0",justify = "left",font=("Arial",16,"bold"))
+        color_label.pack(pady=5,padx=5,expand=False,side = "left")
+        color_G.pack(pady=5,padx=5,expand=False,side = "left")
+        current_color_val2.pack(pady=5,padx=5,expand=False,side = "left")
+        color_G.set(0.0)
 
-        current_color_frame = customtkinter.CTkFrame(master = slider_frame,height=50,corner_radius=0)
+        frame_B =           customtkinter.CTkFrame(master = slider_frame,height=20,corner_radius=0,border_width=0)
+        color_label =       customtkinter.CTkLabel(master = frame_B,text = "B: ",justify = "left",font=("Arial",16,"bold"))
+        color_B =           customtkinter.CTkSlider(master=frame_B,width=400,height=15,from_=0,to=255,command= lambda e: update_color(e))
+        current_color_val3 = customtkinter.CTkLabel(master = frame_B,text = "0",justify = "left",font=("Arial",16,"bold"))
+        color_label.pack(pady=5,padx=5,expand=False,side = "left")
+        color_B.pack(pady=5,padx=5,expand=False,side = "left")
+        current_color_val3.pack(pady=5,padx=5,expand=False,side = "left")
+        color_B.set(0.0)
 
-        thickness = customtkinter.CTkSlider(master=slider_frame,width=400,height=15,from_=1,to=50,command= lambda e: update_thickness(e))
+        current_color_frame = customtkinter.CTkFrame(master = window,height=50,corner_radius=0)
+        
+        draw_circle = customtkinter.CTkCheckBox(master = window, text = "Kruh",command = lambda: switch_draw_mode(),font=("Arial",20))
+        draw_line = customtkinter.CTkCheckBox(master = window, text = "Osa",command = lambda: switch_draw_mode(),font=("Arial",20))
+
+
+        thickness = customtkinter.CTkSlider(master=window,width=400,height=15,from_=1,to=50,command= lambda e: update_thickness(e))
 
         clear_all = customtkinter.CTkButton(master = window,text = "Vyčistit",font=("Arial",22,"bold"),width = 150,height=40,corner_radius=0,command=lambda: clear_canvas())
 
 
 
-        color_R.pack(pady=5,padx=5,expand=False,side = "top")
-        color_G.pack(pady=5,padx=5,expand=False,side = "top")
-        color_B.pack(pady=5,padx=5,expand=False,side = "top")
-        current_color_frame.pack(pady=5,padx=5,expand=False,side = "top",fill="x")
+        frame_R.pack(pady=0,padx=0,expand=False,side = "top",fill="x")
+        frame_G.pack(pady=0,padx=0,expand=False,side = "top",fill="x")
+        frame_B.pack(pady=0,padx=0,expand=False,side = "top",fill="x")
+        current_color_frame.pack(pady=5,padx=5,expand=False,side = "right",anchor = "e")
+
         draw_circle.pack(pady=5,padx=5,expand=False,side = "top",fill="x")
         draw_line.pack(pady=5,padx=5,expand=False,side = "top",fill="x")
         thickness.pack(pady=5,padx=5,expand=False,side = "top",fill="x")

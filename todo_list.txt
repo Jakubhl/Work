@@ -620,9 +620,10 @@ prohlížeč - když rychle přepínám - projede nejdřív vše v hlavním okn�
 
 dodělat nastavení malování
 
-vrátit oba staré enginy zoomu
+
 přidat možnost nastavit citlivost posouvani
-přidat možnost namalovat cursor doprostred obrazovky
+přidat možnost namalovat cursor doprostred obrazku
+
 kdyz prestane existovat okno nastaveni malovaní - přepnout zpět do dragging modu
 zkusit nastavit otevirani draw setting okna na druhem monitoru když bude připojen
 optimalizovat zoomslider
@@ -630,10 +631,6 @@ aplikace v nastaveni zmen pohne s pozici obrazku
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon
-
-
-
-
 
 
 
