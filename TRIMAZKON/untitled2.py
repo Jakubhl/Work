@@ -40,11 +40,12 @@ def drawing_option_window():
 
         current_color_frame.configure(fg_color = rgb_to_hex((red,green,blue)))
         drawing_color = rgb_to_hex((red,green,blue))
+        line_frame.configure(fg_color = drawing_color)
 
     def update_thickness(*args):
         drawing_thickness = int(*args)
         current_thickness.configure(text = str(drawing_thickness))
-        thickness.configure(height = drawing_thickness)
+        line_frame.configure(height = drawing_thickness)
 
     def switch_draw_mode():
         nonlocal draw_circle
@@ -71,12 +72,15 @@ def drawing_option_window():
     window.title("Možnosti malování")
 
 
-    top_frame =         customtkinter.CTkFrame(master = window,corner_radius=0)
+    top_frame =         customtkinter.CTkFrame(master = window,corner_radius=0,height=120)
     current_color_frame = customtkinter.CTkFrame(master = top_frame,corner_radius=0,border_width=2,height=100,width=100)
-    slider_frame =      customtkinter.CTkFrame(master = top_frame,corner_radius=0)
+    slider_frame =      customtkinter.CTkFrame(master = top_frame,corner_radius=0,width=500)
     top_frame.          pack(pady=0,padx=0,fill="x",expand=False,side = "top")
-    slider_frame.       pack(pady=(10,0),padx=(5,0),fill="x",expand=True,side = "left")
-    current_color_frame.pack(pady=(10,0),padx=10,expand=True,side = "left",anchor = "w")
+    top_frame.pack_propagate(0)
+
+    slider_frame.       pack(pady=(10,0),padx=(5,0),expand=False,side = "left")
+    slider_frame.pack_propagate(0)
+    current_color_frame.pack(pady=(10,0),padx=10,expand=False,side = "left",anchor = "w")
 
     frame_R =           customtkinter.CTkFrame(master = slider_frame,height=20,corner_radius=0,border_width=0)
     color_label =       customtkinter.CTkLabel(master = frame_R,text = "R: ",justify = "left",font=("Arial",16,"bold"))
@@ -114,11 +118,13 @@ def drawing_option_window():
 
     bottom_frame_label = customtkinter.CTkLabel(master = bottom_frame,text = "Nastavení tloušťky čáry:",justify = "left",font=("Arial",18,"bold"),anchor="w")
 
-    thickness_frame = customtkinter.CTkFrame(master = bottom_frame,corner_radius=0,fg_color="#292929") 
+    thickness_frame = customtkinter.CTkFrame(master = bottom_frame,corner_radius=0,fg_color="#292929",height=55) 
     thickness = customtkinter.CTkSlider(master=thickness_frame,width=450,height=15,from_=1,to=50,command= lambda e: update_thickness(e))
     current_thickness = customtkinter.CTkLabel(master = thickness_frame,text = "0",justify = "left",font=("Arial",16,"bold"))
+    line_frame = customtkinter.CTkFrame(master = thickness_frame,corner_radius=0,fg_color="black",height=1,width = 100) 
     thickness.pack(pady=5,padx=5,expand=False,side = "left")
     current_thickness.pack(pady=5,padx=5,expand=False,side = "left")
+    line_frame.pack(pady=5,padx=5,expand=False,side = "left")
     thickness.set(0.0)
 
     cursor_button = customtkinter.CTkButton(master = bottom_frame,text = "Kurzor uprostřed",font=("Arial",22,"bold"),width = 150,height=40,corner_radius=0,command=lambda: clear_canvas())
@@ -131,7 +137,7 @@ def drawing_option_window():
     bottom_frame.pack(pady=0,padx=0,fill="x",expand=False,side = "top")
     bottom_frame_label.pack(pady=5,padx=5,expand=False,side = "top",fill="x",anchor = "w")
     thickness_frame.pack(pady=(5,0),padx=5,expand=False,side = "top",fill="x")
-    thickness_frame.configure(height=80)
+    thickness_frame.pack_propagate(0)
     shape_checkboxes.pack(pady=5,padx=5,expand=False,side = "top",fill="x")
     cursor_button.pack(pady=(20,5),padx=5,expand=False,side = "top",fill="x")
     clear_all.pack(pady=5,padx=5,expand=False,side = "top",fill="x")

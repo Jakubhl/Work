@@ -17,7 +17,7 @@ import sys
 import threading
 import math
 
-testing = True
+testing = False
 if testing:
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")
@@ -2958,6 +2958,7 @@ class Catalogue_gui:
             station_frame.pack(pady=0,padx=0,side = "top",anchor = "w",expand = True)
             station_frame.update_idletasks()
             station_frame_height = station_frame.winfo_height()
+            #musim poslat nejyssi ze trech framu...
             current_st_widget_list.append(station_widget)
             current_st_widget_list.append(camera_widgets)
             current_st_widget_list.append(optics_widgets)

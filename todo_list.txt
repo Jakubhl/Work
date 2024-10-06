@@ -599,6 +599,10 @@ catalogue - u editace optiky při přepínání kameru zůstává manuální vst
 catalogue - možnost zvolit si místo optiky světlo - hotovo
 calatogue - proc se nepise e s hackem? = špatné kódování... - hotovo
 
+11:47 AM 10/6/2024
+dodělat nastavení malování - hotovo
+kdyz prestane existovat okno nastaveni malovaní - přepnout zpět do dragging modu - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -617,15 +621,10 @@ prohlížeč - když smažu - neaktualizuje se pás obrázků
 prohlížeč - pozicování při spuštění přes systém
 prohlížeč - když rychle přepínám - projede nejdřív vše v hlavním okně a pak až projede pás (zkusit přes thread)
 
-
-dodělat nastavení malování
-
-
 přidat možnost nastavit citlivost posouvani
 přidat možnost namalovat cursor doprostred obrazku
 
-kdyz prestane existovat okno nastaveni malovaní - přepnout zpět do dragging modu
-zkusit nastavit otevirani draw setting okna na druhem monitoru když bude připojen
+
 optimalizovat zoomslider
 aplikace v nastaveni zmen pohne s pozici obrazku
 

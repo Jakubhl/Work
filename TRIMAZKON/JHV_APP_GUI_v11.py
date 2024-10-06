@@ -749,12 +749,13 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.name_hide_index = 0
         self.main_image = None
         self.drag_option_binded = False
-        self.drawing_color = "#ffffff"
+        self.drawing_color = "#000000"
         self.drawing_thickness = 5
         self.draw_mode = "line"
         self.x_growth_multiplier = 0.5
         self.y_growth_multiplier = 0.5
         self.zoom_direction = "in"
+        self.image_dimensions = (0,0)
         self.create_widgets()
         self.interrupt = self.interrupt_viewing(self)
         
@@ -1099,18 +1100,12 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         
         self.main_frame.update_idletasks()
         self.main_frame.update()
-
-        # if new_width > self.previous_width or new_height > self.previous_height:
-        #     self.zoom_grow_x = - (max(new_width-self.previous_width,self.previous_width-new_width))
-        #     self.zoom_grow_y = - (max(new_height-self.previous_height,self.previous_height-new_height))
-        # else:
         self.zoom_grow_x = max(new_width-self.previous_width,self.previous_width-new_width)
         self.zoom_grow_y = max(new_height-self.previous_height,self.previous_height-new_height)
         
         self.previous_height = new_height
         self.previous_width = new_width
         self.previous_zoom = zoom
-        print("new_width: ",new_width)
         return [new_width, new_height]
     
     def view_image(self,increment_of_image,direct_path = None,only_refresh=None,reset = False): # Samotné zobrazení obrázku
@@ -1186,6 +1181,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             # displayed_image = customtkinter.CTkImage(rotated_image,size = (dimensions[0],dimensions[1]))
 
             resized = rotated_image.resize(size=(int(dimensions[0]),int(dimensions[1])))
+            self.image_dimensions = (int(dimensions[0]),int(dimensions[1]))
             self.tk_image = ImageTk.PhotoImage(resized)
 
             if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
@@ -1573,10 +1569,22 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
 
     def drawing_option_window(self):
         def close_window(window):
+            self.main_frame.unbind("<Button-1>")
+            self.main_frame.unbind("<B1-Motion>")
+            self.main_frame.unbind("<ButtonRelease-1>")
+            self.main_frame.unbind("<Motion>")
+            self.switch_drawing_mode()
             window.destroy()
         
-        def rgb_to_hex(rgb):
-            return "#%02x%02x%02x" % rgb
+        def rgb_to_hex(rgb,one_color = False):
+            if not one_color:
+                return "#%02x%02x%02x" % rgb
+            elif one_color == "red":
+                return ("#%02x" % rgb) + "0000"
+            elif one_color == "green":
+                return "#00" + ("%02x" % rgb) + "00"
+            elif one_color == "blue":
+                return "#0000" + ("%02x" % rgb)
         
         def hex_to_rgb(hex_color):
             # Remove the '#' character if present
@@ -1586,20 +1594,36 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         
         def update_color(*args):
             nonlocal current_color_frame
-
             red = int(color_R.get())
+            red_hex = rgb_to_hex(red,one_color="red")
             current_color_val.configure(text = str(red))
+            color_R.configure(progress_color = red_hex,button_color = red_hex,button_hover_color = red_hex)
+
             green = int(color_G.get())
+            green_hex = rgb_to_hex(green,one_color="green")
             current_color_val2.configure(text = str(green))
+            color_G.configure(progress_color = green_hex,button_color = green_hex,button_hover_color = green_hex)
+
             blue = int(color_B.get())
+            blue_hex = rgb_to_hex(blue,one_color="blue")
             current_color_val3.configure(text = str(blue))
+            color_B.configure(progress_color = blue_hex,button_color = blue_hex,button_hover_color = blue_hex)
 
             current_color_frame.configure(fg_color = rgb_to_hex((red,green,blue)))
             self.drawing_color = rgb_to_hex((red,green,blue))
+            line_frame.configure(fg_color = self.drawing_color)
+
+        def color_set(rgb):
+            color_R.set(rgb[0])
+            color_G.set(rgb[1])
+            color_B.set(rgb[2])
+            update_color("")
 
         def update_thickness(*args):
             self.drawing_thickness = int(*args)
-
+            current_thickness.configure(text = str(self.drawing_thickness))
+            line_frame.configure(height = self.drawing_thickness)
+        
         def switch_draw_mode():
             nonlocal draw_circle
             nonlocal draw_line
@@ -1614,88 +1638,135 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         def clear_canvas():
             self.main_frame.delete("drawing")
 
+        def draw_cursor(flag = ""):
+            image_center_x = self.image_dimensions[0]/2
+            image_center_y = self.image_dimensions[1]/2
+
+            if flag =="full":
+                cursor_len_x = image_center_x
+                cursor_len_y = image_center_y
+            else:
+                cursor_len_x = 50
+                cursor_len_y = 50
+
+            self.main_frame.create_line(image_center_x-cursor_len_x, image_center_y, image_center_x+cursor_len_x, image_center_y, fill=self.drawing_color,tags="drawing",width=self.drawing_thickness)
+            self.main_frame.create_line(image_center_x, image_center_y-cursor_len_y, image_center_x, image_center_y+cursor_len_y, fill=self.drawing_color,tags="drawing",width=self.drawing_thickness)
+
+
         window = customtkinter.CTkToplevel()
         window.after(200, lambda: window.iconbitmap(app_icon))
         window_height = 500
-        window_width = 700
+        window_width = 620
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
         window.geometry(f"{window_width}x{window_height}+{x+150}+{y+50}")
         window.title("Možnosti malování")
-
-
-
         
-        slider_frame =      customtkinter.CTkFrame(master = window,height=20,corner_radius=0,border_width=1)
-        slider_frame.pack(pady=(10,0),padx=5,fill="x",expand=False,side = "left")
+        top_frame =         customtkinter.CTkFrame(master = window,corner_radius=0,height=120,fg_color="gray10")
+        current_color_frame = customtkinter.CTkFrame(master = top_frame,corner_radius=0,border_width=2,height=100,width=100,fg_color="gray10")
+        slider_frame =      customtkinter.CTkFrame(master = top_frame,corner_radius=0,width=500,fg_color="gray10")
+        top_frame.          pack(pady=0,padx=0,fill="x",expand=False,side = "top")
+        top_frame.          pack_propagate(0)
 
-        frame_R =           customtkinter.CTkFrame(master = slider_frame,height=20,corner_radius=0,border_width=0)
+        slider_frame.       pack(pady=(10,0),padx=(5,0),expand=False,side = "left")
+        slider_frame.       pack_propagate(0)
+        current_color_frame.pack(pady=(10,0),padx=10,expand=False,side = "left",anchor = "w")
+
+        frame_R =           customtkinter.CTkFrame(master = slider_frame,height=20,corner_radius=0,border_width=0,fg_color="gray10")
         color_label =       customtkinter.CTkLabel(master = frame_R,text = "R: ",justify = "left",font=("Arial",16,"bold"))
         color_R =           customtkinter.CTkSlider(master=frame_R,width=400,height=15,from_=0,to=255,command= lambda e: update_color(e))
         current_color_val = customtkinter.CTkLabel(master = frame_R,text = "0",justify = "left",font=("Arial",16,"bold"))
-        color_label.pack(pady=5,padx=5,expand=False,side = "left")
-        color_R.pack(pady=5,padx=5,expand=False,side = "left")
-        current_color_val.pack(pady=5,padx=5,expand=False,side = "left")
+        color_label.        pack(pady=5,padx=5,expand=False,side = "left")
+        color_R.            pack(pady=5,padx=5,expand=False,side = "left")
+        current_color_val.  pack(pady=5,padx=5,expand=False,side = "left")
         color_R.set(0.0)
         
-        frame_G =           customtkinter.CTkFrame(master = slider_frame,height=20,corner_radius=0,border_width=0)
+        frame_G =           customtkinter.CTkFrame(master = slider_frame,height=20,corner_radius=0,border_width=0,fg_color="gray10")
         color_label =       customtkinter.CTkLabel(master = frame_G,text = "G: ",justify = "left",font=("Arial",16,"bold"))
         color_G =           customtkinter.CTkSlider(master=frame_G,width=400,height=15,from_=0,to=255,command= lambda e: update_color(e))
         current_color_val2 = customtkinter.CTkLabel(master = frame_G,text = "0",justify = "left",font=("Arial",16,"bold"))
-        color_label.pack(pady=5,padx=5,expand=False,side = "left")
-        color_G.pack(pady=5,padx=5,expand=False,side = "left")
-        current_color_val2.pack(pady=5,padx=5,expand=False,side = "left")
+        color_label.        pack(pady=5,padx=5,expand=False,side = "left")
+        color_G.            pack(pady=5,padx=5,expand=False,side = "left")
+        current_color_val2. pack(pady=5,padx=5,expand=False,side = "left")
         color_G.set(0.0)
 
-        frame_B =           customtkinter.CTkFrame(master = slider_frame,height=20,corner_radius=0,border_width=0)
+        frame_B =           customtkinter.CTkFrame(master = slider_frame,height=20,corner_radius=0,border_width=0,fg_color="gray10")
         color_label =       customtkinter.CTkLabel(master = frame_B,text = "B: ",justify = "left",font=("Arial",16,"bold"))
         color_B =           customtkinter.CTkSlider(master=frame_B,width=400,height=15,from_=0,to=255,command= lambda e: update_color(e))
         current_color_val3 = customtkinter.CTkLabel(master = frame_B,text = "0",justify = "left",font=("Arial",16,"bold"))
-        color_label.pack(pady=5,padx=5,expand=False,side = "left")
-        color_B.pack(pady=5,padx=5,expand=False,side = "left")
-        current_color_val3.pack(pady=5,padx=5,expand=False,side = "left")
+        color_label.        pack(pady=5,padx=5,expand=False,side = "left")
+        color_B.            pack(pady=5,padx=5,expand=False,side = "left")
+        current_color_val3. pack(pady=5,padx=5,expand=False,side = "left")
         color_B.set(0.0)
 
-        current_color_frame = customtkinter.CTkFrame(master = window,height=50,corner_radius=0)
+        bottom_frame =      customtkinter.CTkFrame(master = window,corner_radius=0,fg_color="gray10") 
+        common_colors =     customtkinter.CTkFrame(master = bottom_frame,corner_radius=0,border_width=0,fg_color="gray10")
+        white_button =      customtkinter.CTkButton(master = common_colors,text="",width = 30,height=30,corner_radius=0,fg_color="#FFFFFF",command=lambda: color_set([255,255,255]))
+        black_button =      customtkinter.CTkButton(master = common_colors,text="",width = 30,height=30,corner_radius=0,fg_color="#000000",command=lambda: color_set([0,0,0]))
+        red_button =        customtkinter.CTkButton(master = common_colors,text="",width = 30,height=30,corner_radius=0,fg_color="#FF0000",command=lambda: color_set([255,0,0]))
+        green_button =      customtkinter.CTkButton(master = common_colors,text="",width = 30,height=30,corner_radius=0,fg_color="#00FF00",command=lambda: color_set([0,255,0]))
+        blue_button =       customtkinter.CTkButton(master = common_colors,text="",width = 30,height=30,corner_radius=0,fg_color="#0000FF",command=lambda: color_set([0,0,255]))
+        white_button.       pack(pady=5,padx=(5,0),expand=False,side = "left")
+        black_button.       pack(pady=5,padx=(5,0),expand=False,side = "left")
+        red_button.         pack(pady=5,padx=(5,0),expand=False,side = "left")
+        green_button.       pack(pady=5,padx=(5,0),expand=False,side = "left")
+        blue_button.        pack(pady=5,padx=(5,0),expand=False,side = "left")
+        common_colors.      pack(pady=0,padx=0,expand=False,side = "top",fill="x")
         
-        draw_circle = customtkinter.CTkCheckBox(master = window, text = "Kruh",command = lambda: switch_draw_mode(),font=("Arial",20))
-        draw_line = customtkinter.CTkCheckBox(master = window, text = "Osa",command = lambda: switch_draw_mode(),font=("Arial",20))
+        shape_checkboxes =  customtkinter.CTkFrame(master = bottom_frame,corner_radius=0,fg_color="gray10") 
+        draw_circle =       customtkinter.CTkCheckBox(master = shape_checkboxes, text = "Kruh",command = lambda: switch_draw_mode(),font=("Arial",20))
+        draw_line =         customtkinter.CTkCheckBox(master = shape_checkboxes, text = "Osa",command = lambda: switch_draw_mode(),font=("Arial",20))
+        draw_circle.        pack(pady=0,padx=5,expand=False,side = "left")
+        draw_line.          pack(pady=0,padx=5,expand=False,side = "left")
+        shape_checkboxes.   pack(pady=15,padx=5,expand=False,side = "top",fill="x")
 
+        bottom_frame_label = customtkinter.CTkLabel(master = bottom_frame,text = "Nastavení tloušťky čáry:",justify = "left",font=("Arial",18,"bold"),anchor="w")
 
-        thickness = customtkinter.CTkSlider(master=window,width=400,height=15,from_=1,to=50,command= lambda e: update_thickness(e))
+        thickness_frame =   customtkinter.CTkFrame(master = bottom_frame,corner_radius=0,fg_color="gray10",height=55) 
+        thickness =         customtkinter.CTkSlider(master=thickness_frame,width=450,height=15,from_=1,to=50,command= lambda e: update_thickness(e))
+        current_thickness = customtkinter.CTkLabel(master = thickness_frame,text = "0",justify = "left",font=("Arial",16,"bold"))
+        line_frame =        customtkinter.CTkFrame(master = thickness_frame,corner_radius=0,fg_color="black",height=1,width = 100) 
+        thickness.          pack(pady=5,padx=5,expand=False,side = "left")
+        current_thickness.  pack(pady=5,padx=5,expand=False,side = "left")
+        line_frame.         pack(pady=5,padx=5,expand=False,side = "left")
+        cursor_frame =      customtkinter.CTkFrame(master = bottom_frame,corner_radius=0,fg_color="gray10",height=55)
+        cursor_button =     customtkinter.CTkButton(master = cursor_frame,text = "Kurzor uprostřed",font=("Arial",22,"bold"),width = 150,height=40,corner_radius=0,command=lambda: draw_cursor())
+        cursor_button2 =    customtkinter.CTkButton(master = cursor_frame,text = "Kurzor uprostřed (celý)",font=("Arial",22,"bold"),width = 150,height=40,corner_radius=0,command=lambda: draw_cursor("full"))
+        cursor_button.      pack(pady=5,padx=5,expand=True,side = "left",fill="x")
+        cursor_button2.     pack(pady=5,padx=5,expand=True,side = "left",fill="x")
 
-        clear_all = customtkinter.CTkButton(master = window,text = "Vyčistit",font=("Arial",22,"bold"),width = 150,height=40,corner_radius=0,command=lambda: clear_canvas())
-
-
-
-        frame_R.pack(pady=0,padx=0,expand=False,side = "top",fill="x")
-        frame_G.pack(pady=0,padx=0,expand=False,side = "top",fill="x")
-        frame_B.pack(pady=0,padx=0,expand=False,side = "top",fill="x")
-        current_color_frame.pack(pady=5,padx=5,expand=False,side = "right",anchor = "e")
-
-        draw_circle.pack(pady=5,padx=5,expand=False,side = "top",fill="x")
-        draw_line.pack(pady=5,padx=5,expand=False,side = "top",fill="x")
-        thickness.pack(pady=5,padx=5,expand=False,side = "top",fill="x")
-        clear_all.pack(pady=5,padx=5,expand=False,side = "top",fill="x")
-
+        clear_all =         customtkinter.CTkButton(master = bottom_frame,text = "Vyčistit",font=("Arial",22,"bold"),width = 150,height=40,corner_radius=0,command=lambda: clear_canvas())
+        frame_R.            pack(pady=0,padx=0,expand=False,side = "top",fill="x")
+        frame_G.            pack(pady=0,padx=0,expand=False,side = "top",fill="x")
+        frame_B.            pack(pady=0,padx=0,expand=False,side = "top",fill="x")
+        bottom_frame.       pack(pady=0,padx=0,fill="x",expand=False,side = "top")
+        bottom_frame_label. pack(pady=5,padx=5,expand=False,side = "top",fill="x",anchor = "w")
+        thickness_frame.    pack(pady=(5,0),padx=5,expand=False,side = "top",fill="x")
+        thickness_frame.    pack_propagate(0)
+        cursor_frame.       pack(pady=(20,5),padx=5,expand=False,side = "top",fill="x")
+        clear_all.          pack(pady=5,padx=10,expand=False,side = "top",fill="x")
         current_color_frame.configure(fg_color = self.drawing_color)
         previous_color = hex_to_rgb(self.drawing_color)
         color_R.set(previous_color[0])
         color_G.set(previous_color[1])
         color_B.set(previous_color[2])
         draw_line.select()
+        thickness.set(self.drawing_thickness)
+        update_thickness(self.drawing_thickness)
+        update_color("")
 
         button_exit = customtkinter.CTkButton(master = window,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
         button_exit.pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
-
         # self.root.bind("<Button-1>",lambda e: close_window(window))
         window.update()
         window.update_idletasks()
-        window.focus_force()
-        window.grab_set()
-        window.grab_release()
-
-        window.focus()
+        window.transient(self.root)
+        window.attributes("-topmost", True)
+        window.attributes("-disabled", False)
+        # window.focus_force()
+        # window.grab_set()
+        # window.grab_release()
+        # window.focus()
 
     def switch_drawing_mode(self,initial = False):
         """
@@ -2121,9 +2192,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     #self.view_image(None,self.converted_images[self.increment_of_ifz_image])  
                 else:
                     self.view_image(self.increment_of_image,None,True)
-            
-
-
+        
         def mouse_wheel2(e): # posouvat obrazky
             direction = -e.delta
             if direction < 0:
