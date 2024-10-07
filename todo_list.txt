@@ -602,6 +602,13 @@ calatogue - proc se nepise e s hackem? = špatné kódování... - hotovo
 11:47 AM 10/6/2024
 dodělat nastavení malování - hotovo
 kdyz prestane existovat okno nastaveni malovaní - přepnout zpět do dragging modu - hotovo
+přidat možnost namalovat cursor doprostred obrazku - hotovo
+
+8:27 AM 10/7/2024
+při aplikování nastavení si aplikace pamatuje poslední zoom a souřadnice - hotovo
+přidat možnost nastavit citlivost posouvani - hotovo
+ip setting - doubleclick na připojení + prohodit levé/ pravé - hotovo
+ip setting - delete uvniř poznamek smaze cely projekt - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -609,24 +616,17 @@ ________________________________________________________________________________
 catalogue - mít možnost kopírovat předešlý projekt
 catalogue - mít možnost přepnout mezi zobrazovanými daty
 catalogue - možnost ke stanici přiřadit fotku - tlačítko - nový list - načíst fotku
-catalogue - dodělat adaptaci velikosti widgetů v závislosti na detailním zobrazení
+catalogue - dodělat adaptaci velikosti widgetů v závislosti na detailním zobrazení - chyba kdyz je vic kamer - musím počítat optiku zvlášť pro každou kameru nebo počet acc...
 catalogue - proc refresh project widgets když přepínám v okně editu
 
-
-ip setting - delete uvniř poznamek smaze cely projekt
-ip setting - doubleclick na připojení + prohodit levé/ pravé
+catalogue - když nový kopmonent rozhodí to slider - vrátit zpět na pozici
 
 TRIMAZKON - kontrola spuštěné aplikace - neotevírat více oken když klikám na více obrázků mimo aplikaci
 prohlížeč - když smažu - neaktualizuje se pás obrázků
 prohlížeč - pozicování při spuštění přes systém
 prohlížeč - když rychle přepínám - projede nejdřív vše v hlavním okně a pak až projede pás (zkusit přes thread)
 
-přidat možnost nastavit citlivost posouvani
-přidat možnost namalovat cursor doprostred obrazku
 
-
-optimalizovat zoomslider
-aplikace v nastaveni zmen pohne s pozici obrazku
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon

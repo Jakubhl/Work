@@ -1126,7 +1126,7 @@ class Catalogue_gui:
         self.default_subwindow_status = default_subwindow_status # 0 = minimalized, 1 = maximalized
         self.changes_made = False
         self.optic_light_option = "optic"
-        self.detailed_view = True
+        self.detailed_view = False
         self.widget_list = [] #lists of every widget by station
         self.read_database()
         self.create_main_widgets(initial=True)
@@ -2753,6 +2753,37 @@ class Catalogue_gui:
             """
             sets all widget heights accordingly to station frame
             """
+            station_cnt =0
+            camera_cnt =0
+            optics_cnt =0
+            controller_cnt =0
+            acc_cnt   =0
+            try: 
+                station_cnt = len(widget_list[0])
+            except Exception:
+                pass
+            try: 
+                camera_cnt  = len(widget_list[1])
+            except Exception:
+                pass
+            try: 
+                optics_cnt  = len(widget_list[2])
+            except Exception:
+                pass
+            try: 
+                controller_cnt = len(widget_list[3])
+            except Exception:
+                pass
+            try: 
+                acc_cnt = len(widget_list[4])
+            except Exception:
+                pass
+            print("station count: ",station_cnt)
+            print("camera_cnt: ",camera_cnt)
+            print("optics_cnt: ",optics_cnt)
+            print("controller_cnt: ",controller_cnt)
+            print("acc_cnt: ",acc_cnt)
+
             if station_frame_height < 50:
                 station_frame_height = 50
 
@@ -2772,6 +2803,7 @@ class Catalogue_gui:
         
             
             # max_widget_count = max(get_widget_count())
+            current_index = 0
             for widgets in widget_list:
                 if isinstance(widgets,list):
                     len_of_array = len(widgets)
@@ -2779,15 +2811,24 @@ class Catalogue_gui:
                         new_height = station_frame_height/ len_of_array
                         item_count = 0
                         for items in widgets:
+                            # items.configure(height=new_height)
+                            # items.propagate(0)
                             item_count +=1
                             if item_count == 1:
                                 items.configure(height=new_height)
                             else:
-                                items.configure(height=new_height)
-                else:
-                    widgets.configure(height = station_frame_height+max_widgets*10)
-                    widgets.pack_configure(fill = "y",expand = True)
+                                items.configure(height=new_height-10)
 
+                            items.pack_configure(fill = "both",expand = True)
+                
+                else:
+                    widgets.configure(height = station_frame_height)
+                    widgets.propagate(0)
+                    widgets.pack_configure(fill = "y",expand = True)
+                    # widgets.update_idletasks()
+                    
+                
+                current_index +=1
             # for frames in frame_list:
             #     height_frame = []
             #     frames.update_idletasks()
@@ -2814,7 +2855,8 @@ class Catalogue_gui:
             station_camera_list = self.station_list[i]["camera_list"]
             camera_count = len(station_camera_list)
 
-            station_frame = customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,border_width=0)
+            station_frame = customtkinter.CTkFrame(master=self.project_tree,corner_radius=0,border_width=1)
+            station_frame.pack(pady=0,padx=0,side = "top",anchor = "w",expand = True)
 
             station_widget = self.make_block(master_widget=station_frame,height=default_height,width=self.default_block_width,fg_color="#181818",side = "left",text=station_name,tier=station_tier,fill="y")
             if self.detailed_view:
@@ -2832,19 +2874,20 @@ class Catalogue_gui:
             controllers_widgets = []
             accessory_widgets = []
             camera_frame_made = False
-            optic_frame_made = False
-            
+            main_camera_opt_frame = None
+            main_controller_acc_frame = None
+
             if camera_count > 1:
                 main_camera_opt_frame = customtkinter.CTkFrame(master=station_frame,corner_radius=0,border_width=0,fg_color="#181818")
-                main_camera_opt_frame.pack(pady=0,padx=0,side = "left",fill="y")
+                main_camera_opt_frame.pack(pady=0,padx=0,side = "left",anchor="w",expand = False)
 
             for x in range(0,camera_count):
                 if camera_count > 1:
                     camera_frame = customtkinter.CTkFrame(master=main_camera_opt_frame,corner_radius=0,border_width=0,fg_color="#181818") # frame with camera left and optics left and top
-                    camera_frame.pack(pady=0,padx=0,side = "top")
+                    camera_frame.pack(pady=0,padx=0,side = "top",anchor = "w",expand = False)
                 else:
                     camera_frame = customtkinter.CTkFrame(master=station_frame,corner_radius=0,border_width=0,fg_color="#181818") # frame with camera left and optics left and top
-                    camera_frame.pack(pady=0,padx=0,side = "left",fill="y")
+                    camera_frame.pack(pady=0,padx=0,side = "left",expand = True)
 
                 camera_type = station_camera_list[x]["type"]
                 try:
@@ -2864,15 +2907,15 @@ class Catalogue_gui:
                     camera_tier =  station_tier + str(x) #0101-9999
 
                 camera_widget = self.make_block(master_widget=camera_frame,height=default_height,width=self.default_block_width,fg_color=controller_color,side = "left",text=camera_type,tier = camera_tier)
-                
                 camera_widgets.append(camera_widget)
                 if self.detailed_view:
                     self.switch_widget_info("",camera_tier,camera_widget)
                 
                 # creating optics for camera x------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                 if optic_count == 0:
-                    dummy_opt = self.make_block(master_widget=station_frame,height=default_height-5,width=self.default_block_width,fg_color="#181818",side = "left",text="",dummy_block=True)
+                    dummy_opt = self.make_block(master_widget=camera_frame,height=default_height-5,width=self.default_block_width,fg_color="#181818",side = "left",text="",dummy_block=True)
                 camera_optics_widgets = []
+                optic_frame_made =False
                 for y in range(0,optic_count):
                     optic_type = station_camera_optic_list[y]["type"]
                     if y < 10:
@@ -2885,30 +2928,27 @@ class Catalogue_gui:
                         optic_type = "💡 "+ optic_type
                         self.station_list[i]["camera_list"][x]["optics_list"][y]["light_status"] = 1
                 
-                    if optic_count > 1:
-                        optic_widget = self.make_block(master_widget=camera_frame,height=default_height,width=self.default_block_width,fg_color="#181818",side = "top",text=optic_type,tier=optic_tier,border_color=widget_border_color,anchor="e")
+                    if optic_count > 1 and optic_frame_made == False:
+                        optics_frame = customtkinter.CTkFrame(master=camera_frame,corner_radius=0,border_width=0,fg_color="#181818")
+                        optics_frame.pack(pady=0,padx=0,side = "left",anchor = "w")
+
+                        optic_frame_made=True
+
+                    #     optic_widget = self.make_block(master_widget=camera_frame,height=default_height,width=self.default_block_width,fg_color="#181818",side = "top",text=optic_type,tier=optic_tier,border_color=widget_border_color,anchor="e")
+                    # else:
+                    if optic_frame_made:
+                        optic_widget = self.make_block(master_widget=optics_frame,height=default_height,width=self.default_block_width,fg_color="#181818",side = "top",text=optic_type,tier=optic_tier,border_color=widget_border_color,anchor="e")
                     else:
                         optic_widget = self.make_block(master_widget=camera_frame,height=default_height,width=self.default_block_width,fg_color="#181818",side = "left",text=optic_type,tier=optic_tier,border_color=widget_border_color,anchor="e")
+
                     # camera_optics_widgets.append(optic_widget)
                     if self.detailed_view:
                         self.switch_widget_info("",optic_tier,optic_widget)
-                
                     optics_widgets.append(optic_widget)
-            
-            if camera_count > 1:
-                main_controller_acc_frame = customtkinter.CTkFrame(master=station_frame,corner_radius=0,border_width=0,fg_color="#181818")
-                main_controller_acc_frame.pack(pady=0,padx=0,side = "left",fill="y")
-                
-            for x in range(0,camera_count):
-                # CONTROLLERS and accessories ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                if camera_count > 1:
-                    controller_frame = customtkinter.CTkFrame(master=main_controller_acc_frame,corner_radius=0,border_width=0,fg_color="#181818") # frame with camera left and optics left and top
-                    controller_frame.pack(pady=0,padx=0,side = "top")
-                else:
-                    controller_frame = customtkinter.CTkFrame(master=station_frame,corner_radius=0,border_width=0,fg_color="#181818") # frame with camera left and optics left and top
-                    controller_frame.pack(pady=0,padx=0,side = "left",fill="y")
-                accessory_count = 0
+
                 if controller_index != None:
+                    controller_frame = customtkinter.CTkFrame(master=camera_frame,corner_radius=0,border_width=0,fg_color="#181818") # frame with camera left and optics left and top
+                    controller_frame.pack(pady=0,padx=0,side = "left",anchor = "w")
                     if controller_index < 10:
                         controller_tier =  camera_tier + "c0" + str(controller_index) #xxxxc01-xxxxc99
                     else:
@@ -2919,7 +2959,7 @@ class Catalogue_gui:
                         controller_color = "#181818"
 
                     controller_widget = self.make_block(master_widget=controller_frame,height=default_height,width=self.default_block_width,fg_color=controller_color,
-                                    side = "left",text=self.controller_object_list[controller_index]["type"],tier = controller_tier)
+                                    side = "left",text=self.controller_object_list[controller_index]["type"],tier = controller_tier,anchor="w")
 
                     if self.detailed_view:
                         self.switch_widget_info("",controller_tier,controller_widget)
@@ -2935,19 +2975,78 @@ class Catalogue_gui:
                             accessory_tier =  controller_tier + str(x) #xxxxc0101-xxxxc9999
 
                         if accessory_count > 1:
-                            accessory_widget = self.make_block(master_widget=controller_frame,height=default_height,width=self.default_block_width,fg_color="#181818",side = "top",text=accessory_type,tier = accessory_tier, anchor="e")
+                            accessory_widget = self.make_block(master_widget=controller_frame,height=default_height,width=self.default_block_width,fg_color="#181818",side = "top",text=accessory_type,tier = accessory_tier, anchor="w")
                         else:
-                            accessory_widget = self.make_block(master_widget=controller_frame,height=default_height,width=self.default_block_width,fg_color="#181818",side = "left",text=accessory_type,tier = accessory_tier,anchor="e",fill="y")
+                            accessory_widget = self.make_block(master_widget=controller_frame,height=default_height,width=self.default_block_width,fg_color="#181818",side = "left",text=accessory_type,tier = accessory_tier,anchor="w")
                         
                         if self.detailed_view:
                             self.switch_widget_info("",accessory_tier,accessory_widget)
                         accessory_widgets.append(accessory_widget)
 
                     if accessory_count == 0:
-                        dummy_acc =     self.make_block(master_widget=station_frame,height=default_height-5,width=self.default_block_width,fg_color="#181818",side = "left",text="",dummy_block=True)
+                        dummy_acc =     self.make_block(master_widget=controller_frame,height=default_height-5,width=self.default_block_width,fg_color="#181818",side = "left",text="",dummy_block=True)
+
                 else:   
-                    dummy_controller =  self.make_block(master_widget=station_frame,height=default_height-5,width=self.default_block_width,fg_color="#181818",side = "left",text="",dummy_block=True)
-                    dummy_acc =         self.make_block(master_widget=station_frame,height=default_height-5,width=self.default_block_width,fg_color="#181818",side = "left",text="",dummy_block=True)
+                    dummy_controller =  self.make_block(master_widget=controller_frame,height=default_height-5,width=self.default_block_width,fg_color="#181818",side = "left",text="",dummy_block=True)
+                    dummy_acc =         self.make_block(master_widget=controller_frame,height=default_height-5,width=self.default_block_width,fg_color="#181818",side = "left",text="",dummy_block=True)
+            
+            try:
+                camera_frame.update_idletasks()
+            except Exception:
+                pass
+            # if camera_count > 1:
+            #     main_controller_acc_frame = customtkinter.CTkFrame(master=station_frame,corner_radius=0,border_width=0,fg_color="#181818")
+            #     main_controller_acc_frame.pack(pady=0,padx=0,side = "left",fill="y")
+                
+            # for x in range(0,camera_count):
+            #     # CONTROLLERS and accessories ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+            #     if camera_count > 1:
+            #         controller_frame = customtkinter.CTkFrame(master=main_controller_acc_frame,corner_radius=0,border_width=0,fg_color="#181818") # frame with camera left and optics left and top
+            #         controller_frame.pack(pady=0,padx=0,side = "top")
+            #     else:
+            #         controller_frame = customtkinter.CTkFrame(master=station_frame,corner_radius=0,border_width=0,fg_color="#181818") # frame with camera left and optics left and top
+            #         controller_frame.pack(pady=0,padx=0,side = "left",fill="y")
+            #     accessory_count = 0
+            #     if controller_index != None:
+            #         if controller_index < 10:
+            #             controller_tier =  camera_tier + "c0" + str(controller_index) #xxxxc01-xxxxc99
+            #         else:
+            #             controller_tier =  camera_tier + "c" + str(controller_index) #xxxxc01-xxxxc99
+            #         self.controller_object_list[controller_index]["detailed_name"] = str(self.controller_object_list[controller_index]["name"]) + "(" + str(self.controller_object_list[controller_index]["type"]) + ")"
+            #         controller_color = self.controller_object_list[controller_index]["color"]
+            #         if controller_color == "": # nebyla zvolena žádná barva
+            #             controller_color = "#181818"
+
+            #         controller_widget = self.make_block(master_widget=controller_frame,height=default_height,width=self.default_block_width,fg_color=controller_color,
+            #                         side = "left",text=self.controller_object_list[controller_index]["type"],tier = controller_tier)
+
+            #         if self.detailed_view:
+            #             self.switch_widget_info("",controller_tier,controller_widget)
+            #         controllers_widgets.append(controller_widget)
+                    
+            #         accessory_list = self.controller_object_list[controller_index]["accessory_list"]
+            #         accessory_count = len(accessory_list)
+            #         for x in range(0,accessory_count):
+            #             accessory_type = accessory_list[x]["type"]
+            #             if x < 10:
+            #                 accessory_tier =  controller_tier + "0" + str(x) #xxxxc0101-xxxxc9999
+            #             else:
+            #                 accessory_tier =  controller_tier + str(x) #xxxxc0101-xxxxc9999
+
+            #             if accessory_count > 1:
+            #                 accessory_widget = self.make_block(master_widget=controller_frame,height=default_height,width=self.default_block_width,fg_color="#181818",side = "top",text=accessory_type,tier = accessory_tier, anchor="e")
+            #             else:
+            #                 accessory_widget = self.make_block(master_widget=controller_frame,height=default_height,width=self.default_block_width,fg_color="#181818",side = "left",text=accessory_type,tier = accessory_tier,anchor="e",fill="y")
+                        
+            #             if self.detailed_view:
+            #                 self.switch_widget_info("",accessory_tier,accessory_widget)
+            #             accessory_widgets.append(accessory_widget)
+
+            #         if accessory_count == 0:
+            #             dummy_acc =     self.make_block(master_widget=station_frame,height=default_height-5,width=self.default_block_width,fg_color="#181818",side = "left",text="",dummy_block=True)
+            #     else:   
+            #         dummy_controller =  self.make_block(master_widget=station_frame,height=default_height-5,width=self.default_block_width,fg_color="#181818",side = "left",text="",dummy_block=True)
+            #         dummy_acc =         self.make_block(master_widget=station_frame,height=default_height-5,width=self.default_block_width,fg_color="#181818",side = "left",text="",dummy_block=True)
 
 
 
@@ -2955,14 +3054,21 @@ class Catalogue_gui:
             # current_st_widget_list.append(optics_widgets)
             # current_st_widget_list.append(controllers_widgets)
             # current_st_widget_list.append(accessory_widgets)
-            station_frame.pack(pady=0,padx=0,side = "top",anchor = "w",expand = True)
+            try:
+                main_camera_opt_frame.update_idletasks()
+            except Exception:
+                pass
             station_frame.update_idletasks()
-            station_frame_height = station_frame.winfo_height()
-            #musim poslat nejyssi ze trech framu...
+            station_frame.update()
             current_st_widget_list.append(station_widget)
             current_st_widget_list.append(camera_widgets)
             current_st_widget_list.append(optics_widgets)
-            upgrade_widget_heights(station_frame_height,current_st_widget_list)
+            current_st_widget_list.append(controllers_widgets)
+            current_st_widget_list.append(accessory_widgets)
+            try:
+                upgrade_widget_heights(station_frame._current_height,main_camera_opt_frame._current_height,current_st_widget_list)
+            except Exception:
+                upgrade_widget_heights(station_frame._current_height,None,current_st_widget_list)
 
 class Save_excel:
     def __init__(self,root,station_list,project_name,excel_name,controller_list,console):

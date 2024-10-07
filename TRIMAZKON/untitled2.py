@@ -1,4 +1,126 @@
+
 import customtkinter
+import psutil 
+import os
+import pywintypes
+import win32pipe, win32file
+
+import win32pipe
+import win32file
+import threading
+import time
+
+def server():
+    pipe_name = r'\\.\pipe\YourPipeName'
+    
+    pipe = win32pipe.CreateNamedPipe(
+        pipe_name,
+        win32pipe.PIPE_ACCESS_DUPLEX,
+        win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_READMODE_MESSAGE | win32pipe.PIPE_WAIT,
+        1,
+        512,
+        512,
+        0,
+        None
+    )
+
+    print("Waiting for a client to connect...")
+    win32pipe.ConnectNamedPipe(pipe, None)
+    print("Client connected.")
+
+    # Example of reading from the pipe
+    while True:
+        hr, data = win32file.ReadFile(pipe, 64*1024)
+        print(f"Received: {data.decode()}")
+        time.sleep(1)  # Keep the server running
+
+def client():
+    time.sleep(1)  # Wait for the server to start
+    pipe_name = r'\\.\pipe\YourPipeName'
+
+    handle = win32file.CreateFile(
+        pipe_name,
+        win32file.GENERIC_READ | win32file.GENERIC_WRITE,
+        0,
+        None,
+        win32file.OPEN_EXISTING,
+        0,
+        None
+    )
+
+    print("Connected to server.")
+    message = "Hello from client!"
+    win32file.WriteFile(handle, message.encode())
+    print("Message sent.")
+
+# Start the server in a separate thread
+threading.Thread(target=server, daemon=True).start()
+client()
+
+kk=input("nenee")
+
+def start_pipe_server(pipe_name):
+    pipe_name = f'\\\\.\\pipe\\{pipe_name}'
+    print(pipe_name)
+    # Create a named pipe
+    pipe = win32pipe.CreateNamedPipe(
+        pipe_name,
+        win32pipe.PIPE_ACCESS_DUPLEX,
+        win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_READMODE_MESSAGE | win32pipe.PIPE_WAIT,
+        1,  # max instances
+        512,  # output buffer size
+        512,  # input buffer size
+        0,  # default timeout
+        None  # default security attributes
+    )
+    return pipe
+
+    
+    # Now you can read from or write to the pipe
+pid = os.getpid()
+pipe_name = f"mypipe_{pid}"
+pipe = start_pipe_server(pipe_name)
+
+print("Waiting for a client to connect...")
+win32pipe.ConnectNamedPipe(pipe, None)
+print("server started:",pipe_name)
+
+
+
+def check_if_running():
+    pid = 0
+    num_of_apps = 0
+    for process in psutil.process_iter(['pid', 'name']):
+        print(process.info['pid'])
+        if process.info['name'] == "untitled2.exe":
+            if pid == 0:
+                pid = process.info['pid']
+            num_of_apps+=1
+
+    
+    return [num_of_apps,pid]
+
+
+def send_to_pipe(pipe_name, data):
+    handle = win32file.CreateFile(
+        rf'\\.\pipe\{pipe_name}',
+        win32file.GENERIC_WRITE,
+        0, None,
+        win32file.OPEN_EXISTING,
+        0, None
+    )
+    win32file.WriteFile(handle, data.encode())
+    win32file.CloseHandle(handle)
+
+checking = check_if_running()
+print("run_status SYSTEM",checking)
+
+if checking[0]>1:
+    pid = checking[1]
+    pipe_name = f"mypipe_{pid}"
+    send_to_pipe(pipe_name, "Hello to process!")
+
+
 
 def drawing_option_window():
     def close_window(window):
@@ -161,5 +283,5 @@ def drawing_option_window():
 
     window.focus()
 
-drawing_option_window()
+# drawing_option_window()
 k = input("jojojoj")

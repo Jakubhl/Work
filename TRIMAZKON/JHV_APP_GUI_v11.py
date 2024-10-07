@@ -32,6 +32,7 @@ def path_check(path_raw,only_repair = None):
         return path
 
 initial_path = path_check(os.getcwd())
+
 if len(sys.argv) > 1: #spousteni pres cmd
     raw_path = str(sys.argv[0])
     initial_path = path_check(raw_path,True)
@@ -39,6 +40,9 @@ if len(sys.argv) > 1: #spousteni pres cmd
     initial_path = ""
     for i in range(0,len(initial_path_splitted)-2):
         initial_path += str(initial_path_splitted[i])+"/"
+
+
+    print("SYSTEM: ",sys.argv)
 
 #pro pripad vypisovani do konzole z exe:
 # sys.stdout = sys.__stdout__
@@ -667,6 +671,7 @@ class main_menu:
         # initial promenna aby se to nespoustelo porad do kola pri navratu do menu
         if len(sys.argv) > 1 and initial == True:
             raw_path = str(sys.argv[1])
+            #klik na spusteni trimazkonu s admin právy
             if sys.argv[0] == sys.argv[1]:
                 self.call_ip_manager()
             else: 
@@ -680,7 +685,6 @@ class main_menu:
                 self.root.update()
                 selected_image = IB_as_def_browser_path_splitted[len(IB_as_def_browser_path_splitted)-2]
                 self.call_view_option(IB_as_def_browser_path,selected_image)
-
         self.root.mainloop()
 
 class Image_browser: # Umožňuje procházet obrázky a přitom například vybrané přesouvat do jiné složky
@@ -690,7 +694,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
     - umožňuje: měnit rychlost přehrávání, přiblížení, otočení obrázku
     - reaguje na klávesové zkratky
     """
-    def __init__(self,root,IB_as_def_browser_path = None,selected_image = "",path_given = ""):
+    def __init__(self,root,IB_as_def_browser_path = None,selected_image = "",path_given = "",params_given = None):
         self.root = root
         self.path_given = path_given
         self.IB_as_def_browser_path = IB_as_def_browser_path
@@ -712,14 +716,14 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             self.move_dir = list_of_dir_names[6]
             self.chosen_option = text_file_data[11][0]
             self.zoom_increment = text_file_data[11][1]
-            self.zoom_movement = text_file_data[11][2]
+            self.drag_increment = text_file_data[11][2]
             self.number_of_film_images = text_file_data[14]
         else:
             self.move_dir = "Přesunuté_obrázky"
             self.copy_dir = "Kopírované_obrázky"
             self.chosen_option = 1
             self.zoom_increment = 25
-            self.zoom_movement = 150
+            self.drag_increment = 40
             self.number_of_film_images = 5
 
         self.image_browser_path = ""
@@ -737,7 +741,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.default_path = ""
         self.previous_height = 0
         self.previous_width = 0
-        self.drag_increment = 40
         if text_file_data[13] == "ne":
             self.image_film = False
         else:
@@ -754,8 +757,17 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.draw_mode = "line"
         self.x_growth_multiplier = 0.5
         self.y_growth_multiplier = 0.5
-        self.zoom_direction = "in"
         self.image_dimensions = (0,0)
+        self.last_coords = (0,0)
+        self.zoom_given = 100
+        self.settings_applied = False
+        if params_given != None:
+            print("params given",params_given)
+            coords_given = params_given[0]
+            zoom_given = params_given[1]
+            self.last_coords = coords_given
+            self.zoom_given = zoom_given
+            self.settings_applied = True
         self.create_widgets()
         self.interrupt = self.interrupt_viewing(self)
         
@@ -1195,9 +1207,15 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     self.zoom_grow_x=0
                     self.zoom_grow_y=0
 
-                x_coords, y_coords = check_image_growth_boundaries()
+                if not self.settings_applied:
+                    x_coords, y_coords = check_image_growth_boundaries()
+                else:
+                    x_coords, y_coords = self.last_coords
+                    self.settings_applied = False
+
                 self.main_image = self.main_frame.create_image(x_coords, y_coords,
                                                                anchor=tk.NW, image=self.tk_image,tag = "lower")
+                self.last_coords = (x_coords,y_coords)
                 self.main_frame.tag_lower(self.main_image)
                 self.main_frame.update()
 
@@ -1701,11 +1719,11 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
 
         bottom_frame =      customtkinter.CTkFrame(master = window,corner_radius=0,fg_color="gray10") 
         common_colors =     customtkinter.CTkFrame(master = bottom_frame,corner_radius=0,border_width=0,fg_color="gray10")
-        white_button =      customtkinter.CTkButton(master = common_colors,text="",width = 30,height=30,corner_radius=0,fg_color="#FFFFFF",command=lambda: color_set([255,255,255]))
-        black_button =      customtkinter.CTkButton(master = common_colors,text="",width = 30,height=30,corner_radius=0,fg_color="#000000",command=lambda: color_set([0,0,0]))
-        red_button =        customtkinter.CTkButton(master = common_colors,text="",width = 30,height=30,corner_radius=0,fg_color="#FF0000",command=lambda: color_set([255,0,0]))
-        green_button =      customtkinter.CTkButton(master = common_colors,text="",width = 30,height=30,corner_radius=0,fg_color="#00FF00",command=lambda: color_set([0,255,0]))
-        blue_button =       customtkinter.CTkButton(master = common_colors,text="",width = 30,height=30,corner_radius=0,fg_color="#0000FF",command=lambda: color_set([0,0,255]))
+        white_button =      customtkinter.CTkButton(master = common_colors,text="",width = 30,height=30,corner_radius=0,border_width=1,fg_color="#FFFFFF",command=lambda: color_set([255,255,255]))
+        black_button =      customtkinter.CTkButton(master = common_colors,text="",width = 30,height=30,corner_radius=0,border_width=1,fg_color="#000000",command=lambda: color_set([0,0,0]))
+        red_button =        customtkinter.CTkButton(master = common_colors,text="",width = 30,height=30,corner_radius=0,border_width=1,fg_color="#FF0000",command=lambda: color_set([255,0,0]))
+        green_button =      customtkinter.CTkButton(master = common_colors,text="",width = 30,height=30,corner_radius=0,border_width=1,fg_color="#00FF00",command=lambda: color_set([0,255,0]))
+        blue_button =       customtkinter.CTkButton(master = common_colors,text="",width = 30,height=30,corner_radius=0,border_width=1,fg_color="#0000FF",command=lambda: color_set([0,0,255]))
         white_button.       pack(pady=5,padx=(5,0),expand=False,side = "left")
         black_button.       pack(pady=5,padx=(5,0),expand=False,side = "left")
         red_button.         pack(pady=5,padx=(5,0),expand=False,side = "left")
@@ -1855,8 +1873,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                                 self.main_frame.coords(self.main_image,current_coords[0],current_coords[1]-self.drag_increment)
                             else:
                                 self.main_frame.coords(self.main_image,current_coords[0],-(self.tk_image.height()-self.main_frame.winfo_height()))
-                                
+                    
                     self.main_frame.update()
+                    self.last_coords = self.main_frame.coords(self.main_image) 
                     return
 
                 self.main_frame.bind("<Motion>", get_direction)
@@ -1871,7 +1890,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
 
                 self.main_frame.bind("<ButtonRelease-1>",end_func)
             self.main_frame.bind("<Button-1>",mouse_clicked)
-
 
         if initial:
             bind_image_dragging()
@@ -1893,7 +1911,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 path_to_send = self.all_images[self.increment_of_image]
             else:
                 path_to_send = self.all_images[self.increment_of_image]
-            Advanced_option(self.root,windowed=True,spec_location="image_browser", path_to_remember = path_to_send)
+            Advanced_option(self.root,windowed=True,spec_location="image_browser", path_to_remember = path_to_send,last_params = [self.last_coords,self.zoom_slider.get()])
         
         self.frame_with_path =          customtkinter.CTkFrame(master=self.root,height = 200,corner_radius=0)
         self.background_frame =         customtkinter.CTkFrame(master=self.root,corner_radius=0)
@@ -2001,8 +2019,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.changable_image_num.bind("<Return>",jump_to_image)
 
         # nastaveni defaultnich hodnot slideru
-        self.zoom_slider.set(100)
-        self.update_zoom_slider(100)
+        self.zoom_slider.set(self.zoom_given)
+        self.update_zoom_slider(self.zoom_given)
         self.speed_slider.set(100)
         self.update_speed_slider(100)
 
@@ -2161,14 +2179,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.y_growth_multiplier = -((e.y/(frame_height/2))/2)
                 if direction > 0:
                     self.y_growth_multiplier = self.y_growth_multiplier *(-1)
-
-            print("xmul",self.x_growth_multiplier)
-            print("ymul",self.y_growth_multiplier)
-                
             
             if direction < 0:
                 direction = "in"
-                self.zoom_direction = "in"
                 new_value = self.zoom_slider.get()+self.zoom_increment
                 if self.zoom_slider._to >= new_value:
                     self.zoom_slider.set(new_value)
@@ -2177,7 +2190,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     self.zoom_slider.set(self.zoom_slider._to) # pro pripad, ze by zbyvalo mene nez 5 do maxima 
             else:
                 direction = "out"
-                self.zoom_direction = "out"
                 new_value = self.zoom_slider.get()-self.zoom_increment
                 if self.zoom_slider._from_ <= new_value:
                     self.zoom_slider.set(new_value)
@@ -2260,9 +2272,10 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
     """
     Umožňuje nastavit základní parametry, které ukládá do textového souboru
     """
-    def __init__(self,root,windowed=None,spec_location=None,path_to_remember = None):
+    def __init__(self,root,windowed=None,spec_location=None,path_to_remember = None,last_params = None):
         self.spec_location = spec_location
         self.path_to_remember = path_to_remember
+        self.ib_last_params = last_params
         print("image_path: ",self.path_to_remember)
         self.windowed = windowed
         self.root = root
@@ -2338,7 +2351,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         self.clear_frame(self.current_root)
         self.current_root.destroy()
         if self.spec_location == "image_browser":
-            Image_browser(self.root,self.path_to_remember)
+            Image_browser(self.root,self.path_to_remember,params_given=self.ib_last_params)
         elif self.spec_location == "converting_option":
             Converting_option(self.root)
         elif self.spec_location == "deleting_option":
@@ -2657,7 +2670,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 write_text_file_data(writeable_param,"image_browser_param_set")
                 label_IB4.configure(text = str(int(*args)) + " %")
 
-        def update_zoom_movement_slider(*args):
+        def update_drag_movement_slider(*args):
             self.text_file_data = read_text_file_data()
             if self.text_file_data[11][2] != int(*args):
                 writeable_param = [self.text_file_data[11][0],self.text_file_data[11][1],int(*args)]
@@ -2929,8 +2942,8 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             label_IB4 =                 customtkinter.CTkLabel(master = second_option_frame,height=20,text = text_increment,justify = "left",font=("Arial",20))
             third_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
             third_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
-            label_IB5 =                 customtkinter.CTkLabel(master = third_option_frame,height=20,text = "3. Nastavte velikost kroku při posouvání přibližováním kolečkem myši:",justify = "left",font=("Arial",22,"bold"))
-            zoom_movement_set =         customtkinter.CTkSlider(master=third_option_frame,width=300,height=15,from_=50,to=300,number_of_steps= 5,command= update_zoom_movement_slider)
+            label_IB5 =                 customtkinter.CTkLabel(master = third_option_frame,height=20,text = "3. Nastavte velikost kroku při posouvání levým tlačítkem myši:",justify = "left",font=("Arial",22,"bold"))
+            zoom_movement_set =         customtkinter.CTkSlider(master=third_option_frame,width=300,height=15,from_=10,to=100,number_of_steps= 18,command= update_drag_movement_slider)
             label_IB6 =                 customtkinter.CTkLabel(master = third_option_frame,height=20,text = text_movement,justify = "left",font=("Arial",20))
             forth_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
             forth_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")

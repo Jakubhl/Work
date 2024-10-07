@@ -1167,8 +1167,11 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 add_colored_line(self.main_console,status_text,"green",None,True)
 
     def delete_project(self,wanted_project=None,silence=None,button_trigger = False,flag="",del_favourite=False):
+        if "!ctktextbox" in str(self.root.focus_get()):
+            return
+        
         project_found = False
-        name_list = [] 
+        name_list = []
 
         def check_multiple_projects(window):
             nonlocal wanted_project
@@ -2318,12 +2321,14 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             for x in range(0,len(self.all_rows[y])):
                 if x == 0: # frame s názvem projektu
                     btn_frame = customtkinter.CTkFrame(master=column1,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)
-                    button =    customtkinter.CTkButton(master = btn_frame,width = 200,height=40,text = self.all_rows[y][x],font=("Arial",20,"bold"),corner_radius=0, command = lambda widget_id = y: self.change_computer_ip(widget_id))
+                    # button =    customtkinter.CTkButton(master = btn_frame,width = 200,height=40,text = self.all_rows[y][x],font=("Arial",20,"bold"),corner_radius=0, command = lambda widget_id = y: self.change_computer_ip(widget_id))
+                    button =    customtkinter.CTkButton(master = btn_frame,width = 200,height=40,text = self.all_rows[y][x],font=("Arial",20,"bold"),corner_radius=0)
                     button.     pack(padx =5,pady = 5, fill= "x")
                     btn_frame.  pack(side = "top",anchor = "w",expand = False,fill= "x")
                     button.     bind("<Button-1>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
-                    # zkopírovat pravým klikem na button:
-                    button.     bind("<Button-3>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
+                    # připojit bud pravým klikem nebo doubleclickem na button:
+                    button.     bind("<Double-1>",lambda e,widget_id = y: self.change_computer_ip(widget_id))
+                    button.     bind("<Button-3>",lambda e,widget_id = y: self.change_computer_ip(widget_id))
 
                     if self.is_project_favourite(y):
                         button.configure(fg_color = "#1E90FF")
@@ -2363,8 +2368,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     notes.bind("<Leave>",lambda e, widget = [notes_frame,notes]:       shrink_frame(widget))
                     notes.bind("<Enter>",lambda e, widget = notes,row=y:               on_enter_entry(widget,row))
                     notes.bind("<Leave>",lambda e, widget = notes,row=y:               on_leave_entry(widget,row))
-                    
-                    notes.bind("<Return>",lambda e, widget = [notes_frame,notes]: add_row_return(widget))
+                    notes.bind("<Return>",lambda e, widget = [notes_frame,notes]:      add_row_return(widget))
 
                     if self.default_note_behav == 0:
                         notes.configure(state = "disabled")
@@ -2544,11 +2548,14 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             for x in range(0,len(self.disk_all_rows[y])):# x: 0=button, 1=disk_letter, 2=ip, 3=name, 4=password, 5=notes
                 if x == 0:
                     btn_frame = customtkinter.CTkFrame(master=column1,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)
-                    button =    customtkinter.CTkButton(master = btn_frame,width=200,height=40,text = self.disk_all_rows[y][x], command = lambda widget_id = y: self.map_disk(widget_id),font=("Arial",20,"bold"),corner_radius=0)
+                    button =    customtkinter.CTkButton(master = btn_frame,width=200,height=40,text = self.disk_all_rows[y][x],font=("Arial",20,"bold"),corner_radius=0)
                     button.     pack(padx =5,pady = 5, fill= "x")
-                    btn_frame.  pack(side = "top",anchor = "w",expand = False) 
-                    btn_frame.  bind("<Button-1>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
-                    button.     bind("<Button-3>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
+                    btn_frame.  pack(side = "top",anchor = "w",expand = False)
+                    button.     bind("<Button-1>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
+                    # připojit bud pravým klikem nebo doubleclickem na button:
+                    button.     bind("<Double-1>",lambda e,widget_id = y: self.map_disk(widget_id))
+                    button.     bind("<Button-3>",lambda e,widget_id = y: self.map_disk(widget_id))
+
                 elif x == 1: # frame s písmenem disku, menší šířka, podbarvení
                     param_frame =   customtkinter.CTkFrame(master=column2,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)
                     parameter =     customtkinter.CTkLabel(master = param_frame,text = self.disk_all_rows[y][x],font=("Arial",20,"bold"),width = 40,height=40)

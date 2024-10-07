@@ -4,7 +4,7 @@ bmp,png
 Podporované typy souborů u možností mazání:
 jpg,bmp,png,ifz
 Základní cesta k souborům:
-C:/Users/kubah/Pictures/Screenshots/
+C:/Users/jakub.hlavacek.local/Pictures/Screenshots/
 Základní množství ponechaných souborů:
 998
 Základní cutoff date:
@@ -35,8 +35,8 @@ Bezpečný mód při procházení subsložek:
 ano
 Nastavení prohlížeče obrázků: (1. zvolená možnost, 2. krok přibližování [%], 3. krok posunu)
 2
-55
-150
+30
+100
 Zobrazit changelog?
 ne
 Zobrazovat v prohlížeči obrázků film obrázků?
