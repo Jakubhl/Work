@@ -610,6 +610,10 @@ přidat možnost nastavit citlivost posouvani - hotovo
 ip setting - doubleclick na připojení + prohodit levé/ pravé - hotovo
 ip setting - delete uvniř poznamek smaze cely projekt - hotovo
 
+2:53 PM 10/8/2024
+prohlížeč - pozicování při spuštění přes systém - hotovo
+TRIMAZKON - kontrola spuštěné aplikace - neotevírat více oken když klikám na více obrázků mimo aplikaci - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -621,11 +625,10 @@ catalogue - proc refresh project widgets když přepínám v okně editu
 
 catalogue - když nový kopmonent rozhodí to slider - vrátit zpět na pozici
 
-TRIMAZKON - kontrola spuštěné aplikace - neotevírat více oken když klikám na více obrázků mimo aplikaci
-prohlížeč - když smažu - neaktualizuje se pás obrázků
-prohlížeč - pozicování při spuštění přes systém
-prohlížeč - když rychle přepínám - projede nejdřív vše v hlavním okně a pak až projede pás (zkusit přes thread)
+trimazkon - opravit - po překrytí oknem nastavení nefunguje systémové spuštění
 
+prohlížeč - když smažu - neaktualizuje se pás obrázků
+prohlížeč - když rychle přepínám - projede nejdřív vše v hlavním okně a pak až projede pás (zkusit přes thread)
 
 
 ??? Koumu: admin práva, online auto aktualizace nové verze

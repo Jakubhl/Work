@@ -14,6 +14,9 @@ import tkinter as tk
 import threading
 import shutil
 import sys
+import win32pipe, win32file, pywintypes, psutil
+
+testing = False
 
 def path_check(path_raw,only_repair = None):
     path=path_raw
@@ -33,20 +36,23 @@ def path_check(path_raw,only_repair = None):
 
 initial_path = path_check(os.getcwd())
 
-if len(sys.argv) > 1: #spousteni pres cmd
+if len(sys.argv) > 1: #spousteni pres cmd (kliknuti na obrazek)
     raw_path = str(sys.argv[0])
     initial_path = path_check(raw_path,True)
     initial_path_splitted = initial_path.split("/")
     initial_path = ""
     for i in range(0,len(initial_path_splitted)-2):
         initial_path += str(initial_path_splitted[i])+"/"
-
-
     print("SYSTEM: ",sys.argv)
 
 #pro pripad vypisovani do konzole z exe:
 # sys.stdout = sys.__stdout__
-print(initial_path)
+print("init path: ",initial_path)
+exe_path = sys.executable
+exe_name = os.path.basename(exe_path)
+print("exe name: ",exe_name)
+if testing:
+    exe_name = "x x x"
 # input("continue")
 
 def resource_path(relative_path):
@@ -55,14 +61,150 @@ def resource_path(relative_path):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
 
-app_icon = 'images/logo_TRIMAZKON.ico'
-customtkinter.set_appearance_mode("dark")
-customtkinter.set_default_color_theme("dark-blue")
-root=customtkinter.CTk()
-root.geometry("1200x900")
-root.title("TRIMAZKON v_3.8.1")
-root.wm_iconbitmap(resource_path(app_icon))
+class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
+    def __init__(self,exe_name):
+        self.root = None #define later (to prevend gui loading when 2 apps opened)
+        self.current_pid = None
+        self.exe_name = exe_name
+        if self.exe_name == None or self.exe_name == "":
+            self.exe_name = "TRIMAZKON.exe"
+        self.start_server()
 
+    def server(self,pipe_input):
+        """
+        Endless loop listening for commands
+        """
+        pipe_name = fr'\\.\pipe\{pipe_input}'
+        while True:
+            print(f"Waiting for a TRIMAZKON to connect on {pipe_name}...") 
+            pipe = win32pipe.CreateNamedPipe(
+                pipe_name,
+                win32pipe.PIPE_ACCESS_DUPLEX,
+                win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_READMODE_MESSAGE | win32pipe.PIPE_WAIT,
+                1,
+                512,
+                512,
+                0,
+                None
+            )
+
+            win32pipe.ConnectNamedPipe(pipe, None)
+            print("TRIMAZKON connected.")
+
+            try:
+                while True:
+                    hr, data = win32file.ReadFile(pipe, 64 * 1024)
+                    received_data = data.decode()
+                    print(f"Received: {received_data}")
+                    self.root.after(0,menu.command_landed,received_data)
+
+            except pywintypes.error as e:
+                if e.args[0] == 109:  # ERROR_BROKEN_PIPE
+                    print("TRIMAZKON disconnected.")
+            finally:
+                # Close the pipe after disconnection
+                win32file.CloseHandle(pipe)
+            # Loop back to wait for new client connections
+
+    def client(self,pipe_name_given,command,parameters):
+        pipe_name = fr'\\.\pipe\{pipe_name_given}'
+        handle = win32file.CreateFile(
+            pipe_name,
+            win32file.GENERIC_READ | win32file.GENERIC_WRITE,
+            0,
+            None,
+            win32file.OPEN_EXISTING,
+            0,
+            None
+        )
+        if "Open image browser" in command:
+            message = str(parameters[0]) + ",," + str(parameters[1])
+            win32file.WriteFile(handle, message.encode())
+            print("Message sent.")
+
+    def start_server(self):
+        self.current_pid = os.getpid()
+        self.pipe_name = f"TRIMAZKON_pipe_{self.current_pid}"
+        running_server = threading.Thread(target=self.server, args=(self.pipe_name,), daemon=True)
+        running_server.start()
+        time.sleep(0.5)  # Wait for the server to start
+
+    def get_all_app_processes(self):
+        pid_list = []
+        num_of_apps = 0
+        for process in psutil.process_iter(['pid', 'name']):
+            # if process.info['name'] == "TRIMAZKON_test.exe":
+            if process.info['name'] == self.exe_name:
+                pid_list.append(process.info['pid'])
+                num_of_apps+=1
+        
+        return [num_of_apps,pid_list]
+
+    def call_checking(self,command,parameters):
+        """
+        for every found process with name of an application: send given command
+        """
+        checking = self.get_all_app_processes()
+        print("SYSTEM application processes: ",checking)
+        # if it is running more then one application, execute (root + self.root)
+        if checking[0]>2:
+            pid_list = checking[1]
+            # try to send command to every process which has application name
+            for pids in pid_list:
+                if pids != self.current_pid:
+                    try:
+                        pipe_name = f"TRIMAZKON_pipe_{pids}"
+                        self.client(pipe_name,command,parameters)
+                    except Exception:
+                        pass
+            return True
+        else:
+            return False
+
+# Establishment of pipeline server for duplex communication between running applications:
+pipeline_duplex = system_pipeline_communication(exe_name)
+
+def check_runing_app_duplicity():
+    """
+    Spočte procesy a názvem aplikace, pokud je jich více, jak 2 je již aplikace spuštěná
+    - v top případě zajistí aby se nenačítalo gui a pouze zajistí odeslání paramterů pro image browser
+    """
+    found_processes = pipeline_duplex.get_all_app_processes()
+    if found_processes[0] > 2:
+        return True
+    else:
+        return False
+
+app_running_status = check_runing_app_duplicity()
+print("already opened app status: ",app_running_status)
+if len(sys.argv) > 1:
+    # VÝJIMKA: pukud nové spuštění s admin právy načti i gui...
+    if sys.argv[0] == sys.argv[1]:
+        app_running_status = False
+
+if not app_running_status:
+    app_icon = 'images/logo_TRIMAZKON.ico'
+    customtkinter.set_appearance_mode("dark")
+    customtkinter.set_default_color_theme("dark-blue")
+    root=customtkinter.CTk()
+    root.geometry("1200x900")
+    root.title("TRIMAZKON v_3.8.1")
+    root.wm_iconbitmap(resource_path(app_icon))
+else:
+    # předání parametrů v případě spuštění obrázkem (základní obrázkový prohlížeč)
+    if len(sys.argv) > 1:
+        raw_path = str(sys.argv[1])
+        #klik na spusteni trimazkonu s admin právy
+        if sys.argv[0] != sys.argv[1]:
+            # pokud se nerovnají jedná se nejspíše o volání základního prohlížeče obrázků (spuštění kliknutím na obrázek...)
+            IB_as_def_browser_path=path_check(raw_path,True)
+            IB_as_def_browser_path_splitted = IB_as_def_browser_path.split("/")
+            IB_as_def_browser_path = ""
+            for i in range(0,len(IB_as_def_browser_path_splitted)-2):
+                IB_as_def_browser_path += IB_as_def_browser_path_splitted[i]+"/"
+            selected_image = IB_as_def_browser_path_splitted[len(IB_as_def_browser_path_splitted)-2]
+            pipeline_duplex.call_checking(f"Open image browser starting with image: {IB_as_def_browser_path}, {selected_image}",[IB_as_def_browser_path,selected_image])
+            
 def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
     """
     Funkce vraci data z textoveho souboru Recources.txt
@@ -531,21 +673,24 @@ def add_colored_line(text_widget, text, color,font=None,delete_line = None,no_in
     """
     Vloží řádek do console
     """
-    text_widget.configure(state=tk.NORMAL)
-    if font == None:
-        font = ("Arial",16)
-    if delete_line != None:
-        text_widget.delete("current linestart","current lineend")
-        text_widget.tag_configure(color, foreground=color,font=font)
-        text_widget.insert("current lineend",text, color)
-    else:
-        text_widget.tag_configure(color, foreground=color,font=font)
-        if no_indent:
-            text_widget.insert(tk.END,text+"\n", color)
+    try:
+        text_widget.configure(state=tk.NORMAL)
+        if font == None:
+            font = ("Arial",16)
+        if delete_line != None:
+            text_widget.delete("current linestart","current lineend")
+            text_widget.tag_configure(color, foreground=color,font=font)
+            text_widget.insert("current lineend",text, color)
         else:
-            text_widget.insert(tk.END,"    > "+ text+"\n", color)
+            text_widget.tag_configure(color, foreground=color,font=font)
+            if no_indent:
+                text_widget.insert(tk.END,text+"\n", color)
+            else:
+                text_widget.insert(tk.END,"    > "+ text+"\n", color)
 
-    text_widget.configure(state=tk.DISABLED)
+        text_widget.configure(state=tk.DISABLED)
+    except Exception as e:
+        print(f"Error při psaní do konzole: {e}")
 
 def save_path(console,path_entered):
     path_given = path_entered
@@ -571,15 +716,21 @@ def clear_console(text_widget,from_where=None):
 class main_menu:
     def __init__(self,root):
         self.root = root
+        # předání rootu do pipeline_duplex až ve chvílí, kdy je jasné, že aplikace není vícekrát spuštěná:
+        pipeline_duplex.root = self.root
         self.data_read_in_txt = read_text_file_data()
         self.database_downloaded = False
+        self.ib_running = False
     
     def clear_frames(self):
-        for frames in self.list_of_menu_frames:
-            frames.pack_forget()
-            frames.grid_forget()
-            frames.destroy()
-    
+        for widget in self.root.winfo_children():
+            widget.destroy()
+        # for frames in self.list_of_menu_frames:
+        #     frames.pack_forget()
+        #     frames.grid_forget()
+        #     frames.destroy()
+        # self.list_of_menu_frames = []
+        
     def call_sorting_option(self):
         self.clear_frames()
         self.root.unbind("<f>")
@@ -588,7 +739,8 @@ class main_menu:
     def call_view_option(self,path_given = None,selected_image = ""):
         self.clear_frames()
         self.root.unbind("<f>")
-        Image_browser(self.root,path_given,selected_image)
+        self.IB_class = Image_browser(self.root,path_given,selected_image)
+        self.ib_running = True
 
     def call_ip_manager(self):
         self.clear_frames()
@@ -611,6 +763,33 @@ class main_menu:
             change_log.insert("current lineend",string_element + "\n")
         change_log.see(tk.END)
 
+    def command_landed(self,command):
+        """
+        tato funkce přijímá příkazy z pipeline serveru
+        """
+        print("received in menu: ",command)
+        params = command.split(",,")
+        print("Image browser running status: ",self.ib_running)
+        if self.ib_running == False:
+            for widget in self.root.winfo_children():
+                widget.destroy()
+            self.root.unbind("<Button-1>")
+            self.call_view_option(params[0],params[1])
+        else:
+            # try:
+            print("previous path: ",self.IB_class.image_browser_path)
+            print("previous path: ",self.IB_class.IB_as_def_browser_path)
+            print("previous image: ",self.IB_class.selected_image)
+            print("new path: ",params[0])
+            print("new image: ",params[1])
+
+            self.IB_class.IB_as_def_browser_path = params[0]
+            self.IB_class.selected_image = params[1]
+            print("starting browser: ")
+            self.IB_class.start(params[0])
+            # except Exception as e:
+            # print("pipeline server command error: ",e)
+
     def menu(self,initial=False,catalogue_downloaded = False): # Funkce spouští základní menu při spuštění aplikace (MAIN)
         """
         Funkce spouští základní menu při spuštění aplikace (MAIN)
@@ -619,7 +798,7 @@ class main_menu:
 
         list_of_menu_frames = [frame_with_buttons,frame_with_logo,frame_with_buttons_right]
         """
-        
+        self.ib_running = False
         if self.data_read_in_txt[7] == "ano":
             #root.attributes('-fullscreen', True) #fullscreen bez windows tltacitek
             self.root.after(0, lambda:self.root.state('zoomed')) # max zoom, porad v okne
@@ -667,15 +846,16 @@ class main_menu:
             else:
                 self.root.after(0, lambda:self.root.state('zoomed'))
             self.root.update()
+        
         self.root.bind("<f>",maximalize_window)
-        # initial promenna aby se to nespoustelo porad do kola pri navratu do menu
+        # initial promenna aby se to nespoustelo porad do kola pri navratu do menu (system argumenty jsou stále uložené v aplikaci)
         if len(sys.argv) > 1 and initial == True:
             raw_path = str(sys.argv[1])
             #klik na spusteni trimazkonu s admin právy
             if sys.argv[0] == sys.argv[1]:
                 self.call_ip_manager()
             else: 
-                # pokud se nerovnají jedná se nejspíše o volání základního prohlížeče obrázků
+                # pokud se nerovnají jedná se nejspíše o volání základního prohlížeče obrázků (spuštění kliknutím na obrázek...)
                 IB_as_def_browser_path=path_check(raw_path,True)
                 IB_as_def_browser_path_splitted = IB_as_def_browser_path.split("/")
                 IB_as_def_browser_path = ""
@@ -685,6 +865,7 @@ class main_menu:
                 self.root.update()
                 selected_image = IB_as_def_browser_path_splitted[len(IB_as_def_browser_path_splitted)-2]
                 self.call_view_option(IB_as_def_browser_path,selected_image)
+
         self.root.mainloop()
 
 class Image_browser: # Umožňuje procházet obrázky a přitom například vybrané přesouvat do jiné složky
@@ -793,7 +974,11 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         menu.menu()
     
     def clear_frame(self,frame):
-        for widget in frame.winfo_children():
+        try:
+            children = frame.winfo_children()
+        except Exception:
+            return
+        for widget in children:
             widget.destroy()
 
     def get_images(self,path):  # Seznam všech obrázků v podporovaném formátu (včetně cesty)
@@ -2000,7 +2185,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         button_move.                grid(column = 0,row=2,pady = 5,padx =1065,sticky = tk.W)#85
         button_delete.              grid(column = 0,row=2,pady = 5,padx =1150,sticky = tk.W)#85
         self.name_or_path.select()
-        self.switch_drawing_mode(initial=True)
 
         def jump_to_image(e):
             if self.changable_image_num.get().isdigit():
@@ -2023,6 +2207,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.update_zoom_slider(self.zoom_given)
         self.speed_slider.set(100)
         self.update_speed_slider(100)
+        self.switch_drawing_mode(initial=True)
 
         def focused_entry_widget():
             currently_focused = str(self.root.focus_get())
@@ -2243,10 +2428,11 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         if self.IB_as_def_browser_path != None:
             self.path_set.delete("0","200")
             self.path_set.insert("0", self.IB_as_def_browser_path)
-            add_colored_line(self.console,"Je super, že využíváte TRIMAZKON, jako výchozí prohlížeč!","white",None,True)
+            add_colored_line(self.console,"TRIMAZKON, jako výchozí prohlížeč!","white",None,True)
             self.root.update_idletasks()
             self.image_browser_path = self.IB_as_def_browser_path
             self.start(self.IB_as_def_browser_path)
+
         #hned na zacatku to vleze do defaultni slozky
         elif self.path_given != "":
             self.path_set.delete("0","200")
@@ -2351,7 +2537,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         self.clear_frame(self.current_root)
         self.current_root.destroy()
         if self.spec_location == "image_browser":
-            Image_browser(self.root,self.path_to_remember,params_given=self.ib_last_params)
+            Image_browser(self.root,path_given=self.path_to_remember,params_given=self.ib_last_params)
         elif self.spec_location == "converting_option":
             Converting_option(self.root)
         elif self.spec_location == "deleting_option":
@@ -2930,24 +3116,24 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             text_movement = str(self.text_file_data[11][2]) + " px"
             text_image_film = str(self.text_file_data[14]) + " obrázků na každé straně"
             first_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
-            first_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
+            # first_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             label_IB1 =                 customtkinter.CTkLabel(     master = first_option_frame,height=20,text = "1. Zvolte způsob přibližování:",justify = "left",font=("Arial",22,"bold"))
             label_IB2 =                 customtkinter.CTkLabel(     master = first_option_frame,height=20,text = "- Možnost bez posuvníků funguje nejlépe na obrazovce ve windows nastavené, jako HLAVNÍ a v maximalizovaném okně aplikace\n- U možnosti s posuvníky na těchto podmínkách nezáleží",justify = "left",font=("Arial",20,"bold"))
             checkbox_omron_option =     customtkinter.CTkCheckBox(  master = first_option_frame, text = "Přibližování/ oddalování ke/ od kurzoru myši (bez posuvníků)",command = lambda: select_zoom_option(),font=("Arial",20))
             checkbox_slidebar_option =  customtkinter.CTkCheckBox(  master = first_option_frame, text = "Přibližování/ oddalování do/ od středu obrázku (s posuvníky)",command = lambda: select_zoom_option(),font=("Arial",20))
             second_option_frame =       customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
             second_option_frame.        pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
-            label_IB3 =                 customtkinter.CTkLabel(master = second_option_frame,height=20,text = "2. Nastavte o kolik procent se navýší přiblížení jedním krokem kolečka myši:",justify = "left",font=("Arial",22,"bold"))
+            label_IB3 =                 customtkinter.CTkLabel(master = second_option_frame,height=20,text = "1. Nastavte o kolik procent se navýší přiblížení jedním krokem kolečka myši:",justify = "left",font=("Arial",22,"bold"))
             zoom_increment_set =        customtkinter.CTkSlider(master=second_option_frame,width=300,height=15,from_=5,to=100,number_of_steps= 19,command= update_zoom_increment_slider)
             label_IB4 =                 customtkinter.CTkLabel(master = second_option_frame,height=20,text = text_increment,justify = "left",font=("Arial",20))
             third_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
             third_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
-            label_IB5 =                 customtkinter.CTkLabel(master = third_option_frame,height=20,text = "3. Nastavte velikost kroku při posouvání levým tlačítkem myši:",justify = "left",font=("Arial",22,"bold"))
+            label_IB5 =                 customtkinter.CTkLabel(master = third_option_frame,height=20,text = "2. Nastavte velikost kroku při posouvání levým tlačítkem myši:",justify = "left",font=("Arial",22,"bold"))
             zoom_movement_set =         customtkinter.CTkSlider(master=third_option_frame,width=300,height=15,from_=10,to=100,number_of_steps= 18,command= update_drag_movement_slider)
             label_IB6 =                 customtkinter.CTkLabel(master = third_option_frame,height=20,text = text_movement,justify = "left",font=("Arial",20))
             forth_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
             forth_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
-            label_image_film =          customtkinter.CTkLabel(master = forth_option_frame,height=20,text = "4. Upravte nastavení filmu obrázků:",justify = "left",font=("Arial",22,"bold"))
+            label_image_film =          customtkinter.CTkLabel(master = forth_option_frame,height=20,text = "3. Upravte nastavení filmu obrázků:",justify = "left",font=("Arial",22,"bold"))
             switch_image_film =         customtkinter.CTkCheckBox(master = forth_option_frame, text = "Zapnuto",command = lambda: on_off_image_film(),font=("Arial",20))
             num_of_image_film_images_slider = customtkinter.CTkSlider(master=forth_option_frame,width=300,height=15,from_=1,to=15,command= change_image_film_number)
             num_of_image_film_images =  customtkinter.CTkLabel(master = forth_option_frame,height=20,text = text_image_film,justify = "left",font=("Arial",20))
@@ -4695,6 +4881,7 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
         Catalogue.Catalogue_gui(self.root,input_message,self.callback,current_window_size,self.database_filename,self.default_excel_filename,
                                 self.default_xml_file_name,self.default_subwindow_status,self.default_export_extension,self.default_path)
 
-menu = main_menu(root)
-menu.menu(initial=True)
+if not app_running_status:
+    menu = main_menu(root)
+    menu.menu(initial=True)
 

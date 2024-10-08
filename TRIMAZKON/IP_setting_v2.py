@@ -295,6 +295,15 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         Funkce čistí všechny zaplněné rámečky a funguje, jako tlačítko zpět do hlavního menu trimazkonu
         """
         self.clear_frame(self.root)
+        # self.root.unbind("<f>")
+        self.root.unbind("<Escape>")
+        self.root.unbind("<F5>")
+        self.root.unbind("<Button-1>")
+        self.root.unbind("<Control_L>")
+        self.root.unbind("<Control-Button-1>")
+        self.root.unbind("<KeyRelease-Control_L>")
+        self.root.unbind("<Delete>")
+
         self.callback()
 
     def clear_frame(self,frame):

@@ -36,11 +36,11 @@ ano
 Nastavení prohlížeče obrázků: (1. zvolená možnost, 2. krok přibližování [%], 3. krok posunu)
 2
 30
-100
+55
 Zobrazit changelog?
 ne
 Zobrazovat v prohlížeči obrázků film obrázků?
-ne
+ano
 Kolik obrázků ve filmu obrázků zobrazovat na každé straně?
 8
 Default název pro sharepoint databázi:
