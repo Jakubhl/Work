@@ -783,10 +783,16 @@ class main_menu:
             print("new path: ",params[0])
             print("new image: ",params[1])
 
-            self.IB_class.IB_as_def_browser_path = params[0]
-            self.IB_class.selected_image = params[1]
-            print("starting browser: ")
-            self.IB_class.start(params[0])
+            for widget in self.root.winfo_children():
+                widget.destroy()
+            self.root.unbind("<Button-1>")
+            self.call_view_option(params[0],params[1])
+
+            # self.IB_class.IB_as_def_browser_path = params[0]
+            # self.IB_class.selected_image = params[1]
+            # print("starting browser: ")
+            # self.IB_class.start(params[0])
+
             # except Exception as e:
             # print("pipeline server command error: ",e)
 
@@ -2513,10 +2519,11 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         Smaže widgets na daném framu
         """
         try:
-            for widget in frame.winfo_children():
-                widget.destroy()
+            children = frame.winfo_children()
         except Exception:
-            pass  
+            return
+        for widget in children:
+            widget.destroy()
 
     def maximalized(self): # Nastavení základního spouštění (v okně/ maximalizované)
         option = self.checkbox_maximalized.get()
@@ -2537,7 +2544,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         self.clear_frame(self.current_root)
         self.current_root.destroy()
         if self.spec_location == "image_browser":
-            Image_browser(self.root,path_given=self.path_to_remember,params_given=self.ib_last_params)
+            Image_browser(root=self.root,path_given=self.path_to_remember,params_given=self.ib_last_params)
         elif self.spec_location == "converting_option":
             Converting_option(self.root)
         elif self.spec_location == "deleting_option":

@@ -36,7 +36,7 @@ ano
 Nastavení prohlížeče obrázků: (1. zvolená možnost, 2. krok přibližování [%], 3. krok posunu)
 2
 30
-55
+85
 Zobrazit changelog?
 ne
 Zobrazovat v prohlížeči obrázků film obrázků?

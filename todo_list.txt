@@ -616,6 +616,7 @@ TRIMAZKON - kontrola spuštěné aplikace - neotevírat více oken když klikám
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
+TRIMAZKON - nastavení procent priblízeni aplikace - moznost nechat zatrhnute nastaveni windows (disable slider)
 
 catalogue - mít možnost kopírovat předešlý projekt
 catalogue - mít možnost přepnout mezi zobrazovanými daty
