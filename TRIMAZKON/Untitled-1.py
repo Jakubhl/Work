@@ -310,7 +310,8 @@ class DrawApp:
             self.canvas.create_oval(self.start_x, self.start_y, event.x, event.y, outline="black")
 
 # Create the main window and run the application
-root = tk.Tk()
-app = DrawApp(root)
-root.mainloop()
-
+# root = tk.Tk()
+# app = DrawApp(root)
+# root.mainloop()
+config = customtkinter.CTkScrollableFrame.configure()
+print(config)

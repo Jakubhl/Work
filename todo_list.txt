@@ -613,20 +613,25 @@ ip setting - delete uvniř poznamek smaze cely projekt - hotovo
 2:53 PM 10/8/2024
 prohlížeč - pozicování při spuštění přes systém - hotovo
 TRIMAZKON - kontrola spuštěné aplikace - neotevírat více oken když klikám na více obrázků mimo aplikaci - hotovo
+proc je vepisovano v ib do console po trigu startu - hotovo
+trimazkon - opravit - po překrytí oknem nastavení nefunguje systémové spuštění - hotovo
+
+1:22 PM 10/9/2024
+catalogue - dodělat adaptaci velikosti widgetů v závislosti na detailním zobrazení - chyba kdyz je vic kamer - musím počítat optiku zvlášť pro každou kameru nebo počet acc... - hotovo
+catalogue - mít možnost přepnout mezi zobrazovanými daty - hotovo
+catalogue - proc refresh project widgets když přepínám v okně editu - hotovo
+catalogue - když nový kopmonent rozhodí to slider - vrátit zpět na pozici - hotovo
+
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 TRIMAZKON - nastavení procent priblízeni aplikace - moznost nechat zatrhnute nastaveni windows (disable slider)
+nové čtení dat - zrušit recources
+
 
 catalogue - mít možnost kopírovat předešlý projekt
-catalogue - mít možnost přepnout mezi zobrazovanými daty
 catalogue - možnost ke stanici přiřadit fotku - tlačítko - nový list - načíst fotku
-catalogue - dodělat adaptaci velikosti widgetů v závislosti na detailním zobrazení - chyba kdyz je vic kamer - musím počítat optiku zvlášť pro každou kameru nebo počet acc...
-catalogue - proc refresh project widgets když přepínám v okně editu
 
-catalogue - když nový kopmonent rozhodí to slider - vrátit zpět na pozici
-
-trimazkon - opravit - po překrytí oknem nastavení nefunguje systémové spuštění
 
 prohlížeč - když smažu - neaktualizuje se pás obrázků
 prohlížeč - když rychle přepínám - projede nejdřív vše v hlavním okně a pak až projede pás (zkusit přes thread)

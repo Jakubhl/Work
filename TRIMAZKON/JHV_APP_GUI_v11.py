@@ -16,7 +16,7 @@ import shutil
 import sys
 import win32pipe, win32file, pywintypes, psutil
 
-testing = False
+testing = True
 
 def path_check(path_raw,only_repair = None):
     path=path_raw
@@ -204,6 +204,11 @@ else:
                 IB_as_def_browser_path += IB_as_def_browser_path_splitted[i]+"/"
             selected_image = IB_as_def_browser_path_splitted[len(IB_as_def_browser_path_splitted)-2]
             pipeline_duplex.call_checking(f"Open image browser starting with image: {IB_as_def_browser_path}, {selected_image}",[IB_as_def_browser_path,selected_image])
+
+def set_zoom(zoom_factor):
+    root.tk.call('tk', 'scaling', zoom_factor / 100)
+    customtkinter.set_widget_scaling(zoom_factor / 100) 
+set_zoom(80)
             
 def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
     """
@@ -232,6 +237,7 @@ def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
     18 default subwindow behavior status in catalogue menu\n
     19 default format of catalogue export\n
     20 default path catalogue\n
+    21 app zoom\n
     """
 
     if os.path.exists(initial_path+'Recources.txt'):
@@ -361,14 +367,20 @@ def read_text_file_data(): # Funkce vraci data z textoveho souboru Recources.txt
         except Exception:
             catalogue_save_data = [False]*6
 
+        Lines[58] = Lines[58].replace("\n","")
+        if Lines[58].isdigit():
+            app_zoom = int(Lines[58])
+        else:
+            app_zoom = 100 #default
+
         output_array = [supported_formats_sorting,supported_formats_deleting,path_repaired,files_to_keep,cutoff_date,
                 prefix_function,prefix_camera,maximalized,max_pallets,static_dirs_names,safe_mode,image_browser_param,
                 show_changelog,image_film,num_of_IB_film_images,catalogue_save_data[0],catalogue_save_data[1],catalogue_save_data[2],
-                catalogue_save_data[3],catalogue_save_data[4],catalogue_save_data[5]]
+                catalogue_save_data[3],catalogue_save_data[4],catalogue_save_data[5],app_zoom]
         return output_array
     else:
         print("Chybí konfigurační soubor Recources.txt")
-        return [False]*25
+        return [False]*26
 
 def write_text_file_data(input_data,which_parameter): # Funkce zapisuje data do textoveho souboru Recources.txt
     """
@@ -1169,7 +1181,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.all_images = self.get_images(path)
                 if len(self.all_images) != 0:
                     self.image_browser_path = path
-                    add_colored_line(self.console,f"Vložena cesta: {path}","green",None,True)
+                    # add_colored_line(self.console,f"Vložena cesta: {path}","green",None,True)
                     if self.image_film == True:
                         self.make_image_film_widgets()
                     if self.ifz_located == None:
