@@ -206,12 +206,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         def insert_new_excel_param(wb,ws,row,param,text):
             """
             Oveřuje zda konfigurační excel již obsahuje tyto parametry, případně zapíše
-            param:
-            - (disk_behav) default chování načítání obrazovky s disky
-            - (notes_behav) default chování poznámek
-            - (mapping_cond) disk persistent - yes/ no
-            - (make_first_behav) = chování při editu
-            - (delete_behav) = statusy odvolby dotazování při mazání
             """
             ws['B' + str(row)] = param
             ws['A' + str(row)] = text
@@ -422,7 +416,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     worksheet['D' + str(len(self.all_rows)-row)] = notes
 
                 if self.show_favourite:
-                    save_to_workbook(notes,row,"ip_adress_fav_list")
+                    save_to_workbook(notes,row,"ip_address_fav_list")
                     #kontrola pro druhé prostředí
                     index_of_project = find_notes_in_whole_list(row,new_fav_status = False)
                     print("index",index_of_project)
@@ -435,7 +429,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     index_of_project = find_notes_in_whole_list(row,new_fav_status = True)
                     print("index",index_of_project)
                     if str(index_of_project) != "no data":
-                        save_to_workbook(notes,index_of_project,"ip_adress_fav_list")
+                        save_to_workbook(notes,index_of_project,"ip_address_fav_list")
                     self.show_favourite = False
 
                 workbook.save(filename=self.excel_file_path)
@@ -677,7 +671,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
     def read_excel_data(self,force_ws = None):
         if self.show_favourite:
-            excel_worksheet = "ip_adress_fav_list"
+            excel_worksheet = "ip_address_fav_list"
         else:
             excel_worksheet = "ip_address_list"
         if force_ws != None:
@@ -734,7 +728,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             workbook = wb_given
 
         if self.show_favourite:
-            excel_worksheet = "ip_adress_fav_list"
+            excel_worksheet = "ip_address_fav_list"
         else:
             excel_worksheet = "ip_address_list"
         if force_ws != None:
@@ -999,7 +993,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 row_index_list = get_both_row_indexes(new_project=True)
                 if make_fav:
                     self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[0]+1,fav_status=1,force_ws="ip_address_list")
-                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[1]+1,fav_status=1,force_ws="ip_adress_fav_list")
+                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[1]+1,fav_status=1,force_ws="ip_address_fav_list")
                     add_colored_line(self.main_console,f"Přidán nový oblíbený projekt: {project_name}","green",None,True)
                 else:
                     self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[0]+1,fav_status=0,force_ws="ip_address_list")
@@ -1026,7 +1020,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     # zaskrtnuto oblibene + nebyl oblibeny  = ZMENA:
                     row_index_list = get_both_row_indexes(new_project=True)
                     print("pridan do oblibenych", row_index_list)
-                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[1]+1,fav_status=1,force_ws="ip_adress_fav_list")
+                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[1]+1,fav_status=1,force_ws="ip_address_fav_list")
                     self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=None,fav_status=1)
 
                     if self.last_project_name != project_name:
@@ -1059,7 +1053,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     else:
                         # nejprve smazat z oblíbených:
                         workbook = load_workbook(self.excel_file_path)
-                        worksheet = workbook["ip_adress_fav_list"]
+                        worksheet = workbook["ip_address_fav_list"]
                         worksheet.delete_rows(row_index_list[1])
                         workbook.save(self.excel_file_path)
                         # poté uložit změnu statusu do všech:
@@ -1087,7 +1081,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     if row_index_list[0] != "no data":
                         self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[0],fav_status=current_fav_status,force_ws="ip_address_list")
                     if row_index_list[1] != "no data":
-                        self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[1],fav_status=current_fav_status,force_ws="ip_adress_fav_list")
+                        self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[1],fav_status=current_fav_status,force_ws="ip_address_fav_list")
                     if self.last_project_name != project_name:
                         status_text = f"Projekt: {self.last_project_name} (nově: {project_name}) úspěšně pozměněn"
                     else:
@@ -1215,7 +1209,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 wanted_project = str(self.search_input.get())
             workbook = load_workbook(self.excel_file_path)
             if self.show_favourite:
-                excel_worksheet = "ip_adress_fav_list"
+                excel_worksheet = "ip_address_fav_list"
             else:
                 excel_worksheet = "ip_address_list"
             worksheet = workbook[excel_worksheet]
@@ -2209,7 +2203,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 worksheet['D' + str(len(self.all_rows)-row)] = notes
 
             if self.show_favourite:
-                save_to_workbook(notes,row,"ip_adress_fav_list")
+                save_to_workbook(notes,row,"ip_address_fav_list")
                 index_of_project = find_notes_in_whole_list(row,new_fav_status = False)
                 print("index",index_of_project)
                 if str(index_of_project) != "no data":
@@ -2220,7 +2214,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 index_of_project = find_notes_in_whole_list(row,new_fav_status = True)
                 print("index",index_of_project)
                 if str(index_of_project) != "no data":
-                    save_to_workbook(notes,index_of_project,"ip_adress_fav_list")
+                    save_to_workbook(notes,index_of_project,"ip_address_fav_list")
                 self.show_favourite = False
 
             workbook.save(filename=self.excel_file_path)

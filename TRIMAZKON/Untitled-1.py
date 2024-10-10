@@ -313,5 +313,25 @@ class DrawApp:
 # root = tk.Tk()
 # app = DrawApp(root)
 # root.mainloop()
-config = customtkinter.CTkScrollableFrame.configure()
-print(config)
+# config = customtkinter.CTkScrollableFrame.configure()
+# print(config)
+
+for i in range(10,16):
+    print(i)
+    if str(i).isdigit():
+        print("ano")
+
+def filter_unwanted_chars(to_filter_data, directory = False):
+    unwanted_chars = ["\n","\"","\'","[","]"]
+    if directory:
+        unwanted_chars = ["\n","\"","\'","[","]","\\","/"]
+    # for chars in unwanted_chars:
+    filtered_data = ""
+    for letters in to_filter_data:
+        if letters not in unwanted_chars:
+            filtered_data += letters
+    return filtered_data
+
+data = r"['bmp', 'png']"
+new_data = filter_unwanted_chars(data)
+print(new_data)

@@ -17,7 +17,7 @@ import sys
 import threading
 import math
 
-testing = True
+testing = False
 if testing:
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")

@@ -626,7 +626,7 @@ catalogue - když nový kopmonent rozhodí to slider - vrátit zpět na pozici -
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 TRIMAZKON - nastavení procent priblízeni aplikace - moznost nechat zatrhnute nastaveni windows (disable slider)
-nové čtení dat - zrušit recources
+nové čtení dat - zrušit recources - dodělat write...
 
 
 catalogue - mít možnost kopírovat předešlý projekt

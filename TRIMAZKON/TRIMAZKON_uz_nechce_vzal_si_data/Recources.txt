@@ -1,0 +1,59 @@
+!!!Pro správnou funkci programu prosím dodržujte nastavenou syntaxi. Spíše použijte aplikaci - menu, pokrocile možnosti.!!!
+Podporované typy souborů u možností třídění:
+bmp,png
+Podporované typy souborů u možností mazání:
+jpg,bmp,png,ifz
+Základní cesta k souborům:
+C:/Users/jakub.hlavacek.local/Pictures/Screenshots/
+Základní množství ponechaných souborů:
+998
+Základní cutoff date:
+28.02.2024
+Prefix funkce:
+Func_
+Prefix kamery:
+Cam_
+spoustet v maximalizovanem okne?
+ano
+Základní maximální počet palet v oběhu:
+55
+Název složky pro nepáry (nezastoupenými všemi nalezenými formáty):
+Temp
+Název složky pro nalezené dvojice:
+Pairs
+Název složky se soubory, které jsou určené ke smazání:
+Ke_smazani
+Název složky pro soubory převedené do .bmp formátu:
+Konvertovane_BMP
+Název složky pro soubory převedené do .jpg formátu:
+Konvertovane_JPG
+Název složky pro kopírované obrázky v prohlížeči obrázků:
+Kopírované_obrázky
+Název složky pro přesunuté obrázky v prohlížeči obrázků:
+Přesunuté_obrázky
+Bezpečný mód při procházení subsložek:
+ano
+Nastavení prohlížeče obrázků: (1. zvolená možnost, 2. krok přibližování [%], 3. krok posunu)
+2
+30
+85
+Zobrazit changelog?
+ne
+Zobrazovat v prohlížeči obrázků film obrázků?
+ano
+Kolik obrázků ve filmu obrázků zobrazovat na každé straně?
+8
+Default název pro sharepoint databázi:
+Sharepoint_databaze.xlsx
+Default název pro excel (Katalog):
+Katalog_kamerového_vybavení
+Default název pro xml (Katalog):
+_metadata_catalogue
+Defaultní chování suboken (Katalog):
+0
+Defaultní přípona exportu (Katalog):
+xlsx
+Defaultní cesta katalog:
+C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/
+nastavení celkového zoomu [%]:
+80
