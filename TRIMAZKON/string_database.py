@@ -191,7 +191,8 @@ default_setting_database = ["Podporované typy souborů u možností třídění
                             "Defaultní chování suboken (Katalog):",
                             "Defaultní přípona exportu (Katalog):",
                             "Defaultní cesta katalog:",
-                            "nastavení celkového zoomu [%]:"
+                            "nastavení celkového zoomu [%]:",
+                            "použít nastavení windows (app zoom)"
                             ]
 
 default_setting_database_param = ["bmp,png",
@@ -223,5 +224,6 @@ default_setting_database_param = ["bmp,png",
                                 0,
                                 "xlsx",
                                 "C:/Users/",
-                                80
+                                80,
+                                "ano",
                                 ]

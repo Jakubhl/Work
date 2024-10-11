@@ -622,14 +622,16 @@ catalogue - mít možnost přepnout mezi zobrazovanými daty - hotovo
 catalogue - proc refresh project widgets když přepínám v okně editu - hotovo
 catalogue - když nový kopmonent rozhodí to slider - vrátit zpět na pozici - hotovo
 
+5:31 PM 10/11/2024
+nové čtení dat - zrušit recources - dodělat write... - hotovo
+catalogue - při hledání xml nabízet v exploreru pouze soubory .xml - hotovo
+optimalizace sliderů u nastavení - hotovo
+TRIMAZKON - nastavení procent priblízeni aplikace - moznost nechat zatrhnute nastaveni windows (disable slider) - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-TRIMAZKON - nastavení procent priblízeni aplikace - moznost nechat zatrhnute nastaveni windows (disable slider)
-nové čtení dat - zrušit recources - dodělat write...
 
-
-catalogue - mít možnost kopírovat předešlý projekt
+catalogue - mít možnost kopírovat předešlý projekt (duplicita - edit zaroven copy, orig.)
 catalogue - možnost ke stanici přiřadit fotku - tlačítko - nový list - načíst fotku
 
 
