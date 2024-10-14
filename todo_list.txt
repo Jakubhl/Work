@@ -627,13 +627,14 @@ nové čtení dat - zrušit recources - dodělat write... - hotovo
 catalogue - při hledání xml nabízet v exploreru pouze soubory .xml - hotovo
 optimalizace sliderů u nastavení - hotovo
 TRIMAZKON - nastavení procent priblízeni aplikace - moznost nechat zatrhnute nastaveni windows (disable slider) - hotovo
+catalogue - mít možnost kopírovat předešlý projekt (duplicita - edit zaroven copy, orig.) - hotovo
+catalogue - rychlý mód vykreslování - přidat do nastavení, ukládat - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-
-catalogue - mít možnost kopírovat předešlý projekt (duplicita - edit zaroven copy, orig.)
 catalogue - možnost ke stanici přiřadit fotku - tlačítko - nový list - načíst fotku
-
+catalogue - dodělat spojení řádků (sudý počet...)
+catalogue - vyřešit problematiku i u xlsx
 
 prohlížeč - když smažu - neaktualizuje se pás obrázků
 prohlížeč - když rychle přepínám - projede nejdřív vše v hlavním okně a pak až projede pás (zkusit přes thread)

@@ -193,6 +193,7 @@ default_setting_database = ["Podporované typy souborů u možností třídění
                             "Defaultní cesta katalog:",
                             "nastavení celkového zoomu [%]:",
                             "použít nastavení windows (app zoom)"
+                            "Nastavení módu vykreslování (Katalog)"
                             ]
 
 default_setting_database_param = ["bmp,png",
@@ -226,4 +227,5 @@ default_setting_database_param = ["bmp,png",
                                 "C:/Users/",
                                 80,
                                 "ano",
+                                "fast",
                                 ]

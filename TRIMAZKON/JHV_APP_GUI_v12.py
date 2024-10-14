@@ -209,7 +209,10 @@ else:
 
 def set_zoom(zoom_factor):
     root.tk.call('tk', 'scaling', zoom_factor / 100)
-    customtkinter.set_widget_scaling(zoom_factor / 100) 
+    try:
+        customtkinter.set_widget_scaling(zoom_factor / 100) 
+    except Exception as e:
+        print(f"error with zoom scaling: {e}")
 
 global_recources_load_error = False
 def read_config_data(): # Funkce vraci data z config_TRIMAZKON.
@@ -241,6 +244,7 @@ def read_config_data(): # Funkce vraci data z config_TRIMAZKON.
     20 default path catalogue\n
     21 app zoom\n
     22 app zoom checkbox\n
+    23 render mode\n
     """
     def filter_unwanted_chars(to_filter_data, directory = False,date=False):
         unwanted_chars = ["\n","\"","\'","[","]"]
@@ -279,7 +283,9 @@ def read_config_data(): # Funkce vraci data z config_TRIMAZKON.
                         default_setting_parameters[27],
                         default_setting_parameters[28],
                         default_setting_parameters[29],
-                        default_setting_parameters[30]]
+                        default_setting_parameters[30],
+                        default_setting_parameters[31],
+                        ]
         
         print("read intern database (default values)",output_array,len(output_array))
         return output_array
@@ -290,7 +296,7 @@ def read_config_data(): # Funkce vraci data z config_TRIMAZKON.
         """
         ws['A' + str(row)] = text
         ws['B' + str(row)] = param
-        print(f'inserting new parameter to excel: {param}')
+        print(f'inserting new parameter to excel: {text}: {param}')
         wb.save(initial_path+config_filename)
 
     global global_recources_load_error
@@ -314,6 +320,9 @@ def read_config_data(): # Funkce vraci data z config_TRIMAZKON.
             value_check = ws['B' + str(31)].value
             if value_check is None or str(value_check) == "":
                 insert_new_excel_param(wb,ws,row=31,param=default_setting_parameters[30],text=default_labels[30])
+            value_check = ws['B' + str(32)].value
+            if value_check is None or str(value_check) == "":
+                insert_new_excel_param(wb,ws,row=32,param=default_setting_parameters[31],text=default_labels[31])
 
             read_formats1 = str(ws['B' + str(1)].value)
             read_formats1 = filter_unwanted_chars(read_formats1)
@@ -437,6 +446,10 @@ def read_config_data(): # Funkce vraci data z config_TRIMAZKON.
             if app_zoom_checkbox != "ano":
                 app_zoom_checkbox = "ne"
 
+            render_mode = str(ws['B' + str(32)].value)
+            if render_mode != "precise":
+                render_mode = "fast"
+
             global_recources_load_error = False
             output_array = [supported_formats_sorting,
                             supported_formats_deleting,
@@ -460,7 +473,9 @@ def read_config_data(): # Funkce vraci data z config_TRIMAZKON.
                             catalogue_save_data[4],
                             catalogue_save_data[5],
                             app_zoom,
-                            app_zoom_checkbox]
+                            app_zoom_checkbox,
+                            render_mode,
+                            ]
             
             print("read config",output_array,len(output_array))
             wb.close()
@@ -681,6 +696,7 @@ def save_to_config(input_data,which_parameter): # Funkce zapisuje data do textov
     18 catalogue_data\n
     19 app_zoom\n
     20 app_zoom_checkbox\n
+    21 render_mode\n
     """
 
     def filter_unwanted_chars(to_filter_data, directory = False,formats = False):
@@ -719,6 +735,7 @@ def save_to_config(input_data,which_parameter): # Funkce zapisuje data do textov
         "catalogue_data": [24,25,26,27,28,29],
         "app_zoom": 30,
         "app_zoom_checkbox": 31,
+        "render_mode": 32,
         }
     
     if os.path.exists(initial_path + config_filename):
@@ -852,6 +869,8 @@ def save_to_config(input_data,which_parameter): # Funkce zapisuje data do textov
         elif which_parameter == "app_zoom_checkbox":
             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
 
+        elif which_parameter == "render_mode":
+            ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
 
         if formats_changes:
             #navraceni poli zpet do stringu radku:
@@ -5174,10 +5193,14 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
         self.default_subwindow_status = text_file_data[18]
         self.default_export_extension = text_file_data[19]
         self.default_path = text_file_data[20]
+        self.default_render_mode = text_file_data[23]
         self.create_catalogue_maker_widgets()
 
     def callback(self,data_to_save):
         print("received data: ",data_to_save)
+        render_mode = data_to_save[6]
+        save_to_config(render_mode,"render_mode")
+        data_to_save.pop(6)
         save_to_config(data_to_save,"catalogue_data")
         menu.menu()
 
@@ -5194,9 +5217,17 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
         else:
             input_message = "Datábáze se stáhne znovu až po restartu TRIMAZKONU"
         
-        print("calling catalogue: ",self.database_filename,self.default_excel_filename,self.default_xml_file_name,self.default_subwindow_status,self.default_export_extension,self.default_path)
-        Catalogue.Catalogue_gui(self.root,input_message,self.callback,current_window_size,self.database_filename,self.default_excel_filename,
-                                self.default_xml_file_name,self.default_subwindow_status,self.default_export_extension,self.default_path)
+        Catalogue.Catalogue_gui(self.root,
+                                input_message,
+                                self.callback,
+                                current_window_size,
+                                self.database_filename,
+                                self.default_excel_filename,
+                                self.default_xml_file_name,
+                                self.default_subwindow_status,
+                                self.default_export_extension,
+                                self.default_path,
+                                self.default_render_mode)
 
 if not app_running_status:
     menu = main_menu(root)
