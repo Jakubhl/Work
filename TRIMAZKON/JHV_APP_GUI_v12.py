@@ -7,7 +7,7 @@ import Sorting_option_v5 as Trideni
 import Deleting_option_v1 as Deleting
 import Converting_option_v3 as Converting
 import catalogue_maker_v4 as Catalogue
-# import sharepoint_download as download_database
+import sharepoint_download as download_database
 import IP_setting_v2 as IP_setting
 import string_database
 from tkinter import filedialog
@@ -18,7 +18,7 @@ import sys
 import ctypes
 import win32pipe, win32file, pywintypes, psutil
 
-testing = True
+testing = False
 
 def path_check(path_raw,only_repair = None):
     path=path_raw
@@ -3252,7 +3252,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             new_option_frame =          customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
             new_option_frame.           pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             zomm_app_label =            customtkinter.CTkLabel(master = new_option_frame,height=20,text = "Nastavte celkové přiblížení aplikace:",justify = "left",font=("Arial",22,"bold"))
-            checkbox_app_zoom =         customtkinter.CTkCheckBox(master = new_option_frame,height=40,text = "Použít nastavení windows",command = lambda: windows_zoom_setting(),font=("Arial",22,"bold"))
+            checkbox_app_zoom =         customtkinter.CTkCheckBox(master = new_option_frame,height=40,text = "Použít nastavení Windows",command = lambda: windows_zoom_setting(),font=("Arial",22,"bold"))
             app_zoom_slider =           customtkinter.CTkSlider(master = new_option_frame,width=300,height=15,from_=60,to=200,number_of_steps= 14,command = lambda e: manage_app_zoom(e))
             app_zoom_percent =          customtkinter.CTkLabel(master= new_option_frame,height=20,text = str(current_zoom) + " %",justify = "left",font=("Arial",20))
             zomm_app_label.             grid(column =0,row=0,sticky = tk.W,pady =(10,10),padx=10)
@@ -5161,18 +5161,21 @@ class IP_manager: # Umožňuje nastavit možnosti třídění souborů
     def __init__(self,root):
         self.root = root
         self.create_IP_manager_widgets()
+    
 
     def callback(self):
         menu.menu()
 
     def create_IP_manager_widgets(self):
-        
         if root.wm_state() == "zoomed":
             current_window_size = "max"
         else:
             current_window_size = "min"
-        
-        IP_setting.IP_assignment(self.root,self.callback,current_window_size,initial_path)
+
+        app_data = read_config_data()
+        zoom_factor = app_data[21] 
+
+        IP_setting.IP_assignment(self.root,self.callback,current_window_size,initial_path,zoom_factor)
 
 class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
     """
@@ -5185,7 +5188,7 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
         self.root = root
         self.database_downloaded = menu.database_downloaded
         # automatic download bypass:
-        self.database_downloaded = True
+        # self.database_downloaded = True
         text_file_data = read_config_data()
         self.database_filename = text_file_data[15]
         self.default_excel_filename = text_file_data[16]
@@ -5211,8 +5214,8 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
             current_window_size = "min"
         
         if not self.database_downloaded:
-            # download = download_database.database(self.database_filename)
-            # input_message = str(download.output)
+            download = download_database.database(self.database_filename)
+            input_message = str(download.output)
             menu.database_downloaded = True
         else:
             input_message = "Datábáze se stáhne znovu až po restartu TRIMAZKONU"

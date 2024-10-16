@@ -158,7 +158,52 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - tlačítkem ctrl lze vybrat více projektů najednou
     - lze mazat více projektů najednou
     Prohlížeč obrázků
-    - Ochrana před poškozenými soubory\n"""
+    - Ochrana před poškozenými soubory"""
+        ,"\nVerze 4.0.0 (16.10.2024)"
+        ,
+    """ 
+  Katalog:
+    - hlavička excelu podle vzoru JHV
+    - při odchodu zpět do menu dotazovaní, zda uložit
+    - možnost odebrat kontroler a příslušenství přímo
+    - oprava chyb (chybějící kamery, optiky)
+    - pamatování naposledy zvoleného kontroleru
+    - oprava chyby (když se přepnula kamera, zůstával manual. 
+    vstup typu optiky)
+    - nově možnost zvolit si místo optiky typ světla
+    - oprava špatného kódování vstupu v polích (diakritika)
+    - nová logika vykreslování bloků (stanice nerozhodí jinou 
+    stanici při zobrazení detailních dat)
+    - nově možnost přepnout mezi zobrazovanými daty
+    - odebrání zbytečných refreshů
+    - v případě velkého projektu se při přidání nového bloku 
+    vrátí na poslední pozici slideru
+    - při hledání .xml v exploreru pouze .xml
+    - nově možnost kopírovat jednotlivé bloky
+    - možnost nastavit rychlý mód vykreslování
+  Prohlížeč obrázků
+    - nová logika přibližování (zoom)
+    - mít možnost malovat na obrázky (kruhy, osy...)
+    - možnost vložit kurzor doprostřed obrázku
+    - při aplikování změn z nastavení je nastavena původní 
+    pozice a zoom
+    - možnost nastavit citlivost posouvání myší
+    - oprava pozice při spuštění přes systém 
+  IP setting:
+    - optimalizace vyexportovaného excelu
+    - místo levého kliku na připojení: double-click nebo 
+    právé tlačítko
+    - při stisku delete při editaci poznámek nesmaže projekt
+  TRIMAZKON:
+    - kontrola již spuštěné aplikace (neotevírá se více oken)
+    - je-li otevřená aplikace: při otevření obrázku přesměruje 
+    na prohlížeč obrázků
+    - spojení Recources.txt a saved_addresses2.xlsx do 
+    jednoho config_TRIMAZKON.xlsx (vezme si všechna
+    uživatelská nastavení ze starých souborů)
+    - optimalizace posuvníků v nastavení
+    - možnost nastavit celkový zoom aplikace nebo použít 
+    nastavení windows"""
 ]
 
 
@@ -192,8 +237,8 @@ default_setting_database = ["Podporované typy souborů u možností třídění
                             "Defaultní přípona exportu (Katalog):",
                             "Defaultní cesta katalog:",
                             "nastavení celkového zoomu [%]:",
-                            "použít nastavení windows (app zoom)"
-                            "Nastavení módu vykreslování (Katalog)"
+                            "použít nastavení windows (app zoom)",
+                            "Nastavení módu vykreslování (Katalog)",
                             ]
 
 default_setting_database_param = ["bmp,png",

@@ -147,16 +147,17 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
     Umožňuje měnit nastavení statických IP adres
     """
 
-    def __init__(self,root,callback_function,window_mode,initial_path):
+    def __init__(self,root,callback_function,window_mode,initial_path,zoom_factor):
         self.initial_path = initial_path
         self.window_mode = window_mode
         self.callback = callback_function
         self.root = root
+        self.app_zoom_factor = zoom_factor
         self.app_icon = 'images\\logo_TRIMAZKON.ico'
         self.rows_taken = 0
         self.all_rows = []
         self.project_list = []
-        self.excel_file_path = initial_path + "saved_addresses_2.xlsx"
+        self.excel_file_path = initial_path + "config_TRIMAZKON.xlsx"
         self.last_project_name = ""
         self.last_project_ip = ""
         self.last_project_mask = ""
@@ -310,6 +311,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 widget.unbind("<Return>")
                 widget.unbind("<Button-1>")
                 widget.unbind("<Button-3>")
+                widget.pack_forget()
                 widget.destroy()
 
     def manage_bin(self,flag="",parameters=[],wb=None):
@@ -2269,7 +2271,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             if not opened_window_check():
                 if str(widget[0]) != str(self.last_selected_notes_widget):
                     widget[1].configure(state = "normal")
-                    new_height = 50
+                    new_height = int(50*(self.app_zoom_factor/100))
                     widget[0].configure(height = new_height) #frame
                     widget[1].configure(height = new_height-10) #notes
                     if self.default_note_behav == 0:
@@ -2279,14 +2281,16 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             if not opened_window_check():
                 if str(widget[0]) != str(self.last_selected_notes_widget):
                     # if the height is not 50 then it means it is expanded already
-                    if widget[0].winfo_height() == 50:
+                    print("gr",widget[0].winfo_height(),int(50*(self.app_zoom_factor/100)))
+                    tolerance = 15
+                    if abs(widget[0].winfo_height()-int(50*(self.app_zoom_factor/100))) <= tolerance:
                         widget[1].configure(state = "normal")
                         filtered_input = filter_text_input(self.all_rows[row_of_widget][3])
                         self.all_rows[row_of_widget][3] = filtered_input
                         addition = widget[0]._current_height
                         if "\n" in self.all_rows[row_of_widget][3]:
                             notes_rows = self.all_rows[row_of_widget][3].split("\n")
-                            expanded_dim = addition + (len(notes_rows)-1) * 24
+                            expanded_dim = addition + (len(notes_rows)-1) * 25
                             widget[0].configure(height = expanded_dim)
                             widget[1].configure(height = expanded_dim-10)
                             if self.default_note_behav == 0:
@@ -2486,7 +2490,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             if not opened_window_check():
                 if str(widget[0]) != str(self.last_selected_notes_widget):
                     widget[1].configure(state = "normal")
-                    new_height = 50
+                    new_height = int(50*(self.app_zoom_factor/100))
                     if isinstance(widget,list):
                         widget[0].configure(height = new_height)
                         widget[1].configure(height = new_height-10)
@@ -2499,14 +2503,15 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             if not opened_window_check():
                 if str(widget[0]) != str(self.last_selected_notes_widget):
                     # if the height is not 50 then it means it is expanded already
-                    if widget[0].winfo_height() == 50:
+                    tolerance = 15
+                    if abs(widget[0].winfo_height()-int(50*(self.app_zoom_factor/100))) <= tolerance:
                         widget[1].configure(state = "normal")
                         filtered_input = filter_text_input(self.disk_all_rows[row_of_widget][5])
                         self.disk_all_rows[row_of_widget][5] = filtered_input
                         addition = widget[0]._current_height
                         if "\n" in self.disk_all_rows[row_of_widget][5]:
                             notes_rows = self.disk_all_rows[row_of_widget][5].split("\n")
-                            expanded_dim = addition + (len(notes_rows)-1) * 26
+                            expanded_dim = addition + (len(notes_rows)-1) * 27
                             if isinstance(widget,list):
                                 widget[0].configure(height = expanded_dim)
                                 widget[1].configure(height = expanded_dim-10)

@@ -18,7 +18,7 @@ import sys
 # import math
 import copy
 
-testing = True
+testing = False
 if testing:
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")
@@ -3196,7 +3196,6 @@ class Save_excel:
             if len(stations["camera_list"]) == 0:
                 last_row_cam = last_row_cam + 1
                 last_row_optics = last_row_optics + 1
-                # last_row_accessory = last_row_accessory + 1
             cam_inc = 0
             for cameras in stations["camera_list"]:
                 camera_index = self.station_list[station_index]["camera_list"].index(cameras)
@@ -3223,7 +3222,8 @@ class Save_excel:
                             except Exception:
                                 self.controller_list[controller_index]["excel_position"] = [(columns[3]+str(row_before_addition))]
 
-                            if len(controllers["accessory_list"]) == 0:
+                            acc_count = len(controllers["accessory_list"])
+                            if acc_count == 0:
                                 last_row_accessory = last_row_accessory + 1
                             iii = 0
                             for accessories in controllers["accessory_list"]:
@@ -3235,7 +3235,15 @@ class Save_excel:
                                 except Exception:
                                     self.controller_list[controller_index]["accessory_list"][accessory_index]["excel_position"] = [columns[4]+str(row_before_addition+iii)]
                                 last_row_accessory = last_row_accessory + 1
+
                                 iii+=1
+                            dummy_start_row = row_before_addition+iii
+                            acc_dummy_count = 0
+                            if acc_count > 0:
+                                acc_dummy_count = max(acc_count-int(cameras["row_count"]),int(cameras["row_count"])-acc_count)
+                            
+                            if acc_dummy_count>0:
+                                rows_to_merge.append(columns[4] + str(dummy_start_row-1) + ":"+columns[4] + str(dummy_start_row-1 + acc_dummy_count))
                             break
                         ii += 1
 
