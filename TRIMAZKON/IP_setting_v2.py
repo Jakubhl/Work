@@ -2287,7 +2287,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             if not opened_window_check():
                 if str(widget[0]) != str(self.last_selected_notes_widget):
                     # if the height is not 50 then it means it is expanded already
-                    print("gr",widget[0].winfo_height(),int(50*(self.app_zoom_factor/100)))
                     tolerance = 15
                     if abs(widget[0].winfo_height()-int(50*(self.app_zoom_factor/100))) <= tolerance:
                         widget[1].configure(state = "normal")

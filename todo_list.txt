@@ -635,17 +635,23 @@ catalogue - vyřešit problematiku i u xlsx - hotovo
 
 10:14 AM 10/16/2024
 release verze 4.0.0
+
+1:13 PM 10/21/2024
+prohlížeč - když smažu - neaktualizuje se pás obrázků - hotovo
+prohlížeč - když rychle přepínám - projede nejdřív vše v hlavním okně a pak až projede pás (zkusit přes thread) - hotovo
+prohlížeč - oprava blikání při spuštění sekvence obrázků
+
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 catalogue - možnost ke stanici přiřadit fotku - tlačítko - nový list - načíst fotku
 catalogue - dodělat spojení/ merge řádků (sudý počet...) zkusit nejdřív prohládat dummy bloky
 
-prohlížeč - když smažu - neaktualizuje se pás obrázků
-prohlížeč - když rychle přepínám - projede nejdřív vše v hlavním okně a pak až projede pás (zkusit přes thread)
+prohlížeč - při initu je rozhozená pozice obrázku
 
 ip_setting - mít možnost nastavit přímo ip atd ne z uloženého programu
 
-TRIMAZKON při navrácení zpět do menu nemohu nastavovat celkový zoom aplikace
+TRIMAZKON při navrácení zpět do menu nemohu nastavovat celkový zoom aplikace ???
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon

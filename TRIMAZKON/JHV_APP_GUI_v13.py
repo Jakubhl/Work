@@ -18,7 +18,7 @@ import sys
 import ctypes
 import win32pipe, win32file, pywintypes, psutil
 
-testing = False
+testing = True
 
 
 def path_check(path_raw,only_repair = None):
@@ -1570,7 +1570,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     add_colored_line(self.console,"- V zadané cestě nebyly nalezeny obrázky","red",None,True)
             else:
                 add_colored_line(self.console,"- Vložená cesta je neplatná","red",None,True)
-    
+
     def call_browseDirectories(self): # Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
         Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
@@ -1687,6 +1687,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         -vstupními daty jsou informace o pozici obrázku v poli se všemi obrázky
         -přepočítávání rotace
         """
+        
         def corrupted_image_handling():
             with Image.open(resource_path("images/loading3.png")) as opened_image:
                 rotated_image = opened_image.rotate(180,expand=True)
@@ -1870,6 +1871,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     x_coords, y_coords = self.last_coords
                     self.settings_applied = False
 
+                self.main_frame.update_idletasks()
                 self.main_frame.delete("lower")
                 self.main_image = self.main_frame.create_image(x_coords, y_coords,anchor=tk.NW, image=self.tk_image,tag = "lower")
                 self.main_frame.tag_lower(self.main_image)
