@@ -204,6 +204,14 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - optimalizace posuvníků v nastavení
     - možnost nastavit celkový zoom aplikace nebo použít 
     nastavení windows"""
+        ,"\nVerze 4.0.1 (21.10.2024)"
+        ,
+    """ 
+    Prohlížeč obrázků
+    - obnovování pásu obrázků (po: delete, rotate...)
+    - opravy pásu obrázků při rychlém přepínání
+    - optimalizovaná logika - vyšší rychlost vykreslování
+    - odstranění problikávání při přepnutí obrázku"""
 ]
 
 

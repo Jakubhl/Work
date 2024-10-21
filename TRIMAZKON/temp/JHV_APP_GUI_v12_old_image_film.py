@@ -18,7 +18,8 @@ import sys
 import ctypes
 import win32pipe, win32file, pywintypes, psutil
 
-testing = False
+testing = True
+
 
 def path_check(path_raw,only_repair = None):
     path=path_raw
@@ -208,11 +209,12 @@ else:
             pipeline_duplex.call_checking(f"Open image browser starting with image: {IB_as_def_browser_path}, {selected_image}",[IB_as_def_browser_path,selected_image])
 
 def set_zoom(zoom_factor):
-    root.tk.call('tk', 'scaling', zoom_factor / 100)
     try:
         customtkinter.set_widget_scaling(zoom_factor / 100) 
     except Exception as e:
         print(f"error with zoom scaling: {e}")
+    
+    root.tk.call('tk', 'scaling', zoom_factor / 100)
 
 global_recources_load_error = False
 def read_config_data(): # Funkce vraci data z config_TRIMAZKON.
@@ -2853,6 +2855,14 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         
         self.creating_advanced_option_widgets()
     
+    def set_zoom(self,zoom_factor):
+        try:
+            customtkinter.set_widget_scaling(zoom_factor / 100) 
+        except Exception as e:
+            print(f"error with zoom scaling: {e}")
+        
+        root.tk.call('tk', 'scaling', zoom_factor / 100)
+
     def call_menu(self): # Tlačítko menu (konec, návrat do menu)
         """
         Funkce čistí všechny zaplněné rámečky a funguje, jako tlačítko zpět do menu
@@ -3308,7 +3318,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 if not checkbox_app_zoom.get() == 1:
                     current_zoom = int(app_zoom_slider.get())
                     save_to_config(current_zoom,"app_zoom")
-                    set_zoom(current_zoom)
+                    self.set_zoom(current_zoom)
 
             app_zoom_slider.bind("<ButtonRelease-1>",lambda e: slider_released(e))
 
