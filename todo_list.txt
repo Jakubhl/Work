@@ -641,13 +641,15 @@ prohlížeč - když smažu - neaktualizuje se pás obrázků - hotovo
 prohlížeč - když rychle přepínám - projede nejdřív vše v hlavním okně a pak až projede pás (zkusit přes thread) - hotovo
 prohlížeč - oprava blikání při spuštění sekvence obrázků
 
+2:37 PM 10/22/2024
+prohlížeč - při initu je rozhozená pozice obrázku - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 catalogue - možnost ke stanici přiřadit fotku - tlačítko - nový list - načíst fotku
 catalogue - dodělat spojení/ merge řádků (sudý počet...) zkusit nejdřív prohládat dummy bloky
 
-prohlížeč - při initu je rozhozená pozice obrázku
+
 
 ip_setting - mít možnost nastavit přímo ip atd ne z uloženého programu
 

@@ -1510,7 +1510,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                         new_path = new_path + frags + "/"
 
                 path = new_path
-
             else:
                 path_found = False
                 add_colored_line(self.console,"Zadaná cesta: "+str(path)+" neobsahuje žádné obrázky","red",None,True)
@@ -1604,14 +1603,14 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         """
         Vrací aktuální rozměry rámečku
         """
-        # self.main_frame.update_idletasks()
-        # self.root.update_idletasks()
         whole_app_height = self.root._current_height
         whole_app_width = self.root._current_width
         width = whole_app_width
+        self.frame_with_path.update_idletasks()
+        self.image_film_frame_center.update_idletasks()
         height = whole_app_height-self.frame_with_path._current_height-30
         if self.image_film == True:
-            height = height - self.image_film_frame_left._current_height
+            height = height - self.image_film_frame_center._current_height
         return [width, height]
 
     def calc_current_format(self,width,height): # Přepočítávání rozměrů obrázku do rozměru rámce podle jeho formátu + zooming
@@ -1671,7 +1670,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         new_width = new_width * zoom
         
         # self.main_frame.update_idletasks()
-        # self.main_frame.update()
+        self.main_frame.update()
         self.zoom_grow_x = max(new_width-self.previous_width,self.previous_width-new_width)
         self.zoom_grow_y = max(new_height-self.previous_height,self.previous_height-new_height)
         
@@ -1848,6 +1847,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 corrupted_image_handling()
                 return error_message
 
+
+
+
             dimensions = self.calc_current_format(width,height)
             resized = rotated_image.resize(size=(int(dimensions[0]),int(dimensions[1])))
             self.image_dimensions = (int(dimensions[0]),int(dimensions[1]))
@@ -1878,9 +1880,10 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.last_coords = (x_coords,y_coords)
                 # self.main_frame.update()
 
-            if self.image_film == True: #refreshujeme pouze stredovy obrazek jinak i okolni
-                run_background = threading.Thread(target=make_image_strip, args=(rotated_image,),daemon = True)
-                run_background.start()
+                if self.image_film == True: #refreshujeme pouze stredovy obrazek jinak i okolni
+                    run_background = threading.Thread(target=make_image_strip, args=(rotated_image,),daemon = True)
+                    run_background.start()
+                    
 
     def next_image(self,silent=False,reload_buffer =False): # Další obrázek v pořadí (šipka vpravo)
         """
