@@ -18,7 +18,7 @@ import sys
 # import math
 import copy
 
-testing = False
+testing = True
 if testing:
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")
@@ -74,7 +74,7 @@ def path_check(path_raw,only_repair = None):
     else:
         return path
 
-def browseDirectories(visible_files,start_path=None,file_type = ("All files", "*.*")): # Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
+def browseDirectories(visible_files,start_path=None,file_type = [("All files", "*.*")]): # Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
     """
     Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
 
@@ -100,7 +100,7 @@ def browseDirectories(visible_files,start_path=None,file_type = ("All files", "*
         if(start_path != ""):
             foldername_path = filedialog.askopenfile(initialdir = start_path,
                                                      title = "Klikněte na soubor v požadované cestě",
-                                                     filetypes=[file_type])
+                                                     filetypes=file_type)
             path_to_directory= ""
             if foldername_path != None:
                 path_to_file = str(foldername_path.name)
@@ -120,7 +120,7 @@ def browseDirectories(visible_files,start_path=None,file_type = ("All files", "*
         else:           
             foldername_path = filedialog.askopenfile(initialdir = "/",
                                                      title = "Klikněte na soubor v požadované cestě",
-                                                     filetypes=[file_type])
+                                                     filetypes=file_type)
             path_to_directory= ""
             if foldername_path != None:
                 path_to_file = str(foldername_path.name)
@@ -883,7 +883,7 @@ class ToplevelWindow:
             else:
                 add_colored_line(console,f"V zadané cestě nebyl nalezen soubor .xml s názvem {export_name.get()}","red",None,True)
 
-        def call_browse_directories(what_search,file_extension = ("All files", "*.*")):
+        def call_browse_directories(what_search,file_extension = [("All files", "*.*")]):
             """
             Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
             """
@@ -926,7 +926,7 @@ class ToplevelWindow:
         export_label =          customtkinter.CTkLabel(master = export_frame,text = "Zadejte název souboru:",font=("Arial",22,"bold"))
         export_name_frame =     customtkinter.CTkFrame(master = export_frame,corner_radius=0)
         export_name =           customtkinter.CTkEntry(master = export_name_frame,font=("Arial",20),width=730,height=50,corner_radius=0)
-        explorer_btn_name =     customtkinter.CTkButton(master = export_name_frame,text = "...",font=("Arial",22,"bold"),width = 50,height=50,corner_radius=0,command=lambda: call_browse_directories("all",("XML files", "*.xml")))
+        explorer_btn_name =     customtkinter.CTkButton(master = export_name_frame,text = "...",font=("Arial",22,"bold"),width = 50,height=50,corner_radius=0,command=lambda: call_browse_directories("all",[("XML files", "*.xml"),("All files", "*.*")]))
         format_entry =          customtkinter.CTkOptionMenu(master = export_name_frame,font=("Arial",22),dropdown_font=("Arial",22),values=[".xml"],width=200,height=50,corner_radius=0)
         export_name             .pack(pady = 5, padx = 10,anchor="w",fill="x",expand=True,side="left")
         format_entry            .pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
@@ -1111,6 +1111,124 @@ class ToplevelWindow:
         window.geometry(f"{window_width}x{window_height}+{self.x+150}+{self.y+50}")
         window.focus_force()
         window.focus()
+
+class Insert_image:
+    def __init__(self,root,childroot):
+        self.root = root
+        self.childroot = childroot
+        self.image_paths = [r"C:\Users\jakub.hlavacek.local\Desktop\JHV\W",r"C:\Users\jakub.hlavacek.local\Desktop\JHV\W",r"C:\Users\jakub.hlavacek.local\Desktop\JHV\W"]
+
+        self.added_images_count = 0
+
+    def image_menu_gui(self):
+        window = customtkinter.CTkToplevel()
+        window.after(200, lambda: window.iconbitmap(app_icon_path))
+        window.title("Možnosti uložení projektu")
+        subwindow = ""
+
+        def close_window(window):
+            nonlocal subwindow
+            try:
+                if subwindow.winfo_exists():
+                    subwindow.destroy()
+            except Exception:
+                pass
+            # window.grab_release()
+            window.destroy()
+
+        def call_browse_directories():
+            """
+            Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
+            """
+            filetypes = [
+                ("Image files", "*.png;*.jpg;*.bmp"),
+                ("All files", "*.*")
+            ]
+            output = browseDirectories("all",file_type=filetypes)
+            if str(output[1]) != "/":
+                image_path.delete(0,300)
+                image_path.insert(0, str(output[1])+str(output[2]))
+                add_colored_line(console,"Byla vložena cesta a název souboru","green",None,True)
+
+            print(output[0])
+            self.childroot.focus_force()
+            self.childroot.focus()
+            window.focus_force()
+            window.focus()
+
+        def add_image_path():
+            checked_path = path_check(image_path.get(),only_repair=True)
+            if checked_path == False:
+                print("neplatná cesta")
+                return
+            self.image_paths.append(checked_path)
+            load_image_paths()
+            self.added_images_count += 1
+
+        def load_image_paths():
+            for widget in all_images_frame.winfo_children():
+                widget.destroy()
+
+            def show_context_menu(event):
+                context_menu.tk_popup(event.x_root, event.y_root)
+
+            context_menu = tk.Menu(window, tearoff=0)
+            context_menu.add_command(label="Option 1", command=lambda: print("Option 1 selected"),font=("Arial",22,"bold"))
+            context_menu.add_command(label="Option 2", command=lambda: print("Option 2 selected"),font=("Arial",22,"bold"))
+            context_menu.add_separator()
+
+            for i in range(0,len(self.image_paths)):
+                new_path_frame = customtkinter.CTkFrame(master = all_images_frame,corner_radius=0,border_width=3)
+                new_path_label = customtkinter.CTkLabel(master = new_path_frame,text = str(i+1) + ".  " + self.image_paths[i],font=("Arial",22,"bold"))
+                new_path_label.pack(pady = 10, padx = 10,expand=False,side="top",anchor="w")
+                new_path_frame.pack(pady = 0, padx = 0,expand=False,side="top",fill="x")
+                new_path_frame.bind("<Button-3>", show_context_menu)
+
+            window.update()
+            window.update_idletasks()
+            window.geometry(f"{window.winfo_width()}x{window.winfo_height()+30}")
+            window._update_dimensions_event()
+
+
+
+        load_photo_frame =     customtkinter.CTkFrame(master = window,corner_radius=0)
+        image_path_label =     customtkinter.CTkLabel(master = load_photo_frame,text = "Zadejte cestu k fotografii:",font=("Arial",22,"bold"))
+        image_path_frame =     customtkinter.CTkFrame(master = load_photo_frame,corner_radius=0)
+        image_path =           customtkinter.CTkEntry(master = image_path_frame,font=("Arial",20),width=580,height=50,corner_radius=0)
+        explorer_btn =         customtkinter.CTkButton(master = image_path_frame,text = "...",font=("Arial",22,"bold"),width = 50,height=50,corner_radius=0,command=lambda: call_browse_directories())
+        save_path_btn =        customtkinter.CTkButton(master = image_path_frame,text = "💾",font=("",22),width = 50,height=50,corner_radius=0,command=lambda: add_image_path())
+        image_path             .pack(pady = 5, padx = (10,0),anchor="w",fill="x",expand=True,side="left")
+        save_path_btn          .pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
+        explorer_btn           .pack(pady = 5, padx = (10,0),anchor="e",expand=False,side="right")
+        console =              tk.Text(load_photo_frame, wrap="none", height=0, width=70,background="black",font=("Arial",22),state=tk.DISABLED)
+        all_images_frame =     customtkinter.CTkFrame(master = load_photo_frame,corner_radius=0,height=50)
+
+        buttons_frame =        customtkinter.CTkFrame(master = load_photo_frame,corner_radius=0)
+        button_exit =          customtkinter.CTkButton(master = buttons_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
+        button_exit            .pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
+
+        load_photo_frame       .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left")
+        image_path_label       .pack(pady=(10,5),padx=10,anchor="w",expand=False,side="top")
+        image_path_frame       .pack(expand=True,side="top",anchor="n",fill="x")
+        console                .pack(expand=True,side="top",anchor="n")
+        all_images_frame       .pack(pady = 0, padx = 0,expand=True,side="top",fill="x")
+        buttons_frame          .pack(pady = 0, padx = 0,expand=False,side="top",fill="x")
+
+
+        load_image_paths()
+
+        self.root.bind("<Button-1>",lambda e: close_window(window),"+")
+        self.childroot.bind("<Button-1>",lambda e: close_window(window),"+")
+        window.update()
+        window.update_idletasks()
+        # window.geometry(f"1015x350+{self.x+200}+{self.y+50}")
+        x = self.root.winfo_rootx()
+        y = self.root.winfo_rooty()
+        window.geometry(f"{window.winfo_width()}x{window.winfo_height()}+{x+200}+{y+50}")
+        window.focus_force()
+        window.focus()
+        window.grab_set()
+        window.grab_release()
 
 class Catalogue_gui:
     def __init__(self,root,download_status,
@@ -2009,6 +2127,10 @@ class Catalogue_gui:
             elif event.char == 'ø':
                 event.widget.insert(tk.INSERT, 'ř')
                 return "break"  # Stop the event from inserting the original character
+        
+        def add_photo():
+            insert_image_class = Insert_image(self.root,child_root)
+            insert_image_class.image_menu_gui()
             
         child_root = customtkinter.CTkToplevel()
         # STANICE ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -2022,10 +2144,12 @@ class Catalogue_gui:
         button_prev_st              .pack(pady = 5, padx = 0,anchor="w",expand=False,side="left")
         new_name                    .pack(pady = 5, padx = 0,anchor="w",expand=True,side="left",fill="x")
         button_next_st              .pack(pady = 5, padx = 0,anchor="w",expand=False,side="left")
+        button_add_photo =          customtkinter.CTkButton(master = station_frame,text = "Přiřadit fotografii",font=("Arial",22,"bold"),height=50,corner_radius=0,command=lambda: add_photo())
         inspection_description =    customtkinter.CTkLabel(master = station_frame,text = "Popis inspekce:",font=("Arial",22,"bold"))
         new_description =           customtkinter.CTkTextbox(master = station_frame,font=("Arial",22),width=300,height=220,corner_radius=0)
         station_name_label          .pack(pady=(15,5),padx=10,anchor="w",expand=False,side = "top")
         name_frame                  .pack(pady = 5, padx = 5,anchor="w",expand=False,side="top",fill="x")
+        button_add_photo            .pack(pady=(5,5),padx=10,anchor="w",expand=False,side = "top",fill="x")
         inspection_description      .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
         new_description             .pack(pady = 5, padx = 10,expand=True,side="top",fill="both")     
         new_name.bind("<Key>",remaping_characters)
@@ -2258,12 +2382,24 @@ class Catalogue_gui:
                 optic_type = str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"])
                 optic_alternative = str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"])
 
-                if optic_type not in self.whole_optics_database or optic_type not in self.whole_light_database:
+                if optic_type not in self.whole_optics_database and optic_type not in self.whole_light_database:
                     manual_optics_input.insert(0,optic_type)
-                if optic_type in self.whole_optics_database or optic_type in self.whole_light_database:
+
+                if optic_type in self.whole_optics_database:
+                    if light_checkbox.get() != 1:
+                        optics_lights_switch(reverse=True)
+                    else:
+                        optics_lights_switch()
+                    optic_type_entry.set(optic_type)
+                elif optic_type in self.whole_light_database:
+                    if light_checkbox.get() == 1:
+                        optics_lights_switch(reverse=True)
+                    else:
+                        optics_lights_switch()
                     optic_type_entry.set(optic_type)
                 else:
                     optic_type_entry.set("")
+
                 if optic_alternative in self.whole_optics_database or optic_alternative in self.whole_light_database:
                     alternative_entry.set(optic_alternative)
                 else:
@@ -2276,12 +2412,24 @@ class Catalogue_gui:
                 optic_type = str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"])
                 optic_alternative = str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"])
                 if len(self.station_list[station_index]["camera_list"][camera_index]["optics_list"]) > 0:
-                    if optic_type not in self.whole_optics_database or optic_type not in self.whole_light_database:
+                    if optic_type not in self.whole_optics_database and optic_type not in self.whole_light_database:
                         manual_optics_input.insert(0,optic_type)
-                    if optic_type in self.whole_optics_database or optic_type in self.whole_light_database:
+                    if optic_type in self.whole_optics_database:
+                        if light_checkbox.get() != 1:
+                            optics_lights_switch(reverse=True)
+                        else:
+                            optics_lights_switch()
+                        optic_type_entry.set(optic_type)
+                    
+                    elif optic_type in self.whole_light_database:
+                        if light_checkbox.get() == 1:
+                            optics_lights_switch(reverse=True)
+                        else:
+                            optics_lights_switch()
                         optic_type_entry.set(optic_type)
                     else:
                         optic_type_entry.set("")
+
                     if optic_alternative in self.whole_optics_database or optic_alternative in self.whole_light_database:
                         alternative_entry.set(optic_alternative)
                     else:
@@ -3237,6 +3385,7 @@ class Save_excel:
                                 last_row_accessory = last_row_accessory + 1
 
                                 iii+=1
+                            
                             dummy_start_row = row_before_addition+iii
                             acc_dummy_count = 0
                             if acc_count > 0:

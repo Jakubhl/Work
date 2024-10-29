@@ -825,13 +825,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
         return string_for_excel
     
-    def check_ip_and_mask(self,input_value):
-        input_splitted = input_value.split(".")
-        if len(input_splitted) == 4:
-            return input_value
-        else:
-            return False
-
     def switch_fav_status(self,operation:str,project_given=None,change_status = False):
         if project_given == None:
             selected_project = str(self.search_input.get())
@@ -966,12 +959,19 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 self.edited_project_name = project_name
                 self.manage_bin("save_edited_ip",parameters=[self.last_project_name,self.last_project_ip,self.last_project_mask,self.last_project_notes,previous_fav_status])
 
+        def check_ip_and_mask(input_value):
+            input_splitted = input_value.split(".")
+            if len(input_splitted) == 4:
+                return input_value
+            else:
+                return False
+
         if param == []:
             project_name = str(self.name_input.get())
             IP_adress = str(self.IP_adress_input.get())
-            IP_adress = self.check_ip_and_mask(IP_adress)
+            IP_adress = check_ip_and_mask(IP_adress)
             mask = str(self.mask_input.get())
-            mask = self.check_ip_and_mask(mask)
+            mask = check_ip_and_mask(mask)
             notes = self.get_notes()
         else:
             project_name = param[0]
@@ -1848,7 +1848,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.refresh_ip_statuses()
             return
         
-        interface = str(self.drop_down_options.get())
+        interface = str(self.interface_drop_options.get())
         if not self.check_DHCP(interface):
             if interface != None or interface != "":
                 interface_index = self.connection_option_list.index(interface)
@@ -1889,7 +1889,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             else:
                 add_colored_line(self.main_console,f"Chyba, {interface} je odpojen od tohoto zařízení (pro nastavování odpojených interfaců spusťtě aplikaci jako administrátor)","red",None,True)
 
-    def change_computer_ip(self,button_row):
+    def change_computer_ip(self,button_row,force_params = []):
+        """
+        button_row - index, kde se nachazi ip a maska v poli: self.all_rows
+        """
         def connected_interface(interface,ip,mask):
             """
             Když jsou vyžadována admin práva, tato funkce ověří, zda není daný interface připojen nebo součástí zařízení a zkusí znovu
@@ -1919,11 +1922,14 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             except Exception as e:
                 print(f"Exception occurred: {str(e)}")
 
-        
         ip = str(self.all_rows[button_row][1])
         mask = str(self.all_rows[button_row][2])
+        if len(force_params) > 0:
+            ip = force_params[0]
+            mask = force_params[1]
+
         # powershell command na zjisteni network adapter name> Get-NetAdapter | Select-Object -Property InterfaceAlias, Linkspeed, Status
-        interface_name = str(self.drop_down_options.get())
+        interface_name = str(self.interface_drop_options.get())
         powershell_command = f"netsh interface ip set address \"{interface_name}\" static " + ip + " " + mask
         try:
             process = subprocess.Popen(['powershell.exe', '-Command', powershell_command],
@@ -2799,7 +2805,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         """
         if not only_console:
             try:
-                self.default_connection_option = self.connection_option_list.index(self.drop_down_options.get())
+                self.default_connection_option = self.connection_option_list.index(self.interface_drop_options.get())
             except ValueError as e:
                 print(f"Error: {e}")
                 self.default_connection_option = 0
@@ -3029,7 +3035,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         """
         interfaces_data = self.fill_interfaces()
         self.connection_option_list = interfaces_data[0]
-        self.drop_down_options.configure(values = self.connection_option_list)
+        self.interface_drop_options.configure(values = self.connection_option_list)
         online_list_text = ""
         if len(interfaces_data[1]) > 0:
             for data in interfaces_data[1]:
@@ -3199,6 +3205,124 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         child_root.focus_force()
         self.root.bind("<Button-1>",lambda e: child_root.destroy(),"+")
 
+    def manual_ip_setting(self):
+        window = customtkinter.CTkToplevel()
+        window.after(200, lambda: window.iconbitmap(resource_path(self.app_icon)))
+        self.opened_window = window
+        window.title("Manuální nastavení IPv4 adresy")
+
+        def check_ip_and_mask(input_value):
+            input_splitted = input_value.split(".")
+            if len(input_splitted) == 4:
+                return input_value
+            else:
+                return False
+
+        def call_ip_change():
+            if "DHCP" in str(select_mode.get()):
+                self.change_to_DHCP()
+                window.destroy()
+                return
+            
+            ip_input = ip_address_entry.get()
+            mask_input = mask_entry.get()
+            ip_checked = check_ip_and_mask(ip_input)
+            mask_checked = check_ip_and_mask(mask_input)
+            errors = 0
+            if ip_checked == False and errors == 0:
+                add_colored_line(manual_console,f"Neplatná IP adresa","red",None,True)
+                errors += 1
+            if mask_checked == False and errors == 0:
+                add_colored_line(manual_console,f"Neplatná maska","red",None,True)
+                errors += 1
+
+            if errors == 0:
+                self.change_computer_ip(0,force_params=[ip_input,mask_input])
+                window.destroy()
+
+        def call_option_change(*args):
+            nonlocal ip_address_entry
+            self.interface_drop_options.set(str(*args))
+            self.option_change(*args)
+            ip_address_entry.delete(0,300)
+            ip_address_entry.insert(0,self.current_address_list[self.default_connection_option])
+            check_interface_status()
+
+        def switch_manual_dhcp(*args):
+            nonlocal ip_address_entry
+            nonlocal mask_entry
+            if "DHCP" in str(*args):
+                ip_address_entry.configure(state = "disabled",text_color = "gray32")
+                mask_entry.configure(state = "disabled",text_color = "gray32")
+            else:
+                ip_address_entry.configure(state = "normal",text_color = "gray84")
+                mask_entry.configure(state = "normal",text_color = "gray84")
+
+        def check_interface_status(online_list = False):
+            if online_list == False:
+                online_list = self.refresh_interfaces()
+
+            found = False
+            for items in online_list:
+                if items == str(select_interface.get()):
+                    found = True
+                    select_interface.configure(fg_color = "green",button_color = "green")
+                    interface_status.configure(text = "Online")
+                    break
+
+            if not found:
+                select_interface.configure(fg_color = "red",button_color = "red")
+                interface_status.configure(text = "Offline")
+
+        interface_label =       customtkinter.CTkLabel(master = window,text = "Manuálně nastavit IPv4 adresu pro: ",font=("Arial",20,"bold"))
+        interface_frame =         customtkinter.CTkFrame(master = window,corner_radius=0,border_width=0,fg_color="#181818")
+        select_interface =      customtkinter.CTkOptionMenu(master = interface_frame,width=320,height=50,font=("Arial",20,"bold"),dropdown_font=("Arial",20),corner_radius=0,command= lambda args:  call_option_change(args))
+        interface_status =      customtkinter.CTkLabel(master = interface_frame,text = "",font=("Arial",20,"bold"))
+        select_interface.       pack(pady=(10,0),padx=10,side = "left",anchor = "w")
+        interface_status.       pack(pady=(10,0),padx=10,side = "left",anchor = "w")
+        mode_label =            customtkinter.CTkLabel(master = window,text = "Způsob nastavení: ",font=("Arial",20,"bold"))
+        select_mode =           customtkinter.CTkOptionMenu(master = window,width=400,height=50,font=("Arial",20,"bold"),dropdown_font=("Arial",20),corner_radius=0,values = ["manuálně","automaticky (DHCP)"],command= lambda args: switch_manual_dhcp(args))
+        ip_address =            customtkinter.CTkLabel(master = window,text = "IPv4 adresa: ",font=("Arial",20,"bold"))
+        ip_address_entry =      customtkinter.CTkEntry(master = window,width=400,height=50,font=("Arial",20),corner_radius=0)
+        mask =                  customtkinter.CTkLabel(master = window,text = "IPv4 maska: ",font=("Arial",20,"bold"))
+        mask_entry =            customtkinter.CTkEntry(master = window,width=400,height=50,font=("Arial",20),corner_radius=0)
+        manual_console =        tk.Text(window, wrap="none", height=0, width=36,background="black",font=("Arial",14),state=tk.DISABLED)
+        buttons_frame =         customtkinter.CTkFrame(master = window,corner_radius=0,border_width=0,fg_color="#181818")
+        save_button =           customtkinter.CTkButton(master = buttons_frame, width = 200,height=40,text = "Nastavit", command = lambda: call_ip_change(),font=("Arial",20,"bold"),corner_radius=0)
+        exit_button =           customtkinter.CTkButton(master = buttons_frame, width = 200,height=40,text = "Zrušit", command = lambda: window.destroy(),font=("Arial",20,"bold"),corner_radius=0)
+
+        interface_label.        pack(pady=(10,0),padx=10,side = "top",anchor = "w",expand = True)
+
+        interface_frame.       pack(pady=(0),padx=0,side = "top",anchor = "w")
+        mode_label.             pack(pady=(10,0),padx=10,side = "top",anchor = "w")
+        select_mode.            pack(pady=(10,0),padx=10,side = "top",anchor = "w")
+        ip_address.             pack(pady=(10,0),padx=10,side = "top",anchor = "w")
+        ip_address_entry.       pack(pady=(10,0),padx=10,side = "top",anchor = "w")
+        mask.                   pack(pady=(10,0),padx=10,side = "top",anchor = "w")
+        mask_entry.             pack(pady=(10,0),padx=10,side = "top",anchor = "w")
+        manual_console.         pack(pady=(10,0),padx=10,side = "top",anchor = "w")
+        buttons_frame.          pack(pady=(10),padx=10,side = "top",anchor = "e")
+        save_button.            pack(pady=(10),padx=10,side = "right",anchor = "w")
+        exit_button.            pack(pady=(10),padx=10,side = "right",anchor = "e")
+    
+        online_list = self.refresh_interfaces()
+        select_interface.configure(values = self.connection_option_list)
+        select_interface.set(self.interface_drop_options.get())
+        ip_address_entry.insert(0,self.current_address_list[self.default_connection_option])
+        mask_entry.insert(0,"255.255.255.0")
+        check_interface_status(online_list)
+        
+        self.root.bind("<Button-1>",lambda e: window.destroy(),"+")
+        window.update()
+        window.update_idletasks()
+        self.root.update_idletasks()
+        x = self.root.winfo_rootx()
+        y = self.root.winfo_rooty()
+        window.geometry(f"{window.winfo_width()+100}x{window.winfo_height()}+{x+150}+{y+5}")
+
+        window.focus_force()
+        window.focus()
+
     def create_widgets(self,fav_status = None,init=None,excel_load_error = False):
         
         def get_none_count(array_given):
@@ -3258,6 +3382,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.undo_edit =            customtkinter.CTkButton(master = self.main_widgets, width = 50,height=40,text = "↶", command =  lambda: self.manage_bin(flag="load_edited_ip"),font=("",28,"bold"),corner_radius=0,border_width=1,text_color="red")
         button_make_first =         customtkinter.CTkButton(master = self.main_widgets, width = 200,height=40,text = "Přesunout na začátek",command =  lambda: self.make_project_first(),font=("Arial",20,"bold"),corner_radius=0)
         button_settings_behav =     customtkinter.CTkButton(master = self.main_widgets, width = 40,height=40,text="⚙️",command =  lambda: self.setting_window(ip_window=True),font=("",22),corner_radius=0)
+        manual_ip_set =             customtkinter.CTkButton(master = self.main_widgets, width = 40,height=40,text="Manuálně",command =  lambda: self.manual_ip_setting(),font=("Arial",20,"bold"),corner_radius=0)
         
         if self.show_favourite:
             self.button_remove_main.            configure(text="Odebrat")
@@ -3281,7 +3406,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             self.undo_edit.configure(state = "disabled")
 
         connect_label =         customtkinter.CTkLabel(master = self.main_widgets, width = 100,height=40,text = "Připojení: ",font=("Arial",20,"bold"))
-        self.drop_down_options = customtkinter.CTkOptionMenu(master = self.main_widgets,width=200,height=40,font=("Arial",20,"bold"),corner_radius=0,command=  self.option_change)
+        self.interface_drop_options = customtkinter.CTkOptionMenu(master = self.main_widgets,width=200,height=40,font=("Arial",20,"bold"),dropdown_font=("Arial",20),corner_radius=0,command=  self.option_change)
         # "⚙️", "⚒", "🔧", "🔩"
         button_settings =       customtkinter.CTkButton(master = self.main_widgets, width = 40,height=40,text="⚒",command =  lambda: self.refresh_interfaces(all=True),font=("",22),corner_radius=0) #refresh interface statusů
         button_dhcp =           customtkinter.CTkButton(master = self.main_widgets, width = 100,height=40,text = "DHCP",command =  lambda: self.change_to_DHCP(),font=("Arial",20,"bold"),corner_radius=0)
@@ -3305,8 +3430,9 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.undo_edit.                 grid(column = 0,row=0,pady = 5,padx =830,sticky = tk.W)
         button_make_first.              grid(column = 0,row=0,pady = 5,padx =885,sticky = tk.W)
         button_settings_behav.          grid(column = 0,row=0,pady = 5,padx =1100,sticky = tk.W)
+        manual_ip_set.                  grid(column = 0,row=0,pady = 5,padx =1145,sticky = tk.W)
         connect_label.                  grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
-        self.drop_down_options.         grid(column = 0,row=1,pady = 0,padx =110,sticky = tk.W)
+        self.interface_drop_options.         grid(column = 0,row=1,pady = 0,padx =110,sticky = tk.W)
         button_settings.                grid(column = 0,row=1,pady = 0,padx =315,sticky = tk.W)
         button_dhcp.                    grid(column = 0,row=1,pady = 0,padx =360,sticky = tk.W)
         static_label.                   grid(column = 0,row=1,pady = 0,padx =470,sticky = tk.W)
@@ -3319,11 +3445,11 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         # aktualizace hodnot nabídky
         if self.default_connection_option < len(self.connection_option_list):
             # nastavení naposledy zvoleného interfacu
-            self.drop_down_options.set(self.connection_option_list[self.default_connection_option])
+            self.interface_drop_options.set(self.connection_option_list[self.default_connection_option])
         else:
             self.default_connection_option = 0
             self.save_setting_parameter(parameter="change_def_conn_option",status=0)
-            self.drop_down_options.set(self.connection_option_list[self.default_connection_option])
+            self.interface_drop_options.set(self.connection_option_list[self.default_connection_option])
 
         if not excel_load_error:
             self.option_change("")
@@ -3536,5 +3662,5 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.root.mainloop()
 
 if testing_mode:
-    IP_assignment(root,"","max",str(os.getcwd())+"\\")
+    IP_assignment(root,"","max",str(os.getcwd())+"\\",100)
     root.mainloop()
