@@ -316,22 +316,27 @@ class DrawApp:
 # config = customtkinter.CTkScrollableFrame.configure()
 # print(config)
 
-for i in range(10,16):
-    print(i)
-    if str(i).isdigit():
-        print("ano")
+# for i in range(10,16):
+#     print(i)
+#     if str(i).isdigit():
+#         print("ano")
 
-def filter_unwanted_chars(to_filter_data, directory = False):
-    unwanted_chars = ["\n","\"","\'","[","]"]
-    if directory:
-        unwanted_chars = ["\n","\"","\'","[","]","\\","/"]
-    # for chars in unwanted_chars:
-    filtered_data = ""
-    for letters in to_filter_data:
-        if letters not in unwanted_chars:
-            filtered_data += letters
-    return filtered_data
+# def filter_unwanted_chars(to_filter_data, directory = False):
+#     unwanted_chars = ["\n","\"","\'","[","]"]
+#     if directory:
+#         unwanted_chars = ["\n","\"","\'","[","]","\\","/"]
+#     # for chars in unwanted_chars:
+#     filtered_data = ""
+#     for letters in to_filter_data:
+#         if letters not in unwanted_chars:
+#             filtered_data += letters
+#     return filtered_data
 
-data = r"['bmp', 'png']"
-new_data = filter_unwanted_chars(data)
-print(new_data)
+# data = r"['bmp', 'png']"
+# new_data = filter_unwanted_chars(data)
+# print(new_data)
+
+image_paths = [r"C:/Users/jakub.hlavacek.local/Desktop/Screenshot 2024-09-23 135409.png",r"C:\Users\jakub.hlavacek.local\Desktop\JHV\W",r"C:\Users\jakub.hlavacek.local\Desktop\JHV\W"]
+print(image_paths[0].split("/")[-1])
+noname = image_paths[0].replace(str(image_paths[0].split("/")[-1]),"")
+print(noname)

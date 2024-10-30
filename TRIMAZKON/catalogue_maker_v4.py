@@ -8,6 +8,7 @@ from openpyxl import load_workbook
 import xlwings as xw
 import string
 from PIL import Image as PILImage
+from PIL import ImageTk
 from datetime import datetime
 from tkinter import filedialog
 import os
@@ -92,12 +93,12 @@ def browseDirectories(visible_files,start_path=None,file_type = [("All files", "
     corrected_path = ""
     output= ""
     name_of_selected_file = ""
-    start_path = resource_path(os.getcwd())
+    if start_path == None:
+        start_path = resource_path(os.getcwd())
     start_path = path_check(start_path)
-
     # pripad vyberu files, aby byly viditelne
     if visible_files == "all":
-        if(start_path != ""):
+        if(start_path != "" and start_path != False):
             foldername_path = filedialog.askopenfile(initialdir = start_path,
                                                      title = "Klikněte na soubor v požadované cestě",
                                                      filetypes=file_type)
@@ -215,6 +216,13 @@ class Save_prog_metadata:
                             else:
                                 cam_child = ET.SubElement(camera_element, cam_key)
                                 cam_child.text = str(cam_value)  # Ensure value is a string
+                
+                elif key == "image_list":
+                    images = ET.SubElement(station_element, "image_list")
+                    for image in value:
+                        image_element = ET.SubElement(images, "image")
+                        image_element.text = image
+
                 else:
                     child = ET.SubElement(station_element, key)
                     child.text = str(value)  # Ensure value is a string
@@ -301,12 +309,21 @@ class Save_prog_metadata:
                                     camera_data[cam_child.tag] = ""
                         camera_list.append(camera_data)
                     station_data[child.tag] = camera_list
+                
+                elif child.tag == "image_list":
+                    image_list = []
+                    for image in child.findall("image"):
+                        if image.text is not None:
+                            image_list.append(image.text)
+                    station_data[child.tag] = image_list
+                    
                 else:
                     if child.text is not None:
                         station_data[child.tag] = child.text
                     else:
                         station_data[child.tag] = ""
-                        
+
+                         
             stations.append(station_data)
         return stations
 
@@ -1113,17 +1130,125 @@ class ToplevelWindow:
         window.focus()
 
 class Insert_image:
-    def __init__(self,root,childroot):
+    def __init__(self,root,childroot,image_paths,callback):
         self.root = root
         self.childroot = childroot
-        self.image_paths = [r"C:\Users\jakub.hlavacek.local\Desktop\JHV\W",r"C:\Users\jakub.hlavacek.local\Desktop\JHV\W",r"C:\Users\jakub.hlavacek.local\Desktop\JHV\W"]
+        self.image_paths = image_paths
+        self.callback_function = callback
+        self.image_name = ""
+        self.image_path_inserted = ""
+        self.current_image_index = 0
+        self.remembered_path = None
 
-        self.added_images_count = 0
+    def calc_current_format(self,image_width,image_height,frame_width,frame_height): # Přepočítávání rozměrů obrázku do rozměru rámce podle jeho formátu + zooming
+        """
+        Přepočítávání rozměrů obrázku do rozměru rámce podle jeho formátu
+
+        -vstupními daty jsou šířka a výška obrázku
+        -přepočítávání pozicování obrázku a scrollbarů v závislosti na zoomu
+        """
+        image_width = image_width
+        image_height = image_height
+        image_ratio = image_width / image_height
+
+        def rescale_image(): # Vmestnani obrazku do velikosti aktualni velikosti ramce podle jeho formatu
+            if image_height > image_width:
+                new_height = frame_height
+                if image_width > frame_width:
+                    new_width = int(new_height * image_ratio)
+                else:
+                    new_width = frame_width
+                    if image_width > frame_width:
+                        new_width = image_width
+                    new_height = int(new_width / image_ratio)
+
+            elif image_height < image_width:
+                new_width = frame_width
+
+                if image_height < frame_height:
+                    new_height = int(new_width / image_ratio)
+                else:
+                    new_height = frame_height
+                    if image_height < frame_height:
+                        new_height = image_height
+                    new_width = int(new_height * image_ratio)
+
+            elif image_height == image_width:
+                new_height = frame_height
+                new_width = new_height
+
+            #doublecheck
+            if new_height > frame_height:
+                new_height = frame_height
+                new_width = int(new_height * image_ratio)
+            if new_width > frame_width:
+                new_width = frame_width
+                new_height = int(new_width / image_ratio)
+
+            return (new_height,new_width)
+        
+        new_height, new_width = rescale_image()
+        return (int(new_width), int(new_height))
+
+    def load_image_paths(self,refresh = False):
+        if len(self.image_paths) == 0:
+            add_colored_line(self.console,"Není přiřazena fotografie","orange",None,True)
+            return
+        name_split = self.image_paths[self.current_image_index].split("/")
+        self.image_name = str(name_split[-1])
+        if self.image_paths[self.current_image_index].endswith("/"):
+            self.image_name = str(name_split[-2])
+        self.image_path_inserted = self.image_paths[self.current_image_index].replace(self.image_name,"")
+
+        if refresh:
+            if self.name_or_path.get() == 1:
+                add_colored_line(self.console,self.image_name,"white",None,True)
+            else:
+                add_colored_line(self.console,self.image_path_inserted + self.image_name,"white",None,True)
+            return
+        
+        self.image_frame.bind("<Button-3>", self.show_context_menu)
+
+        if not os.path.isfile(str(self.image_path_inserted)+str(self.image_name)):
+            self.image_frame.delete("lower")
+            add_colored_line(self.console,f"Cesta k souboru neexistuje: {str(self.image_paths[self.current_image_index])}","red",None,True)
+            return
+        try:
+            with PILImage.open(self.image_paths[self.current_image_index]) as opened_image:
+                width,height = opened_image.size
+                self.image_frame.update()
+                self.image_frame.update_idletasks()
+                dimensions = self.calc_current_format(width,
+                                                    height,
+                                                    self.image_frame.winfo_width(),
+                                                    self.image_frame.winfo_height())
+
+                resized = opened_image.resize(size=dimensions)
+                self.tk_image = ImageTk.PhotoImage(resized)
+                self.image_frame.delete("lower")
+                main_image = self.image_frame.create_image(0, 0,anchor=tk.NW, image=self.tk_image,tag = "lower")
+                self.image_frame.tag_lower(main_image)
+                if self.name_or_path.get() == 1:
+                    add_colored_line(self.console,self.image_name,"white",None,True)
+                else:
+                    add_colored_line(self.console,self.image_path_inserted + self.image_name,"white",None,True)
+
+        except Exception as e:
+            error_message = f"Obrázek: {self.image_name} je poškozen"
+            add_colored_line(self.console,error_message,"red",None,True)
+            # print(error_message)
+            self.image_name = ""
+            self.image_path_inserted = ""
+            self.image_frame.delete("lower")
+            return error_message
+        
+    def show_context_menu(self,event):
+        self.context_menu.tk_popup(event.x_root, event.y_root)
 
     def image_menu_gui(self):
         window = customtkinter.CTkToplevel()
         window.after(200, lambda: window.iconbitmap(app_icon_path))
-        window.title("Možnosti uložení projektu")
+        window.title("Možnosti vložení fotografie ke stanici")
         subwindow = ""
 
         def close_window(window):
@@ -1136,99 +1261,126 @@ class Insert_image:
             # window.grab_release()
             window.destroy()
 
-        def call_browse_directories():
+        def call_browse_directories(context_menu = False):
             """
             Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
             """
+            if context_menu:
+                name_split = self.image_paths[self.current_image_index].split("/")
+                self.remembered_path = str(self.image_paths[self.current_image_index].replace(str(name_split[-1]),""))
+                if self.image_paths[self.current_image_index].endswith("/"):
+                    self.remembered_path = str(self.image_paths[self.current_image_index].replace(str(name_split[-2]),""))
+
             filetypes = [
                 ("Image files", "*.png;*.jpg;*.bmp"),
                 ("All files", "*.*")
             ]
-            output = browseDirectories("all",file_type=filetypes)
+            output = browseDirectories("all",start_path=self.remembered_path,file_type=filetypes)
             if str(output[1]) != "/":
                 image_path.delete(0,300)
                 image_path.insert(0, str(output[1])+str(output[2]))
-                add_colored_line(console,"Byla vložena cesta a název souboru","green",None,True)
-
-            print(output[0])
-            self.childroot.focus_force()
-            self.childroot.focus()
+                self.remembered_path = str(output[1])
+                add_colored_line(self.console,"Byla vložena cesta a název souboru","green",None,True)
+                add_image_path()
+                
+            if self.childroot != None:
+                self.childroot.focus_force()
+                self.childroot.focus()
             window.focus_force()
             window.focus()
 
         def add_image_path():
             checked_path = path_check(image_path.get(),only_repair=True)
-            if checked_path == False:
-                print("neplatná cesta")
+            if checked_path == False or checked_path.replace(" ","") == "" or checked_path.replace(" ","") == "/":
+                add_colored_line(self.console,"Cesta k souboru je neplatná","red",None,True)
                 return
-            self.image_paths.append(checked_path)
-            load_image_paths()
-            self.added_images_count += 1
+            
+            if checked_path not in self.image_paths:
+                self.image_paths.append(checked_path)
+                self.callback_function(self.image_paths)
+                next_image(force_index=len(self.image_paths)-1)
+            else:
+                add_colored_line(self.console,"Soubor už je přidán","orange",None,True)
 
-        def load_image_paths():
-            for widget in all_images_frame.winfo_children():
-                widget.destroy()
+        def next_image(force_index = False):
+            if not force_index:
+                self.current_image_index +=1
+                if self.current_image_index == len(self.image_paths):
+                    self.current_image_index = 0
+            else:
+                self.current_image_index = force_index
+            self.image_number.configure(text = str(self.current_image_index+1)+"/"+str(len(self.image_paths)))
+            self.load_image_paths()
+        
+        def previous_image():
+            self.current_image_index -=1
+            if self.current_image_index < 0:
+                self.current_image_index = len(self.image_paths)-1
+            self.image_number.configure(text = str(self.current_image_index+1)+"/"+str(len(self.image_paths)))
+            self.load_image_paths()
 
-            def show_context_menu(event):
-                context_menu.tk_popup(event.x_root, event.y_root)
+        def remove_file(file):
+            self.image_paths.pop(self.image_paths.index(file))
+            self.callback_function(self.image_paths)
+            previous_image()
 
-            context_menu = tk.Menu(window, tearoff=0)
-            context_menu.add_command(label="Option 1", command=lambda: print("Option 1 selected"),font=("Arial",22,"bold"))
-            context_menu.add_command(label="Option 2", command=lambda: print("Option 2 selected"),font=("Arial",22,"bold"))
-            context_menu.add_separator()
+        load_photo_frame =  customtkinter.CTkFrame(master = window,corner_radius=0)
+        image_path_label =  customtkinter.CTkLabel(master = load_photo_frame,text = "Zadejte cestu k fotografii:",font=("Arial",22,"bold"))
+        image_path_frame =  customtkinter.CTkFrame(master = load_photo_frame,corner_radius=0)
+        image_path =        customtkinter.CTkEntry(master = image_path_frame,font=("Arial",20),width=580,height=50,corner_radius=0)
+        explorer_btn =      customtkinter.CTkButton(master = image_path_frame,text = "...",font=("Arial",22,"bold"),width = 50,height=50,corner_radius=0,command=lambda: call_browse_directories())
+        save_path_btn =     customtkinter.CTkButton(master = image_path_frame,text = "💾",font=("",22),width = 50,height=50,corner_radius=0,command=lambda: add_image_path())
+        image_path          .pack(pady = 5, padx = (10,0),anchor="w",fill="x",expand=True,side="left")
+        save_path_btn       .pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
+        explorer_btn        .pack(pady = 5, padx = (10,0),anchor="e",expand=False,side="right")
+        self.console =      tk.Text(load_photo_frame, wrap="none", height=0, width=70,background="black",font=("Arial",22),state=tk.DISABLED)
+        controls_frame =    customtkinter.CTkFrame(master = load_photo_frame,corner_radius=0,height=50)
+        self.name_or_path = customtkinter.CTkCheckBox(master = controls_frame, text = "Název/ cesta",font=("Arial",22,"bold"),command=lambda: self.load_image_paths(refresh=True))
+        button_left =       customtkinter.CTkButton(master = controls_frame,text = "<",font=("Arial",30,"bold"),width = 150,height=50,corner_radius=0,command=lambda: previous_image())
+        self.image_number = customtkinter.CTkLabel(master = controls_frame,text = f"1/{str(len(self.image_paths))}",font=("Arial",22,"bold"))
+        button_right =      customtkinter.CTkButton(master = controls_frame,text = ">",font=("Arial",30,"bold"),width = 150,height=50,corner_radius=0,command=lambda: next_image())
+        self.name_or_path   .pack(pady = 10, padx = 10,anchor="w",side="left")
+        button_left         .pack(pady = 0, padx = 10,anchor="w",side="left")
+        self.image_number   .pack(pady = 0, padx = 10,anchor="w",side="left")
+        button_right        .pack(pady = 0, padx = 10,anchor="w",side="left")
+        self.image_frame =  tk.Canvas(master=load_photo_frame,bg="#212121",highlightthickness=0)
+        buttons_frame =     customtkinter.CTkFrame(master = load_photo_frame,corner_radius=0)
+        button_exit =       customtkinter.CTkButton(master = buttons_frame,text = "Zavřít",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
+        button_exit         .pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
+        load_photo_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left")
+        image_path_label    .pack(pady=(10,5),padx=10,anchor="w",expand=False,side="top")
+        image_path_frame    .pack(expand=False,side="top",anchor="n",fill="x")
+        controls_frame      .pack(expand=False,side="top",anchor="n",fill="x")
+        self.console        .pack(expand=False,side="top",anchor="n",fill="x")
+        self.image_frame    .pack(pady = 5, padx = 5,expand=True,side="top",fill="both",anchor="n")
+        buttons_frame       .pack(pady = 0, padx = 0,expand=False,side="top",fill="x")
 
-            for i in range(0,len(self.image_paths)):
-                new_path_frame = customtkinter.CTkFrame(master = all_images_frame,corner_radius=0,border_width=3)
-                new_path_label = customtkinter.CTkLabel(master = new_path_frame,text = str(i+1) + ".  " + self.image_paths[i],font=("Arial",22,"bold"))
-                new_path_label.pack(pady = 10, padx = 10,expand=False,side="top",anchor="w")
-                new_path_frame.pack(pady = 0, padx = 0,expand=False,side="top",fill="x")
-                new_path_frame.bind("<Button-3>", show_context_menu)
-
-            window.update()
-            window.update_idletasks()
-            window.geometry(f"{window.winfo_width()}x{window.winfo_height()+30}")
-            window._update_dimensions_event()
-
-
-
-        load_photo_frame =     customtkinter.CTkFrame(master = window,corner_radius=0)
-        image_path_label =     customtkinter.CTkLabel(master = load_photo_frame,text = "Zadejte cestu k fotografii:",font=("Arial",22,"bold"))
-        image_path_frame =     customtkinter.CTkFrame(master = load_photo_frame,corner_radius=0)
-        image_path =           customtkinter.CTkEntry(master = image_path_frame,font=("Arial",20),width=580,height=50,corner_radius=0)
-        explorer_btn =         customtkinter.CTkButton(master = image_path_frame,text = "...",font=("Arial",22,"bold"),width = 50,height=50,corner_radius=0,command=lambda: call_browse_directories())
-        save_path_btn =        customtkinter.CTkButton(master = image_path_frame,text = "💾",font=("",22),width = 50,height=50,corner_radius=0,command=lambda: add_image_path())
-        image_path             .pack(pady = 5, padx = (10,0),anchor="w",fill="x",expand=True,side="left")
-        save_path_btn          .pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
-        explorer_btn           .pack(pady = 5, padx = (10,0),anchor="e",expand=False,side="right")
-        console =              tk.Text(load_photo_frame, wrap="none", height=0, width=70,background="black",font=("Arial",22),state=tk.DISABLED)
-        all_images_frame =     customtkinter.CTkFrame(master = load_photo_frame,corner_radius=0,height=50)
-
-        buttons_frame =        customtkinter.CTkFrame(master = load_photo_frame,corner_radius=0)
-        button_exit =          customtkinter.CTkButton(master = buttons_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
-        button_exit            .pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
-
-        load_photo_frame       .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left")
-        image_path_label       .pack(pady=(10,5),padx=10,anchor="w",expand=False,side="top")
-        image_path_frame       .pack(expand=True,side="top",anchor="n",fill="x")
-        console                .pack(expand=True,side="top",anchor="n")
-        all_images_frame       .pack(pady = 0, padx = 0,expand=True,side="top",fill="x")
-        buttons_frame          .pack(pady = 0, padx = 0,expand=False,side="top",fill="x")
-
-
-        load_image_paths()
-
+        self.context_menu = tk.Menu(window, tearoff=0,fg="white",bg="black")
+        self.context_menu.add_command(label="Otevřít cestu", command=lambda: call_browse_directories(context_menu = True),font=("Arial",22,"bold"))
+        self.context_menu.add_separator()
+        self.context_menu.add_command(label="Odstranit cestu", command=lambda: remove_file(self.image_paths[self.current_image_index]),font=("Arial",22,"bold"))
         self.root.bind("<Button-1>",lambda e: close_window(window),"+")
-        self.childroot.bind("<Button-1>",lambda e: close_window(window),"+")
+        if self.childroot != None:
+            self.childroot.bind("<Button-1>",lambda e: close_window(window),"+")
         window.update()
         window.update_idletasks()
-        # window.geometry(f"1015x350+{self.x+200}+{self.y+50}")
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
-        window.geometry(f"{window.winfo_width()}x{window.winfo_height()}+{x+200}+{y+50}")
+        window.geometry(f"1200x900+{x+200}+{y+50}")
+        self.load_image_paths()
         window.focus_force()
         window.focus()
         window.grab_set()
         window.grab_release()
+
+        window.bind("<Left>",lambda e: previous_image())
+        window.bind("<Right>",lambda e: next_image())
+        def mousewheel_handle(e):
+            if e.delta < 0:
+                previous_image()
+            else:
+                next_image()
+        window.bind("<MouseWheel>",mousewheel_handle)
 
 class Catalogue_gui:
     def __init__(self,root,download_status,
@@ -1441,8 +1593,9 @@ class Catalogue_gui:
     def switch_widget_info(self,args,widget_tier,widget):
         if len(widget_tier) == 2: #01-99 stanice
             station_index = int(widget_tier[:2])
-            if widget._text != str(self.station_list[station_index]["name"]):
-                widget.configure(text=str(self.station_list[station_index]["name"]),font = ("Arial",25,"bold"))
+            station_name = str(self.station_list[station_index]["name"])
+            if widget._text != station_name:
+                widget.configure(text=station_name,font = ("Arial",25,"bold"))
             else:
                 notes_raw = str(self.station_list[station_index]["inspection_description"])
                 description = strip_lines_to_fit(notes_raw)
@@ -1563,6 +1716,15 @@ class Catalogue_gui:
             widget.configure(border_color="white")
 
     def make_block(self,master_widget,height,width,fg_color,text,side,dummy_block = False,tier = "",border_color="#636363",anchor="w",fill=None):
+        def show_image(event,tier):
+            def manage_photo_callback(updated_list):
+                self.station_list[station_index]["image_list"] = updated_list
+
+            station_index = int(tier)
+            if "image_list" in self.station_list[station_index]:
+                show_im = Insert_image(self.root,None,self.station_list[station_index]["image_list"],manage_photo_callback)
+                show_im.image_menu_gui()
+
         if dummy_block:
             dummy_block_widget =    customtkinter.CTkFrame(master=master_widget,corner_radius=0,height=height,width =width-10,fg_color="#212121")
             dummy_block_widget.     pack(pady = 0,padx =0,expand = False,side = side,anchor=anchor)
@@ -1581,6 +1743,9 @@ class Catalogue_gui:
             block_name.         bind("<Button-3>",lambda e, widget_tier=tier,widget = block_name: self.switch_widget_info(e, widget_tier,widget))
             block_widget.       bind("<Button-1>",lambda e, widget_tier=tier,widget = block_widget: self.select_block(e, widget_tier,widget))
             block_name.         bind("<Button-1>",lambda e, widget_tier=tier,widget = block_widget: self.select_block(e, widget_tier,widget))
+            if len(tier) == 2:
+                block_name.bind("<Double-Button-1>",lambda e,widget_tier=tier: show_image(e,widget_tier))
+                block_widget.bind("<Double-Button-1>",lambda e,widget_tier=tier: show_image(e,widget_tier))
             return block_name
         
     def make_new_object(self,which_one,object_to_edit = None,cam_index = None,optic_index = None):
@@ -1674,7 +1839,6 @@ class Catalogue_gui:
                     else:
                         new_camera_index = "00"
                     self.edit_object("",widget_tier+str(new_camera_index),new_station=False)
-                
 
         elif len(widget_tier) == 7: #xxxxc01-xxxxc99 kontrolery - tzn. nove prislusenstvi ke kontroleru
             if btn == "add_object":
@@ -2129,7 +2293,15 @@ class Catalogue_gui:
                 return "break"  # Stop the event from inserting the original character
         
         def add_photo():
-            insert_image_class = Insert_image(self.root,child_root)
+            def add_photo_callback(updated_list):
+                self.station_list[station_index]["image_list"] = updated_list
+            image_list_given = []
+            if "image_list" in self.station_list[station_index]:
+                image_list_given = self.station_list[station_index]["image_list"]
+            insert_image_class = Insert_image(self.root,
+                                              child_root,
+                                              image_list_given,
+                                              add_photo_callback)
             insert_image_class.image_menu_gui()
             
         child_root = customtkinter.CTkToplevel()
@@ -2144,7 +2316,7 @@ class Catalogue_gui:
         button_prev_st              .pack(pady = 5, padx = 0,anchor="w",expand=False,side="left")
         new_name                    .pack(pady = 5, padx = 0,anchor="w",expand=True,side="left",fill="x")
         button_next_st              .pack(pady = 5, padx = 0,anchor="w",expand=False,side="left")
-        button_add_photo =          customtkinter.CTkButton(master = station_frame,text = "Přiřadit fotografii",font=("Arial",22,"bold"),height=50,corner_radius=0,command=lambda: add_photo())
+        button_add_photo =          customtkinter.CTkButton(master = station_frame,text = "Přiřadit/ zobrazit fotografii",font=("Arial",22,"bold"),height=50,corner_radius=0,command=lambda: add_photo())
         inspection_description =    customtkinter.CTkLabel(master = station_frame,text = "Popis inspekce:",font=("Arial",22,"bold"))
         new_description =           customtkinter.CTkTextbox(master = station_frame,font=("Arial",22),width=300,height=220,corner_radius=0)
         station_name_label          .pack(pady=(15,5),padx=10,anchor="w",expand=False,side = "top")
@@ -3041,7 +3213,6 @@ class Catalogue_gui:
             
             self.station_list[station_index]["row_count"] = station_rows
 
-
         if not initial:
             self.changes_made = True
         self.clear_frame(self.project_tree)
@@ -3058,7 +3229,6 @@ class Catalogue_gui:
 
             station_camera_list = self.station_list[i]["camera_list"]
             camera_count = len(station_camera_list)
-
             station_frame = customtkinter.CTkFrame(master=self.project_tree,corner_radius=5,fg_color="#212121")
             station_frame.pack(pady=5,padx=0,side = "top",anchor = "w",expand = False)
 

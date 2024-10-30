@@ -1,0 +1,5 @@
+<?xml version='1.0' encoding='utf-8'?>
+<metadata><controllers /><station_list><station><name>Název stanice</name><inspection_description>- popis inspekce
+</inspection_description><camera_list><camera><type>FH-SC12</type><controller /><controller_color /><cable /><optics_list><optic><type /><alternative /><accessory_list>[]</accessory_list><description>
+</description></optic></optics_list><description>
+</description><controller_index>None</controller_index><row_count>1</row_count></camera></camera_list><image_list><image>C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/24_type.PNG/</image><image>C:/Users/jakub.hlavacek.local/Pictures/Screenshots/Screenshot 2024-05-15 134624.png/</image><image>C:/Users/jakub.hlavacek.local/Pictures/Screenshots/Screenshot 2024-06-24 105833.png/</image></image_list><row_count>1</row_count></station></station_list><project_name /></metadata>

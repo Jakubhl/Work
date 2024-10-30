@@ -644,17 +644,27 @@ prohlížeč - oprava blikání při spuštění sekvence obrázků
 2:37 PM 10/22/2024
 prohlížeč - při initu je rozhozená pozice obrázku - hotovo
 
+11:10 AM 10/29/2024
+ip_setting - mít možnost nastavit přímo ip atd ne z uloženého projektu - hotovo
+catalogue - oprava chybějícího seznamu světel
+catalogue - oprava předvyplňování optiky v editu
+
+2:59 PM 10/30/2024
+catalogue - možnost ke stanici přiřadit fotku - gui - hotovo
+catalogue - možnost ke stanici přiřadit fotku - save_xml - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-catalogue - možnost ke stanici přiřadit fotku - tlačítko - nový list - načíst fotku
-catalogue - dodělat spojení/ merge řádků (sudý počet...) zkusit nejdřív prohládat dummy bloky
+
+catalogue - možnost ke stanici přiřadit fotku - dodělat export
+
+ip setting - rozdělit do tříd
+
+catalogue - když nový komponent a zrušit, přidá se
 
 
-
-ip_setting - mít možnost nastavit přímo ip atd ne z uloženého programu
+zkontrolovat pamatovani cest u explorerů
 
 TRIMAZKON při navrácení zpět do menu nemohu nastavovat celkový zoom aplikace ???
-
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon
 
