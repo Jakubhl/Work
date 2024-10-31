@@ -1130,7 +1130,7 @@ class ToplevelWindow:
         window.focus()
 
 class Insert_image:
-    def __init__(self,root,childroot,image_paths,callback):
+    def __init__(self,root,childroot,image_paths,callback,window_scale,remembered_path=None):
         self.root = root
         self.childroot = childroot
         self.image_paths = image_paths
@@ -1138,7 +1138,8 @@ class Insert_image:
         self.image_name = ""
         self.image_path_inserted = ""
         self.current_image_index = 0
-        self.remembered_path = None
+        self.remembered_path = remembered_path
+        self.window_scale = window_scale
 
     def calc_current_format(self,image_width,image_height,frame_width,frame_height): # Přepočítávání rozměrů obrázku do rozměru rámce podle jeho formátu + zooming
         """
@@ -1194,11 +1195,12 @@ class Insert_image:
         if len(self.image_paths) == 0:
             add_colored_line(self.console,"Není přiřazena fotografie","orange",None,True)
             return
-        name_split = self.image_paths[self.current_image_index].split("/")
+        current_path = str(self.image_paths[self.current_image_index])
+        if current_path.endswith("/"):
+            current_path = current_path[:-1]
+        name_split = current_path.split("/")
         self.image_name = str(name_split[-1])
-        if self.image_paths[self.current_image_index].endswith("/"):
-            self.image_name = str(name_split[-2])
-        self.image_path_inserted = self.image_paths[self.current_image_index].replace(self.image_name,"")
+        self.image_path_inserted = current_path.replace(self.image_name,"")
 
         if refresh:
             if self.name_or_path.get() == 1:
@@ -1211,10 +1213,10 @@ class Insert_image:
 
         if not os.path.isfile(str(self.image_path_inserted)+str(self.image_name)):
             self.image_frame.delete("lower")
-            add_colored_line(self.console,f"Cesta k souboru neexistuje: {str(self.image_paths[self.current_image_index])}","red",None,True)
+            add_colored_line(self.console,f"Cesta k souboru neexistuje: {current_path}","red",None,True)
             return
         try:
-            with PILImage.open(self.image_paths[self.current_image_index]) as opened_image:
+            with PILImage.open(current_path) as opened_image:
                 width,height = opened_image.size
                 self.image_frame.update()
                 self.image_frame.update_idletasks()
@@ -1234,7 +1236,7 @@ class Insert_image:
                     add_colored_line(self.console,self.image_path_inserted + self.image_name,"white",None,True)
 
         except Exception as e:
-            error_message = f"Obrázek: {self.image_name} je poškozen"
+            error_message = f"Obrázek: {self.image_name} je poškozen. {e}"
             add_colored_line(self.console,error_message,"red",None,True)
             # print(error_message)
             self.image_name = ""
@@ -1297,7 +1299,7 @@ class Insert_image:
             
             if checked_path not in self.image_paths:
                 self.image_paths.append(checked_path)
-                self.callback_function(self.image_paths)
+                self.callback_function(self.image_paths,self.remembered_path)
                 next_image(force_index=len(self.image_paths)-1)
             else:
                 add_colored_line(self.console,"Soubor už je přidán","orange",None,True)
@@ -1321,7 +1323,7 @@ class Insert_image:
 
         def remove_file(file):
             self.image_paths.pop(self.image_paths.index(file))
-            self.callback_function(self.image_paths)
+            self.callback_function(self.image_paths,self.remembered_path)
             previous_image()
 
         load_photo_frame =  customtkinter.CTkFrame(master = window,corner_radius=0)
@@ -1367,6 +1369,8 @@ class Insert_image:
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
         window.geometry(f"1200x900+{x+200}+{y+50}")
+        if self.window_scale == 1:
+            window.state('zoomed')
         self.load_image_paths()
         window.focus_force()
         window.focus()
@@ -1450,6 +1454,7 @@ class Catalogue_gui:
         self.last_scroll_position = 0.0
         self.render_mode = default_render_mode
         self.widget_list = [] #lists of every widget by station
+        self.last_path_to_images = None
         self.read_database()
         self.create_main_widgets(initial=True)
 
@@ -1717,12 +1722,13 @@ class Catalogue_gui:
 
     def make_block(self,master_widget,height,width,fg_color,text,side,dummy_block = False,tier = "",border_color="#636363",anchor="w",fill=None):
         def show_image(event,tier):
-            def manage_photo_callback(updated_list):
+            def manage_photo_callback(updated_list,last_path):
                 self.station_list[station_index]["image_list"] = updated_list
+                self.last_path_to_images = last_path
 
             station_index = int(tier)
             if "image_list" in self.station_list[station_index]:
-                show_im = Insert_image(self.root,None,self.station_list[station_index]["image_list"],manage_photo_callback)
+                show_im = Insert_image(self.root,None,self.station_list[station_index]["image_list"],manage_photo_callback,self.default_subwindow_status,self.last_path_to_images)
                 show_im.image_menu_gui()
 
         if dummy_block:
@@ -1821,9 +1827,15 @@ class Catalogue_gui:
     def manage_widgets(self,args,widget_tier,btn,open_edit = True):
         if btn == "add_line": # nova stanice
             new_station = self.make_new_object("station")
-            self.station_list.append(new_station)
-            # self.make_project_widgets()
-            self.edit_object("",widget_tier,new_station=True)
+            if len(self.station_list) > 0:
+                self.station_list.insert(int(widget_tier)+1,new_station)
+                widget_tier = str(int(widget_tier)+1)
+                if len(widget_tier) < 2:
+                    widget_tier = "0" + widget_tier
+                self.edit_object("",widget_tier) # logika pro vložení pod posledně zvolený widget
+            else:
+                self.station_list.append(new_station)
+                self.edit_object("",widget_tier,new_station=True)
             return
         
         if len(widget_tier) == 2: #01-99 stanice
@@ -2293,15 +2305,18 @@ class Catalogue_gui:
                 return "break"  # Stop the event from inserting the original character
         
         def add_photo():
-            def add_photo_callback(updated_list):
+            def add_photo_callback(updated_list,last_path):
                 self.station_list[station_index]["image_list"] = updated_list
+                self.last_path_to_images = last_path
             image_list_given = []
             if "image_list" in self.station_list[station_index]:
                 image_list_given = self.station_list[station_index]["image_list"]
             insert_image_class = Insert_image(self.root,
                                               child_root,
                                               image_list_given,
-                                              add_photo_callback)
+                                              add_photo_callback,
+                                              self.default_subwindow_status,
+                                              self.last_path_to_images)
             insert_image_class.image_menu_gui()
             
         child_root = customtkinter.CTkToplevel()
@@ -2899,24 +2914,34 @@ class Catalogue_gui:
 
     def create_main_widgets(self,initial=False):
         def call_manage_widgets(button):
+            """
+            add_line = přidat pouze stanici
+            add_object = vše nové, ostatní
+            """
+            def get_last_st_position():
+                next_st_widget_tier = len(self.station_list)
+                if next_st_widget_tier < 10:
+                    next_st_widget_tier = "0" + str(next_st_widget_tier)
+                return str(next_st_widget_tier)
+
             widget_tier = ""
             widget_tier = self.current_block_id
             if len(self.station_list) == 0:
                 widget_tier = "00"
 
             if button == "add_line":
+                if widget_tier == "":
+                    widget_tier = get_last_st_position()
+
                 if widget_tier != "":
                     if len(widget_tier) > 2: # pokud je nakliknuteho neco jiného než stanice - přidej novou pod poslední
-                        next_st_widget_tier = len(self.station_list)
-                        if next_st_widget_tier < 10:
-                            next_st_widget_tier = "0" + str(next_st_widget_tier)
-                        self.current_block_id = str(next_st_widget_tier)
-                        self.manage_widgets("",str(next_st_widget_tier),btn=button)
-                        return
-
-                    self.manage_widgets("",widget_tier,btn=button)
+                        station_tier = widget_tier[:2]
+                        # self.current_block_id = get_last_st_position()
+                        self.current_block_id = station_tier
+                        self.manage_widgets("",self.current_block_id,btn=button)
+                    else:
+                        self.manage_widgets("",widget_tier,btn=button)
                     return
-                
             elif widget_tier != "" and self.current_block_id != "":
                 self.manage_widgets("",widget_tier,btn=button)
                 return
@@ -3114,6 +3139,7 @@ class Catalogue_gui:
         self.root.mainloop()
     
     def make_project_widgets(self,initial = False,return_scroll = True):
+        self.current_block_id = ""
         self.last_scroll_position = self.project_tree._parent_canvas.yview()[0]
 
         def upgrade_widget_heights(widget_list):
@@ -4046,12 +4072,31 @@ class Save_excel:
                         ws[excel_cell] = accessory["description"]
                         ws[excel_cell].alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
 
+    def fill_images(self,wb):
+        for station in self.station_list:
+            if "image_list" in station:
+                ws = wb.create_sheet(str(station["name"])+" - foto")
+                num_of_images = 0
+                for image_paths in station["image_list"]:
+                    num_of_images +=1
+                    try:
+                        if image_paths.endswith("/"):
+                            image_paths = image_paths[:-1]
+                        image = Image(image_paths)
+                        if num_of_images > 1:
+                            ws.add_image(image,"A"+str(num_of_images*10))
+                        else:
+                            ws.add_image(image,"A"+str(num_of_images))
+                    except Exception as e:
+                        print(f"Obrázek {image_paths} se nepodařilo exportovat. {e}")
+
     def main(self):
         wb = Workbook() #vytvorit novy excel, prepsat...
         if ".xlsm" in self.excel_file_name:
             self.init_objects()
             rows_to_merge = self.get_cells_to_merge()
             self.make_header(wb)
+            self.fill_images(wb)
             # try:
             if os.path.exists(self.temp_excel_file_name):
                 os.remove(self.temp_excel_file_name)
@@ -4091,6 +4136,7 @@ class Save_excel:
                 self.merge_cells(wb,merge_list=rows_to_merge)
                 self.fill_values(wb)
                 self.fill_xlsx_column(wb)
+                self.fill_images(wb)
                 wb.save(self.excel_file_name)
                 wb.close()
                 add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)

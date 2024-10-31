@@ -652,18 +652,21 @@ catalogue - oprava předvyplňování optiky v editu
 2:59 PM 10/30/2024
 catalogue - možnost ke stanici přiřadit fotku - gui - hotovo
 catalogue - možnost ke stanici přiřadit fotku - save_xml - hotovo
+
+6:53 PM 10/31/2024
+catalogue - možnost ke stanici přiřadit fotku - dodělat export - hotovo
+catalogue - pamatovat si cestu k obrazkum - pridat do callbacku - hotovo
+catalogue - nová stanice - zvolte pro co pridat - upravit manage_widgets - hotovo
+catalogue - když nový komponent a zrušit, přidá se... = udělat kopii self.station_list_temp - když zrušit smaže se, když uložit propise se - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
-catalogue - možnost ke stanici přiřadit fotku - dodělat export
+catalogue - když nový komponent a zrušit, přidá se... to samé u kontroleru
 
+
+TRIMAZKON zkontrolovat pamatovani cest u explorerů
 ip setting - rozdělit do tříd
-
-catalogue - když nový komponent a zrušit, přidá se
-
-
-zkontrolovat pamatovani cest u explorerů
-
 TRIMAZKON při navrácení zpět do menu nemohu nastavovat celkový zoom aplikace ???
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon

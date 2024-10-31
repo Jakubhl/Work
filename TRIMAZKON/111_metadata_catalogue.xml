@@ -36,7 +36,7 @@ Svìtlo: LA-120W
 </inspection_description><camera_list><camera><type>FH-SMX01</type><controller>KG01 (FH-2051-20)</controller><controller_color /><cable /><optics_list><optic><type>3Z4S-LE SV-5014H</type><alternative /><accessory_list>[]</accessory_list><description>
 </description><excel_position>C13</excel_position><hidden_values>GE</hidden_values></optic></optics_list><description>1,6 nebo 3Mpix kamera + Koaxiální světlo
 Svìtlo: CL-50
-</description><row_count>1</row_count><controller_index>0</controller_index><excel_position>B13</excel_position><hidden_values>DE</hidden_values></camera></camera_list><row_count>1</row_count><excel_position>A13</excel_position><hidden_values>AD</hidden_values></station><station><name>ST070</name><inspection_description>Kontrola jestli modrá těsnící guma neleze ven ze senzoru.
+</description><row_count>1</row_count><controller_index>0</controller_index><excel_position>B13</excel_position><hidden_values>DE</hidden_values></camera></camera_list><row_count>1</row_count><excel_position>A13</excel_position><hidden_values>AD</hidden_values><image_list><image>C:/Users/kubah/Pictures/Screenshots/Screenshot 2023-10-16 191432.png/</image><image>C:/Users/kubah/Pictures/Screenshots/Screenshot 2023-11-28 223650.png/</image></image_list></station><station><name>ST070</name><inspection_description>Kontrola jestli modrá těsnící guma neleze ven ze senzoru.
 </inspection_description><camera_list><camera><type>FH-SMX03</type><controller>KG02 (FH-2051-10)</controller><controller_color /><cable /><optics_list><optic><type>3Z4S-LE SV-3514H</type><alternative /><accessory_list>[]</accessory_list><description>
 </description><excel_position>C15</excel_position><hidden_values>GF</hidden_values></optic><optic><type /><alternative /><excel_position>C16</excel_position><description /><hidden_values>GG</hidden_values></optic><optic><type /><alternative /><excel_position>C17</excel_position><description /><hidden_values>GH</hidden_values></optic></optics_list><description>2x 3Mpix  (boční pohled telecentrika, vrchní barevná kamera + Doom světlo)
 
@@ -69,9 +69,8 @@ Svìtlo: SP-27IR-850
 </description></optic><optic><type>LA-70W</type><alternative /><accessory_list>[]</accessory_list><description>
 </description><light_status>1</light_status></optic><optic><type>BL-50W-4S</type><alternative /><accessory_list>[]</accessory_list><description>
 </description><light_status>1</light_status></optic></optics_list><description>12MPix objektiv Telecentrika 
-
 svìtlo: LA-70B
-</description><row_count>4</row_count><controller_index>2</controller_index><excel_position>B35</excel_position><hidden_values>DK</hidden_values></camera></camera_list><row_count>4</row_count><excel_position>A35</excel_position><hidden_values>AH</hidden_values></station><station><name>ST270</name><inspection_description>Kontrola naohýbání drátku 
+</description><row_count>4</row_count><controller_index>2</controller_index><excel_position>B35</excel_position><hidden_values>DK</hidden_values></camera></camera_list><row_count>4</row_count><excel_position>A35</excel_position><hidden_values>AH</hidden_values><image_list><image>C:/Users/kubah/Pictures/Screenshots/Screenshot 2023-10-23 002535.png/</image></image_list></station><station><name>ST270</name><inspection_description>Kontrola naohýbání drátku 
 </inspection_description><camera_list><camera><type>FH-SMX05</type><controller>KG03 (FH-2051-10)</controller><controller_color /><cable /><optics_list><optic><type>TO42/16.0-120-V-BW</type><alternative /><accessory_list>[]</accessory_list><description>Telecentrika 
 </description><excel_position>C37</excel_position><hidden_values>GW</hidden_values></optic></optics_list><description>5Mpx kamera + Telecentrika 
 svìtlo: BL-50W-4S
