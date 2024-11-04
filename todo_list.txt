@@ -675,6 +675,8 @@ ________________________________________________________________________________
 ip setting - rozdělit do tříd
 ip setting - grid předělat na pack
 
+ip setting - nepsat u disku do konzole současná připojení interfaců, ale disků
+
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon
 
