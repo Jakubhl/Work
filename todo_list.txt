@@ -640,6 +640,7 @@ release verze 4.0.0
 prohlížeč - když smažu - neaktualizuje se pás obrázků - hotovo
 prohlížeč - když rychle přepínám - projede nejdřív vše v hlavním okně a pak až projede pás (zkusit přes thread) - hotovo
 prohlížeč - oprava blikání při spuštění sekvence obrázků
+release 4.0.1
 
 2:37 PM 10/22/2024
 prohlížeč - při initu je rozhozená pozice obrázku - hotovo
@@ -658,16 +659,22 @@ catalogue - možnost ke stanici přiřadit fotku - dodělat export - hotovo
 catalogue - pamatovat si cestu k obrazkum - pridat do callbacku - hotovo
 catalogue - nová stanice - zvolte pro co pridat - upravit manage_widgets - hotovo
 catalogue - když nový komponent a zrušit, přidá se... = udělat kopii self.station_list_temp - když zrušit smaže se, když uložit propise se - hotovo
+catalogue - když nový komponent a zrušit, přidá se... to samé u kontroleru - hotovo
+
+10:56 AM 11/4/2024
+kontextová nabídka u prohlížeče obrázků - hotovo
+ip_setting - optimalizace chování poznámek - hotovo
+TRIMAZKON při navrácení zpět do menu nemohu nastavovat celkový zoom aplikace ??? - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
-catalogue - když nový komponent a zrušit, přidá se... to samé u kontroleru
 
 
-TRIMAZKON zkontrolovat pamatovani cest u explorerů
+
 ip setting - rozdělit do tříd
-TRIMAZKON při navrácení zpět do menu nemohu nastavovat celkový zoom aplikace ???
+ip setting - grid předělat na pack
+
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon
 

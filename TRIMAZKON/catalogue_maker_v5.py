@@ -13,13 +13,13 @@ from datetime import datetime
 from tkinter import filedialog
 import os
 import xml.etree.ElementTree as ET
-# import sharepoint_download as download_database
+import sharepoint_download as download_database
 import sys
 # import threading
 # import math
 import copy
 
-testing = True
+testing = False
 if testing:
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")
@@ -727,10 +727,6 @@ class ToplevelWindow:
         def refresh_counters():
             nonlocal accessory_index
             nonlocal counter_acc
-            if len(controller["accessory_list"]) == 0:
-                addition = 0
-            else:
-                addition = 1
             try:
                 counter_acc_state = str(accessory_index+1) + "/" + str(len(controller["accessory_list"]))
                 counter_acc.configure(text = counter_acc_state)
@@ -773,7 +769,7 @@ class ToplevelWindow:
             except TypeError: # pokud je v indexu None - defaultně nastavit index na nulu:
                 try:
                     accessory_index = 0
-                    if str(controller["accessory_list"][accessory_index]["type"]) in self.whole_accessory_database:   
+                    if str(controller["accessory_list"][accessory_index]["type"]) in self.whole_accessory_database:
                         hw_type_entry.set(str(controller["accessory_list"][accessory_index]["type"]))
                     else:
                         hw_type_entry.set("")
@@ -1828,6 +1824,7 @@ class Catalogue_gui:
     def manage_widgets(self,args,widget_tier,btn,open_edit = True,rewrite_temp = True):
         if rewrite_temp:
             self.temp_station_list = copy.deepcopy(self.station_list)
+
         if btn == "add_line": # nova stanice
             new_station = self.make_new_object("station")
             if len(self.temp_station_list) > 0 and self.temp_station_list[0] != "00":
@@ -1877,7 +1874,7 @@ class Catalogue_gui:
                     else:
                         new_optics_index = "00"
                     self.edit_object("",widget_tier+str(new_optics_index),new_station=False)
-
+        
         print("widget_tier: ",widget_tier)
 
     def confirm_delete(self,to_del_object):
@@ -2676,7 +2673,10 @@ class Catalogue_gui:
         child_root.focus_force()
         child_root.focus()
 
-    def edit_object(self,args,widget_tier,new_station = False):
+    def edit_object(self,args,widget_tier,new_station = False,rewrite_temp = False):
+        if rewrite_temp:
+            self.temp_station_list = copy.deepcopy(self.station_list)
+
         def callback_edited_controller(new_controller_data):
             nonlocal controller_index
             self.controller_object_list[controller_index]["type"] = new_controller_data[0]
@@ -2955,7 +2955,7 @@ class Catalogue_gui:
             widget_tier = ""
             widget_tier = self.current_block_id
             if widget_tier != "":
-                self.edit_object("",widget_tier)
+                self.edit_object("",widget_tier,rewrite_temp = True)
             else:
                 add_colored_line(self.main_console,f"Nejprve zvolte zařízení pro editaci","red",None,True)
 
@@ -3048,6 +3048,7 @@ class Catalogue_gui:
                     optic_index = int(widget_tier[4:])
                     to_append = copy.deepcopy(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optic_index])
                     self.station_list[station_index]["camera_list"][camera_index]["optics_list"].insert(optic_index,to_append)
+                    print("\n\n",self.station_list[station_index]["camera_list"][camera_index]["optics_list"])
                     self.make_project_widgets()
                 else:
                     add_colored_line(self.main_console,f"Kontroler a příslušenství nelze kopírovat","red",None,True)

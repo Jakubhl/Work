@@ -194,6 +194,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.bin_projects = [[None],[None],[None],[None]]
         self.changed_notes = []
         self.changed_notes_disk = []
+        self.notes_frame_height = 50
 
         def call_main(what:str):
             try:
@@ -2280,10 +2281,13 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     self.root.focus_set() # unfocus widget
                     
         def shrink_frame(widget):
+            tolerance = 5
+            if abs(int(widget[0]._current_height)-self.notes_frame_height) <= tolerance:
+                return
             if not opened_window_check():
                 if str(widget[0]) != str(self.last_selected_notes_widget):
                     widget[1].configure(state = "normal")
-                    new_height = int(50*(self.app_zoom_factor/100))
+                    new_height = self.notes_frame_height
                     widget[0].configure(height = new_height) #frame
                     widget[1].configure(height = new_height-10) #notes
                     if self.default_note_behav == 0:
@@ -2292,23 +2296,23 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         def expand_frame(widget,row_of_widget):
             if not opened_window_check():
                 if str(widget[0]) != str(self.last_selected_notes_widget):
-                    # if the height is not 50 then it means it is expanded already
-                    tolerance = 15
-                    if abs(widget[0].winfo_height()-int(50*(self.app_zoom_factor/100))) <= tolerance:
-                        widget[1].configure(state = "normal")
+                    tolerance = 5
+                    if abs(int(widget[0]._current_height)-self.notes_frame_height) <= tolerance: # if the height is not default then it means it is expanded already
                         filtered_input = filter_text_input(self.all_rows[row_of_widget][3])
                         self.all_rows[row_of_widget][3] = filtered_input
-                        addition = widget[0]._current_height
+                        addition = self.notes_frame_height
                         if "\n" in self.all_rows[row_of_widget][3]:
                             notes_rows = self.all_rows[row_of_widget][3].split("\n")
-                            expanded_dim = addition + (len(notes_rows)-1) * 25
-                            widget[0].configure(height = expanded_dim)
-                            widget[1].configure(height = expanded_dim-10)
+                            if len(notes_rows) > 1:
+                                expanded_dim = addition + (len(notes_rows)-1) * 25
+                                widget[0].configure(height = expanded_dim)
+                                widget[1].configure(state = "normal")
+                                widget[1].configure(height = expanded_dim-10)
                             if self.default_note_behav == 0:
                                 widget[1].configure(state = "disabled")
-                        else:
-                            if self.default_note_behav == 0:
-                                widget[1].configure(state = "disabled")
+                        # else:
+                        #     if self.default_note_behav == 0:
+                        #         widget[1].configure(state = "disabled")
          
         def add_row_return(widget):
             addition = widget[0]._current_height
@@ -2393,6 +2397,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
         self.project_tree.update()
         self.project_tree.update_idletasks()
+        self.notes_frame_height = int(notes_frame._current_height)
         self.project_tree._parent_canvas.yview_moveto(0.0)
     
     def refresh_disk_statuses(self):
@@ -2472,8 +2477,8 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 notes_before = filter_text_input(str(self.disk_all_rows[row_of_widget][5]))
                 notes_after = filter_text_input(str(widget.get("1.0",tk.END)))
                 if str(widget) != str(self.last_selected_notes_widget) + ".!ctktextbox":
+                    widget.configure(state = "normal")
                     if notes_before != notes_after:
-                        widget.configure(state = "normal")
                         self.disk_all_rows[row_of_widget][5] = notes_after
                         self.changed_notes_disk = [self.disk_all_rows[row_of_widget][0],notes_before]
                         self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="change_notes_back_disk"))
@@ -2498,41 +2503,38 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     self.root.focus_set() # unfocus widget
 
         def shrink_frame(widget):
+            tolerance = 5
+            if abs(int(widget[0]._current_height)-self.notes_frame_height) <= tolerance:
+                return
             if not opened_window_check():
                 if str(widget[0]) != str(self.last_selected_notes_widget):
                     widget[1].configure(state = "normal")
-                    new_height = int(50*(self.app_zoom_factor/100))
-                    if isinstance(widget,list):
-                        widget[0].configure(height = new_height)
-                        widget[1].configure(height = new_height-10)
-                    else:
-                        widget.configure(height = new_height)
+                    new_height = self.notes_frame_height
+                    widget[0].configure(height = new_height)
+                    widget[1].configure(height = new_height-10)
                     if self.default_note_behav == 0:
                         widget[1].configure(state = "disabled")
 
         def expand_frame(widget,row_of_widget):
             if not opened_window_check():
                 if str(widget[0]) != str(self.last_selected_notes_widget):
-                    # if the height is not 50 then it means it is expanded already
-                    tolerance = 15
-                    if abs(widget[0].winfo_height()-int(50*(self.app_zoom_factor/100))) <= tolerance:
-                        widget[1].configure(state = "normal")
+                    tolerance = 5
+                    if abs(int(widget[0]._current_height)-self.notes_frame_height) <= tolerance: # if the height is not 50 then it means it is expanded already
                         filtered_input = filter_text_input(self.disk_all_rows[row_of_widget][5])
                         self.disk_all_rows[row_of_widget][5] = filtered_input
-                        addition = widget[0]._current_height
+                        addition = self.notes_frame_height
                         if "\n" in self.disk_all_rows[row_of_widget][5]:
                             notes_rows = self.disk_all_rows[row_of_widget][5].split("\n")
-                            expanded_dim = addition + (len(notes_rows)-1) * 27
-                            if isinstance(widget,list):
+                            if len(notes_rows) > 1:
+                                expanded_dim = addition + (len(notes_rows)-1) * 25
                                 widget[0].configure(height = expanded_dim)
+                                widget[1].configure(state = "normal")
                                 widget[1].configure(height = expanded_dim-10)
-                            else:
-                                widget.configure(height = expanded_dim)
                             if self.default_note_behav == 0:
                                 widget[1].configure(state = "disabled")
-                        else:
-                            if self.default_note_behav == 0:
-                                widget[1].configure(state = "disabled")
+                        # else:
+                        #     if self.default_note_behav == 0:
+                        #         widget[1].configure(state = "disabled")
 
         def add_row_return(widget):
             addition = widget[0]._current_height
@@ -2612,7 +2614,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                     notes.bind("<Leave>",lambda e, widget = [notes_frame,notes]:       shrink_frame(widget))
                     notes.bind("<Enter>",lambda e, widget = notes,row=y:               on_enter_entry(widget,row))
                     notes.bind("<Leave>",lambda e, widget = notes,row=y:               on_leave_entry(widget,row))
-
                     notes.bind("<Return>",lambda e, widget = [notes_frame,notes]: add_row_return(widget))
 
                     if self.default_note_behav == 0:
@@ -2620,6 +2621,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         
         self.project_tree.update()
         self.project_tree.update_idletasks()
+        self.notes_frame_height = int(notes_frame._current_height)
         self.project_tree._parent_canvas.yview_moveto(0.0)
         if disk_statuses:
             self.refresh_disk_statuses()     
@@ -3353,14 +3355,14 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.selected_list_disk = []
         self.control_pressed = False
         menu_cards =            customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=50,border_width=0)
-        self.main_widgets =          customtkinter.CTkFrame(master=self.root,corner_radius=0,border_width=0)
+        self.main_widgets =     customtkinter.CTkFrame(master=self.root,corner_radius=0,border_width=0)
         self.project_tree =     customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0,border_width=0)
 
         menu_cards.             pack(pady=0,padx=5,fill="x",expand=False,side = "top")
         logo =                  customtkinter.CTkImage(Image.open(resource_path("images/jhv_logo.png")),size=(300, 100))
         image_logo =            customtkinter.CTkLabel(master = menu_cards,text = "",image =logo,bg_color="#212121")
         image_logo.             pack(pady=5,padx=15,expand=True,side = "right",anchor="e")
-        self.main_widgets.           pack(pady=0,padx=5,fill="x",expand=False,side = "top")
+        self.main_widgets.      pack(pady=0,padx=5,fill="x",expand=False,side = "top")
         self.project_tree.      pack(pady=5,padx=5,fill="both",expand=True,side = "top")
 
         main_menu_button =                  customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "MENU",command =  lambda: self.call_menu(),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
@@ -3432,7 +3434,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         button_settings_behav.          grid(column = 0,row=0,pady = 5,padx =1100,sticky = tk.W)
         manual_ip_set.                  grid(column = 0,row=0,pady = 5,padx =1145,sticky = tk.W)
         connect_label.                  grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
-        self.interface_drop_options.         grid(column = 0,row=1,pady = 0,padx =110,sticky = tk.W)
+        self.interface_drop_options.    grid(column = 0,row=1,pady = 0,padx =110,sticky = tk.W)
         button_settings.                grid(column = 0,row=1,pady = 0,padx =315,sticky = tk.W)
         button_dhcp.                    grid(column = 0,row=1,pady = 0,padx =360,sticky = tk.W)
         static_label.                   grid(column = 0,row=1,pady = 0,padx =470,sticky = tk.W)

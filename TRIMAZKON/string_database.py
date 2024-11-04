@@ -212,7 +212,28 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - opravy pásu obrázků při rychlém přepínání
     - optimalizovaná logika - vyšší rychlost vykreslování
     - odstranění problikávání při přepnutí obrázku"""
+        ,"\nVerze 4.1.0 (4.11.2024)"
+        ,
+    """ 
+  Prohlížeč obrázků
+    - opravení rozhozené pozice obrázku při initu
+    - nově kontextová nabídka (pravý klik)
+  IP setting:
+    - možnost přímého nastavování IP (bez uložení)
+    - optimalizace poznámek
+  Katalog:
+    - oprava korespondencí světlo/ objektiv
+    - nově možnost přiřadit fotku ke stanici
+    (gui,save xml,export xls/xlm)
+    - doubleclick na stanici otevře fotky
+    - oprava chyb při přidávání nové stanice
+    - nově, když není editace ukončena tlačítkem \"uložit\"
+    zahodí se provedené změny (mimo přepínání stanic)
+  TRIMAZKON:
+    - oprava + doladění zoomu celé aplikace"""
 ]
+
+
 
 
 default_setting_database = ["Podporované typy souborů u možností třídění:",

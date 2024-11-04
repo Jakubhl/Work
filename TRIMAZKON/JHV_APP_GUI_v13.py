@@ -6,7 +6,7 @@ from PIL import Image, ImageTk
 import Sorting_option_v5 as Trideni
 import Deleting_option_v1 as Deleting
 import Converting_option_v3 as Converting
-import catalogue_maker_v4 as Catalogue
+import catalogue_maker_v5 as Catalogue
 import sharepoint_download as download_database
 import IP_setting_v2 as IP_setting
 import string_database
@@ -18,7 +18,7 @@ import sys
 import ctypes
 import win32pipe, win32file, pywintypes, psutil
 
-testing = True
+testing = False
 
 
 def path_check(path_raw,only_repair = None):
@@ -191,7 +191,7 @@ if not app_running_status:
     customtkinter.set_default_color_theme("dark-blue")
     root=customtkinter.CTk()
     root.geometry("1200x900")
-    root.title("TRIMAZKON v_4.0.1")
+    root.title("TRIMAZKON v_4.1.0")
     root.wm_iconbitmap(resource_path(app_icon))
 else:
     # předání parametrů v případě spuštění obrázkem (základní obrázkový prohlížeč)
@@ -210,7 +210,8 @@ else:
 
 def set_zoom(zoom_factor):
     try:
-        customtkinter.set_widget_scaling(zoom_factor / 100) 
+        root.after(0, lambda: customtkinter.set_widget_scaling(zoom_factor / 100))
+        # customtkinter.set_widget_scaling(zoom_factor / 100)
     except Exception as e:
         print(f"error with zoom scaling: {e}")
     
@@ -1170,7 +1171,7 @@ class main_menu:
             self.root.unbind("<Button-1>")
             self.call_view_option(params[0],params[1])
 
-    def menu(self,initial=False,catalogue_downloaded = False): # Funkce spouští základní menu při spuštění aplikace (MAIN)
+    def menu(self,initial=False,catalogue_downloaded = False,zoom_disable = False): # Funkce spouští základní menu při spuštění aplikace (MAIN)
         """
         Funkce spouští základní menu při spuštění aplikace (MAIN)
 
@@ -1182,11 +1183,11 @@ class main_menu:
         if self.data_read_in_txt[7] == "ano":
             self.root.after(0, lambda:self.root.state('zoomed')) # max zoom, porad v okne
             
-        if self.data_read_in_txt[22] == "ne":
+        if self.data_read_in_txt[22] == "ne" and initial: # pokud není využito nastavení windows
             try:
-                self.root.after(0, lambda: set_zoom(int(self.data_read_in_txt[21])))
-            except Exception:
-                pass
+                root.after(0, lambda: set_zoom(int(self.data_read_in_txt[21])))
+            except Exception as e:
+                print("error with menu scaling")
 
         frame_with_logo = customtkinter.CTkFrame(master=self.root,corner_radius=0)
         # logo = customtkinter.CTkImage(Image.open(initial_path+"images/logo.png"),size=(1200, 100))
@@ -1884,7 +1885,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     run_background = threading.Thread(target=make_image_strip, args=(rotated_image,),daemon = True)
                     run_background.start()
                     
-
     def next_image(self,silent=False,reload_buffer =False): # Další obrázek v pořadí (šipka vpravo)
         """
         Další obrázek v pořadí (šipka vpravo)
@@ -2815,6 +2815,31 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             self.start(self.path_set.get())
         self.path_set.bind("<Return>",save_path_enter_btn)
 
+        def open_path():
+            checked_path = path_check(self.path_for_explorer)
+            if checked_path != False and checked_path != "/" and checked_path != "":
+                if os.path.exists(checked_path):
+                    os.startfile(checked_path)
+
+        def show_context_menu(event):
+            context_menu.tk_popup(event.x_root, event.y_root)
+
+        self.main_frame.bind("<Button-3>", show_context_menu)
+        context_menu = tk.Menu(self.root, tearoff=0,fg="white",bg="black")
+        context_menu.add_command(label="Otevřít cestu", command=lambda: open_path(),font=("Arial",22,"bold"))
+        context_menu.add_separator()
+        context_menu.add_command(label="Malovat", command=lambda: self.switch_drawing_mode(),font=("Arial",22,"bold"))
+        context_menu.add_separator()
+        context_menu.add_command(label="Otočit", command=lambda: self.rotate_image(),font=("Arial",22,"bold"))
+        context_menu.add_separator()
+        context_menu.add_command(label="Kopírovat", command=lambda: self.copy_image(self.image_browser_path),font=("Arial",22,"bold"))
+        context_menu.add_separator()
+        context_menu.add_command(label="Přesunout", command=lambda: self.move_image(),font=("Arial",22,"bold"))
+        context_menu.add_separator()
+        context_menu.add_command(label="Reset", command=lambda: self.Reset_all(),font=("Arial",22,"bold"))
+        context_menu.add_separator()
+        context_menu.add_command(label="Smazat", command=lambda: self.delete_image(),font=("Arial",22,"bold"))
+
         #kdyz je vyuzit TRIMAZKON, jako vychozi prohlizec obrazku
         if self.IB_as_def_browser_path != None:
             self.path_set.delete("0","200")
@@ -2875,7 +2900,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
     
     def set_zoom(self,zoom_factor):
         try:
-            customtkinter.set_widget_scaling(zoom_factor / 100) 
+            root.after(0,customtkinter.set_widget_scaling(zoom_factor / 100))
         except Exception as e:
             print(f"error with zoom scaling: {e}")
         
@@ -2895,7 +2920,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         
         for binds in self.unbind_list:
             self.root.unbind(binds)
-        menu.menu()
+        menu.menu(zoom_disable = True)
 
     def clear_frame(self,frame): # Smaže widgets na daném framu
         """
@@ -5190,7 +5215,6 @@ class IP_manager: # Umožňuje nastavit možnosti třídění souborů
         self.root = root
         self.create_IP_manager_widgets()
     
-
     def callback(self):
         menu.menu()
 
@@ -5216,7 +5240,8 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
         self.root = root
         self.database_downloaded = menu.database_downloaded
         # automatic download bypass:
-        # self.database_downloaded = True
+        if testing:
+            self.database_downloaded = True 
         text_file_data = read_config_data()
         self.database_filename = text_file_data[15]
         self.default_excel_filename = text_file_data[16]
