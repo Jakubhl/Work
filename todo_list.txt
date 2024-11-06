@@ -666,7 +666,17 @@ kontextová nabídka u prohlížeče obrázků - hotovo
 ip_setting - optimalizace chování poznámek - hotovo
 TRIMAZKON při navrácení zpět do menu nemohu nastavovat celkový zoom aplikace ??? - hotovo
 
+10:07 AM 11/6/2024
+catalogue - předvyplnění u stanic převést na placeholder text - hotovo
+catalogue - nová optika/ světlo - předělat nápisy - hotovo
+catalogue - když jsem na jiné pozici v horním přepínání a přepnu stanici - smaže se změna - ukládá se až po kliku na šipku v dané sekci - hotovo
+catalogue - barva optionmenu kontroleru pri prepinani stanic - hotovo
+catalogue - oprava stripování na řádek - hotovo
+catalogue - rozhozené řádkování u xlsm - hotovo
+catalogue - xlsm - chybí ip u kontroleru - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
+
+
 
 
 

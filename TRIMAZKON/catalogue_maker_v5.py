@@ -15,11 +15,12 @@ import os
 import xml.etree.ElementTree as ET
 import sharepoint_download as download_database
 import sys
+import re
 # import threading
 # import math
 import copy
 
-testing = False
+testing = True
 if testing:
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")
@@ -156,19 +157,28 @@ def browseDirectories(visible_files,start_path=None,file_type = [("All files", "
 
 def strip_lines_to_fit(text):
     number_of_chars = 0
-    text_splitted = text.split(" ")
-    new_string = ""
-    max_num_of_chars_one_line = 32
-    for items in text_splitted:
-        if items != "\n":
-            number_of_chars += len(items)
-            if number_of_chars > max_num_of_chars_one_line:
-                new_string += "\n" + str(items) + " "
-                number_of_chars = len(items)
-            else:
-                new_string += str(items) + " "
+    paragraphs = text.split("\n\n")
+    print("para",paragraphs,len(paragraphs))
+    whole_new_string = ""
+    for i in range(0,len(paragraphs)):
+        if paragraphs[i] != "" and paragraphs[i] != "\n":
+            paragraph_block = paragraphs[i].replace("\n"," ")
+            text_splitted = paragraph_block.split(" ")
+            new_string = ""
+            max_num_of_chars_one_line = 35
+            for items in text_splitted:
+                number_of_chars += len(items)
+                if number_of_chars > max_num_of_chars_one_line:
+                    new_string += "\n" + str(items) + " "
+                    number_of_chars = len(items)
+                else:
+                    new_string += str(items) + " "
 
-    return new_string
+            whole_new_string += new_string + "\n\n"
+            
+    if whole_new_string.endswith("\n\n"):
+        whole_new_string = whole_new_string.rstrip("\n")
+    return whole_new_string
 
 class Save_prog_metadata:
     def __init__(self,console,controller_database=[],station_list=[],project_name="",xml_file_path=""):
@@ -1614,7 +1624,7 @@ class Catalogue_gui:
                 notes_raw = str(self.controller_object_list[controller_index]["notes"])
                 description = strip_lines_to_fit(notes_raw)
 
-                details = whole_name + "\n"
+                details = whole_name + "\n\n"
                 if not description == "":
                     details = details + description + "\n\n"
 
@@ -1637,8 +1647,8 @@ class Catalogue_gui:
                 notes_raw = str(self.station_list[station_index]["camera_list"][camera_index]["description"])
                 description = strip_lines_to_fit(notes_raw)
                 cable = str(self.station_list[station_index]["camera_list"][camera_index]["cable"])
-                if cable != "":
-                    details = details + "Kabel: " + str(self.station_list[station_index]["camera_list"][camera_index]["cable"])+ "\n"
+                if cable != "" and not cable in description:
+                    details = details + "Kabel: " + cable + "\n\n"
                 details = details + description
                 widget.configure(text=details,font = ("Arial",25))
             else:
@@ -1667,7 +1677,7 @@ class Catalogue_gui:
             if widget._text == addition + optic_type:
                 alternative = str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optic_index]["alternative"])
                 if alternative != "":
-                    details = "Alternativa: " +  alternative + "\n"
+                    details = "Alternativa: " +  alternative + "\n\n"
 
                 notes_raw = str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optic_index]["description"])
                 description = strip_lines_to_fit(notes_raw)
@@ -1690,15 +1700,15 @@ class Catalogue_gui:
             self.del_device.configure(text = "Odebrat stanici")
             self.button_copy.configure(text = "Kopírovat stanici",state = tk.NORMAL)
         elif len(widget_tier) == 4: # 0101-9999 kamery
-            self.new_device.configure(text="Nová optika",state = tk.NORMAL)
+            self.new_device.configure(text="Nová optika/ světlo",state = tk.NORMAL)
             self.edit_device.configure(text="Editovat kameru")
             self.del_device.configure(text = "Odebrat kameru")
             self.button_copy.configure(text = "Kopírovat kameru",state = tk.NORMAL)
         elif len(widget_tier) == 6: # 010101-999999 optika
             self.new_device.configure(text="",state = tk.DISABLED)
-            self.edit_device.configure(text="Editovat optiku")
-            self.del_device.configure(text = "Odebrat optiku")
-            self.button_copy.configure(text = "Kopírovat optiku",state = tk.NORMAL)
+            self.edit_device.configure(text="Editovat optiku/světlo")
+            self.del_device.configure(text = "Odebrat optiku/světlo")
+            self.button_copy.configure(text = "Kopírovat optiku/světlo",state = tk.NORMAL)
         elif len(widget_tier) == 7: # xxxx01-xxxxc99 kontrolery
             self.new_device.configure(text="Nové příslušenství",state = tk.NORMAL)
             self.edit_device.configure(text="Editovat kontroler")
@@ -1776,8 +1786,8 @@ class Catalogue_gui:
                 "description": "",
             }
             station = {
-                "name": "Název stanice",
-                "inspection_description": "- popis inspekce",
+                "name": "",
+                "inspection_description": "",
                 "camera_list": [camera],
             }
 
@@ -1965,7 +1975,8 @@ class Catalogue_gui:
         def save_changes(no_window_shut = False):
             if object == "station" or all_parameters:
                 self.temp_station_list[station_index]["name"] = new_name.get()
-                self.temp_station_list[station_index]["inspection_description"] = new_description.get("1.0", tk.END)
+                filtered_description = re.sub(r'\n{3,}', '\n', str(new_description.get("1.0", tk.END)))
+                self.temp_station_list[station_index]["inspection_description"] = filtered_description
 
             if object == "camera" or all_parameters:
                 self.temp_station_list[station_index]["camera_list"][camera_index]["type"] = camera_type_entry.get()
@@ -1979,7 +1990,8 @@ class Catalogue_gui:
                             self.last_controller_index = controller_index+1 #musíme počítat s možností nemít žádný kontroler
                 self.temp_station_list[station_index]["camera_list"][camera_index]["controller_index"] = controller_index
                 self.temp_station_list[station_index]["camera_list"][camera_index]["cable"] = cam_cable_menu.get()
-                self.temp_station_list[station_index]["camera_list"][camera_index]["description"] = notes_input.get("1.0", tk.END)
+                # filtered_description = re.sub(r'\n{3,}', '\n', str(notes_input.get("1.0", tk.END)))
+                self.temp_station_list[station_index]["camera_list"][camera_index]["description"] = str(notes_input.get("1.0", tk.END))
                 
             if object == "optics" or "camera" or all_parameters:
                 # Pokud je zadán manuálně, upřednostni
@@ -1989,7 +2001,8 @@ class Catalogue_gui:
                     optic_type = optic_type_entry.get()
                 self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"] = optic_type
                 self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"] = alternative_entry.get()
-                self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"] = notes_input2.get("1.0", tk.END)
+                # filtered_description = re.sub(r'\n{3,}', '\n', str(notes_input2.get("1.0", tk.END)))
+                self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"] = str(notes_input2.get("1.0", tk.END))
 
             if not no_window_shut:
                 self.station_list = copy.deepcopy(self.temp_station_list)
@@ -2000,19 +2013,20 @@ class Catalogue_gui:
             nonlocal station_index
             nonlocal camera_index
             nonlocal optics_index
-            nonlocal accessory_index
-            camera_index = 0
-            optics_index = 0
-            accessory_index = 0
+
             station_index += 1
             if station_index < len(self.temp_station_list):
                 station_index -= 1
                 save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
                 station_index += 1
+                camera_index = 0
+                optics_index = 0
                 initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
             else: # TLACITKO +:
                 station_index -= 1
                 save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                camera_index = 0
+                optics_index = 0
                 self.station_list = copy.deepcopy(self.temp_station_list)
                 close_window(child_root)
                 if station_index < 10:
@@ -2025,31 +2039,29 @@ class Catalogue_gui:
             nonlocal station_index
             nonlocal camera_index
             nonlocal optics_index
-            nonlocal accessory_index
-            camera_index = 0
-            optics_index = 0
-            accessory_index = 0
             station_index -= 1
             if station_index > -1:
                 station_index += 1
                 save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
                 station_index -= 1
+                camera_index = 0
+                optics_index = 0
                 initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
             else: # aby to neslo zase odznovu:
                 station_index += 1
+                camera_index = 0
+                optics_index = 0
             
         def next_camera():
             nonlocal station_index
             nonlocal camera_index
             nonlocal optics_index
-            nonlocal accessory_index
             camera_index += 1
             if camera_index < len(self.temp_station_list[station_index]["camera_list"]):
                 camera_index -= 1
                 save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
                 camera_index += 1
                 optics_index = 0
-                accessory_index = 0
                 initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
 
             else: # TLACITKO +:
@@ -2071,14 +2083,12 @@ class Catalogue_gui:
             nonlocal station_index
             nonlocal camera_index
             nonlocal optics_index
-            nonlocal accessory_index
             camera_index -= 1
             if camera_index > -1:
                 camera_index += 1
                 save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
                 camera_index -= 1
                 optics_index = 0
-                accessory_index = 0
                 initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
             else: # aby to neslo zase odznovu:
                 camera_index += 1
@@ -2087,13 +2097,11 @@ class Catalogue_gui:
             nonlocal station_index
             nonlocal camera_index
             nonlocal optics_index
-            nonlocal accessory_index
             optics_index += 1
             if optics_index < len(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"]):
                 optics_index -= 1
                 save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
                 optics_index += 1
-                accessory_index = 0
                 initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
 
             else: # TLACITKO +:
@@ -2117,13 +2125,11 @@ class Catalogue_gui:
             nonlocal station_index
             nonlocal camera_index
             nonlocal optics_index
-            nonlocal accessory_index
             optics_index -= 1
             if optics_index > -1:
                 optics_index += 1
                 save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
                 optics_index -= 1
-                accessory_index = 0
                 initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
             else: # aby to neslo zase odznovu:
                 optics_index += 1
@@ -2172,14 +2178,14 @@ class Catalogue_gui:
                 if current_camera != "":
                     camera_notes = str(self.camera_notes_database[self.whole_camera_type_database.index(current_camera)])
                     if camera_notes != "":
-                        notes_string = notes_string + "Kamera: " + camera_notes + "\n\n"
+                        notes_string = notes_string + "Kamera - popis: " + camera_notes + "\n\n"
                 if current_cable != "":
                     cable_notes = str(self.cable_notes_database[self.whole_camera_cable_database.index(current_cable)]) 
                     if cable_notes != "":
-                        notes_string = notes_string + "Kabel: " + cable_notes + "\n\n"
+                        notes_string = notes_string + f"Kabel ({str(current_cable)}): " + cable_notes + "\n\n"
                 
                 notes_input.delete("1.0",tk.END)
-                notes_input.insert("1.0",notes_string)
+                notes_input.insert("1.0",strip_lines_to_fit(notes_string))
             
             elif which == "optics":
                 current_optics = optic_type_entry.get()
@@ -2188,14 +2194,14 @@ class Catalogue_gui:
                 if current_optics != "":
                     optic_notes = str(self.optics_notes_database[self.whole_optics_database.index(current_optics)])
                     if optic_notes !="":
-                        notes_string = notes_string + "Objektiv: " + optic_notes + "\n\n"
+                        notes_string = notes_string + "Objektiv - popis: " + optic_notes + "\n\n"
                 if current_alternative != "":
                     alternative_notes = str(self.optics_notes_database[self.whole_optics_database.index(current_alternative)])
                     if alternative_notes != "":
-                        notes_string = notes_string + "Alternativní: " + alternative_notes + "\n\n"
+                        notes_string = notes_string + "Alternativní - popis: " + alternative_notes + "\n\n"
                 
                 notes_input2.delete("1.0",tk.END)
-                notes_input2.insert("1.0",notes_string)
+                notes_input2.insert("1.0",strip_lines_to_fit(notes_string))
 
         def call_new_controller_gui():
             window = ToplevelWindow(self.root,[self.controller_database,self.controller_notes_database],callback_new_controller,self.controller_object_list,[self.accessory_database,self.whole_accessory_database,self.accessory_notes_database])
@@ -2250,13 +2256,14 @@ class Catalogue_gui:
                 widget_menu._open_dropdown_menu()
 
         def controller_opt_menu_color(*args,only_color = False):
+            nonlocal controller_entry
             if not only_color:
                 current_controller = str(*args)
                 if str(current_controller).replace(" ","") != "":
                     for controllers in self.controller_object_list:
                         if controllers["color"] != "":
-                            if (controllers["name"]+"("+controllers["type"]+")").replace(" ","") == str(current_controller).replace(" ",""):
-                                controller_entry.configure(fg_color = controllers["color"])
+                            if (controllers["name"]+"("+controllers["type"]+")").replace(" ","") == current_controller.replace(" ",""):
+                                controller_entry.configure(fg_color = str(controllers["color"]))
                                 break
                 else:
                     controller_entry.configure(fg_color = "#636363")
@@ -2628,10 +2635,9 @@ class Catalogue_gui:
 
             refresh_counters()
             refresh_button_appearance()
-            
-        initial_prefill()
-        controller_opt_menu_color(controller_entry.get())
+            controller_opt_menu_color(controller_entry.get())
 
+        initial_prefill()
         button_frame =  customtkinter.CTkFrame(master = child_root,corner_radius=0)
         button_frame    .pack(pady = 0, padx = 0,fill="x",anchor="s",expand=False,side="bottom")
         x = self.root.winfo_rootx()
@@ -3838,7 +3844,7 @@ class Save_excel:
             
             for i in range((self.values_start_row-1),self.excel_rows_used-1):
                 cell = ws[columns + str(i)]
-                cell.alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
+                cell.alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True,shrink_to_fit=True,justifyLastLine=True)
                 cell.border = thin_border
 
                 if i == (self.values_start_row-1): # nadpisy sloupců
@@ -3954,8 +3960,9 @@ class Save_excel:
 
         for stations in self.station_list:
             excel_cell = stations["hidden_values"]
-            ws[excel_cell + str(1)] = stations["name"]
-            ws[excel_cell + str(2)] = stations["inspection_description"]
+            ws[excel_cell + str(1)] = str(stations["name"])
+            filtered_description = re.sub(r'\n{2,}', '\n',str(stations["inspection_description"]))
+            ws[excel_cell + str(2)] = filtered_description
             ws[excel_cell + str(3)] = 1 # toggle status... default: 1
 
             for cameras in stations["camera_list"]:
@@ -3965,7 +3972,8 @@ class Save_excel:
                 if str(cameras["cable"]) != "":
                     detail_info = detail_info + "Kabel: " + str(cameras["cable"])+ "\n"
 
-                ws[excel_cell + str(2)] = detail_info + str(cameras["description"])
+                filtered_notes = re.sub(r'\n{2,}', '\n', str(cameras["description"]))
+                ws[excel_cell + str(2)] = detail_info + filtered_notes
                 ws[excel_cell + str(3)] = 1
                 
                 for optics in cameras["optics_list"]:
@@ -3974,7 +3982,10 @@ class Save_excel:
                     detail_info = ""
                     if str(optics["alternative"]) != "":
                         detail_info = "Alternativa: " + str(optics["alternative"]) + "\n"
-                    detail_info = detail_info + str(optics["description"])
+                    
+                    filtered_notes = re.sub(r'\n{2,}', '\n', str(optics["description"]))
+                    detail_info = detail_info + "\n" + filtered_notes
+
                     ws[excel_cell + str(2)] = detail_info
                     ws[excel_cell + str(3)] = 1
 
@@ -3982,15 +3993,16 @@ class Save_excel:
             for controller_positions in controllers["hidden_values"]:
                 excel_cell = controller_positions
                 ws[excel_cell + str(1)] = controllers["type"]
-                details = controllers["detailed_name"] + "\n"
-                if not controllers["notes"] == "":
-                    details = details + controllers["notes"] + "\n\n"
-                if not controllers["ip"] == "" and not controllers["ip"] == "192.168.000.000":
-                    details = details + controllers["ip"] + "\n"
-                if not controllers["username"] == "":
-                    details = details + "Jméno: " + controllers["username"] + "\n"
-                if not controllers["password"] == "":
-                    details = details + "Heslo: " + controllers["password"] + "\n"
+                details = str(controllers["detailed_name"])
+                if not str(controllers["notes"]) == "":
+                    filtered_notes = re.sub(r'\n{2,}', '\n', str(controllers["notes"]))
+                    details = details +"xx\n\n"+ filtered_notes
+                if not str(controllers["ip"]) == "" and not controllers["ip"] == "192.168.000.000":
+                    details = details + "\nIP: " + str(controllers["ip"])
+                if not str(controllers["username"]) == "":
+                    details = details + "\nJméno: " + str(controllers["username"])
+                if not str(controllers["password"]) == "":
+                    details = details + "\nHeslo: " + str(controllers["password"])
                 ws[excel_cell + str(2)] = details
                 ws[excel_cell + str(3)] = 1 # toggle status... default: 1
 
