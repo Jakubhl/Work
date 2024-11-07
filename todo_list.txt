@@ -674,13 +674,18 @@ catalogue - barva optionmenu kontroleru pri prepinani stanic - hotovo
 catalogue - oprava stripování na řádek - hotovo
 catalogue - rozhozené řádkování u xlsm - hotovo
 catalogue - xlsm - chybí ip u kontroleru - hotovo
+
+5:23 PM 11/7/2024
+catalogue - kdyz otevreny excel a export - chybova hlaska je na hlavni consoli - shodi to okno - hotovo
+catalogue - dodelat expand cells u kontroleru a prislusenstvi - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 
 
-
-
+catalogue - upravit ramecek na focusnutym svetle
+upravit rozmery okna na automacicke - export
 
 ip setting - rozdělit do tříd
 ip setting - grid předělat na pack

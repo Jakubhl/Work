@@ -13,11 +13,9 @@ from datetime import datetime
 from tkinter import filedialog
 import os
 import xml.etree.ElementTree as ET
-import sharepoint_download as download_database
+# import sharepoint_download as download_database
 import sys
 import re
-# import threading
-# import math
 import copy
 
 testing = True
@@ -33,7 +31,7 @@ if testing:
     def set_zoom(zoom_factor):
         root.tk.call('tk', 'scaling', zoom_factor / 100)
         customtkinter.set_widget_scaling(zoom_factor / 100) 
-    set_zoom(80)
+    set_zoom(60)
 
 def add_colored_line(text_widget, text, color,font=None,delete_line = None):
     """
@@ -155,30 +153,45 @@ def browseDirectories(visible_files,start_path=None,file_type = [("All files", "
     corrected_path = check
     return [output,corrected_path,name_of_selected_file]
 
-def strip_lines_to_fit(text):
-    number_of_chars = 0
-    paragraphs = text.split("\n\n")
-    print("para",paragraphs,len(paragraphs))
-    whole_new_string = ""
-    for i in range(0,len(paragraphs)):
-        if paragraphs[i] != "" and paragraphs[i] != "\n":
-            paragraph_block = paragraphs[i].replace("\n"," ")
-            text_splitted = paragraph_block.split(" ")
-            new_string = ""
-            max_num_of_chars_one_line = 35
-            for items in text_splitted:
-                number_of_chars += len(items)
-                if number_of_chars > max_num_of_chars_one_line:
-                    new_string += "\n" + str(items) + " "
-                    number_of_chars = len(items)
-                else:
-                    new_string += str(items) + " "
 
-            whole_new_string += new_string + "\n\n"
+class Tools:
+    @classmethod
+    def strip_lines_to_fit(cls,text):
+        text = re.sub(r'\n{3,}', '\n', str(text)) # odstraní více jak tři mezery za sebou
+        paragraphs = text.split("\n\n")
+        paragraphs = [x for x in paragraphs if x]
+        print(paragraphs)
+        whole_new_string = ""
+        number_of_chars = 0
+        max_num_of_chars_one_line = 35
+        for i in range(0,len(paragraphs)):
+            if paragraphs[i] != "" and paragraphs[i] != "\n":
+                # paragraph_block = paragraphs[i].replace("\n"," ")
+                paragraph_block = paragraphs[i]
+                text_splitted = paragraph_block.split(" ")
+                new_string = ""
+                for items in text_splitted:
+                    number_of_chars += len(items)
+                    if number_of_chars > max_num_of_chars_one_line:
+                        new_string += "\n" + str(items) + " "
+                        number_of_chars = len(items)
+                    else:
+                        new_string += str(items) + " "
+
+                if new_string.endswith(" "):
+                    new_string = new_string.rstrip(" ")
+                whole_new_string += new_string + "\n\n"
             
-    if whole_new_string.endswith("\n\n"):
-        whole_new_string = whole_new_string.rstrip("\n")
-    return whole_new_string
+        if whole_new_string.endswith("\n\n"):
+            whole_new_string = whole_new_string.rstrip("\n")
+        return whole_new_string
+
+    @classmethod
+    def remove_last_empty_rows(cls,text):
+        if text.endswith("\n\n"):
+            text = text.rstrip("\n")
+        
+        return text
 
 class Save_prog_metadata:
     def __init__(self,console,controller_database=[],station_list=[],project_name="",xml_file_path=""):
@@ -445,6 +458,7 @@ class ToplevelWindow:
             save_changes()
 
             notes = notes_input.get("1.0", tk.END)
+            # notes = Tools.strip_lines_to_fit(notes)
             try:
                 color_chosen = controller_color.cget("fg_color")
             except Exception:
@@ -510,21 +524,23 @@ class ToplevelWindow:
             }
         
         def save_changes():
+            notes = str(notes_input3.get("0.0", tk.END))
+            # notes = Tools.strip_lines_to_fit(notes)
             try:
                 controller["accessory_list"][accessory_index]["type"] = hw_type_entry.get()
-                controller["accessory_list"][accessory_index]["description"] = notes_input3.get("1.0", tk.END)
+                controller["accessory_list"][accessory_index]["description"] = notes
             except IndexError:
-                if hw_type_entry.get() != "" or notes_input3.get("0.0", "end") != "\n":
+                if hw_type_entry.get() != "" or notes != "\n":
                     new_accessory = {
                     "type": hw_type_entry.get(),
-                    "description":notes_input3.get("0.0", "end"),
+                    "description":notes,
                     }
                     controller["accessory_list"].append(new_accessory)
             except TypeError: # pokud je jako index vložen None
-                if hw_type_entry.get() != "" or notes_input3.get("0.0", "end") != "\n":
+                if hw_type_entry.get() != "" or notes != "\n":
                     new_accessory = {
                     "type": hw_type_entry.get(),
-                    "description":notes_input3.get("0.0", "end"),
+                    "description":notes,
                     }
                     controller["accessory_list"].append(new_accessory)
             
@@ -698,23 +714,23 @@ class ToplevelWindow:
         notes_input3.bind("<Key>",remaping_characters)
 
 
-        def filter_text_input(text):
-            """
-            - removes extra new empty lines
-            """
-            legit_rows = []
-            legit_notes = ""
-            rows = text.split("\n")
-            for i in range(0,len(rows)):
-                if rows[i].replace(" ","") != "":
-                    legit_rows.append(rows[i])
+        # def filter_text_input(text):
+        #     """
+        #     - removes extra new empty lines
+        #     """
+        #     legit_rows = []
+        #     legit_notes = ""
+        #     rows = text.split("\n")
+        #     for i in range(0,len(rows)):
+        #         if rows[i].replace(" ","") != "":
+        #             legit_rows.append(rows[i])
 
-            for i in range(0,len(legit_rows)): 
-                if i == len(legit_rows)-1:
-                    legit_notes = legit_notes + legit_rows[i]
-                else:
-                    legit_notes = legit_notes + legit_rows[i]+ "\n"
-            return legit_notes
+        #     for i in range(0,len(legit_rows)): 
+        #         if i == len(legit_rows)-1:
+        #             legit_notes = legit_notes + legit_rows[i]
+        #         else:
+        #             legit_notes = legit_notes + legit_rows[i]+ "\n"
+        #     return legit_notes
 
         if edit:
             IP_adress_entry.insert(0,str(current_ip))
@@ -728,7 +744,8 @@ class ToplevelWindow:
                 controller_color.configure(fg_color= "#212121",hover_color="#212121")
 
             notes_input.delete("1.0",tk.END)
-            notes_input.insert("1.0",filter_text_input(str(current_notes)))
+            # notes_input.insert("1.0",filter_text_input(str(current_notes)))
+            notes_input.insert("1.0",str(current_notes))
         else:
             IP_adress_entry.insert(0,"192.168.000.000")
             controller_name_entry.insert(0,"Kontroler " + str(len(self.custom_controller_database)+1) + " ")
@@ -775,7 +792,8 @@ class ToplevelWindow:
                 else:
                     hw_type_entry.set("")
                 notes_input3.delete("1.0",tk.END)
-                notes_input3.insert("1.0",filter_text_input(str(controller["accessory_list"][accessory_index]["description"])))
+                # notes_input3.insert("1.0",filter_text_input(str(controller["accessory_list"][accessory_index]["description"])))
+                notes_input3.insert("1.0",str(controller["accessory_list"][accessory_index]["description"]))
             except TypeError: # pokud je v indexu None - defaultně nastavit index na nulu:
                 try:
                     accessory_index = 0
@@ -784,7 +802,8 @@ class ToplevelWindow:
                     else:
                         hw_type_entry.set("")
                     notes_input3.delete("1.0",tk.END)
-                    notes_input3.insert("1.0",filter_text_input(str(controller["accessory_list"][accessory_index]["description"])))
+                    # notes_input3.insert("1.0",filter_text_input(str(controller["accessory_list"][accessory_index]["description"])))
+                    notes_input3.insert("1.0",str(controller["accessory_list"][accessory_index]["description"]))
                 except IndexError: #případ, že není accessory
                     hw_type_entry.set("")
                     notes_input3.delete("1.0",tk.END)
@@ -1392,6 +1411,70 @@ class Insert_image:
                 next_image()
         window.bind("<MouseWheel>",mousewheel_handle)
 
+class Fill_details:
+    @classmethod
+    def station(cls,station):
+        detail_info = ""
+        detail_info = str(station["inspection_description"])
+
+        return detail_info
+    
+    @classmethod
+    def controller(cls,controller):
+        detail_info = str(controller["detailed_name"])
+        if not str(controller["notes"]) == "":
+            detail_info = detail_info +"\n\n"+ str(controller["notes"])
+        if not str(controller["ip"]) == "" and not controller["ip"] == "192.168.000.000":
+            detail_info = detail_info + "\n\nIP: " + str(controller["ip"])
+        if not str(controller["username"]) == "":
+            detail_info = detail_info + "\nJméno: " + str(controller["username"])
+        if not str(controller["password"]) == "":
+            detail_info = detail_info + "\nHeslo: " + str(controller["password"])
+        return detail_info
+    
+    @classmethod
+    def camera(cls,camera):
+        """
+        Returns:
+        - detail info string [0]
+        - controller background color [1]
+        """
+        detail_info_cam = ""
+        controller_fill = None
+
+        if str(camera["controller_color"]) != "":
+            try:
+                color_modified = str(camera["controller_color"])[1:]
+                controller_fill = PatternFill(start_color=color_modified, end_color=color_modified, fill_type="solid")
+                # ws[excel_cell].fill = controller_fill
+            except Exception as e:
+                print(f"chyba pri nastavovani barvy kontroleru pri exportu: {e}")
+                pass
+
+        cable = str(camera["cable"])
+        if cable != "" and not cable in str(camera["description"]):
+            detail_info_cam = detail_info_cam + "Kabel: " + str(camera["cable"])+ "\n\n"
+        detail_info_cam += str(camera["description"])
+
+        return [detail_info_cam,controller_fill]
+    
+    @classmethod
+    def optics(cls,optics):
+        detail_info = ""
+        if str(optics["alternative"]) != "":
+            detail_info = "Alternativa: " + str(optics["alternative"]) + "\n\n"
+            
+        detail_info += str(optics["description"])
+        # detail_info += Tools.strip_lines_to_fit(str(optics["description"]))
+        return detail_info
+    
+    @classmethod
+    def accessory(cls,accessory):
+        detail_info = ""
+        detail_info = str(accessory["description"])
+
+        return detail_info
+    
 class Catalogue_gui:
     def __init__(self,root,download_status,
                  callback_function,
@@ -1609,58 +1692,33 @@ class Catalogue_gui:
             if widget._text != station_name:
                 widget.configure(text=station_name,font = ("Arial",25,"bold"))
             else:
-                notes_raw = str(self.station_list[station_index]["inspection_description"])
-                description = strip_lines_to_fit(notes_raw)
-                widget.configure(text=str(description),font = ("Arial",25))
+                # notes_raw = str(self.station_list[station_index]["inspection_description"])
+                # description = Tools.strip_lines_to_fit(notes_raw)
+                description = Fill_details.station(self.station_list[station_index])
+                widget.configure(text=description,font = ("Arial",25))
         
         elif len(widget_tier) == 7: # xxxxc01-xxxxc99 kontolery
-            details = ""
             controller_index = int(widget_tier[5:7])
             if widget._text == str(self.controller_object_list[controller_index]["type"]):
-                whole_name = self.controller_object_list[controller_index]["detailed_name"]
-                ip_address = self.controller_object_list[controller_index]["ip"]
-                username = self.controller_object_list[controller_index]["username"]
-                password = self.controller_object_list[controller_index]["password"]
-                notes_raw = str(self.controller_object_list[controller_index]["notes"])
-                description = strip_lines_to_fit(notes_raw)
-
-                details = whole_name + "\n\n"
-                if not description == "":
-                    details = details + description + "\n\n"
-
-                if not ip_address == "" and not ip_address == "192.168.000.000":
-                    details = details + ip_address + "\n"
-                if not username == "":
-                    details = details + "Jméno: " + username + "\n"
-                if not password == "":
-                    details = details + "Heslo: " + password + "\n"       
-
+                details = Fill_details.controller(self.controller_object_list[controller_index])
                 widget.configure(text=details,font = ("Arial",25))
             else:
                 widget.configure(text=str(self.controller_object_list[controller_index]["type"]),font = ("Arial",25,"bold"))
 
         elif len(widget_tier) == 4: # 0101-9999 kamery
             station_index = int(widget_tier[:2])
-            details = ""
             camera_index = int(widget_tier[2:])
             if widget._text == str(self.station_list[station_index]["camera_list"][camera_index]["type"]):
-                notes_raw = str(self.station_list[station_index]["camera_list"][camera_index]["description"])
-                description = strip_lines_to_fit(notes_raw)
-                cable = str(self.station_list[station_index]["camera_list"][camera_index]["cable"])
-                if cable != "" and not cable in description:
-                    details = details + "Kabel: " + cable + "\n\n"
-                details = details + description
+                details = Fill_details.camera(self.station_list[station_index]["camera_list"][camera_index])[0]
                 widget.configure(text=details,font = ("Arial",25))
             else:
                 widget.configure(text=str(self.station_list[station_index]["camera_list"][camera_index]["type"]),font = ("Arial",25,"bold"))
 
         elif len(widget_tier) == 9: # xxxxc0101-xxxxc9999 prislusenstvi kontroleru
-            details = ""
             controller_index = int(widget_tier[5:7])
             accessory_index = int(widget_tier[7:9])
             if widget._text == str(self.controller_object_list[controller_index]["accessory_list"][accessory_index]["type"]):
-                notes_raw = str(self.controller_object_list[controller_index]["accessory_list"][accessory_index]["description"])
-                description = strip_lines_to_fit(notes_raw)
+                description = Fill_details.accessory(self.controller_object_list[controller_index]["accessory_list"][accessory_index])
                 widget.configure(text=description,font = ("Arial",25))
             else:
                 widget.configure(text=str(self.controller_object_list[controller_index]["accessory_list"][accessory_index]["type"]),font = ("Arial",25,"bold"))
@@ -1675,13 +1733,7 @@ class Catalogue_gui:
             if optic_type in self.whole_light_database and optic_type != "":
                 addition = "💡 "
             if widget._text == addition + optic_type:
-                alternative = str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optic_index]["alternative"])
-                if alternative != "":
-                    details = "Alternativa: " +  alternative + "\n\n"
-
-                notes_raw = str(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optic_index]["description"])
-                description = strip_lines_to_fit(notes_raw)
-                details = details + description
+                details = Fill_details.optics(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optic_index])
                 widget.configure(text=details,font = ("Arial",25))
             else:
                 widget.configure(text=addition+optic_type,font = ("Arial",25,"bold"))
@@ -1975,7 +2027,9 @@ class Catalogue_gui:
         def save_changes(no_window_shut = False):
             if object == "station" or all_parameters:
                 self.temp_station_list[station_index]["name"] = new_name.get()
-                filtered_description = re.sub(r'\n{3,}', '\n', str(new_description.get("1.0", tk.END)))
+                # filtered_description = Tools.strip_lines_to_fit(str(new_description.get("1.0", tk.END)))
+                filtered_description = Tools.remove_last_empty_rows(str(new_description.get("1.0", tk.END)))
+                
                 self.temp_station_list[station_index]["inspection_description"] = filtered_description
 
             if object == "camera" or all_parameters:
@@ -1990,8 +2044,9 @@ class Catalogue_gui:
                             self.last_controller_index = controller_index+1 #musíme počítat s možností nemít žádný kontroler
                 self.temp_station_list[station_index]["camera_list"][camera_index]["controller_index"] = controller_index
                 self.temp_station_list[station_index]["camera_list"][camera_index]["cable"] = cam_cable_menu.get()
-                # filtered_description = re.sub(r'\n{3,}', '\n', str(notes_input.get("1.0", tk.END)))
-                self.temp_station_list[station_index]["camera_list"][camera_index]["description"] = str(notes_input.get("1.0", tk.END))
+                # filtered_description = Tools.strip_lines_to_fit(str(notes_input.get("1.0", tk.END)))
+                filtered_description = Tools.remove_last_empty_rows(str(notes_input.get("1.0", tk.END)))
+                self.temp_station_list[station_index]["camera_list"][camera_index]["description"] = filtered_description
                 
             if object == "optics" or "camera" or all_parameters:
                 # Pokud je zadán manuálně, upřednostni
@@ -2001,8 +2056,10 @@ class Catalogue_gui:
                     optic_type = optic_type_entry.get()
                 self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"] = optic_type
                 self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"] = alternative_entry.get()
-                # filtered_description = re.sub(r'\n{3,}', '\n', str(notes_input2.get("1.0", tk.END)))
-                self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"] = str(notes_input2.get("1.0", tk.END))
+                # filtered_description = Tools.strip_lines_to_fit(str(notes_input2.get("1.0", tk.END)))
+                filtered_description = str(notes_input2.get("1.0", tk.END))
+                filtered_description = Tools.remove_last_empty_rows(str(notes_input2.get("1.0", tk.END)))
+                self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"] = filtered_description
 
             if not no_window_shut:
                 self.station_list = copy.deepcopy(self.temp_station_list)
@@ -2185,7 +2242,8 @@ class Catalogue_gui:
                         notes_string = notes_string + f"Kabel ({str(current_cable)}): " + cable_notes + "\n\n"
                 
                 notes_input.delete("1.0",tk.END)
-                notes_input.insert("1.0",strip_lines_to_fit(notes_string))
+                notes_input.insert("1.0",Tools.strip_lines_to_fit(notes_string))
+                # notes_input.insert("1.0",notes_string)
             
             elif which == "optics":
                 current_optics = optic_type_entry.get()
@@ -2201,7 +2259,8 @@ class Catalogue_gui:
                         notes_string = notes_string + "Alternativní - popis: " + alternative_notes + "\n\n"
                 
                 notes_input2.delete("1.0",tk.END)
-                notes_input2.insert("1.0",strip_lines_to_fit(notes_string))
+                notes_input2.insert("1.0",Tools.strip_lines_to_fit(notes_string))
+                # notes_input2.insert("1.0",notes_string)
 
         def call_new_controller_gui():
             window = ToplevelWindow(self.root,[self.controller_database,self.controller_notes_database],callback_new_controller,self.controller_object_list,[self.accessory_database,self.whole_accessory_database,self.accessory_notes_database])
@@ -2452,7 +2511,7 @@ class Catalogue_gui:
         import_notes2_btn =                  customtkinter.CTkButton(master = note2_label_frame,text = "Import z databáze",font=("Arial",22,"bold"),width = 100,height=30,corner_radius=0,command=lambda: import_notes("optics"))
         note2_label.                         pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
         import_notes2_btn.                   pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
-        notes_input2 =                      customtkinter.CTkTextbox(master = optics_frame,font=("Arial",22),width=300,height=200,corner_radius=0)
+        notes_input2 =                      customtkinter.CTkTextbox(master = optics_frame,font=("Arial",22),width=300,height=200,corner_radius=0,wrap= "word")
         counter_frame_optics                .pack(pady=(10,0),padx=3,anchor="n",expand=False,side = "top")
         checkbox_frame                      .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
         optic_type                          .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
@@ -2514,23 +2573,24 @@ class Catalogue_gui:
                 # pass
 
         def initial_prefill():
-            def filter_text_input(text):
-                """
-                - removes extra new empty lines
-                """
-                legit_rows = []
-                legit_notes = ""
-                rows = text.split("\n")
-                for i in range(0,len(rows)):
-                    if rows[i].replace(" ","") != "":
-                        legit_rows.append(rows[i])
+            # def filter_text_input(text):
+            #     """
+            #     - removes extra new empty lines
+            #     """
+            #     return text
+            #     legit_rows = []
+            #     legit_notes = ""
+            #     rows = text.split("\n")
+            #     for i in range(0,len(rows)):
+            #         if rows[i].replace(" ","") != "":
+            #             legit_rows.append(rows[i])
 
-                for i in range(0,len(legit_rows)): 
-                    if i == len(legit_rows)-1:
-                        legit_notes = legit_notes + legit_rows[i]
-                    else:
-                        legit_notes = legit_notes + legit_rows[i]+ "\n"
-                return legit_notes
+            #     for i in range(0,len(legit_rows)): 
+            #         if i == len(legit_rows)-1:
+            #             legit_notes = legit_notes + legit_rows[i]
+            #         else:
+            #             legit_notes = legit_notes + legit_rows[i]+ "\n"
+            #     return legit_notes
 
             nonlocal station_index
             nonlocal camera_index
@@ -2538,8 +2598,9 @@ class Catalogue_gui:
             nonlocal accessory_index
             new_name.delete(0,300)
             new_name.insert(0,str(self.temp_station_list[station_index]["name"]))
-            new_description.delete("1.0",tk.END)
-            new_description.insert("1.0",filter_text_input(str(self.temp_station_list[station_index]["inspection_description"])))
+            new_description.delete("0.0","end")
+            # new_description.insert("1.0",filter_text_input(str(self.temp_station_list[station_index]["inspection_description"])))
+            new_description.insert("0.0",str(self.temp_station_list[station_index]["inspection_description"]))
             # initial prefill - camera:
             try:
                 if str(self.temp_station_list[station_index]["camera_list"][camera_index]["type"]) in self.whole_camera_type_database:
@@ -2550,7 +2611,8 @@ class Catalogue_gui:
                     cam_cable_menu.set(str(self.temp_station_list[station_index]["camera_list"][camera_index]["cable"]))
                 
                 notes_input.delete("1.0",tk.END)
-                notes_input.insert("1.0",filter_text_input(str(self.temp_station_list[station_index]["camera_list"][camera_index]["description"])))
+                # notes_input.insert("1.0",filter_text_input(str(self.temp_station_list[station_index]["camera_list"][camera_index]["description"])))
+                notes_input.insert("1.0",str(self.temp_station_list[station_index]["camera_list"][camera_index]["description"]))
             except TypeError:
                 camera_index = 0
                 if len(self.temp_station_list[station_index]["camera_list"]) > 0:
@@ -2564,7 +2626,8 @@ class Catalogue_gui:
                         cam_cable_menu.set(str(self.temp_station_list[station_index]["camera_list"][camera_index]["cable"]))
 
                     notes_input.delete("1.0",tk.END)
-                    notes_input.insert("1.0",filter_text_input(str(self.temp_station_list[station_index]["camera_list"][camera_index]["description"])))
+                    # notes_input.insert("1.0",filter_text_input(str(self.temp_station_list[station_index]["camera_list"][camera_index]["description"])))
+                    notes_input.insert("1.0",str(self.temp_station_list[station_index]["camera_list"][camera_index]["description"]))
             except IndexError:
                 camera_index = 0
                 station_with_new_camera = self.make_new_object("camera",object_to_edit=self.temp_station_list[station_index])
@@ -2599,7 +2662,8 @@ class Catalogue_gui:
                 else:
                     alternative_entry.set("")
                 notes_input2.delete("1.0",tk.END)
-                notes_input2.insert("1.0",filter_text_input(str(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"])))
+                # notes_input2.insert("1.0",filter_text_input(str(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"])))
+                notes_input2.insert("1.0",str(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"]))
             except TypeError:
                 optics_index = 0
                 manual_optics_input.delete(0,300)
@@ -2629,7 +2693,8 @@ class Catalogue_gui:
                     else:
                         alternative_entry.set("")
                     notes_input2.delete("1.0",tk.END)
-                    notes_input2.insert("1.0",filter_text_input(str(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"])))
+                    # notes_input2.insert("1.0",filter_text_input(str(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"])))
+                    notes_input2.insert("1.0",str(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"]))
             except Exception:
                 optics_index = 0
 
@@ -2749,7 +2814,7 @@ class Catalogue_gui:
     def export_to_excel(self,path_with_name):
         save_excel_class = Save_excel(self.root,station_list = self.station_list,project_name = self.project_name_input.get(),excel_name=path_with_name,controller_list=self.controller_object_list,console = self.main_console)
         output = save_excel_class.main()
-        return
+        return output
 
     def export_option_window(self):
         child_root = customtkinter.CTkToplevel()
@@ -2786,16 +2851,23 @@ class Catalogue_gui:
                     if click_count > 1 and previous_path == excel_path_with_name: # když podruhé a nebyla změněna cesta
                         self.favourite_format = str(format_entry.get())
                         self.last_path_input = path_inserted
-                        self.export_to_excel(excel_path_with_name)
-                        close_window(child_root)
+                        export_success = self.export_to_excel(excel_path_with_name)
+                        if export_success == True:
+                            close_window(child_root)
+                        else:
+                            add_colored_line(console,export_success,"red",None,True)
+
                     elif click_count > 1 and previous_path != excel_path_with_name:
                         click_count =1
                     previous_path = excel_path_with_name
                 else:
                     self.favourite_format = str(format_entry.get())
                     self.last_path_input = path_inserted
-                    self.export_to_excel(excel_path_with_name)
-                    close_window(child_root)
+                    export_success = self.export_to_excel(excel_path_with_name)
+                    if export_success == True:
+                        close_window(child_root)
+                    else:
+                        add_colored_line(console,export_success,"red",None,True)
             else:
                 add_colored_line(console,"Zadaná cesta pro uložení je neplatná","red",None,True)
 
@@ -3842,9 +3914,12 @@ class Save_excel:
         for columns in self.used_columns:
             ws.column_dimensions[columns].width = self.excel_column_width
             
-            for i in range((self.values_start_row-1),self.excel_rows_used-1):
+            for i in range((self.values_start_row-1),self.excel_rows_used-1): # formát všech zaplněných buněk
                 cell = ws[columns + str(i)]
-                cell.alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True,shrink_to_fit=True,justifyLastLine=True)
+                # if self.xlsx_format:
+                #   cell.alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True,shrink_to_fit=True,justifyLastLine=True)
+                # else:
+                cell.alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
                 cell.border = thin_border
 
                 if i == (self.values_start_row-1): # nadpisy sloupců
@@ -3957,12 +4032,10 @@ class Save_excel:
 
         ws = wb.create_sheet("HiddenSheet")
         ws.sheet_state = 'hidden'
-
         for stations in self.station_list:
             excel_cell = stations["hidden_values"]
             ws[excel_cell + str(1)] = str(stations["name"])
-            filtered_description = re.sub(r'\n{2,}', '\n',str(stations["inspection_description"]))
-            ws[excel_cell + str(2)] = filtered_description
+            ws[excel_cell + str(2)] = str(stations["inspection_description"])
             ws[excel_cell + str(3)] = 1 # toggle status... default: 1
 
             for cameras in stations["camera_list"]:
@@ -3971,9 +4044,7 @@ class Save_excel:
                 detail_info = ""
                 if str(cameras["cable"]) != "":
                     detail_info = detail_info + "Kabel: " + str(cameras["cable"])+ "\n"
-
-                filtered_notes = re.sub(r'\n{2,}', '\n', str(cameras["description"]))
-                ws[excel_cell + str(2)] = detail_info + filtered_notes
+                ws[excel_cell + str(2)] = detail_info + str(cameras["description"])
                 ws[excel_cell + str(3)] = 1
                 
                 for optics in cameras["optics_list"]:
@@ -3982,9 +4053,7 @@ class Save_excel:
                     detail_info = ""
                     if str(optics["alternative"]) != "":
                         detail_info = "Alternativa: " + str(optics["alternative"]) + "\n"
-                    
-                    filtered_notes = re.sub(r'\n{2,}', '\n', str(optics["description"]))
-                    detail_info = detail_info + "\n" + filtered_notes
+                    detail_info = detail_info + "\n" + str(optics["description"])
 
                     ws[excel_cell + str(2)] = detail_info
                     ws[excel_cell + str(3)] = 1
@@ -3995,8 +4064,7 @@ class Save_excel:
                 ws[excel_cell + str(1)] = controllers["type"]
                 details = str(controllers["detailed_name"])
                 if not str(controllers["notes"]) == "":
-                    filtered_notes = re.sub(r'\n{2,}', '\n', str(controllers["notes"]))
-                    details = details +"xx\n\n"+ filtered_notes
+                    details = details +"\n\n"+ str(controllers["notes"])
                 if not str(controllers["ip"]) == "" and not controllers["ip"] == "192.168.000.000":
                     details = details + "\nIP: " + str(controllers["ip"])
                 if not str(controllers["username"]) == "":
@@ -4014,80 +4082,89 @@ class Save_excel:
                         ws[excel_cell + str(3)] = 1 # toggle status... default: 1
 
     def fill_xlsx_column(self,wb):
+        def get_string_rows(input_string):
+            rows_splitted = []
+            rows_splitted = input_string.split("\n")
+            cleaned_data = [x for x in rows_splitted if x]
+            return len(cleaned_data)
+
+        def calculate_new_cell_height(max_rows,line_to_be_expanded:int):
+            if max_rows == 0:
+                return
+            current_cell_height = ws.row_dimensions[line_to_be_expanded].height
+            if current_cell_height == None:
+                ws.row_dimensions[line_to_be_expanded].height = max_rows*15
+
+            elif int(current_cell_height) < max_rows*15:
+                ws.row_dimensions[line_to_be_expanded].height = max_rows*15
+
         ws = wb.active
         columns = ["D","F","H","J"]
-        light_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
-        align = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
-
         for stations in self.station_list:
             excel_cell = str(stations["excel_position"])
             excel_cell = excel_cell.replace("A","B")
+            station_cell = str(excel_cell)
             ws[excel_cell] = stations["inspection_description"]
-            ws[excel_cell].alignment = align
+            station_number_of_rows = get_string_rows(str(stations["inspection_description"]))
             if len(stations["camera_list"]) == 0:
                 excel_cell = columns[0] + stations["excel_position"][1:]
                 ws[excel_cell] = ""
+
+            camera_num_of_rows = 0
+            optics_num_of_rows = 0
             for cameras in stations["camera_list"]:
                 excel_cell = cameras["excel_position"]
                 excel_cell = excel_cell.replace("C","D")
-                detail_info = ""
-                if str(cameras["controller_color"]) != "":
-                    try:
-                        color_modified = str(cameras["controller_color"])[1:]
-                        controller_fill = PatternFill(start_color=color_modified, end_color=color_modified, fill_type="solid")
-                        ws[excel_cell].fill = controller_fill
-                    except Exception as e:
-                        print(f"chyba pri nastavovani barvy kontroleru pri exportu: {e}")
-                        pass
-                if str(cameras["cable"]) != "":
-                    detail_info = detail_info + "Kabel: " + str(cameras["cable"])+ "\n"
-
-                ws[excel_cell] = detail_info + str(cameras["description"])
-                ws[excel_cell].alignment = align
+                detail_info_cam = Fill_details.camera(cameras)
+                if detail_info_cam[1] != None:
+                    ws[excel_cell].fill = detail_info_cam[1]
+                ws[excel_cell] = detail_info_cam[0]
                 
                 if len(cameras["optics_list"]) == 0:
                     excel_cell = columns[1] + cameras["excel_position"][1:]
                     ws[excel_cell] = ""
+
                 for optics in cameras["optics_list"]:
                     excel_cell = optics["excel_position"]
                     excel_cell = excel_cell.replace("E","F")
-                    detail_info = ""
-                    if str(optics["alternative"]) != "":
-                        detail_info = "Alternativa: " + str(optics["alternative"]) + "\n\n"
-                    ws[excel_cell] = detail_info + str(optics["description"])
-                    ws[excel_cell].alignment = align
-                    if "light_status" in optics:
-                        ws[excel_cell].fill = light_fill
+                    detail_info_opt = Fill_details.optics(optics)
+                    optic_rows = get_string_rows(detail_info_opt)
+                    optics_num_of_rows += optic_rows
+                camera_rows = get_string_rows(detail_info_cam[0])
+                camera_num_of_rows += camera_rows
+
+            max_rows = max(station_number_of_rows,camera_num_of_rows,optics_num_of_rows)
+            calculate_new_cell_height(max_rows,int(station_cell[1:]))
 
         for controllers in self.controller_list:
+            controller_num_of_rows = 0
+            acc_num_of_rows = 0
+            acc_rows_received = False
+            detail_info_cont = Fill_details.controller(controllers)
+            controller_num_of_rows = get_string_rows(detail_info_cont)
+
             for position in controllers["excel_position"]:
                 excel_cell = str(position)
                 excel_cell = excel_cell.replace("G","H")
-                detail_info = controllers["detailed_name"] + "\n"
-
-                if str(controllers["ip"]) != "" and str(controllers["ip"]) != "192.168.000.000":
-                    detail_info += str(controllers["ip"]) + "\n"
-                if str(controllers["username"]) != "":
-                    detail_info += str(controllers["username"]) + "\n"
-                if str(controllers["password"]) != "":
-                    detail_info += str(controllers["password"]) + "\n\n"
-                if str(controllers["notes"]) != "":
-                    detail_info += str(controllers["notes"]) + "\n"
-                ws[excel_cell] = detail_info
-                ws[excel_cell].alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
-
+                ws[excel_cell] = detail_info_cont
 
                 if len(controllers["accessory_list"]) == 0:
-                    # excel_cell = columns[3] + controllers["excel_position"][1:]
                     excel_cell = columns[3] + position[1:]
                     ws[excel_cell] = ""
                 for accessory in controllers["accessory_list"]:
+                    detail_info_acc = Fill_details.accessory(accessory)
+                    if not acc_rows_received:
+                        acc_rows = get_string_rows(detail_info_acc)
+                        acc_num_of_rows += acc_rows
+
                     for acc_positions in accessory["excel_position"]:
                         excel_cell = acc_positions
                         excel_cell = excel_cell.replace("I","J")
-                        ws[excel_cell] = accessory["description"]
-                        ws[excel_cell].alignment = Alignment(horizontal = "left", vertical = "center",wrap_text=True)
-
+                        ws[excel_cell] = detail_info_acc
+                acc_rows_received = True
+                max_rows = max(controller_num_of_rows,acc_num_of_rows)
+                calculate_new_cell_height(max_rows,int(position[1:]))
+    
     def fill_images(self,wb):
         for station in self.station_list:
             if "image_list" in station:
@@ -4131,15 +4208,19 @@ class Save_excel:
             wb.close()
             attempt = self.update_sheet_vba_code(new_code=new_vba_code)
             if attempt == False:
+                error_message1 = f"Nejprve prosím zavřete soubor {self.excel_file_name}"
                 add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}","red",None,True)
+                return error_message1
             elif attempt == "rights_error":
+                error_message2 = f"Nemáte nastavená potřebná práva v excelu pro makra (VBA)"
                 add_colored_line(self.main_console,f"Nemáte nastavená potřebná práva v excelu pro makra (VBA)","red",None,True)
                 window = ToplevelWindow(self.root)
                 window.excel_manual_window()
+                return error_message2
             else:
                 add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
                 os.startfile(self.excel_file_name)
-                return
+                return True
                 
         elif ".xlsx" in self.excel_file_name:
             self.used_columns = ["A","B","C","D","E","F","G","H","I","J"]
@@ -4147,9 +4228,8 @@ class Save_excel:
             self.init_objects()
             rows_to_merge = self.get_cells_to_merge()
             self.make_header(wb)
-
+            self.merge_cells(wb,merge_list=rows_to_merge)
             try:
-                self.merge_cells(wb,merge_list=rows_to_merge)
                 self.fill_values(wb)
                 self.fill_xlsx_column(wb)
                 self.fill_images(wb)
@@ -4157,9 +4237,13 @@ class Save_excel:
                 wb.close()
                 add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
                 os.startfile(self.excel_file_name)
+                return True
+
             except Exception as e:
+                error_message = f"Nejprve prosím zavřete soubor {self.excel_file_name}, chyba: {e}"
                 add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}, chyba: {e}","red",None,True)
-                wb.close()
+                return error_message # returns the failure information to main gui
+                # wb.close()
 
 # download = download_database.database(database_filename)
 # Catalogue_gui(root,download.output)

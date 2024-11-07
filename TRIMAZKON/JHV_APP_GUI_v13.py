@@ -7,7 +7,7 @@ import Sorting_option_v5 as Trideni
 import Deleting_option_v1 as Deleting
 import Converting_option_v3 as Converting
 import catalogue_maker_v5 as Catalogue
-import sharepoint_download as download_database
+# import sharepoint_download as download_database
 import IP_setting_v2 as IP_setting
 import string_database
 from tkinter import filedialog
@@ -18,7 +18,7 @@ import sys
 import ctypes
 import win32pipe, win32file, pywintypes, psutil
 
-testing = False
+testing = True
 
 
 def path_check(path_raw,only_repair = None):
@@ -5267,7 +5267,7 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
             current_window_size = "min"
         
         if not self.database_downloaded:
-            download = download_database.database(self.database_filename)
+            # download = download_database.database(self.database_filename)
             input_message = str(download.output)
             menu.database_downloaded = True
         else:
