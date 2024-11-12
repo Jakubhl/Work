@@ -665,6 +665,7 @@ catalogue - když nový komponent a zrušit, přidá se... to samé u kontroleru
 kontextová nabídka u prohlížeče obrázků - hotovo
 ip_setting - optimalizace chování poznámek - hotovo
 TRIMAZKON při navrácení zpět do menu nemohu nastavovat celkový zoom aplikace ??? - hotovo
+release 4.1.0
 
 10:07 AM 11/6/2024
 catalogue - předvyplnění u stanic převést na placeholder text - hotovo
@@ -678,8 +679,13 @@ catalogue - xlsm - chybí ip u kontroleru - hotovo
 5:23 PM 11/7/2024
 catalogue - kdyz otevreny excel a export - chybova hlaska je na hlavni consoli - shodi to okno - hotovo
 catalogue - dodelat expand cells u kontroleru a prislusenstvi - hotovo
+catalogue - hotová optimalizace xlsm a adaptace vysky radku
+
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
+
+
+catalogue - xlsx - dodelat, ze se prenastavi vzdy dany radek komponentu, pokud uz neni vyssi
 
 
 

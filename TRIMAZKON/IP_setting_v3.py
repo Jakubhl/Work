@@ -527,17 +527,20 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         frame.update()
         frame.update_idletasks()
         for widget in frame.winfo_children():
-            if widget.winfo_exists():
-                widget.unbind("<Enter>")
-                widget.unbind("<Leave>")
-                widget.unbind("<Return>")
-                widget.unbind("<Button-1>")
-                widget.unbind("<Button-3>")
-                widget.unbind("<Double-1>")
-                widget.unbind("<MouseWheel>")
-                widget.pack_forget()
-                widget.grid_forget()
-                widget.destroy()
+            try:
+                if widget.winfo_exists():
+                    widget.unbind("<Enter>")
+                    widget.unbind("<Leave>")
+                    widget.unbind("<Return>")
+                    widget.unbind("<Button-1>")
+                    widget.unbind("<Button-3>")
+                    widget.unbind("<Double-1>")
+                    widget.unbind("<MouseWheel>")
+                    widget.pack_forget()
+                    widget.grid_forget()
+                    widget.destroy()
+            except Exception:
+                pass
         
     def manage_bin(self,flag="",parameters=[],wb=None):
         """

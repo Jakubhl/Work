@@ -3846,6 +3846,7 @@ class Save_excel:
                     targetCell.Value = text1
                     toggle_status = 1
 
+                    On Error GoTo ErrorHandler ' Start error handling
                     targetCell.Rows.AutoFit
 
                 End If
@@ -3855,10 +3856,13 @@ class Save_excel:
                 ' Cancel the default right-click menu
                 Cancel = True
             End If
-            ActiveSheet.Protect
+            Exit Sub
+
+        ErrorHandler: ' Define what to do if an error occurs
+            MsgBox "An error occurred: " & Err.Description, vbExclamation
+            Exit Sub
 
         End Sub
-
         """
         return vba_code
 
@@ -4039,112 +4043,71 @@ class Save_excel:
         def get_string_rows(input_string):
             rows_splitted = []
             rows_splitted = input_string.split("\n")
-            cleaned_data = [x for x in rows_splitted if x]
-            print(cleaned_data)
-            return len(cleaned_data)
+            #potreba ty prazdna mista ponechat, kdyz je vlozeno hodne odsazení
+            # cleaned_data = [x for x in rows_splitted if x]
+            return len(rows_splitted)
 
-        def calculate_new_cell_height(max_rows,line_to_be_expanded = None):
+        def calculate_new_cell_height(max_rows):
             height_of_one_row = 15
             if max_rows == 0:
                 return height_of_one_row
             else:
                 return max_rows*height_of_one_row
-
-            current_cell_height = ws.row_dimensions[line_to_be_expanded].height
-            if current_cell_height == None:
-                ws.row_dimensions[line_to_be_expanded].height = max_rows*height_of_one_row
-
-            elif int(current_cell_height) < max_rows*height_of_one_row:
-                ws.row_dimensions[line_to_be_expanded].height = max_rows*height_of_one_row
-
+            
         ws = wb.create_sheet("HiddenSheet")
         ws.sheet_state = 'hidden'
         for stations in self.station_list:
             excel_cell = stations["hidden_values"]
-            station_cell = str(excel_cell)
             ws[excel_cell + str(1)] = str(stations["name"])
             ws[excel_cell + str(2)] = str(stations["inspection_description"])
             station_number_of_rows = get_string_rows(str(stations["inspection_description"]))
             ws[excel_cell + str(3)] = 1 # toggle status... default: 1
+            new_cell_height = calculate_new_cell_height(station_number_of_rows)
+            ws[excel_cell + str(4)] = new_cell_height
 
-            camera_num_of_rows = 0
-            optics_num_of_rows = 0
             for cameras in stations["camera_list"]:
                 excel_cell = cameras["hidden_values"]
                 ws[excel_cell + str(1)] = cameras["type"]
-
                 detail_info_cam = Fill_details.camera(cameras)
-                # detail_info = ""
-                # if str(cameras["cable"]) != "":
-                #     detail_info = detail_info + "Kabel: " + str(cameras["cable"])+ "\n"
-                # ws[excel_cell + str(2)] = detail_info + str(cameras["description"])
-
                 ws[excel_cell + str(2)] = detail_info_cam[0]
                 ws[excel_cell + str(3)] = 1
+                camera_rows = get_string_rows(str(detail_info_cam[0]))
+                new_cell_height = calculate_new_cell_height(camera_rows)
+                ws[excel_cell + str(4)] = new_cell_height
                 
                 for optics in cameras["optics_list"]:
                     excel_cell = optics["hidden_values"]
                     ws[excel_cell + str(1)] = optics["type"]
-
                     detail_info_opt = Fill_details.optics(optics)
-                    optic_rows = get_string_rows(str(detail_info_opt))
-                    optics_num_of_rows += optic_rows
-
-                    # detail_info = ""
-                    # if str(optics["alternative"]) != "":
-                    #     detail_info = "Alternativa: " + str(optics["alternative"]) + "\n"
-                    # detail_info = detail_info + "\n" + str(optics["description"])
-
                     ws[excel_cell + str(2)] = detail_info_opt
                     ws[excel_cell + str(3)] = 1
-                camera_rows = get_string_rows(str(detail_info_cam[0]))
-                camera_num_of_rows += camera_rows
-
-            max_rows = max(station_number_of_rows,camera_num_of_rows,optics_num_of_rows)
-            new_cell_height = calculate_new_cell_height(max_rows)
-            ws[station_cell + str(4)] = new_cell_height
+                    optic_rows = get_string_rows(str(detail_info_opt))
+                    new_cell_height = calculate_new_cell_height(optic_rows)
+                    ws[excel_cell + str(4)] = new_cell_height
 
         for controllers in self.controller_list:
             detail_info_cont = Fill_details.controller(controllers)
-            controller_num_of_rows = 0
-            acc_num_of_rows = 0
-            acc_rows_received = False
             controller_num_of_rows = get_string_rows(detail_info_cont)
+            new_cont_cell_height = calculate_new_cell_height(controller_num_of_rows)
 
             for controller_positions in controllers["hidden_values"]:
                 excel_cell = controller_positions
-
-                # details = str(controllers["detailed_name"])
-                # if not str(controllers["notes"]) == "":
-                #     details = details +"\n\n"+ str(controllers["notes"])
-                # if not str(controllers["ip"]) == "" and not controllers["ip"] == "192.168.000.000":
-                #     details = details + "\nIP: " + str(controllers["ip"])
-                # if not str(controllers["username"]) == "":
-                #     details = details + "\nJméno: " + str(controllers["username"])
-                # if not str(controllers["password"]) == "":
-                #     details = details + "\nHeslo: " + str(controllers["password"])
-                # ws[excel_cell + str(2)] = details
-
                 ws[excel_cell + str(1)] = controllers["type"]
                 ws[excel_cell + str(2)] = detail_info_cont
                 ws[excel_cell + str(3)] = 1 # toggle status... default: 1
+                ws[excel_cell + str(4)] = new_cont_cell_height
 
                 for accessories in controllers["accessory_list"]:
                     detail_info_acc = Fill_details.accessory(accessories)
-                    if not acc_rows_received:
-                        acc_rows = get_string_rows(detail_info_acc)
-                        acc_num_of_rows += acc_rows
+                    acc_rows = get_string_rows(detail_info_acc)
+                    new_acc_cell_height = calculate_new_cell_height(acc_rows)
 
                     for acc_positions in accessories["hidden_values"]:
                         excel_cell = acc_positions
                         ws[excel_cell + str(1)] = accessories["type"]
                         ws[excel_cell + str(2)] = detail_info_acc
                         ws[excel_cell + str(3)] = 1 # toggle status... default: 1
-
-                acc_rows_received = True
-                max_rows = max(controller_num_of_rows,acc_num_of_rows)
-                new_cell_height = calculate_new_cell_height(max_rows)
-                ws[controller_positions + str(4)] = new_cell_height
+                        ws[excel_cell + str(4)] = new_acc_cell_height
 
     def fill_xlsx_column(self,wb):
         def get_string_rows(input_string):
