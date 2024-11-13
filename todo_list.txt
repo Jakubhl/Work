@@ -680,22 +680,21 @@ catalogue - xlsm - chybí ip u kontroleru - hotovo
 catalogue - kdyz otevreny excel a export - chybova hlaska je na hlavni consoli - shodi to okno - hotovo
 catalogue - dodelat expand cells u kontroleru a prislusenstvi - hotovo
 catalogue - hotová optimalizace xlsm a adaptace vysky radku
-
+catalogue - xlsx - dodelat, ze se prenastavi vzdy dany radek komponentu, pokud uz neni vyssi - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
-catalogue - xlsx - dodelat, ze se prenastavi vzdy dany radek komponentu, pokud uz neni vyssi
 
-
-
+catalogue - detail předělat na doubleclick, přidat kontext nabídku
 
 catalogue - upravit ramecek na focusnutym svetle
-upravit rozmery okna na automacicke - export
+catalogue - upravit rozmery okna na automacicke - export
 
 ip setting - rozdělit do tříd
 ip setting - grid předělat na pack
-
+ip setting - kontext menu + optimalizace vykreslování
+ip setting - runtime error moc nízký
 ip setting - nepsat u disku do konzole současná připojení interfaců, ale disků
 
 ??? Koumu: admin práva, online auto aktualizace nové verze

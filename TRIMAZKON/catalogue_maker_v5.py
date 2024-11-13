@@ -156,6 +156,7 @@ def browseDirectories(visible_files,start_path=None,file_type = [("All files", "
 class Tools:
     @classmethod
     def strip_lines_to_fit(cls,text):
+        print(text)
         text = re.sub(r'\n{3,}', '\n', str(text)) # odstraní více jak tři mezery za sebou
         paragraphs = text.split("\n\n")
         paragraphs = [x for x in paragraphs if x]
@@ -178,7 +179,7 @@ class Tools:
 
                 if new_string.endswith(" "):
                     new_string = new_string.rstrip(" ")
-                whole_new_string += new_string + "\n\n"
+                whole_new_string += new_string + "\n"
             
         if whole_new_string.endswith("\n\n"):
             whole_new_string = whole_new_string.rstrip("\n")
@@ -191,6 +192,59 @@ class Tools:
         
         return text
 
+    @classmethod
+    def make_wrapping(cls,text_widget):
+        text = str(text_widget.get("1.0", tk.END))
+        lines = []
+        index = "1.0"
+        while True:
+            line_end = text_widget.index(f"{index} lineend")
+            line_text = text_widget.get(index, line_end)
+            lines.append(line_text)
+            index = text_widget.index(f"{index} +1line")
+            
+            # Stop if we've reached the last line
+            if index == line_end:
+                break
+        text = re.sub(r'\n{3,}', '\n', str(text)) # odstraní více jak tři mezery za sebou
+        paragraphs = text.split("\n")
+
+        print("paragraphs: ",paragraphs)
+
+        lines = [x for x in lines if x]
+        print(lines)
+        whole_new_string = ""
+        number_of_chars = 0
+        max_num_of_chars_one_line = 35
+        # for i in range(0,len(paragraphs)):
+            # if paragraphs[i] != "" and paragraphs[i] != "\n":
+                # paragraph_block = paragraphs[i].replace("\n"," ") # Rozhodí se mezery a entery od uživatele
+        for line in lines:
+            # line = line.replace("\n"," ")
+            text_splitted = line.split(" ")
+            new_string = ""
+            for items in text_splitted:
+                number_of_chars += len(items)
+                if number_of_chars > max_num_of_chars_one_line:
+                    new_string += "\n" + str(items) + " "
+                    number_of_chars = len(items)
+                else:
+                    new_string += str(items) + " "
+
+            if new_string.endswith(" "):
+                new_string = new_string.rstrip(" ")
+
+            if not new_string.endswith("\n"):
+                whole_new_string += new_string
+            else:
+                whole_new_string += new_string
+
+            
+        if whole_new_string.endswith("\n\n"):
+            whole_new_string = whole_new_string.rstrip("\n")
+
+        return whole_new_string
+    
 class Save_prog_metadata:
     def __init__(self,console,controller_database=[],station_list=[],project_name="",xml_file_path=""):
         self.controller_database = controller_database
@@ -2025,8 +2079,9 @@ class Catalogue_gui:
         def save_changes(no_window_shut = False):
             if object == "station" or all_parameters:
                 self.temp_station_list[station_index]["name"] = new_name.get()
-                filtered_description = Tools.strip_lines_to_fit(str(new_description.get("1.0", tk.END)))
+                # filtered_description = Tools.strip_lines_to_fit(str(new_description.get("1.0", tk.END)))
                 # filtered_description = Tools.remove_last_empty_rows(str(new_description.get("1.0", tk.END)))
+                filtered_description = Tools.make_wrapping(new_description)
                 
                 self.temp_station_list[station_index]["inspection_description"] = filtered_description
 
@@ -2042,8 +2097,8 @@ class Catalogue_gui:
                             self.last_controller_index = controller_index+1 #musíme počítat s možností nemít žádný kontroler
                 self.temp_station_list[station_index]["camera_list"][camera_index]["controller_index"] = controller_index
                 self.temp_station_list[station_index]["camera_list"][camera_index]["cable"] = cam_cable_menu.get()
-                filtered_description = Tools.strip_lines_to_fit(str(notes_input.get("1.0", tk.END)))
-                # filtered_description = Tools.remove_last_empty_rows(str(notes_input.get("1.0", tk.END)))
+                # filtered_description = Tools.strip_lines_to_fit(str(notes_input.get("1.0", tk.END)))
+                filtered_description = Tools.remove_last_empty_rows(str(notes_input.get("1.0", tk.END)))
                 self.temp_station_list[station_index]["camera_list"][camera_index]["description"] = filtered_description
                 
             if object == "optics" or "camera" or all_parameters:
@@ -2054,8 +2109,8 @@ class Catalogue_gui:
                     optic_type = optic_type_entry.get()
                 self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"] = optic_type
                 self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"] = alternative_entry.get()
-                filtered_description = Tools.strip_lines_to_fit(str(notes_input2.get("1.0", tk.END)))
-                # filtered_description = Tools.remove_last_empty_rows(str(notes_input2.get("1.0", tk.END)))
+                # filtered_description = Tools.strip_lines_to_fit(str(notes_input2.get("1.0", tk.END)))
+                filtered_description = Tools.remove_last_empty_rows(str(notes_input2.get("1.0", tk.END)))
                 self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"] = filtered_description
 
             if not no_window_shut:
@@ -2239,8 +2294,8 @@ class Catalogue_gui:
                         notes_string = notes_string + f"Kabel ({str(current_cable)}): " + cable_notes + "\n\n"
                 
                 notes_input.delete("1.0",tk.END)
-                # notes_input.insert("1.0",Tools.strip_lines_to_fit(notes_string))
-                notes_input.insert("1.0",notes_string)
+                notes_input.insert("1.0",Tools.strip_lines_to_fit(notes_string))
+                # notes_input.insert("1.0",notes_string)
             
             elif which == "optics":
                 current_optics = optic_type_entry.get()
@@ -2256,8 +2311,8 @@ class Catalogue_gui:
                         notes_string = notes_string + "Alternativní - popis: " + alternative_notes + "\n\n"
                 
                 notes_input2.delete("1.0",tk.END)
-                # notes_input2.insert("1.0",Tools.strip_lines_to_fit(notes_string))
-                notes_input2.insert("1.0",notes_string)
+                notes_input2.insert("1.0",Tools.strip_lines_to_fit(notes_string))
+                # notes_input2.insert("1.0",notes_string)
 
         def call_new_controller_gui():
             window = ToplevelWindow(self.root,[self.controller_database,self.controller_notes_database],callback_new_controller,self.controller_object_list,[self.accessory_database,self.whole_accessory_database,self.accessory_notes_database])
@@ -2385,6 +2440,27 @@ class Catalogue_gui:
         child_root = customtkinter.CTkToplevel()
         # STANICE ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         
+        def get_text_with_wrapping(text_widget):
+            lines = []
+            index = "1.0"
+            while True:
+                line_end = text_widget.index(f"{index} lineend")
+                line_text = text_widget.get(index, line_end)
+                lines.append(line_text)
+                index = text_widget.index(f"{index} +1line")
+                print(index)
+                
+                # Stop if we've reached the last line
+                if index == line_end:
+                    break
+            return "\n".join(lines)
+
+        def last_letter(event):
+            if event.char == " ":
+                print("space ",event.char)
+                # x = get_text_with_wrapping(new_description)
+                Tools.strip_lines_to_fit(new_description.get("1.0", tk.END))
+
         station_frame =             customtkinter.CTkFrame(master = child_root,corner_radius=0,border_width=3)
         station_name_label =        customtkinter.CTkLabel(master = station_frame,text = "Název stanice:",font=("Arial",22,"bold"))
         name_frame =                customtkinter.CTkFrame(master = station_frame,corner_radius=0)
@@ -2404,6 +2480,8 @@ class Catalogue_gui:
         new_description             .pack(pady = 5, padx = 10,expand=True,side="top",fill="both")     
         new_name.bind("<Key>",remaping_characters)
         new_description.bind("<Key>",remaping_characters)
+
+        # new_description.bind("<KeyRelease>",last_letter)
 
         # KAMERY ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         
@@ -4113,20 +4191,23 @@ class Save_excel:
         def get_string_rows(input_string):
             rows_splitted = []
             rows_splitted = input_string.split("\n")
-            cleaned_data = [x for x in rows_splitted if x]
-            return len(cleaned_data)
+            # cleaned_data = [x for x in rows_splitted if x]
+            return len(rows_splitted)
 
         def calculate_new_cell_height(max_rows,line_to_be_expanded:int):
             height_of_one_row = 15
             if max_rows == 0:
                 return
-            current_cell_height = ws.row_dimensions[line_to_be_expanded].height
-            if current_cell_height == None:
-                ws.row_dimensions[line_to_be_expanded].height = max_rows*height_of_one_row
+            try:
+                current_cell_height = ws.row_dimensions[line_to_be_expanded].height
+                if current_cell_height == None:
+                    ws.row_dimensions[line_to_be_expanded].height = max_rows*height_of_one_row
 
-            elif int(current_cell_height) < max_rows*height_of_one_row:
-                ws.row_dimensions[line_to_be_expanded].height = max_rows*height_of_one_row
-
+                elif int(current_cell_height) < max_rows*height_of_one_row:
+                    ws.row_dimensions[line_to_be_expanded].height = max_rows*height_of_one_row
+            except Exception as e:
+                print(e)
+                
         ws = wb.active
         columns = ["D","F","H","J"]
         for stations in self.station_list:
@@ -4135,6 +4216,8 @@ class Save_excel:
             station_cell = str(excel_cell)
             ws[excel_cell] = stations["inspection_description"]
             station_number_of_rows = get_string_rows(str(stations["inspection_description"]))
+            # calculate_new_cell_height(station_number_of_rows,int(station_cell[1:]))
+
             if len(stations["camera_list"]) == 0:
                 excel_cell = columns[0] + stations["excel_position"][1:]
                 ws[excel_cell] = ""
@@ -4148,7 +4231,9 @@ class Save_excel:
                 if detail_info_cam[1] != None:
                     ws[excel_cell].fill = detail_info_cam[1]
                 ws[excel_cell] = detail_info_cam[0]
-                
+                camera_rows = get_string_rows(detail_info_cam[0])
+                # calculate_new_cell_height(camera_rows,int(excel_cell[1:]))
+
                 if len(cameras["optics_list"]) == 0:
                     excel_cell = columns[1] + cameras["excel_position"][1:]
                     ws[excel_cell] = ""
@@ -4157,9 +4242,14 @@ class Save_excel:
                     excel_cell = optics["excel_position"]
                     excel_cell = excel_cell.replace("E","F")
                     detail_info_opt = Fill_details.optics(optics)
+                    try:
+                        ws[excel_cell] = str(detail_info_opt)
+                    except Exception as e:
+                        pass
                     optic_rows = get_string_rows(detail_info_opt)
+                    # calculate_new_cell_height(optic_rows,int(excel_cell[1:]))
+
                     optics_num_of_rows += optic_rows
-                camera_rows = get_string_rows(detail_info_cam[0])
                 camera_num_of_rows += camera_rows
 
             max_rows = max(station_number_of_rows,camera_num_of_rows,optics_num_of_rows)
@@ -4258,20 +4348,20 @@ class Save_excel:
             rows_to_merge = self.get_cells_to_merge()
             self.make_header(wb)
             self.merge_cells(wb,merge_list=rows_to_merge)
-            try:
-                self.fill_values(wb)
-                self.fill_xlsx_column(wb)
-                self.fill_images(wb)
-                wb.save(self.excel_file_name)
-                wb.close()
-                add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
-                os.startfile(self.excel_file_name)
-                return True
+            # try:
+            self.fill_values(wb)
+            self.fill_xlsx_column(wb)
+            self.fill_images(wb)
+            wb.save(self.excel_file_name)
+            wb.close()
+            add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
+            os.startfile(self.excel_file_name)
+            return True
 
-            except Exception as e:
-                error_message = f"Nejprve prosím zavřete soubor {self.excel_file_name}, chyba: {e}"
-                add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}, chyba: {e}","red",None,True)
-                return error_message # returns the failure information to main gui
+            # except Exception as e:
+            error_message = f"Nejprve prosím zavřete soubor {self.excel_file_name}, chyba: {e}"
+            add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}, chyba: {e}","red",None,True)
+            return error_message # returns the failure information to main gui
                 # wb.close()
 
 # download = download_database.database(database_filename)
