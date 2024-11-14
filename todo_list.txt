@@ -682,14 +682,15 @@ catalogue - dodelat expand cells u kontroleru a prislusenstvi - hotovo
 catalogue - hotová optimalizace xlsm a adaptace vysky radku
 catalogue - xlsx - dodelat, ze se prenastavi vzdy dany radek komponentu, pokud uz neni vyssi - hotovo
 
+3:11 PM 11/14/2024
+catalogue - odebrat stanici, zrusit nacte vsechny widgets - hotovo
+catalogue - upravit rozmery okna na automacicke - export - hotovo
+catalogue - upravit ramecek na focusnutym svetle - hotovo
+catalogue - v kontext nabídce mít možnost kopírovat třeba ip adresu - hotovo
+catalogue - detail předělat na doubleclick, přidat kontext nabídku - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-
-
-catalogue - detail předělat na doubleclick, přidat kontext nabídku
-
-catalogue - upravit ramecek na focusnutym svetle
-catalogue - upravit rozmery okna na automacicke - export
 
 ip setting - rozdělit do tříd
 ip setting - grid předělat na pack

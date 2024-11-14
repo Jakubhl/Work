@@ -15,7 +15,7 @@ import os
 import xml.etree.ElementTree as ET
 # import sharepoint_download as download_database
 import sys
-import re
+import pyperclip
 import copy
 
 testing = True
@@ -33,218 +33,171 @@ if testing:
         customtkinter.set_widget_scaling(zoom_factor / 100) 
     set_zoom(60)
 
-def add_colored_line(text_widget, text, color,font=None,delete_line = None):
-    """
-    Vloží řádek do console
-    """
-    text_widget.configure(state=tk.NORMAL)
-    if font == None:
-        font = ("Arial",16)
-    if delete_line != None:
-        text_widget.delete("current linestart","current lineend")
-        text_widget.tag_configure(color, foreground=color,font=font)
-        text_widget.insert("current lineend",text, color)
-    else:
-        text_widget.tag_configure(color, foreground=color,font=font)
-        text_widget.insert(tk.END,"    > "+ text+"\n", color)
-
-    text_widget.configure(state=tk.DISABLED)
-
-def resource_path(relative_path):
-    """ Get the absolute path to a resource, works for dev and for PyInstaller """
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath("."), relative_path)
-
-app_icon_path = resource_path('images\\logo_TRIMAZKON.ico')
-
-def path_check(path_raw,only_repair = None):
-    path=path_raw
-    backslash = "\\"
-    if backslash[0] in path:
-        newPath = path.replace(backslash[0], '/')
-        path = newPath
-    if path.endswith('/') == False:
-        newPath = path + "/"
-        path = newPath
-    #oprava mezery v nazvu
-    path = r"{}".format(path)
-    if not os.path.exists(path) and only_repair == None:
-        return False
-    else:
-        return path
-
-def browseDirectories(visible_files,start_path=None,file_type = [("All files", "*.*")]): # Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
-    """
-    Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
-
-    Vstupní data:
-
-    0: visible_files = "all" / "only_dirs"\n
-    1: start_path = None -optimalni, docasne se ulozi posledni nastavena cesta v exploreru
-
-    Výstupní data:
-
-    0: výstupní chybová hlášení
-    1: opravená cesta
-    2: nazev vybraneho souboru (option: all)
-    """
-    corrected_path = ""
-    output= ""
-    name_of_selected_file = ""
-    if start_path == None:
-        start_path = resource_path(os.getcwd())
-    start_path = path_check(start_path)
-    # pripad vyberu files, aby byly viditelne
-    if visible_files == "all":
-        if(start_path != "" and start_path != False):
-            foldername_path = filedialog.askopenfile(initialdir = start_path,
-                                                     title = "Klikněte na soubor v požadované cestě",
-                                                     filetypes=file_type)
-            path_to_directory= ""
-            if foldername_path != None:
-                path_to_file = str(foldername_path.name)
-                path_to_file_split = path_to_file.split("/")
-                i=0
-                for parts in path_to_file_split:
-                    i+=1
-                    if i<len(path_to_file_split):
-                        if i == 1:
-                            path_to_directory = path_to_directory + parts
-                        else:
-                            path_to_directory = path_to_directory +"/"+ parts
-                    else:
-                        name_of_selected_file = parts
-            else:
-                output = "Přes explorer nebyla vložena žádná cesta"
-        else:           
-            foldername_path = filedialog.askopenfile(initialdir = "/",
-                                                     title = "Klikněte na soubor v požadované cestě",
-                                                     filetypes=file_type)
-            path_to_directory= ""
-            if foldername_path != None:
-                path_to_file = str(foldername_path.name)
-                path_to_file_split = path_to_file.split("/")
-                i=0
-                for parts in path_to_file_split:
-                    i+=1
-                    if i<len(path_to_file_split):
-                        if i == 1:
-                            path_to_directory = path_to_directory + parts
-                        else:
-                            path_to_directory = path_to_directory +"/"+ parts
-                    else:
-                        name_of_selected_file = parts
-            else:
-                output = "Přes explorer nebyla vložena žádná cesta"
-
-    # pripad vyberu slozek
-    if visible_files == "only_dirs":
-        if(start_path != ""):
-            path_to_directory = filedialog.askdirectory(initialdir = start_path, title = "Vyberte adresář")
-            if path_to_directory == None or path_to_directory == "":
-                output = "Přes explorer nebyla vložena žádná cesta"
-        else:
-            path_to_directory = filedialog.askdirectory(initialdir = "/", title = "Vyberte adresář")
-            if path_to_directory == None or path_to_directory == "":
-                output = "Přes explorer nebyla vložena žádná cesta"
-
-    check = path_check(path_to_directory)
-    corrected_path = check
-    return [output,corrected_path,name_of_selected_file]
-
 class Tools:
     @classmethod
-    def strip_lines_to_fit(cls,text):
-        print(text)
-        text = re.sub(r'\n{3,}', '\n', str(text)) # odstraní více jak tři mezery za sebou
-        paragraphs = text.split("\n\n")
-        paragraphs = [x for x in paragraphs if x]
+    def add_colored_line(cls,text_widget, text, color,font=None,delete_line = None):
+        """
+        Vloží řádek do console
+        """
+        text_widget.configure(state=tk.NORMAL)
+        if font == None:
+            font = ("Arial",16)
+        if delete_line != None:
+            text_widget.delete("current linestart","current lineend")
+            text_widget.tag_configure(color, foreground=color,font=font)
+            text_widget.insert("current lineend",text, color)
+        else:
+            text_widget.tag_configure(color, foreground=color,font=font)
+            text_widget.insert(tk.END,"    > "+ text+"\n", color)
+
+        text_widget.configure(state=tk.DISABLED)
+        
+    @classmethod
+    def make_wrapping(cls,text):
+        # text = re.sub(r'\n{3,}', '\n', str(text)) # odstraní více jak tři mezery za sebou
+        lines = text.split("\n")
         whole_new_string = ""
         number_of_chars = 0
         max_num_of_chars_one_line = 35
-        for i in range(0,len(paragraphs)):
-            if paragraphs[i] != "" and paragraphs[i] != "\n":
-                # paragraph_block = paragraphs[i].replace("\n"," ") # Rozhodí se mezery a entery od uživatele
-                paragraph_block = paragraphs[i]
-                text_splitted = paragraph_block.split(" ")
+
+        fitted_lines = []
+        for line in lines:
+            line = line.rstrip()
+            if len(line) > max_num_of_chars_one_line:
+                text_splitted = line.split(" ")
+                # text_splitted = [x for x in text_splitted if x]
                 new_string = ""
                 for items in text_splitted:
                     number_of_chars += len(items)
                     if number_of_chars > max_num_of_chars_one_line:
-                        new_string += "\n" + str(items) + " "
-                        number_of_chars = len(items)
-                    else:
+                        if new_string == "": # osetreni odsazeni na prvnim radku
+                            new_string += str(items) + " "
+                            number_of_chars = len(items)
+                        else:
+                            new_string += "\n" + str(items) + " "
+                            number_of_chars = len(items)
+                    else: 
                         new_string += str(items) + " "
 
-                if new_string.endswith(" "):
-                    new_string = new_string.rstrip(" ")
-                whole_new_string += new_string + "\n"
-            
-        if whole_new_string.endswith("\n\n"):
-            whole_new_string = whole_new_string.rstrip("\n")
-        return whole_new_string
-
-    @classmethod
-    def remove_last_empty_rows(cls,text):
-        if text.endswith("\n\n"):
-            text = text.rstrip("\n")
-        
-        return text
-
-    @classmethod
-    def make_wrapping(cls,text_widget):
-        text = str(text_widget.get("1.0", tk.END))
-        lines = []
-        index = "1.0"
-        while True:
-            line_end = text_widget.index(f"{index} lineend")
-            line_text = text_widget.get(index, line_end)
-            lines.append(line_text)
-            index = text_widget.index(f"{index} +1line")
-            
-            # Stop if we've reached the last line
-            if index == line_end:
-                break
-        text = re.sub(r'\n{3,}', '\n', str(text)) # odstraní více jak tři mezery za sebou
-        paragraphs = text.split("\n")
-
-        print("paragraphs: ",paragraphs)
-
-        lines = [x for x in lines if x]
-        print(lines)
-        whole_new_string = ""
-        number_of_chars = 0
-        max_num_of_chars_one_line = 35
-        # for i in range(0,len(paragraphs)):
-            # if paragraphs[i] != "" and paragraphs[i] != "\n":
-                # paragraph_block = paragraphs[i].replace("\n"," ") # Rozhodí se mezery a entery od uživatele
-        for line in lines:
-            # line = line.replace("\n"," ")
-            text_splitted = line.split(" ")
-            new_string = ""
-            for items in text_splitted:
-                number_of_chars += len(items)
-                if number_of_chars > max_num_of_chars_one_line:
-                    new_string += "\n" + str(items) + " "
-                    number_of_chars = len(items)
-                else:
-                    new_string += str(items) + " "
-
-            if new_string.endswith(" "):
-                new_string = new_string.rstrip(" ")
-
-            if not new_string.endswith("\n"):
-                whole_new_string += new_string
+                fitted_lines.append(new_string + "\n")
             else:
-                whole_new_string += new_string
+                if line == "":
+                    fitted_lines.append("\n")
+                else:
+                    fitted_lines.append(line+"\n")
 
-            
-        if whole_new_string.endswith("\n\n"):
+        for items in fitted_lines:
+            whole_new_string += items
+
+        if whole_new_string.endswith("\n"):
             whole_new_string = whole_new_string.rstrip("\n")
 
         return whole_new_string
     
+    @classmethod
+    def browseDirectories(cls,visible_files,start_path=None,file_type = [("All files", "*.*")]): # Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
+        """
+        Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
+
+        Vstupní data:
+
+        0: visible_files = "all" / "only_dirs"\n
+        1: start_path = None -optimalni, docasne se ulozi posledni nastavena cesta v exploreru
+
+        Výstupní data:
+
+        0: výstupní chybová hlášení
+        1: opravená cesta
+        2: nazev vybraneho souboru (option: all)
+        """
+        corrected_path = ""
+        output= ""
+        name_of_selected_file = ""
+        if start_path == None:
+            start_path = Tools.resource_path(os.getcwd())
+        start_path = Tools.path_check(start_path)
+        # pripad vyberu files, aby byly viditelne
+        if visible_files == "all":
+            if(start_path != "" and start_path != False):
+                foldername_path = filedialog.askopenfile(initialdir = start_path,
+                                                        title = "Klikněte na soubor v požadované cestě",
+                                                        filetypes=file_type)
+                path_to_directory= ""
+                if foldername_path != None:
+                    path_to_file = str(foldername_path.name)
+                    path_to_file_split = path_to_file.split("/")
+                    i=0
+                    for parts in path_to_file_split:
+                        i+=1
+                        if i<len(path_to_file_split):
+                            if i == 1:
+                                path_to_directory = path_to_directory + parts
+                            else:
+                                path_to_directory = path_to_directory +"/"+ parts
+                        else:
+                            name_of_selected_file = parts
+                else:
+                    output = "Přes explorer nebyla vložena žádná cesta"
+            else:           
+                foldername_path = filedialog.askopenfile(initialdir = "/",
+                                                        title = "Klikněte na soubor v požadované cestě",
+                                                        filetypes=file_type)
+                path_to_directory= ""
+                if foldername_path != None:
+                    path_to_file = str(foldername_path.name)
+                    path_to_file_split = path_to_file.split("/")
+                    i=0
+                    for parts in path_to_file_split:
+                        i+=1
+                        if i<len(path_to_file_split):
+                            if i == 1:
+                                path_to_directory = path_to_directory + parts
+                            else:
+                                path_to_directory = path_to_directory +"/"+ parts
+                        else:
+                            name_of_selected_file = parts
+                else:
+                    output = "Přes explorer nebyla vložena žádná cesta"
+
+        # pripad vyberu slozek
+        if visible_files == "only_dirs":
+            if(start_path != ""):
+                path_to_directory = filedialog.askdirectory(initialdir = start_path, title = "Vyberte adresář")
+                if path_to_directory == None or path_to_directory == "":
+                    output = "Přes explorer nebyla vložena žádná cesta"
+            else:
+                path_to_directory = filedialog.askdirectory(initialdir = "/", title = "Vyberte adresář")
+                if path_to_directory == None or path_to_directory == "":
+                    output = "Přes explorer nebyla vložena žádná cesta"
+
+        check = Tools.path_check(path_to_directory)
+        corrected_path = check
+        return [output,corrected_path,name_of_selected_file]
+
+    @classmethod
+    def path_check(cls,path_raw,only_repair = None):
+        path=path_raw
+        backslash = "\\"
+        if backslash[0] in path:
+            newPath = path.replace(backslash[0], '/')
+            path = newPath
+        if path.endswith('/') == False:
+            newPath = path + "/"
+            path = newPath
+        #oprava mezery v nazvu
+        path = r"{}".format(path)
+        if not os.path.exists(path) and only_repair == None:
+            return False
+        else:
+            return path
+
+    @classmethod
+    def resource_path(cls,relative_path):
+        """ Get the absolute path to a resource, works for dev and for PyInstaller """
+        if hasattr(sys, '_MEIPASS'):
+            return os.path.join(sys._MEIPASS, relative_path)
+        return os.path.join(os.path.abspath("."), relative_path)
+
 class Save_prog_metadata:
     def __init__(self,console,controller_database=[],station_list=[],project_name="",xml_file_path=""):
         self.controller_database = controller_database
@@ -312,9 +265,9 @@ class Save_prog_metadata:
         tree1 = ET.ElementTree(root1)
         try:
             tree1.write(self.xml_file_path, encoding="utf-8", xml_declaration=True)
-            add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně uložen","green",None,True)
+            Tools.add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně uložen","green",None,True)
         except Exception as e:
-            add_colored_line(self.main_console,f"Neočekávaná chyba {e}","red",None,True)
+            Tools.add_colored_line(self.main_console,f"Neočekávaná chyba {e}","red",None,True)
 
     def read_xml_data(self,file_path):
         stations = self.read_stations_xml(file_path)
@@ -416,6 +369,505 @@ class Save_prog_metadata:
         return project_name
     
 class ToplevelWindow:
+    @classmethod
+    def save_prog_options_window(cls,root,app_icon_path,custom_controller_database,main_console,station_list,project_name,callback,callback_save_last_file,last_file = None,last_path = "",default_xml_file_name="_metadata_catalogue",default_path = "",exit_status = False):
+        """
+        okno s možnostmi uložení rozdělaného projektu
+        """
+        window = customtkinter.CTkToplevel()
+        # window.geometry(f"1015x350+{self.x+200}+{self.y+50}")
+        window.after(200, lambda: window.iconbitmap(app_icon_path))
+        window.title("Možnosti uložení projektu")
+        subwindow = ""
+
+        def confirm_window(final_path):
+            nonlocal subwindow
+            def call_save(final_path):
+                nonlocal subwindow
+                save_file(final_path)
+                subwindow.destroy()
+            subwindow = customtkinter.CTkToplevel()
+            subwindow.after(200, lambda: subwindow.iconbitmap(app_icon_path))
+            subwindow.geometry(f"700x150+{root.winfo_rootx()+250}+{root.winfo_rooty()+100}")
+            subwindow.title("Potvrdit přepsání souboru")
+            export_label = customtkinter.CTkLabel(master = subwindow,text = "V zadané cestě se soubor s tímto názvem již vyskytuje, přepsat?",font=("Arial",22,"bold"),justify = "left",text_color="orange")
+            button_yes = customtkinter.CTkButton(master = subwindow,text = "Ano",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command = lambda: call_save(final_path))
+            button_no = customtkinter.CTkButton(master = subwindow,text = "Ne",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command = lambda: subwindow.destroy())
+            export_label    .pack(pady=(15,0),padx=10,expand=False,side = "top",anchor="w")           
+            button_no       .pack(pady = 5, padx = 10,anchor="w",expand=False,side="right")
+            button_yes      .pack(pady = 5, padx = 10,anchor="w",expand=False,side="right")
+            subwindow.update()
+            subwindow.update_idletasks()
+            subwindow.focus_force()
+            subwindow.focus()
+            subwindow.grab_set()
+
+        def close_window(window,button = None):
+            nonlocal subwindow
+            try:
+                if subwindow.winfo_exists():
+                    subwindow.destroy()
+            except Exception:
+                pass
+            window.destroy()
+            if button:
+                callback_save_last_file(None,None,None)
+
+        def create_path(path_inserted):
+            nonlocal export_name
+            nonlocal default_xml_file_name
+            file_name = export_name.get()
+            if file_name =="":
+                file_name = default_xml_file_name
+            path = path_inserted + file_name + ".xml"
+            print(path)
+            return path
+
+        def save_file(final_path):
+            nonlocal window
+            # ukladani posledne zadaneho nazvu souboru:
+            nonlocal export_name
+            nonlocal export_path
+            path_inserted = export_path.get()
+            file_name = export_name.get()
+            # samotne ukladani vsech dat:
+            save_prog = Save_prog_metadata(station_list=station_list,project_name=project_name,controller_database=custom_controller_database,console=console,xml_file_path=final_path)
+            save_prog.store_xml_data()
+            Tools.add_colored_line(main_console,f"Data úspěšně uložena do: {final_path}","green",None,True)
+            close_window(window)
+            callback_save_last_file(file_name,path_inserted,None,True)
+
+        def call_save_file(window):
+            nonlocal console
+            nonlocal export_path
+            path_inserted = export_path.get()
+            if os.path.exists(path_inserted):
+                final_path = create_path(path_inserted)
+                if os.path.exists(final_path):
+                    confirm_window(final_path)
+                else:
+                    save_file(final_path)
+            else:
+                Tools.add_colored_line(console,"Zadaná cesta pro uložení je neplatná","red",None,True)
+        
+        def call_load_file(window):
+            nonlocal console
+            nonlocal export_path
+            nonlocal export_name
+            path_inserted = export_path.get()
+            if os.path.exists(path_inserted):
+                final_path = create_path(path_inserted)
+                save_prog = Save_prog_metadata(station_list=station_list,project_name=project_name,controller_database=custom_controller_database,console=console)
+                try:
+                    received_data = save_prog.read_xml_data(final_path)
+                    Tools.add_colored_line(main_console,f"Data úspěšně nahrána z: {final_path}","green",None,True)
+                    callback(received_data)
+                    # ulozit posledně načtený soubor
+                    file_name = export_name.get()
+                    callback_save_last_file(file_name,path_inserted,None,True)
+                    window.destroy()
+                except Exception:
+                    Tools.add_colored_line(console,f"Soubor .xml je neplatný: {final_path}","red",None,True)
+                    # window.destroy()
+            else:
+                Tools.add_colored_line(console,f"V zadané cestě nebyl nalezen soubor .xml s názvem {export_name.get()}","red",None,True)
+
+        def call_browse_directories(what_search,file_extension = [("All files", "*.*")]):
+            """
+            Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
+            """
+            if what_search == "only_dirs":
+                output = Tools.browseDirectories(what_search)
+                if str(output[1]) != "/":
+                    export_path.delete(0,300)
+                    export_path.insert(0, str(output[1]))
+                    Tools.add_colored_line(console,"Byla vložena cesta pro uložení","green",None,True)
+            else:
+                output = Tools.browseDirectories(what_search,file_type=file_extension)
+                if str(output[1]) != "/":
+                    export_name.delete(0,300)
+                    name_without_extension = str(output[2])[:-4]
+                    export_name.insert(0, name_without_extension)
+                    export_path.delete(0,300)
+                    export_path.insert(0, str(output[1]))
+                    Tools.add_colored_line(console,"Byla vložena cesta a název souboru","green",None,True)
+            print(output[0])
+
+            window.focus_force()
+            window.focus()
+
+        def search_for_xmls(path):
+            found_files = []
+            for files in os.listdir(path):
+                if ".xml" in files:
+                    if not files in found_files:
+                        found_files.append(files)
+            return found_files
+
+        def save_current_path():
+            path_inserted = str(export_path.get())
+            if path_inserted.replace(" ","") != "":
+                checked_path = Tools.path_check(path_inserted)
+                if checked_path != False:
+                    callback_save_last_file(None,None,checked_path)
+                    Tools.add_colored_line(console,f"Zvolená cesta uložena: {checked_path}","green",None,True)
+
+        export_frame =          customtkinter.CTkFrame(master = window,corner_radius=0)
+        export_label =          customtkinter.CTkLabel(master = export_frame,text = "Zadejte název souboru:",font=("Arial",22,"bold"))
+        export_name_frame =     customtkinter.CTkFrame(master = export_frame,corner_radius=0)
+        export_name =           customtkinter.CTkEntry(master = export_name_frame,font=("Arial",20),width=730,height=50,corner_radius=0)
+        explorer_btn_name =     customtkinter.CTkButton(master = export_name_frame,text = "...",font=("Arial",22,"bold"),width = 50,height=50,corner_radius=0,command=lambda: call_browse_directories("all",[("XML files", "*.xml"),("All files", "*.*")]))
+        format_entry =          customtkinter.CTkOptionMenu(master = export_name_frame,font=("Arial",22),dropdown_font=("Arial",22),values=[".xml"],width=200,height=50,corner_radius=0)
+        export_name             .pack(pady = 5, padx = 10,anchor="w",fill="x",expand=True,side="left")
+        format_entry            .pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
+        explorer_btn_name       .pack(pady = 5, padx = 0,anchor="e",expand=False,side="right")
+        export_label2 =         customtkinter.CTkLabel(master = export_frame,text = "Zadejte cestu, kam soubor uložit:",font=("Arial",22,"bold"))
+        export_path_frame =     customtkinter.CTkFrame(master = export_frame,corner_radius=0)
+        export_path =           customtkinter.CTkEntry(master = export_path_frame,font=("Arial",20),width=780,height=50,corner_radius=0)
+        explorer_btn =          customtkinter.CTkButton(master = export_path_frame,text = "...",font=("Arial",22,"bold"),width = 50,height=50,corner_radius=0,command=lambda: call_browse_directories("only_dirs"))
+        save_path_btn =         customtkinter.CTkButton(master = export_path_frame,text = "💾",font=("",22),width = 50,height=50,corner_radius=0,command=lambda: save_current_path())
+        export_path             .pack(pady = 5, padx = (10,0),anchor="w",fill="x",expand=True,side="left")
+        save_path_btn           .pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
+        explorer_btn            .pack(pady = 5, padx = (10,0),anchor="e",expand=False,side="right")
+        console =               tk.Text(export_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED)
+        button_load =           customtkinter.CTkButton(master = export_frame,text = "Nahrát",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: call_load_file(window))
+        button_save =           customtkinter.CTkButton(master = export_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: call_save_file(window))
+        button_exit =           customtkinter.CTkButton(master = export_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window,True))
+        export_frame            .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left")
+        export_label            .pack(pady=(15,5),padx=10,anchor="w",expand=False,side="top")
+        export_name_frame       .pack(expand=True,side="top",anchor="n",fill="x")
+        export_label2           .pack(pady=(10,5),padx=10,anchor="w",expand=False,side="top")
+        export_path_frame       .pack(expand=True,side="top",anchor="n",fill="x")
+        console                 .pack(expand=True,side="top",anchor="n",fill="x")
+        button_load             .pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
+        button_save             .pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
+        button_exit             .pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
+
+        if exit_status:
+            button_load.configure(state = "disabled")
+
+        checked_last_path = Tools.path_check(last_path)
+        default_path = Tools.path_check(default_path)
+        if checked_last_path != False and checked_last_path != None and checked_last_path.replace(" ","") != "" and checked_last_path.replace(" ","") != "/":
+            initial_path = str(checked_last_path)
+            export_path.insert("0",Tools.resource_path(str(checked_last_path)))
+            Tools.add_colored_line(console,"Byla vložena posledně zvolená cesta","green",None,True)
+
+        elif default_path != False and default_path != None and default_path.replace(" ","") != "" and default_path.replace(" ","") != "/":
+            initial_path = str(default_path)
+            export_path.insert("0",Tools.resource_path(str(default_path)))
+            Tools.add_colored_line(console,"Byla vložena uložená cesta z konfiguračního souboru","green",None,True)
+        else:
+            initial_path = Tools.path_check(os.getcwd())
+            export_path.insert("0",Tools.resource_path(str(initial_path)))
+
+        found_xmls = search_for_xmls(initial_path)
+        # posledni ulozeny/ nacteny soubor:
+        if last_file != None and last_file.replace(" ","") != "":
+            export_name.insert("0",str(last_file))
+        # první soubor nalezeny ve slozce:
+        elif len(found_xmls) > 0:
+            export_name.insert("0",str(found_xmls[0].replace(".xml","")))
+            print("nalezené soubory xml: ",found_xmls)
+        # default název + název projektu:
+        else:
+            export_name.insert("0",str(project_name) + default_xml_file_name)
+
+        root.bind("<Button-1>",lambda e: close_window(window))
+        window.update()
+        window.update_idletasks()
+        x = root.winfo_rootx()
+        y = root.winfo_rooty()
+        window.geometry(f"{window.winfo_width()}x{window.winfo_height()}+{x+250}+{y+150}")
+        window.focus_force()
+        window.focus()
+
+    @classmethod
+    def setting_window(cls,root,app_icon_path,default_excel_name,default_xml_name,window_status,callback,default_database_filename,detailed_view_status,render_mode = "fast"):
+        def close_window(window):
+            window.destroy()
+
+        def save_changes():
+            def filter_input(data):
+                forbidden_formats = [".","xml","xlsm","xlsx"]
+                for formats in forbidden_formats:
+                    data = data.replace(formats,"")
+                return data
+
+            if checkbox.get() == 1:
+                window_status = 1
+            else:
+                window_status = 0
+            default_excel_name = filter_input(str(excel_name_label_entry.get()))
+            default_xml_name = filter_input(str(xml_name_label_entry.get()))
+            default_database_filename = filter_input(str(default_database_name_entry.get()))
+
+            input_data = [default_excel_name,default_xml_name,window_status,default_database_filename]
+            callback(input_data)
+            close_window(window)
+
+        def open_all_data():
+            callback(["open_all_cmd",show_all_data_chckbx.get()])
+
+        def switch_render_mode(mode):
+            if mode == "fast":
+                fast_render_mode.select()
+                precise_render_mode.deselect()
+                callback(["set_render_mode","fast"])
+            else:
+                fast_render_mode.deselect()
+                precise_render_mode.select()
+                callback(["set_render_mode","precise"])
+
+        window = customtkinter.CTkToplevel()
+        window.after(200, lambda: window.iconbitmap(app_icon_path))
+        window.title("Nastavení")
+
+        main_frame =                customtkinter.CTkFrame(master = window,corner_radius=0)
+        option1_frame =             customtkinter.CTkFrame(master = main_frame,corner_radius=0,border_color="#505050",border_width=1)
+        checkbox =                  customtkinter.CTkCheckBox(master = option1_frame, text = "Okna editování otevírat maximalizované",font=("Arial",22,"bold"))#,command=lambda: save_new_behav_notes()
+        checkbox.                   pack(pady = 20, padx = 10,anchor="w")
+        option2_frame =             customtkinter.CTkFrame(master = main_frame,corner_radius=0,border_color="#505050",border_width=1)
+        xml_name_label =            customtkinter.CTkLabel(master = option2_frame,text = "Nastavte základní název pro ukládání rozpracovaného projektu:",font=("Arial",22,"bold"),justify = "left",anchor="w")
+        xml_name_frame =            customtkinter.CTkFrame(master = option2_frame,corner_radius=0)
+        xml_name_label_entry =      customtkinter.CTkEntry(master = xml_name_frame,font=("Arial",20),corner_radius=0)
+        xml_extension_label =       customtkinter.CTkLabel(master = xml_name_frame,text = ".xml",font=("Arial",22,"bold"),justify = "left",anchor="w")
+        xml_extension_label.        pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
+        xml_name_label_entry.       pack(pady = 10, padx = 10,fill="x",anchor="w",side="top")
+        xml_name_label.             pack(pady = (10,0), padx = 10,fill="x",anchor="w",side="top")
+        xml_name_frame.             pack(pady = 10, padx = 10,fill="x",anchor="w",side="top")
+        option3_frame =             customtkinter.CTkFrame(master = main_frame,corner_radius=0,border_color="#505050",border_width=1)
+        excel_name_label =          customtkinter.CTkLabel(master = option3_frame,text = "Nastavte základní název pro ukládání excelu:",font=("Arial",22,"bold"),justify = "left",anchor="w")
+        excel_name_frame =          customtkinter.CTkFrame(master = option3_frame,corner_radius=0)
+        excel_name_label_entry =    customtkinter.CTkEntry(master = excel_name_frame,font=("Arial",20),corner_radius=0)
+        excel_extension_label =     customtkinter.CTkLabel(master = excel_name_frame,text = ".xlsm/ .xlsx",font=("Arial",22,"bold"),justify = "left",anchor="w")
+        excel_extension_label.      pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
+        excel_name_label_entry.     pack(pady = 10, padx = 10,fill="x",anchor="w",side="top")
+        excel_name_label.           pack(pady = (10,0), padx = 10,fill="x",anchor="w",side="top")
+        excel_name_frame.           pack(pady = 10, padx = 10,fill="x",anchor="w",side="top")
+        option4_frame =                 customtkinter.CTkFrame(master = main_frame,corner_radius=0,border_color="#505050",border_width=1)
+        default_database_name =         customtkinter.CTkLabel(master = option4_frame,text = "Nastavte základní název souboru databáze produktů:",font=("Arial",22,"bold"),justify = "left",anchor="w")
+        default_database_name_warning = customtkinter.CTkLabel(master = option4_frame,text = "(název se musí shodovat s názvem souboru na sharepointu)",font=("Arial",22),justify = "left",anchor="w",text_color="orange")
+        default_database_name_frame =   customtkinter.CTkFrame(master = option4_frame,corner_radius=0)
+        default_database_name_entry =   customtkinter.CTkEntry(master = default_database_name_frame,font=("Arial",20),corner_radius=0)
+        database_extension_label =      customtkinter.CTkLabel(master = default_database_name_frame,text = ".xlsx",font=("Arial",22,"bold"),justify = "left",anchor="w")
+        database_extension_label.       pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
+        default_database_name_entry.    pack(pady = 10, padx = 10,fill="x",anchor="w",side="top")
+        default_database_name.          pack(pady = (10,0), padx = 10,fill="x",anchor="w",side="top")
+        default_database_name_warning.  pack(pady = 0, padx = 10,fill="x",anchor="w",side="top")
+        default_database_name_frame.    pack(pady = 10, padx = 10,fill="x",anchor="w",side="top")
+
+        option5_frame =             customtkinter.CTkFrame(master = main_frame,corner_radius=0,border_color="#505050",border_width=1)
+        show_all_data_chckbx =      customtkinter.CTkCheckBox(master = option5_frame,text = "Zobrazit všechna data (rozbalit vše)",font=("Arial",22,"bold"),command=lambda: open_all_data())
+        show_all_data_chckbx.       pack(pady = 10, padx = 10,fill="x",anchor="w",side="top")
+
+        option6_frame =             customtkinter.CTkFrame(master = main_frame,corner_radius=0,border_color="#505050",border_width=1)
+        render_mode_label =         customtkinter.CTkLabel(master = option6_frame,text = "Nastavte chování vykreslování:",font=("Arial",22,"bold"),justify = "left",anchor="w")
+        checkbox_frame =            customtkinter.CTkFrame(master = option6_frame,corner_radius=0,fg_color=option6_frame.cget("fg_color")[1])
+        fast_render_mode =          customtkinter.CTkCheckBox(master = checkbox_frame,text = "Rychlé",font=("Arial",22,"bold"),command=lambda: switch_render_mode("fast"))
+        precise_render_mode =       customtkinter.CTkCheckBox(master = checkbox_frame,text = "Precizní",font=("Arial",22,"bold"),command=lambda: switch_render_mode("precise"))
+        fast_render_mode.           pack(pady = 10, padx = 10,anchor="w",side="left")
+        precise_render_mode.        pack(pady = 10, padx = 10,anchor="w",side="left")
+        render_mode_label.          pack(pady = 10, padx = 10,fill="x",anchor="w",side="top")
+        checkbox_frame.             pack(pady = 0, padx = 10,anchor="w",side="top")
+
+        button_save =               customtkinter.CTkButton(master = main_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: save_changes())
+        button_exit =               customtkinter.CTkButton(master = main_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
+        main_frame.                 pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 10,ipadx=10)
+        option1_frame.              pack(pady = 0, padx = 0,fill="x",anchor="n",expand=False,side="top")
+        option2_frame.              pack(pady = 0, padx = 0,fill="x",anchor="n",expand=False,side="top")
+        option3_frame.              pack(pady = 0, padx = 0,fill="x",anchor="n",expand=False,side="top")
+        option4_frame.              pack(pady = 0, padx = 0,fill="x",anchor="n",expand=False,side="top")
+        option5_frame.              pack(pady = 0, padx = 0,fill="x",anchor="n",expand=False,side="top")
+        option6_frame.              pack(pady = 0, padx = 0,fill="x",anchor="n",expand=False,side="top",ipadx=5,ipady=5)
+        button_save.                pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
+        button_exit.                pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
+
+        excel_name_label_entry.insert(0,str(default_excel_name))
+        xml_name_label_entry.insert(0,str(default_xml_name))
+        default_database_name_entry.insert(0,str(default_database_filename.replace(".xlsx","")))
+        if detailed_view_status == True:
+            show_all_data_chckbx.select()
+
+        if window_status == 1:
+            checkbox.select()
+
+        if render_mode == "fast":
+            fast_render_mode.select()
+        else:
+            precise_render_mode.select()
+
+        root.bind("<Button-1>",lambda e: close_window(window))
+        window.update()
+        window.update_idletasks()
+        window_height = window.winfo_height()
+        window_width = window.winfo_width()
+        x = root.winfo_rootx()
+        y = root.winfo_rooty()
+        window.geometry(f"{window_width}x{window_height}+{x+200}+{y+100}")
+        window.focus_force()
+        window.focus()
+
+    @classmethod
+    def export_option_window(cls,root,app_icon_path,export_to_excel_callback,excel_format_list,favourite_excel_format,last_path,default_path,default_excel_filename,project_name = ""):
+        child_root = customtkinter.CTkToplevel()
+        child_root.after(200, lambda: child_root.iconbitmap(app_icon_path))
+        child_root.title("Možnosti exportování souboru")
+
+        def get_excel_path():
+            nonlocal export_path
+            nonlocal export_name
+            nonlocal format_entry
+            name_inserted = export_name.get()
+            path_inserted = export_path.get()
+            path_inserted = Tools.resource_path(path_inserted)
+            if path_inserted.replace(" ","") == "":
+                return None
+            else:
+                print("Cesta pro export: ",path_inserted + name_inserted + "." + format_entry.get())
+                return path_inserted + name_inserted + "." + format_entry.get()
+
+        def call_save_file(child_root):
+            nonlocal console
+            nonlocal export_path
+            path_inserted = export_path.get()
+            if os.path.exists(path_inserted):
+                excel_path_with_name = get_excel_path()
+                if os.path.exists(excel_path_with_name): # kontrola souboru se stejným názvem
+                    nonlocal click_count
+                    nonlocal previous_path
+                    click_count += 1
+                    Tools.add_colored_line(console,f"Cesta již obsahuje soubor se stejným názvem, při druhém kliknutí na \"Uložit\" bude přepsán","orange",None,True)
+                    if click_count > 1 and previous_path == excel_path_with_name: # když podruhé a nebyla změněna cesta
+                        favourite_format = str(format_entry.get())
+                        export_success = export_to_excel_callback(excel_path_with_name,favourite_format,path_inserted)
+                        if export_success == True:
+                            close_window(child_root)
+                        else:
+                            Tools.add_colored_line(console,export_success,"red",None,True)
+
+                    elif click_count > 1 and previous_path != excel_path_with_name:
+                        click_count =1
+                    previous_path = excel_path_with_name
+                else:
+                    favourite_format = str(format_entry.get())
+                    export_success = export_to_excel_callback(excel_path_with_name,favourite_format,path_inserted)
+                    if export_success == True:
+                        close_window(child_root)
+                    else:
+                        Tools.add_colored_line(console,export_success,"red",None,True)
+            else:
+                Tools.add_colored_line(console,"Zadaná cesta pro uložení je neplatná","red",None,True)
+
+        def close_window(child_root):
+            try:
+                root.unbind("<Button-1>")
+            except Exception:
+                pass
+            # child_root.quit()
+            child_root.destroy()
+
+        def call_browse_directories():
+            """
+            Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
+            """
+            output = Tools.browseDirectories("only_dirs")
+            if str(output[1]) != "/":
+                export_path.delete(0,300)
+                export_path.insert(0, str(output[1]))
+                Tools.add_colored_line(console,"Byla vložena cesta pro uložení","green",None,True)
+            print(output[0])
+            child_root.focus()
+            child_root.focus_force()
+
+        def save_current_path():
+            path_inserted = str(export_path.get())
+            if path_inserted.replace(" ","") != "":
+                checked_path = Tools.path_check(path_inserted)
+                if checked_path != False:
+                    export_to_excel_callback(None,None,path_inserted)
+                    Tools.add_colored_line(console,f"Zvolená cesta uložena: {path_inserted}","green",None,True)
+                    
+        click_count = 0
+        previous_path = ""
+        export_frame =      customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        export_label =      customtkinter.CTkLabel(master = export_frame,text = "Zadejte název souboru:",font=("Arial",22,"bold"))
+        export_name_frame = customtkinter.CTkFrame(master = export_frame,corner_radius=0)
+        export_name =       customtkinter.CTkEntry(master = export_name_frame,font=("Arial",20),width=780,height=50,corner_radius=0)
+        format_entry =      customtkinter.CTkOptionMenu(master = export_name_frame,font=("Arial",22),dropdown_font=("Arial",22),width=200,height=50,values=excel_format_list,corner_radius=0)
+        export_name         .pack(pady = 5, padx = (10,0),anchor="w",fill="x",expand=True,side="left")
+        format_entry        .pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
+        export_label2 =      customtkinter.CTkLabel(master = export_frame,text = "Zadejte cestu, kam soubor uložit:",font=("Arial",22,"bold"))
+        export_path_frame = customtkinter.CTkFrame(master = export_frame,corner_radius=0)
+        export_path =       customtkinter.CTkEntry(master = export_path_frame,font=("Arial",20),width=780,height=50,corner_radius=0)
+        save_path_btn =     customtkinter.CTkButton(master = export_path_frame,text = "💾",font=("",22),width = 50,height=50,corner_radius=0,command=lambda: save_current_path())
+        explorer_btn =      customtkinter.CTkButton(master = export_path_frame,text = "...",font=("Arial",22,"bold"),width = 50,height=50,corner_radius=0,command=lambda: call_browse_directories())
+        export_path         .pack(pady = 5, padx = (10,0),anchor="w",fill="x",expand=True,side="left")
+        save_path_btn       .pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
+        explorer_btn        .pack(pady = 5, padx = (10,0),anchor="e",expand=False,side="right")
+        console =           tk.Text(export_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED)
+        button_save =       customtkinter.CTkButton(master = export_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: call_save_file(child_root))
+        button_exit =       customtkinter.CTkButton(master = export_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(child_root))
+
+        export_frame        .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left")
+        export_label        .pack(pady=(15,5),padx=10,anchor="w",expand=False,side="top")
+        export_name_frame   .pack(expand=True,side="top",anchor="n",fill="x")
+        export_label2       .pack(pady=(10,5),padx=10,anchor="w",expand=False,side="top")
+        export_path_frame   .pack(expand=True,side="top",anchor="n",fill="x")
+        console             .pack(expand=True,side="top",anchor="n",fill="x")
+        button_save         .pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
+        button_exit         .pack(pady = 10, padx = 10,expand=True,side="right",anchor = "e")
+
+        excel_filename = default_excel_filename
+        if str(project_name.replace(" ","")) != "":
+            excel_filename = default_excel_filename + "_projekt_" + str(project_name)
+        export_name.insert("0",excel_filename)
+
+        default_path = Tools.path_check(default_path)
+        checked_last_path = Tools.path_check(last_path)
+        
+        if checked_last_path != False and checked_last_path != None and checked_last_path.replace(" ","") != "" and checked_last_path.replace(" ","") != "/":
+            initial_path = Tools.resource_path(checked_last_path)
+            Tools.add_colored_line(console,"Byla vložena poslední zvolená cesta","green",None,True)
+        elif default_path != False and default_path != None and default_path.replace(" ","") != "" and default_path.replace(" ","") != "/":
+            initial_path = Tools.resource_path(default_path)
+            Tools.add_colored_line(console,"Byla vložena uložená cesta z konfiguračního souboru","green",None,True)
+        else:
+            initial_path = Tools.resource_path(Tools.path_check(os.getcwd()))
+
+        export_path.insert("0",str(initial_path))
+        format_entry.set(favourite_excel_format)
+
+        root.bind("<Button-1>",lambda e: close_window(child_root))
+        child_root.update()
+        child_root.update_idletasks()
+        x = root.winfo_rootx()
+        y = root.winfo_rooty()
+        child_root.geometry(f"{child_root.winfo_width()}x{child_root.winfo_height()}+{x+200}+{y+100}")
+        child_root.focus()
+        child_root.focus_force()
+
+    @classmethod
+    def excel_manual_window(cls,root,app_icon_path):
+        window = customtkinter.CTkToplevel()
+        x = root.winfo_rootx()
+        y = root.winfo_rooty()
+        window.geometry(f"1200x580+{x+100}+{y+200}")
+        window.after(200, lambda: window.iconbitmap(app_icon_path))
+        window.title("Manual")
+
+        manual_frame =  customtkinter.CTkFrame(master=window,corner_radius=0,height=100,fg_color="#212121")
+        manual_frame    .pack(pady=0,padx=0,expand=False,side = "right",anchor="e",ipady = 10,ipadx = 10)
+        manual =        customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/excel_manual.png")),size=(1200,520))
+        manual_label =  customtkinter.CTkLabel(master = manual_frame,text = "",image =manual,bg_color="#212121")
+        manual_label    .pack(pady=0,padx=0,expand=True)
+        button_exit =   customtkinter.CTkButton(master = manual_frame,text = "Zavřít",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: window.destroy())
+        button_exit     .pack(pady=10,padx=10,expand=True,side = "bottom",anchor = "e")
+
+        root.bind("<Button-1>",lambda e: window.destroy())
+        window.grab_set()
+        window.focus_force()
+
     def __init__(self,root,controller_databases = [[],[]],callback = None,custom_controller_database = [],accessory_databases=[[],[],[]],changes_check = False):
         self.controller_database = controller_databases[0]
         self.controller_notes_database = controller_databases[1]
@@ -444,24 +896,7 @@ class ToplevelWindow:
         self.controller_color_pointer = 0
         self.accessory_database_pointer = 0
         self.one_segment_width = 450
-
-    def excel_manual_window(self):
-        window = customtkinter.CTkToplevel()
-        window.geometry(f"1200x580+{self.x+100}+{self.y+200}")
-        window.after(200, lambda: window.iconbitmap(app_icon_path))
-        window.title("Manual")
-
-        manual_frame =  customtkinter.CTkFrame(master=window,corner_radius=0,height=100,fg_color="#212121")
-        manual_frame    .pack(pady=0,padx=0,expand=False,side = "right",anchor="e",ipady = 10,ipadx = 10)
-        manual =        customtkinter.CTkImage(PILImage.open(resource_path("images/excel_manual.png")),size=(1200,520))
-        manual_label =  customtkinter.CTkLabel(master = manual_frame,text = "",image =manual,bg_color="#212121")
-        manual_label    .pack(pady=0,padx=0,expand=True)
-        button_exit =   customtkinter.CTkButton(master = manual_frame,text = "Zavřít",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: window.destroy())
-        button_exit     .pack(pady=10,padx=10,expand=True,side = "bottom",anchor = "e")
-
-        self.root.bind("<Button-1>",lambda e: window.destroy())
-        window.grab_set()
-        window.focus_force()
+        self.app_icon_path = Tools.resource_path('images\\logo_TRIMAZKON.ico')
 
     def save_check(self,menu_callback,save_metadata_callback):
         if self.changes_check == False:
@@ -471,7 +906,7 @@ class ToplevelWindow:
         
         window = customtkinter.CTkToplevel()
         window.geometry(f"650x130+{self.x+80}+{self.y+150}")
-        window.after(200, lambda: window.iconbitmap(app_icon_path))
+        window.after(200, lambda: window.iconbitmap(self.app_icon_path))
         window.title("Upozornění")
 
         def clicked_save():
@@ -510,7 +945,7 @@ class ToplevelWindow:
             save_changes()
 
             notes = notes_input.get("1.0", tk.END)
-            # notes = Tools.strip_lines_to_fit(notes)
+            notes = Tools.make_wrapping(notes)
             try:
                 color_chosen = controller_color.cget("fg_color")
             except Exception:
@@ -556,7 +991,7 @@ class ToplevelWindow:
             window.destroy()
 
         window = customtkinter.CTkToplevel()
-        window.after(200, lambda: window.iconbitmap(app_icon_path))
+        window.after(200, lambda: window.iconbitmap(self.app_icon_path))
         window_height = 870
         window.geometry(f"{self.one_segment_width}x{window_height}+{self.x+150}+{self.y+5}")
         if edit:
@@ -576,8 +1011,11 @@ class ToplevelWindow:
             }
         
         def save_changes():
+            """
+            only accessory...
+            """
             notes = str(notes_input3.get("0.0", tk.END))
-            # notes = Tools.strip_lines_to_fit(notes)
+            notes = Tools.make_wrapping(notes)
             try:
                 controller["accessory_list"][accessory_index]["type"] = hw_type_entry.get()
                 controller["accessory_list"][accessory_index]["description"] = notes
@@ -596,7 +1034,7 @@ class ToplevelWindow:
                     }
                     controller["accessory_list"].append(new_accessory)
             
-            print("acc_list --------- ",controller["accessory_list"])
+            # print("acc_list --------- ",controller["accessory_list"])
 
         def next_accessory():
             nonlocal accessory_index
@@ -765,25 +1203,6 @@ class ToplevelWindow:
 
         notes_input3.bind("<Key>",remaping_characters)
 
-
-        # def filter_text_input(text):
-        #     """
-        #     - removes extra new empty lines
-        #     """
-        #     legit_rows = []
-        #     legit_notes = ""
-        #     rows = text.split("\n")
-        #     for i in range(0,len(rows)):
-        #         if rows[i].replace(" ","") != "":
-        #             legit_rows.append(rows[i])
-
-        #     for i in range(0,len(legit_rows)): 
-        #         if i == len(legit_rows)-1:
-        #             legit_notes = legit_notes + legit_rows[i]
-        #         else:
-        #             legit_notes = legit_notes + legit_rows[i]+ "\n"
-        #     return legit_notes
-
         if edit:
             IP_adress_entry.insert(0,str(current_ip))
             controller_entry.set(str(current_type))
@@ -875,337 +1294,6 @@ class ToplevelWindow:
         window.focus_force()
         window.focus()
 
-    def save_prog_options_window(self,main_console,station_list,project_name,callback,callback_save_last_file,last_file = None,last_path = "",default_xml_file_name="_metadata_catalogue",default_path = "",exit_status = False):
-        """
-        okno s možnostmi uložení rozdělaného projektu
-        """
-        window = customtkinter.CTkToplevel()
-        window.geometry(f"1015x350+{self.x+200}+{self.y+50}")
-        window.after(200, lambda: window.iconbitmap(app_icon_path))
-        window.title("Možnosti uložení projektu")
-        subwindow = ""
-
-        def confirm_window(final_path):
-            nonlocal subwindow
-            def call_save(final_path):
-                nonlocal subwindow
-                save_file(final_path)
-                subwindow.destroy()
-            subwindow = customtkinter.CTkToplevel()
-            subwindow.after(200, lambda: subwindow.iconbitmap(app_icon_path))
-            subwindow.geometry(f"700x150+{self.x+200}+{self.y+50}")
-            subwindow.title("Potvrdit přepsání souboru")
-            export_label = customtkinter.CTkLabel(master = subwindow,text = "V zadané cestě se soubor s tímto názvem již vyskytuje, přepsat?",font=("Arial",22,"bold"),justify = "left",text_color="orange")
-            button_yes = customtkinter.CTkButton(master = subwindow,text = "Ano",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command = lambda: call_save(final_path))
-            button_no = customtkinter.CTkButton(master = subwindow,text = "Ne",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command = lambda: subwindow.destroy())
-            export_label    .pack(pady=(15,0),padx=10,expand=False,side = "top",anchor="w")           
-            button_no       .pack(pady = 5, padx = 10,anchor="w",expand=False,side="right")
-            button_yes      .pack(pady = 5, padx = 10,anchor="w",expand=False,side="right")
-            subwindow.update()
-            subwindow.update_idletasks()
-            subwindow.focus_force()
-            subwindow.focus()
-            subwindow.grab_set()
-
-        def close_window(window,button = None):
-            nonlocal subwindow
-            try:
-                if subwindow.winfo_exists():
-                    subwindow.destroy()
-            except Exception:
-                pass
-            window.destroy()
-            if button:
-                callback_save_last_file(None,None,None)
-
-        def create_path(path_inserted):
-            nonlocal export_name
-            nonlocal default_xml_file_name
-            file_name = export_name.get()
-            if file_name =="":
-                file_name = default_xml_file_name
-            path = path_inserted + file_name + ".xml"
-            print(path)
-            return path
-
-        def save_file(final_path):
-            nonlocal window
-            # ukladani posledne zadaneho nazvu souboru:
-            nonlocal export_name
-            nonlocal export_path
-            path_inserted = export_path.get()
-            file_name = export_name.get()
-            # samotne ukladani vsech dat:
-            save_prog = Save_prog_metadata(station_list=station_list,project_name=project_name,controller_database=self.custom_controller_database,console=console,xml_file_path=final_path)
-            save_prog.store_xml_data()
-            add_colored_line(main_console,f"Data úspěšně uložena do: {final_path}","green",None,True)
-            close_window(window)
-            callback_save_last_file(file_name,path_inserted,None,True)
-
-        def call_save_file(window):
-            nonlocal console
-            nonlocal export_path
-            path_inserted = export_path.get()
-            if os.path.exists(path_inserted):
-                final_path = create_path(path_inserted)
-                if os.path.exists(final_path):
-                    confirm_window(final_path)
-                else:
-                    save_file(final_path)
-            else:
-                add_colored_line(console,"Zadaná cesta pro uložení je neplatná","red",None,True)
-        
-        def call_load_file(window):
-            nonlocal console
-            nonlocal export_path
-            nonlocal export_name
-            path_inserted = export_path.get()
-            if os.path.exists(path_inserted):
-                final_path = create_path(path_inserted)
-                save_prog = Save_prog_metadata(station_list=station_list,project_name=project_name,controller_database=self.custom_controller_database,console=console)
-                try:
-                    received_data = save_prog.read_xml_data(final_path)
-                    add_colored_line(main_console,f"Data úspěšně nahrána z: {final_path}","green",None,True)
-                    callback(received_data)
-                    # ulozit posledně načtený soubor
-                    file_name = export_name.get()
-                    callback_save_last_file(file_name,path_inserted,None,True)
-                    window.destroy()
-                except Exception:
-                    add_colored_line(console,f"Soubor .xml je neplatný: {final_path}","red",None,True)
-                    # window.destroy()
-            else:
-                add_colored_line(console,f"V zadané cestě nebyl nalezen soubor .xml s názvem {export_name.get()}","red",None,True)
-
-        def call_browse_directories(what_search,file_extension = [("All files", "*.*")]):
-            """
-            Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
-            """
-            if what_search == "only_dirs":
-                output = browseDirectories(what_search)
-                if str(output[1]) != "/":
-                    export_path.delete(0,300)
-                    export_path.insert(0, str(output[1]))
-                    add_colored_line(console,"Byla vložena cesta pro uložení","green",None,True)
-            else:
-                output = browseDirectories(what_search,file_type=file_extension)
-                if str(output[1]) != "/":
-                    export_name.delete(0,300)
-                    name_without_extension = str(output[2])[:-4]
-                    export_name.insert(0, name_without_extension)
-                    export_path.delete(0,300)
-                    export_path.insert(0, str(output[1]))
-                    add_colored_line(console,"Byla vložena cesta a název souboru","green",None,True)
-            print(output[0])
-
-            window.focus_force()
-            window.focus()
-
-        def search_for_xmls(path):
-            found_files = []
-            for files in os.listdir(path):
-                if ".xml" in files:
-                    if not files in found_files:
-                        found_files.append(files)
-            return found_files
-
-        def save_current_path():
-            path_inserted = str(export_path.get())
-            if path_inserted.replace(" ","") != "":
-                checked_path = path_check(path_inserted)
-                if checked_path != False:
-                    callback_save_last_file(None,None,checked_path)
-
-        export_frame =          customtkinter.CTkFrame(master = window,corner_radius=0)
-        export_label =          customtkinter.CTkLabel(master = export_frame,text = "Zadejte název souboru:",font=("Arial",22,"bold"))
-        export_name_frame =     customtkinter.CTkFrame(master = export_frame,corner_radius=0)
-        export_name =           customtkinter.CTkEntry(master = export_name_frame,font=("Arial",20),width=730,height=50,corner_radius=0)
-        explorer_btn_name =     customtkinter.CTkButton(master = export_name_frame,text = "...",font=("Arial",22,"bold"),width = 50,height=50,corner_radius=0,command=lambda: call_browse_directories("all",[("XML files", "*.xml"),("All files", "*.*")]))
-        format_entry =          customtkinter.CTkOptionMenu(master = export_name_frame,font=("Arial",22),dropdown_font=("Arial",22),values=[".xml"],width=200,height=50,corner_radius=0)
-        export_name             .pack(pady = 5, padx = 10,anchor="w",fill="x",expand=True,side="left")
-        format_entry            .pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
-        explorer_btn_name       .pack(pady = 5, padx = 0,anchor="e",expand=False,side="right")
-        export_label2 =         customtkinter.CTkLabel(master = export_frame,text = "Zadejte cestu, kam soubor uložit:",font=("Arial",22,"bold"))
-        export_path_frame =     customtkinter.CTkFrame(master = export_frame,corner_radius=0)
-        export_path =           customtkinter.CTkEntry(master = export_path_frame,font=("Arial",20),width=780,height=50,corner_radius=0)
-        explorer_btn =          customtkinter.CTkButton(master = export_path_frame,text = "...",font=("Arial",22,"bold"),width = 50,height=50,corner_radius=0,command=lambda: call_browse_directories("only_dirs"))
-        save_path_btn =         customtkinter.CTkButton(master = export_path_frame,text = "💾",font=("",22),width = 50,height=50,corner_radius=0,command=lambda: save_current_path())
-        export_path             .pack(pady = 5, padx = (10,0),anchor="w",fill="x",expand=True,side="left")
-        save_path_btn           .pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
-        explorer_btn            .pack(pady = 5, padx = (10,0),anchor="e",expand=False,side="right")
-        console =               tk.Text(export_frame, wrap="none", height=0, width=180,background="black",font=("Arial",22),state=tk.DISABLED)
-        button_load =           customtkinter.CTkButton(master = export_frame,text = "Nahrát",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: call_load_file(window))
-        button_save =           customtkinter.CTkButton(master = export_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: call_save_file(window))
-        button_exit =           customtkinter.CTkButton(master = export_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window,True))
-        export_frame            .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left")
-        export_label            .pack(pady=(15,5),padx=10,anchor="w",expand=False,side="top")
-        export_name_frame       .pack(expand=True,side="top",anchor="n",fill="x")
-        export_label2           .pack(pady=(10,5),padx=10,anchor="w",expand=False,side="top")
-        export_path_frame       .pack(expand=True,side="top",anchor="n",fill="x")
-        console                 .pack(expand=True,side="top",anchor="n",fill="x")
-        button_load             .pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
-        button_save             .pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
-        button_exit             .pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
-
-        if exit_status:
-            button_load.configure(state = "disabled")
-
-        checked_last_path = path_check(last_path)
-        default_path = path_check(default_path)
-        if checked_last_path != False and checked_last_path != None and checked_last_path.replace(" ","") != "" and checked_last_path.replace(" ","") != "/":
-            initial_path = str(checked_last_path)
-            export_path.insert("0",resource_path(str(checked_last_path)))
-            add_colored_line(console,"Byla vložena posledně zvolená cesta","green",None,True)
-
-        elif default_path != False and default_path != None and default_path.replace(" ","") != "" and default_path.replace(" ","") != "/":
-            initial_path = str(default_path)
-            export_path.insert("0",resource_path(str(default_path)))
-            add_colored_line(console,"Byla vložena uložená cesta z konfiguračního souboru","green",None,True)
-        else:
-            initial_path = path_check(os.getcwd())
-            export_path.insert("0",resource_path(str(initial_path)))
-
-        found_xmls = search_for_xmls(initial_path)
-        # posledni ulozeny/ nacteny soubor:
-        if last_file != None and last_file.replace(" ","") != "":
-            export_name.insert("0",str(last_file))
-        # první soubor nalezeny ve slozce:
-        elif len(found_xmls) > 0:
-            export_name.insert("0",str(found_xmls[0].replace(".xml","")))
-            print("nalezené soubory xml: ",found_xmls)
-        # default název + název projektu:
-        else:
-            export_name.insert("0",str(project_name) + default_xml_file_name)
-
-        self.root.bind("<Button-1>",lambda e: close_window(window))
-        window.update()
-        window.update_idletasks()
-        window.focus_force()
-        window.focus()
-
-    def setting_window(self,default_excel_name,default_xml_name,window_status,callback,default_database_filename,detailed_view_status,render_mode = "fast"):
-        def close_window(window):
-            window.destroy()
-
-        def save_changes():
-            def filter_input(data):
-                forbidden_formats = [".","xml","xlsm","xlsx"]
-                for formats in forbidden_formats:
-                    data = data.replace(formats,"")
-                return data
-
-            if checkbox.get() == 1:
-                window_status = 1
-            else:
-                window_status = 0
-            default_excel_name = filter_input(str(excel_name_label_entry.get()))
-            default_xml_name = filter_input(str(xml_name_label_entry.get()))
-            default_database_filename = filter_input(str(default_database_name_entry.get()))
-
-            input_data = [default_excel_name,default_xml_name,window_status,default_database_filename]
-            callback(input_data)
-            close_window(window)
-
-        def open_all_data():
-            callback(["open_all_cmd",show_all_data_chckbx.get()])
-
-        def switch_render_mode(mode):
-            if mode == "fast":
-                fast_render_mode.select()
-                precise_render_mode.deselect()
-                callback(["set_render_mode","fast"])
-            else:
-                fast_render_mode.deselect()
-                precise_render_mode.select()
-                callback(["set_render_mode","precise"])
-
-        window = customtkinter.CTkToplevel()
-        window.after(200, lambda: window.iconbitmap(app_icon_path))
-        window.title("Nastavení")
-
-        main_frame =                customtkinter.CTkFrame(master = window,corner_radius=0)
-        option1_frame =             customtkinter.CTkFrame(master = main_frame,corner_radius=0,border_color="#505050",border_width=1)
-        checkbox =                  customtkinter.CTkCheckBox(master = option1_frame, text = "Okna editování otevírat maximalizované",font=("Arial",22,"bold"))#,command=lambda: save_new_behav_notes()
-        checkbox.                   pack(pady = 20, padx = 10,anchor="w")
-        option2_frame =             customtkinter.CTkFrame(master = main_frame,corner_radius=0,border_color="#505050",border_width=1)
-        xml_name_label =            customtkinter.CTkLabel(master = option2_frame,text = "Nastavte základní název pro ukládání rozpracovaného projektu:",font=("Arial",22,"bold"),justify = "left",anchor="w")
-        xml_name_frame =            customtkinter.CTkFrame(master = option2_frame,corner_radius=0)
-        xml_name_label_entry =      customtkinter.CTkEntry(master = xml_name_frame,font=("Arial",20),corner_radius=0)
-        xml_extension_label =       customtkinter.CTkLabel(master = xml_name_frame,text = ".xml",font=("Arial",22,"bold"),justify = "left",anchor="w")
-        xml_extension_label.        pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
-        xml_name_label_entry.       pack(pady = 10, padx = 10,fill="x",anchor="w",side="top")
-        xml_name_label.             pack(pady = (10,0), padx = 10,fill="x",anchor="w",side="top")
-        xml_name_frame.             pack(pady = 10, padx = 10,fill="x",anchor="w",side="top")
-        option3_frame =             customtkinter.CTkFrame(master = main_frame,corner_radius=0,border_color="#505050",border_width=1)
-        excel_name_label =          customtkinter.CTkLabel(master = option3_frame,text = "Nastavte základní název pro ukládání excelu:",font=("Arial",22,"bold"),justify = "left",anchor="w")
-        excel_name_frame =          customtkinter.CTkFrame(master = option3_frame,corner_radius=0)
-        excel_name_label_entry =    customtkinter.CTkEntry(master = excel_name_frame,font=("Arial",20),corner_radius=0)
-        excel_extension_label =     customtkinter.CTkLabel(master = excel_name_frame,text = ".xlsm/ .xlsx",font=("Arial",22,"bold"),justify = "left",anchor="w")
-        excel_extension_label.      pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
-        excel_name_label_entry.     pack(pady = 10, padx = 10,fill="x",anchor="w",side="top")
-        excel_name_label.           pack(pady = (10,0), padx = 10,fill="x",anchor="w",side="top")
-        excel_name_frame.           pack(pady = 10, padx = 10,fill="x",anchor="w",side="top")
-        option4_frame =                 customtkinter.CTkFrame(master = main_frame,corner_radius=0,border_color="#505050",border_width=1)
-        default_database_name =         customtkinter.CTkLabel(master = option4_frame,text = "Nastavte základní název souboru databáze produktů:",font=("Arial",22,"bold"),justify = "left",anchor="w")
-        default_database_name_warning = customtkinter.CTkLabel(master = option4_frame,text = "(název se musí shodovat s názvem souboru na sharepointu)",font=("Arial",22),justify = "left",anchor="w",text_color="orange")
-        default_database_name_frame =   customtkinter.CTkFrame(master = option4_frame,corner_radius=0)
-        default_database_name_entry =   customtkinter.CTkEntry(master = default_database_name_frame,font=("Arial",20),corner_radius=0)
-        database_extension_label =      customtkinter.CTkLabel(master = default_database_name_frame,text = ".xlsx",font=("Arial",22,"bold"),justify = "left",anchor="w")
-        database_extension_label.       pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
-        default_database_name_entry.    pack(pady = 10, padx = 10,fill="x",anchor="w",side="top")
-        default_database_name.          pack(pady = (10,0), padx = 10,fill="x",anchor="w",side="top")
-        default_database_name_warning.  pack(pady = 0, padx = 10,fill="x",anchor="w",side="top")
-        default_database_name_frame.    pack(pady = 10, padx = 10,fill="x",anchor="w",side="top")
-
-        option5_frame =             customtkinter.CTkFrame(master = main_frame,corner_radius=0,border_color="#505050",border_width=1)
-        show_all_data_chckbx =      customtkinter.CTkCheckBox(master = option5_frame,text = "Zobrazit všechna data (rozbalit vše)",font=("Arial",22,"bold"),command=lambda: open_all_data())
-        show_all_data_chckbx.       pack(pady = 10, padx = 10,fill="x",anchor="w",side="top")
-
-        option6_frame =             customtkinter.CTkFrame(master = main_frame,corner_radius=0,border_color="#505050",border_width=1)
-        render_mode_label =         customtkinter.CTkLabel(master = option6_frame,text = "Nastavte chování vykreslování:",font=("Arial",22,"bold"),justify = "left",anchor="w")
-        checkbox_frame =            customtkinter.CTkFrame(master = option6_frame,corner_radius=0,fg_color=option6_frame.cget("fg_color")[1])
-        fast_render_mode =          customtkinter.CTkCheckBox(master = checkbox_frame,text = "Rychlé",font=("Arial",22,"bold"),command=lambda: switch_render_mode("fast"))
-        precise_render_mode =       customtkinter.CTkCheckBox(master = checkbox_frame,text = "Precizní",font=("Arial",22,"bold"),command=lambda: switch_render_mode("precise"))
-        fast_render_mode.           pack(pady = 10, padx = 10,anchor="w",side="left")
-        precise_render_mode.        pack(pady = 10, padx = 10,anchor="w",side="left")
-        render_mode_label.          pack(pady = 10, padx = 10,fill="x",anchor="w",side="top")
-        checkbox_frame.             pack(pady = 0, padx = 10,anchor="w",side="top")
-
-        button_save =               customtkinter.CTkButton(master = main_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: save_changes())
-        button_exit =               customtkinter.CTkButton(master = main_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
-        main_frame.                 pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 10,ipadx=10)
-        option1_frame.              pack(pady = 0, padx = 0,fill="x",anchor="n",expand=False,side="top")
-        option2_frame.              pack(pady = 0, padx = 0,fill="x",anchor="n",expand=False,side="top")
-        option3_frame.              pack(pady = 0, padx = 0,fill="x",anchor="n",expand=False,side="top")
-        option4_frame.              pack(pady = 0, padx = 0,fill="x",anchor="n",expand=False,side="top")
-        option5_frame.              pack(pady = 0, padx = 0,fill="x",anchor="n",expand=False,side="top")
-        option6_frame.              pack(pady = 0, padx = 0,fill="x",anchor="n",expand=False,side="top",ipadx=5,ipady=5)
-        button_save.                pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
-        button_exit.                pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
-
-        excel_name_label_entry.insert(0,str(default_excel_name))
-        xml_name_label_entry.insert(0,str(default_xml_name))
-        default_database_name_entry.insert(0,str(default_database_filename.replace(".xlsx","")))
-        if detailed_view_status == True:
-            show_all_data_chckbx.select()
-
-        if window_status == 1:
-            checkbox.select()
-
-        if render_mode == "fast":
-            fast_render_mode.select()
-        else:
-            precise_render_mode.select()
-
-        self.root.bind("<Button-1>",lambda e: close_window(window))
-        window.update()
-        window.update_idletasks()
-        window_height = window.winfo_height()
-        window_width = window.winfo_width()
-        window.geometry(f"{window_width}x{window_height}+{self.x+150}+{self.y+50}")
-        window.focus_force()
-        window.focus()
-
 class Insert_image:
     def __init__(self,root,childroot,image_paths,callback,window_scale,remembered_path=None):
         self.root = root
@@ -1217,6 +1305,7 @@ class Insert_image:
         self.current_image_index = 0
         self.remembered_path = remembered_path
         self.window_scale = window_scale
+        self.app_icon_path = Tools.resource_path('images\\logo_TRIMAZKON.ico')
 
     def calc_current_format(self,image_width,image_height,frame_width,frame_height): # Přepočítávání rozměrů obrázku do rozměru rámce podle jeho formátu + zooming
         """
@@ -1270,7 +1359,7 @@ class Insert_image:
 
     def load_image_paths(self,refresh = False):
         if len(self.image_paths) == 0:
-            add_colored_line(self.console,"Není přiřazena fotografie","orange",None,True)
+            Tools.add_colored_line(self.console,"Není přiřazena fotografie","orange",None,True)
             return
         current_path = str(self.image_paths[self.current_image_index])
         if current_path.endswith("/"):
@@ -1281,16 +1370,16 @@ class Insert_image:
 
         if refresh:
             if self.name_or_path.get() == 1:
-                add_colored_line(self.console,self.image_name,"white",None,True)
+                Tools.add_colored_line(self.console,self.image_name,"white",None,True)
             else:
-                add_colored_line(self.console,self.image_path_inserted + self.image_name,"white",None,True)
+                Tools.add_colored_line(self.console,self.image_path_inserted + self.image_name,"white",None,True)
             return
         
         self.image_frame.bind("<Button-3>", self.show_context_menu)
 
         if not os.path.isfile(str(self.image_path_inserted)+str(self.image_name)):
             self.image_frame.delete("lower")
-            add_colored_line(self.console,f"Cesta k souboru neexistuje: {current_path}","red",None,True)
+            Tools.add_colored_line(self.console,f"Cesta k souboru neexistuje: {current_path}","red",None,True)
             return
         try:
             with PILImage.open(current_path) as opened_image:
@@ -1308,13 +1397,13 @@ class Insert_image:
                 main_image = self.image_frame.create_image(0, 0,anchor=tk.NW, image=self.tk_image,tag = "lower")
                 self.image_frame.tag_lower(main_image)
                 if self.name_or_path.get() == 1:
-                    add_colored_line(self.console,self.image_name,"white",None,True)
+                    Tools.add_colored_line(self.console,self.image_name,"white",None,True)
                 else:
-                    add_colored_line(self.console,self.image_path_inserted + self.image_name,"white",None,True)
+                    Tools.add_colored_line(self.console,self.image_path_inserted + self.image_name,"white",None,True)
 
         except Exception as e:
             error_message = f"Obrázek: {self.image_name} je poškozen. {e}"
-            add_colored_line(self.console,error_message,"red",None,True)
+            Tools.add_colored_line(self.console,error_message,"red",None,True)
             # print(error_message)
             self.image_name = ""
             self.image_path_inserted = ""
@@ -1326,7 +1415,7 @@ class Insert_image:
 
     def image_menu_gui(self):
         window = customtkinter.CTkToplevel()
-        window.after(200, lambda: window.iconbitmap(app_icon_path))
+        window.after(200, lambda: window.iconbitmap(self.app_icon_path))
         window.title("Možnosti vložení fotografie ke stanici")
         subwindow = ""
 
@@ -1354,12 +1443,12 @@ class Insert_image:
                 ("Image files", "*.png;*.jpg;*.bmp"),
                 ("All files", "*.*")
             ]
-            output = browseDirectories("all",start_path=self.remembered_path,file_type=filetypes)
+            output = Tools.browseDirectories("all",start_path=self.remembered_path,file_type=filetypes)
             if str(output[1]) != "/":
                 image_path.delete(0,300)
                 image_path.insert(0, str(output[1])+str(output[2]))
                 self.remembered_path = str(output[1])
-                add_colored_line(self.console,"Byla vložena cesta a název souboru","green",None,True)
+                Tools.add_colored_line(self.console,"Byla vložena cesta a název souboru","green",None,True)
                 add_image_path()
                 
             if self.childroot != None:
@@ -1369,9 +1458,9 @@ class Insert_image:
             window.focus()
 
         def add_image_path():
-            checked_path = path_check(image_path.get(),only_repair=True)
+            checked_path = Tools.path_check(image_path.get(),only_repair=True)
             if checked_path == False or checked_path.replace(" ","") == "" or checked_path.replace(" ","") == "/":
-                add_colored_line(self.console,"Cesta k souboru je neplatná","red",None,True)
+                Tools.add_colored_line(self.console,"Cesta k souboru je neplatná","red",None,True)
                 return
             
             if checked_path not in self.image_paths:
@@ -1379,7 +1468,7 @@ class Insert_image:
                 self.callback_function(self.image_paths,self.remembered_path)
                 next_image(force_index=len(self.image_paths)-1)
             else:
-                add_colored_line(self.console,"Soubor už je přidán","orange",None,True)
+                Tools.add_colored_line(self.console,"Soubor už je přidán","orange",None,True)
 
         def next_image(force_index = False):
             if not force_index:
@@ -1517,7 +1606,6 @@ class Fill_details:
             detail_info = "Alternativa: " + str(optics["alternative"]) + "\n\n"
             
         detail_info += str(optics["description"])
-        # detail_info += Tools.strip_lines_to_fit(str(optics["description"]))
         return detail_info
     
     @classmethod
@@ -1528,6 +1616,17 @@ class Fill_details:
         return detail_info
     
 class Catalogue_gui:
+    @classmethod
+    def get_device_strings(cls,widget_tier):
+        device_string_mapping = {
+        2: ["Nová kamera","Editovat stanici","Odebrat stanici","Kopírovat stanici"],
+        4: ["Nová optika/ světlo","Editovat kameru","Odebrat kameru","Kopírovat kameru"],
+        6: ["","Editovat optiku/světlo","Odebrat optiku/světlo","Kopírovat optiku/světlo"],
+        7: ["Nové příslušenství","Editovat kontroler","Odebrat kontroler",""],
+        9: ["","Editovat příslušenství","Odebrat příslušenství",""],
+        }
+        return device_string_mapping.get(len(widget_tier))
+
     def __init__(self,root,download_status,
                  callback_function,
                  window_size,database_filename,
@@ -1543,6 +1642,7 @@ class Catalogue_gui:
         self.callback = callback_function
         self.default_database_filename = database_filename
         self.path_for_callback = None
+        self.app_icon_path = Tools.resource_path('images\\logo_TRIMAZKON.ico')
         if window_size == "max":
             self.root.state('zoomed')
             self.root.update()
@@ -1566,7 +1666,7 @@ class Catalogue_gui:
         self.controller_object_list = []
         self.custom_controller_drop_list = [""]
         self.chosen_manufacturer = "Omron"
-        self.last_selected_widget = ""
+        self.last_selected_widget = ["",""]
         self.controller_database = []
         self.controller_notes_database = []
         self.camera_type_database = [["no data"]]
@@ -1632,7 +1732,7 @@ class Catalogue_gui:
         self.download_database_console_input.append(self.download_status)
         self.download_database_console_input.append(text_color)
 
-        sharepoint_database_path = resource_path(path_check(os.getcwd()) + self.default_database_filename)
+        sharepoint_database_path = Tools.resource_path(Tools.path_check(os.getcwd()) + self.default_database_filename)
 
         self.camera_database_pointer = 0
         self.optics_database_pointer = 0
@@ -1744,8 +1844,6 @@ class Catalogue_gui:
             if widget._text != station_name:
                 widget.configure(text=station_name,font = ("Arial",25,"bold"))
             else:
-                # notes_raw = str(self.station_list[station_index]["inspection_description"])
-                # description = Tools.strip_lines_to_fit(notes_raw)
                 description = Fill_details.station(self.station_list[station_index])
                 widget.configure(text=description,font = ("Arial",25))
         
@@ -1797,51 +1895,92 @@ class Catalogue_gui:
         - mění názvy tlačítek v závislosti na nakliknutém zařízení
         """
         self.current_block_id = str(widget_tier)
-        print(self.current_block_id)
-        if len(widget_tier) == 2: #01-99 stanice
-            self.new_device.configure(text="Nová kamera",state = tk.NORMAL)
-            self.edit_device.configure(text="Editovat stanici")
-            self.del_device.configure(text = "Odebrat stanici")
-            self.button_copy.configure(text = "Kopírovat stanici",state = tk.NORMAL)
-        elif len(widget_tier) == 4: # 0101-9999 kamery
-            self.new_device.configure(text="Nová optika/ světlo",state = tk.NORMAL)
-            self.edit_device.configure(text="Editovat kameru")
-            self.del_device.configure(text = "Odebrat kameru")
-            self.button_copy.configure(text = "Kopírovat kameru",state = tk.NORMAL)
-        elif len(widget_tier) == 6: # 010101-999999 optika
-            self.new_device.configure(text="",state = tk.DISABLED)
-            self.edit_device.configure(text="Editovat optiku/světlo")
-            self.del_device.configure(text = "Odebrat optiku/světlo")
-            self.button_copy.configure(text = "Kopírovat optiku/světlo",state = tk.NORMAL)
-        elif len(widget_tier) == 7: # xxxx01-xxxxc99 kontrolery
-            self.new_device.configure(text="Nové příslušenství",state = tk.NORMAL)
-            self.edit_device.configure(text="Editovat kontroler")
-            self.del_device.configure(text = "Odebrat kontroler")
-            self.button_copy.configure(text = "",state = tk.DISABLED)
-        elif len(widget_tier) == 9: # xxxxc0101-xxxxc9999 prislusenstvi kontroleru
-            self.new_device.configure(text="",state = tk.DISABLED)
-            self.edit_device.configure(text="Editovat příslušenství")
-            self.del_device.configure(text = "Odebrat příslušenství")
-            self.button_copy.configure(text = "",state = tk.DISABLED)
+        button_strings = Catalogue_gui.get_device_strings(self.current_block_id)
+        
+        if button_strings [0] == "":
+            self.new_device.configure(text = button_strings[0],state = tk.DISABLED)
+        else:
+            self.new_device.configure(text = button_strings[0],state = tk.NORMAL)
+        self.edit_device.configure(text = button_strings[1])
+        self.del_device.configure(text = button_strings[2])
+        if button_strings [3] == "":
+            self.button_copy.configure(text = button_strings[3],state = tk.DISABLED)
+        else:
+            self.button_copy.configure(text = button_strings[3],state = tk.NORMAL)
+    
 
-        if self.last_selected_widget != "" and self.last_selected_widget.winfo_exists():
-            if self.last_selected_widget._border_color.lower() != "#ffff00":
-                self.last_selected_widget.configure(border_color="#636363")
-        self.last_selected_widget = widget
-        if widget._border_color.lower() != "#ffff00":
-            widget.configure(border_color="white")
+        if self.last_selected_widget[0] != "" and self.last_selected_widget[0].winfo_exists():
+            # if self.last_selected_widget[0]._border_color.lower() != "#ffff00":
+            if self.last_selected_widget[1] == "light":
+                self.last_selected_widget[0].configure(border_color="#ffff00")
+            else:
+                self.last_selected_widget[0].configure(border_color="#636363")
 
-    def make_block(self,master_widget,height,width,fg_color,text,side,dummy_block = False,tier = "",border_color="#636363",anchor="w",fill=None):
-        def show_image(event,tier):
-            def manage_photo_callback(updated_list,last_path):
-                self.station_list[station_index]["image_list"] = updated_list
-                self.last_path_to_images = last_path
+        self.last_selected_widget[0] = widget
+        self.last_selected_widget[1] = ""
+        if widget._border_color.lower() == "#ffff00":
+            self.last_selected_widget[1] = "light"
 
-            station_index = int(tier)
+        # if widget._border_color.lower() != "#ffff00":
+        widget.configure(border_color="white")
+
+    def show_station_images(self,event,widget_id):
+        def manage_photo_callback(updated_list,last_path):
+            self.station_list[station_index]["image_list"] = updated_list
+            self.last_path_to_images = last_path
+
+        station_index = int(widget_id)
+        image_list_given = []
+        if "image_list" in self.station_list[station_index]:
+            print("station indes:",station_index)
+            image_list_given = self.station_list[station_index]["image_list"]
+        
+        show_im = Insert_image(self.root,None,image_list_given,manage_photo_callback,self.default_subwindow_status,self.last_path_to_images)
+        show_im.image_menu_gui()
+
+    def show_context_menu(self,event,widget_id):
+        button_strings = Catalogue_gui.get_device_strings(str(widget_id))
+        self.context_menu = tk.Menu(self.root,tearoff=0,fg="white",bg="black")
+        if len(str(widget_id)) == 2: # Station extra options
+            self.context_menu.add_command(label="Nová stanice",font=("Arial",22,"bold"), command=lambda: self.manage_widgets("",str(widget_id),btn="add_line"))
+            self.context_menu.add_separator()
+            station_index = int(widget_id)
             if "image_list" in self.station_list[station_index]:
-                show_im = Insert_image(self.root,None,self.station_list[station_index]["image_list"],manage_photo_callback,self.default_subwindow_status,self.last_path_to_images)
-                show_im.image_menu_gui()
+                self.context_menu.add_command(label="Načíst obrázky",font=("Arial",22,"bold"), command=lambda: self.show_station_images("",str(widget_id)))
+                self.context_menu.add_separator()
+            else:
+                self.context_menu.add_command(label="Přidat obrázky",font=("Arial",22,"bold"), command=lambda: self.show_station_images("",str(widget_id)))
+                self.context_menu.add_separator()
+        if button_strings[0] != "":
+            self.context_menu.add_command(label=button_strings[0],font=("Arial",22,"bold"),command=lambda: self.manage_widgets("",str(widget_id),btn="add_object"))
+            self.context_menu.add_separator()
+        self.context_menu.add_command(label=button_strings[1],font=("Arial",22,"bold"),command=lambda: self.edit_object("",str(widget_id),rewrite_temp = True))
+        self.context_menu.add_separator()
+        self.context_menu.add_command(label=button_strings[2],font=("Arial",22,"bold"),command=lambda: self.delete_block("",str(widget_id)))
+        if button_strings[3] != "":
+            self.context_menu.add_separator()
+            self.context_menu.add_command(label=button_strings[3],font=("Arial",22,"bold"), command=lambda: self.copy_objects(str(widget_id)))
 
+        if len(str(widget_id)) == 7: # Controller extra options
+
+            controller_index = int(widget_id[5:7])
+            controller_ip = self.controller_object_list[controller_index]["ip"]
+            controller_username = self.controller_object_list[controller_index]["username"]
+            controller_password = self.controller_object_list[controller_index]["password"]
+            if controller_ip != "" and controller_ip != "192.168.000.000":
+                self.context_menu.add_separator()
+                self.context_menu.add_command(label="Kopírovat IP adresu",font=("Arial",22,"bold"), command=lambda: pyperclip.copy(controller_ip))
+                
+            if controller_username != "":
+                self.context_menu.add_separator()
+                self.context_menu.add_command(label="Kopírovat uživ. jméno",font=("Arial",22,"bold"), command=lambda: pyperclip.copy(controller_username))
+            if controller_password != "":
+                self.context_menu.add_separator()
+                self.context_menu.add_command(label="Kopírovat heslo",font=("Arial",22,"bold"), command=lambda: pyperclip.copy(controller_password))
+        
+        self.context_menu.tk_popup(event.x_root, event.y_root)
+        
+    def make_block(self,master_widget,height,width,fg_color,text,side,dummy_block = False,tier = "",border_color="#636363",anchor="w",fill=None):
         if dummy_block:
             dummy_block_widget =    customtkinter.CTkFrame(master=master_widget,corner_radius=0,height=height,width =width-10,fg_color="#212121")
             dummy_block_widget.     pack(pady = 0,padx =0,expand = False,side = side,anchor=anchor)
@@ -1855,14 +1994,14 @@ class Catalogue_gui:
             else:
                 block_name.pack(pady = 5,padx =5,expand = False,fill=fill)
             
-            # block_name.       pack(pady = 0,padx =0)
-            block_widget.       bind("<Button-3>",lambda e, widget_tier=tier,widget = block_name: self.switch_widget_info(e, widget_tier,widget))
-            block_name.         bind("<Button-3>",lambda e, widget_tier=tier,widget = block_name: self.switch_widget_info(e, widget_tier,widget))
+            block_name.bind("<Button-3>",lambda e, widget_tier=tier: self.show_context_menu(e, widget_tier))
             block_widget.       bind("<Button-1>",lambda e, widget_tier=tier,widget = block_widget: self.select_block(e, widget_tier,widget))
             block_name.         bind("<Button-1>",lambda e, widget_tier=tier,widget = block_widget: self.select_block(e, widget_tier,widget))
-            if len(tier) == 2:
-                block_name.bind("<Double-Button-1>",lambda e,widget_tier=tier: show_image(e,widget_tier))
-                block_widget.bind("<Double-Button-1>",lambda e,widget_tier=tier: show_image(e,widget_tier))
+            block_widget.       bind("<Button-1>",lambda e, widget_tier=tier,widget = block_name: self.switch_widget_info(e, widget_tier,widget))
+            block_name.         bind("<Button-1>",lambda e, widget_tier=tier,widget = block_name: self.switch_widget_info(e, widget_tier,widget))
+            # if len(tier) == 2:
+            #     block_name.bind("<Double-Button-1>",lambda e,widget_tier=tier: self.show_station_images(e,widget_tier))
+            #     block_widget.bind("<Double-Button-1>",lambda e,widget_tier=tier: self.show_station_images(e,widget_tier))
             return block_name
         
     def make_new_object(self,which_one,object_to_edit = None,cam_index = None,optic_index = None):
@@ -1995,7 +2134,7 @@ class Catalogue_gui:
         def make_decision(decision):
             if decision == True:
                 self.station_list.pop(to_del_object)
-            self.make_project_widgets()
+                self.make_project_widgets()
             close_window(child_root)
 
         def close_window(window):
@@ -2006,7 +2145,7 @@ class Catalogue_gui:
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
         child_root.geometry(f"650x130+{x+80}+{y+80}")
-        child_root.after(200, lambda: child_root.iconbitmap(app_icon_path))
+        child_root.after(200, lambda: child_root.iconbitmap(self.app_icon_path))
         child_root.title("Upozornění")
 
         proceed_label = customtkinter.CTkLabel(master = child_root,text = "Opravdu si přejete odstranit celou stanici a všechna zařízení k ní připojená?",font=("Arial",18))
@@ -2079,10 +2218,7 @@ class Catalogue_gui:
         def save_changes(no_window_shut = False):
             if object == "station" or all_parameters:
                 self.temp_station_list[station_index]["name"] = new_name.get()
-                # filtered_description = Tools.strip_lines_to_fit(str(new_description.get("1.0", tk.END)))
-                # filtered_description = Tools.remove_last_empty_rows(str(new_description.get("1.0", tk.END)))
-                filtered_description = Tools.make_wrapping(new_description)
-                
+                filtered_description = Tools.make_wrapping(str(new_description.get("1.0", tk.END)))
                 self.temp_station_list[station_index]["inspection_description"] = filtered_description
 
             if object == "camera" or all_parameters:
@@ -2097,8 +2233,7 @@ class Catalogue_gui:
                             self.last_controller_index = controller_index+1 #musíme počítat s možností nemít žádný kontroler
                 self.temp_station_list[station_index]["camera_list"][camera_index]["controller_index"] = controller_index
                 self.temp_station_list[station_index]["camera_list"][camera_index]["cable"] = cam_cable_menu.get()
-                # filtered_description = Tools.strip_lines_to_fit(str(notes_input.get("1.0", tk.END)))
-                filtered_description = Tools.remove_last_empty_rows(str(notes_input.get("1.0", tk.END)))
+                filtered_description = Tools.make_wrapping(str(notes_input.get("1.0", tk.END)))
                 self.temp_station_list[station_index]["camera_list"][camera_index]["description"] = filtered_description
                 
             if object == "optics" or "camera" or all_parameters:
@@ -2109,8 +2244,7 @@ class Catalogue_gui:
                     optic_type = optic_type_entry.get()
                 self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"] = optic_type
                 self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"] = alternative_entry.get()
-                # filtered_description = Tools.strip_lines_to_fit(str(notes_input2.get("1.0", tk.END)))
-                filtered_description = Tools.remove_last_empty_rows(str(notes_input2.get("1.0", tk.END)))
+                filtered_description = Tools.make_wrapping(str(notes_input2.get("1.0", tk.END)))
                 self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"] = filtered_description
 
             if not no_window_shut:
@@ -2291,11 +2425,10 @@ class Catalogue_gui:
                 if current_cable != "":
                     cable_notes = str(self.cable_notes_database[self.whole_camera_cable_database.index(current_cable)]) 
                     if cable_notes != "":
-                        notes_string = notes_string + f"Kabel ({str(current_cable)}): " + cable_notes + "\n\n"
+                        notes_string = notes_string + "Kabel (" + str(current_cable) + "): " + cable_notes + "\n\n"
                 
                 notes_input.delete("1.0",tk.END)
-                notes_input.insert("1.0",Tools.strip_lines_to_fit(notes_string))
-                # notes_input.insert("1.0",notes_string)
+                notes_input.insert("1.0",notes_string)
             
             elif which == "optics":
                 current_optics = optic_type_entry.get()
@@ -2311,8 +2444,7 @@ class Catalogue_gui:
                         notes_string = notes_string + "Alternativní - popis: " + alternative_notes + "\n\n"
                 
                 notes_input2.delete("1.0",tk.END)
-                notes_input2.insert("1.0",Tools.strip_lines_to_fit(notes_string))
-                # notes_input2.insert("1.0",notes_string)
+                notes_input2.insert("1.0",notes_string)
 
         def call_new_controller_gui():
             window = ToplevelWindow(self.root,[self.controller_database,self.controller_notes_database],callback_new_controller,self.controller_object_list,[self.accessory_database,self.whole_accessory_database,self.accessory_notes_database])
@@ -2423,6 +2555,10 @@ class Catalogue_gui:
                 return "break"  # Stop the event from inserting the original character
         
         def add_photo():
+            """
+            Pozor pracuje se tu s temp station listem 
+            - a bere se tu v potaz childroot
+            """
             def add_photo_callback(updated_list,last_path):
                 self.temp_station_list[station_index]["image_list"] = updated_list
                 self.last_path_to_images = last_path
@@ -2437,30 +2573,13 @@ class Catalogue_gui:
                                               self.last_path_to_images)
             insert_image_class.image_menu_gui()
             
+        def call_text_wrap(textbox_widget):
+            wrapped_text = Tools.make_wrapping(str(textbox_widget.get("1.0", tk.END)))
+            textbox_widget.delete("0.0","end")
+            textbox_widget.insert("0.0",wrapped_text)
+
         child_root = customtkinter.CTkToplevel()
         # STANICE ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        
-        def get_text_with_wrapping(text_widget):
-            lines = []
-            index = "1.0"
-            while True:
-                line_end = text_widget.index(f"{index} lineend")
-                line_text = text_widget.get(index, line_end)
-                lines.append(line_text)
-                index = text_widget.index(f"{index} +1line")
-                print(index)
-                
-                # Stop if we've reached the last line
-                if index == line_end:
-                    break
-            return "\n".join(lines)
-
-        def last_letter(event):
-            if event.char == " ":
-                print("space ",event.char)
-                # x = get_text_with_wrapping(new_description)
-                Tools.strip_lines_to_fit(new_description.get("1.0", tk.END))
-
         station_frame =             customtkinter.CTkFrame(master = child_root,corner_radius=0,border_width=3)
         station_name_label =        customtkinter.CTkLabel(master = station_frame,text = "Název stanice:",font=("Arial",22,"bold"))
         name_frame =                customtkinter.CTkFrame(master = station_frame,corner_radius=0)
@@ -2471,17 +2590,19 @@ class Catalogue_gui:
         new_name                    .pack(pady = 5, padx = 0,anchor="w",expand=True,side="left",fill="x")
         button_next_st              .pack(pady = 5, padx = 0,anchor="w",expand=False,side="left")
         button_add_photo =          customtkinter.CTkButton(master = station_frame,text = "Přiřadit/ zobrazit fotografii",font=("Arial",22,"bold"),height=50,corner_radius=0,command=lambda: add_photo())
-        inspection_description =    customtkinter.CTkLabel(master = station_frame,text = "Popis inspekce:",font=("Arial",22,"bold"))
+        description_label_frame =   customtkinter.CTkFrame(master = station_frame,corner_radius=0)
+        inspection_description =    customtkinter.CTkLabel(master = description_label_frame,text = "Popis inspekce:",font=("Arial",22,"bold"))
+        wrap_text_btn =             customtkinter.CTkButton(master = description_label_frame,text = "Zarovnat text",font=("Arial",22,"bold"),width = 100,height=30,corner_radius=0,command=lambda: call_text_wrap(new_description))
+        inspection_description      .pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
+        wrap_text_btn               .pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
         new_description =           customtkinter.CTkTextbox(master = station_frame,font=("Arial",22),width=300,height=220,corner_radius=0)
         station_name_label          .pack(pady=(15,5),padx=10,anchor="w",expand=False,side = "top")
         name_frame                  .pack(pady = 5, padx = 5,anchor="w",expand=False,side="top",fill="x")
         button_add_photo            .pack(pady=(5,5),padx=10,anchor="w",expand=False,side = "top",fill="x")
-        inspection_description      .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
-        new_description             .pack(pady = 5, padx = 10,expand=True,side="top",fill="both")     
+        description_label_frame     .pack(pady = 0, padx = 3,anchor="w",expand=False,side="top",fill="x")
+        new_description             .pack(pady = 5, padx = 10,expand=True,side="top",fill="both")
         new_name.bind("<Key>",remaping_characters)
         new_description.bind("<Key>",remaping_characters)
-
-        # new_description.bind("<KeyRelease>",last_letter)
 
         # KAMERY ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         
@@ -2525,8 +2646,10 @@ class Catalogue_gui:
         note_label_frame =              customtkinter.CTkFrame(master = camera_frame,corner_radius=0)
         note_label =                    customtkinter.CTkLabel(master = note_label_frame,text = "Poznámky:",font=("Arial",22,"bold"))
         import_notes_btn =              customtkinter.CTkButton(master = note_label_frame,text = "Import z databáze",font=("Arial",22,"bold"),width = 100,height=30,corner_radius=0,command=lambda: import_notes("camera"))
+        wrap_text_btn2 =                customtkinter.CTkButton(master = note_label_frame,text = "Zarovnat text",font=("Arial",22,"bold"),width = 100,height=30,corner_radius=0,command=lambda: call_text_wrap(notes_input))
         note_label.                     pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
         import_notes_btn.               pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
+        wrap_text_btn2.                 pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
         notes_input =                   customtkinter.CTkTextbox(master = camera_frame,font=("Arial",22),corner_radius=0)
         counter_frame_cam               .pack(pady=(10,0),padx= 3,anchor="n",expand=False,side="top")
         camera_type                     .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
@@ -2584,9 +2707,11 @@ class Catalogue_gui:
         note2_label_frame =                  customtkinter.CTkFrame(master = optics_frame,corner_radius=0)
         note2_label =                        customtkinter.CTkLabel(master = note2_label_frame,text = "Poznámky:",font=("Arial",22,"bold"))
         import_notes2_btn =                  customtkinter.CTkButton(master = note2_label_frame,text = "Import z databáze",font=("Arial",22,"bold"),width = 100,height=30,corner_radius=0,command=lambda: import_notes("optics"))
+        wrap_text_btn3 =                     customtkinter.CTkButton(master = note2_label_frame,text = "Zarovnat text",font=("Arial",22,"bold"),width = 100,height=30,corner_radius=0,command=lambda: call_text_wrap(notes_input2))
         note2_label.                         pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
         import_notes2_btn.                   pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
-        notes_input2 =                      customtkinter.CTkTextbox(master = optics_frame,font=("Arial",22),width=300,height=200,corner_radius=0,wrap= "word")
+        wrap_text_btn3.                      pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
+        notes_input2 =                       customtkinter.CTkTextbox(master = optics_frame,font=("Arial",22),width=300,height=200,corner_radius=0,wrap= "word")
         counter_frame_optics                .pack(pady=(10,0),padx=3,anchor="n",expand=False,side = "top")
         checkbox_frame                      .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
         optic_type                          .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
@@ -2648,25 +2773,6 @@ class Catalogue_gui:
                 # pass
 
         def initial_prefill():
-            # def filter_text_input(text):
-            #     """
-            #     - removes extra new empty lines
-            #     """
-            #     return text
-            #     legit_rows = []
-            #     legit_notes = ""
-            #     rows = text.split("\n")
-            #     for i in range(0,len(rows)):
-            #         if rows[i].replace(" ","") != "":
-            #             legit_rows.append(rows[i])
-
-            #     for i in range(0,len(legit_rows)): 
-            #         if i == len(legit_rows)-1:
-            #             legit_notes = legit_notes + legit_rows[i]
-            #         else:
-            #             legit_notes = legit_notes + legit_rows[i]+ "\n"
-            #     return legit_notes
-
             nonlocal station_index
             nonlocal camera_index
             nonlocal optics_index
@@ -2784,7 +2890,7 @@ class Catalogue_gui:
         y = self.root.winfo_rooty()
         one_segment_width = 450
         height = 850
-        child_root.after(200, lambda: child_root.iconbitmap(app_icon_path))
+        child_root.after(200, lambda: child_root.iconbitmap(self.app_icon_path))
 
         if object == "station":
             width = 3*one_segment_width
@@ -2818,6 +2924,8 @@ class Catalogue_gui:
         child_root.update_idletasks()
         child_root.focus_force()
         child_root.focus()
+        # child_root.grab_set()
+        # child_root.grab_release()
 
     def edit_object(self,args,widget_tier,new_station = False,rewrite_temp = False):
         if rewrite_temp:
@@ -2886,14 +2994,21 @@ class Catalogue_gui:
             window = ToplevelWindow(self.root,[self.controller_database,self.controller_notes_database],callback_edited_controller,self.controller_object_list,[self.accessory_database,self.whole_accessory_database,self.accessory_notes_database])
             window.new_controller_window(childroot=None,controller=self.controller_object_list[controller_index],edit=True,accessory_index = accessory_index,only_accessory=True)
 
-    def export_to_excel(self,path_with_name):
+    def export_to_excel(self,path_with_name,favourite_format,path_inserted):
+        if path_with_name == None and favourite_format == None: # only save path button
+            self.last_path_input = path_inserted
+            self.path_for_callback = path_inserted
+            return
+
+        self.favourite_format = favourite_format
+        self.last_path_input = path_inserted
         save_excel_class = Save_excel(self.root,station_list = self.station_list,project_name = self.project_name_input.get(),excel_name=path_with_name,controller_list=self.controller_object_list,console = self.main_console)
         output = save_excel_class.main()
         return output
 
     def export_option_window(self):
         child_root = customtkinter.CTkToplevel()
-        child_root.after(200, lambda: child_root.iconbitmap(app_icon_path))
+        child_root.after(200, lambda: child_root.iconbitmap(self.app_icon_path))
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
         child_root.geometry(f"1000x350+{x+200}+{y+100}")
@@ -2905,7 +3020,7 @@ class Catalogue_gui:
             nonlocal format_entry
             name_inserted = export_name.get()
             path_inserted = export_path.get()
-            path_inserted = resource_path(path_inserted)
+            path_inserted = Tools.resource_path(path_inserted)
             if path_inserted.replace(" ","") == "":
                 return None
             else:
@@ -2922,7 +3037,7 @@ class Catalogue_gui:
                     nonlocal click_count
                     nonlocal previous_path
                     click_count += 1
-                    add_colored_line(console,f"Cesta již obsahuje soubor se stejným názvem, při druhém kliknutí na \"Uložit\" bude přepsán","orange",None,True)
+                    Tools.add_colored_line(console,f"Cesta již obsahuje soubor se stejným názvem, při druhém kliknutí na \"Uložit\" bude přepsán","orange",None,True)
                     if click_count > 1 and previous_path == excel_path_with_name: # když podruhé a nebyla změněna cesta
                         self.favourite_format = str(format_entry.get())
                         self.last_path_input = path_inserted
@@ -2930,7 +3045,7 @@ class Catalogue_gui:
                         if export_success == True:
                             close_window(child_root)
                         else:
-                            add_colored_line(console,export_success,"red",None,True)
+                            Tools.add_colored_line(console,export_success,"red",None,True)
 
                     elif click_count > 1 and previous_path != excel_path_with_name:
                         click_count =1
@@ -2942,9 +3057,9 @@ class Catalogue_gui:
                     if export_success == True:
                         close_window(child_root)
                     else:
-                        add_colored_line(console,export_success,"red",None,True)
+                        Tools.add_colored_line(console,export_success,"red",None,True)
             else:
-                add_colored_line(console,"Zadaná cesta pro uložení je neplatná","red",None,True)
+                Tools.add_colored_line(console,"Zadaná cesta pro uložení je neplatná","red",None,True)
 
         def close_window(child_root):
             try:
@@ -2958,11 +3073,11 @@ class Catalogue_gui:
             """
             Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
             """
-            output = browseDirectories("only_dirs")
+            output = Tools.browseDirectories("only_dirs")
             if str(output[1]) != "/":
                 export_path.delete(0,300)
                 export_path.insert(0, str(output[1]))
-                add_colored_line(console,"Byla vložena cesta pro uložení","green",None,True)
+                Tools.add_colored_line(console,"Byla vložena cesta pro uložení","green",None,True)
             print(output[0])
             child_root.focus()
             child_root.focus_force()
@@ -2970,7 +3085,7 @@ class Catalogue_gui:
         def save_current_path():
             path_inserted = str(export_path.get())
             if path_inserted.replace(" ","") != "":
-                checked_path = path_check(path_inserted)
+                checked_path = Tools.path_check(path_inserted)
                 if checked_path != False:
                     self.last_path_input = path_inserted
                     self.path_for_callback = path_inserted
@@ -3010,17 +3125,17 @@ class Catalogue_gui:
             excel_filename = self.default_excel_filename + "_projekt_" + str(self.project_name_input.get())
         export_name.insert("0",excel_filename)
 
-        default_path = path_check(self.default_path)
-        checked_last_path = path_check(self.last_path_input)
+        default_path = Tools.path_check(self.default_path)
+        checked_last_path = Tools.path_check(self.last_path_input)
         
         if checked_last_path != False and checked_last_path != None and checked_last_path.replace(" ","") != "" and checked_last_path.replace(" ","") != "/":
-            initial_path = resource_path(checked_last_path)
-            add_colored_line(console,"Byla vložena poslední zvolená cesta","green",None,True)
+            initial_path = Tools.resource_path(checked_last_path)
+            Tools.add_colored_line(console,"Byla vložena poslední zvolená cesta","green",None,True)
         elif default_path != False and default_path != None and default_path.replace(" ","") != "" and default_path.replace(" ","") != "/":
-            initial_path = resource_path(default_path)
-            add_colored_line(console,"Byla vložena uložená cesta z konfiguračního souboru","green",None,True)
+            initial_path = Tools.resource_path(default_path)
+            Tools.add_colored_line(console,"Byla vložena uložená cesta z konfiguračního souboru","green",None,True)
         else:
-            initial_path = resource_path(path_check(os.getcwd()))
+            initial_path = Tools.resource_path(Tools.path_check(os.getcwd()))
 
         export_path.insert("0",str(initial_path))
         format_entry.set(self.favourite_format)
@@ -3065,8 +3180,42 @@ class Catalogue_gui:
             if exiting_status:
                 self.call_menu()
 
-        window = ToplevelWindow(self.root,custom_controller_database=self.controller_object_list)
-        window.save_prog_options_window(self.main_console,self.station_list,self.project_name_input.get(),self.load_metadata_callback,callback_save_last_input,self.last_xml_filename,self.last_path_input,self.default_xml_file_name,self.default_path,exit_status = exiting_status)
+        ToplevelWindow.save_prog_options_window(self.root,
+                                                self.app_icon_path,
+                                                self.controller_object_list,
+                                                self.main_console,
+                                                self.station_list,
+                                                self.project_name_input.get(),
+                                                self.load_metadata_callback,
+                                                callback_save_last_input,
+                                                self.last_xml_filename,
+                                                self.last_path_input,
+                                                self.default_xml_file_name,
+                                                self.default_path,
+                                                exit_status = exiting_status)
+
+    def copy_objects(self,widget_tier):
+        if len(widget_tier) == 2:
+            station_index = int(widget_tier[:2])
+            to_append = copy.deepcopy(self.station_list[station_index])
+            self.station_list.insert(station_index,to_append)
+            self.make_project_widgets()
+        elif len(widget_tier) == 4:
+            station_index = int(widget_tier[:2])
+            camera_index = int(widget_tier[2:4])
+            to_append = copy.deepcopy(self.station_list[station_index]["camera_list"][camera_index])
+            self.station_list[station_index]["camera_list"].insert(camera_index,to_append)
+            self.make_project_widgets()
+        elif len(widget_tier) == 6:
+            station_index = int(widget_tier[:2])
+            camera_index = int(widget_tier[2:4])
+            optic_index = int(widget_tier[4:])
+            to_append = copy.deepcopy(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optic_index])
+            self.station_list[station_index]["camera_list"][camera_index]["optics_list"].insert(optic_index,to_append)
+            print("\n\n",self.station_list[station_index]["camera_list"][camera_index]["optics_list"])
+            self.make_project_widgets()
+        else:
+            Tools.add_colored_line(self.main_console,f"Kontroler a příslušenství nelze kopírovat","red",None,True)
 
     def create_main_widgets(self,initial=False):
         def call_manage_widgets(button):
@@ -3092,7 +3241,6 @@ class Catalogue_gui:
                 if widget_tier != "":
                     if len(widget_tier) > 2: # pokud je nakliknuteho neco jiného než stanice - přidej novou pod poslední
                         station_tier = widget_tier[:2]
-                        # self.current_block_id = get_last_st_position()
                         self.current_block_id = station_tier
                         self.manage_widgets("",self.current_block_id,btn=button)
                     else:
@@ -3102,7 +3250,7 @@ class Catalogue_gui:
                 self.manage_widgets("",widget_tier,btn=button)
                 return
             
-            add_colored_line(self.main_console,f"Nejprve zvolte pro co zařízení přidat","red",None,True)
+            Tools.add_colored_line(self.main_console,f"Nejprve zvolte pro co zařízení přidat","red",None,True)
         
         def call_edit_object():
             widget_tier = ""
@@ -3110,7 +3258,7 @@ class Catalogue_gui:
             if widget_tier != "":
                 self.edit_object("",widget_tier,rewrite_temp = True)
             else:
-                add_colored_line(self.main_console,f"Nejprve zvolte zařízení pro editaci","red",None,True)
+                Tools.add_colored_line(self.main_console,f"Nejprve zvolte zařízení pro editaci","red",None,True)
 
         def call_delete_object():
             widget_tier = ""
@@ -3118,11 +3266,11 @@ class Catalogue_gui:
             if widget_tier != "":
                 self.delete_block("",widget_tier)
             else:
-                add_colored_line(self.main_console,f"Nejprve zvolte zařízení pro odebrání","red",None,True)
+                Tools.add_colored_line(self.main_console,f"Nejprve zvolte zařízení pro odebrání","red",None,True)
 
         def switch_manufacturer():
             if self.chosen_manufacturer == "Omron":
-                manufacturer_logo =             customtkinter.CTkImage(PILImage.open(resource_path("images/keyence_logo.png")),size=(240, 50))
+                manufacturer_logo =             customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/keyence_logo.png")),size=(240, 50))
                 self.chosen_manufacturer = "Keyence"
                 self.camera_database_pointer = 0
                 self.optics_database_pointer = 0
@@ -3131,7 +3279,7 @@ class Catalogue_gui:
                 switch_manufacturer_image.configure(image = manufacturer_logo)
                 self.read_database()
             elif self.chosen_manufacturer == "Keyence":
-                manufacturer_logo =             customtkinter.CTkImage(PILImage.open(resource_path("images/omron_logo.png")),size=(240, 50))
+                manufacturer_logo =             customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/omron_logo.png")),size=(240, 50))
                 self.chosen_manufacturer = "Omron"
                 self.camera_database_pointer = 0
                 self.optics_database_pointer = 0
@@ -3163,9 +3311,17 @@ class Catalogue_gui:
                     self.default_subwindow_status = input_data[2]
                 if input_data[3] != "":
                     self.default_database_filename = input_data[3]
-            window = ToplevelWindow(self.root)
-            window.setting_window(self.default_excel_filename,self.default_xml_file_name,self.default_subwindow_status,apply_changes_callback,self.default_database_filename,self.detailed_view,self.render_mode)
 
+            ToplevelWindow.setting_window(self.root,
+                                          self.app_icon_path,
+                                          self.default_excel_filename,
+                                          self.default_xml_file_name,
+                                          self.default_subwindow_status,
+                                          apply_changes_callback,
+                                          self.default_database_filename,
+                                          self.detailed_view,
+                                          self.render_mode)
+            
         def call_menu_routine():
             ToplevelWindow(self.root,changes_check = self.changes_made).save_check(self.call_menu,self.call_save_metadata_gui)
 
@@ -3184,29 +3340,20 @@ class Catalogue_gui:
             widget_tier = ""
             widget_tier = self.current_block_id
             if widget_tier != "":
-                if len(widget_tier) == 2:
-                    station_index = int(widget_tier[:2])
-                    to_append = copy.deepcopy(self.station_list[station_index])
-                    self.station_list.insert(station_index,to_append)
-                    self.make_project_widgets()
-                elif len(widget_tier) == 4:
-                    station_index = int(widget_tier[:2])
-                    camera_index = int(widget_tier[2:4])
-                    to_append = copy.deepcopy(self.station_list[station_index]["camera_list"][camera_index])
-                    self.station_list[station_index]["camera_list"].insert(camera_index,to_append)
-                    self.make_project_widgets()
-                elif len(widget_tier) == 6:
-                    station_index = int(widget_tier[:2])
-                    camera_index = int(widget_tier[2:4])
-                    optic_index = int(widget_tier[4:])
-                    to_append = copy.deepcopy(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optic_index])
-                    self.station_list[station_index]["camera_list"][camera_index]["optics_list"].insert(optic_index,to_append)
-                    print("\n\n",self.station_list[station_index]["camera_list"][camera_index]["optics_list"])
-                    self.make_project_widgets()
-                else:
-                    add_colored_line(self.main_console,f"Kontroler a příslušenství nelze kopírovat","red",None,True)
+                self.copy_objects(widget_tier)
             else:
-                add_colored_line(self.main_console,f"Nejprve zvolte, co chcete kopírovat","red",None,True)
+                Tools.add_colored_line(self.main_console,f"Nejprve zvolte, co chcete kopírovat","red",None,True)
+
+        def call_export_window():
+            ToplevelWindow.export_option_window(self.root,
+            self.app_icon_path,
+            self.export_to_excel,
+            self.format_list,
+            self.favourite_format,
+            self.last_path_input,
+            self.default_path,
+            self.default_excel_filename,
+            str(self.project_name_input.get()))
 
         self.clear_frame(self.root)
         main_header =                   customtkinter.CTkFrame(master=self.root,corner_radius=0,height=100)
@@ -3216,7 +3363,7 @@ class Catalogue_gui:
         main_header_row0                .pack(pady=0,padx=0,expand=True,fill="x",side = "top",anchor="w")
         image_frame =                   customtkinter.CTkFrame(master=main_header,corner_radius=0,height=100,fg_color="#212121")
         image_frame                     .pack(pady=0,padx=0,expand=False,side = "right",anchor="e",ipady = 10,ipadx = 10)
-        logo =                          customtkinter.CTkImage(PILImage.open(resource_path("images/jhv_logo.png")),size=(300, 100))
+        logo =                          customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/jhv_logo.png")),size=(300, 100))
         image_logo =                    customtkinter.CTkLabel(master = image_frame,text = "",image =logo,bg_color="#212121")
         image_logo                      .pack(pady=0,padx=0,expand=True)
         main_header_row1 =              customtkinter.CTkFrame(master=main_header,corner_radius=0,height=100,fg_color="#212121")
@@ -3239,10 +3386,10 @@ class Catalogue_gui:
         self.del_device                 .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         self.project_name_input.bind("<Key>",remaping_characters)
 
-        export_button =                 customtkinter.CTkButton(master = main_header_row2,text = "Exportovat",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command=lambda:self.export_option_window())
+        export_button =                 customtkinter.CTkButton(master = main_header_row2,text = "Exportovat",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command=lambda:call_export_window())
         switch_manufacturer_frame =     customtkinter.CTkFrame(master = main_header_row2,corner_radius=0)
         switch_manufacturer_btn =       customtkinter.CTkButton(master=switch_manufacturer_frame,text="Změnit výrobce:",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command=lambda:switch_manufacturer())
-        manufacturer_logo =             customtkinter.CTkImage(PILImage.open(resource_path("images/omron_logo.png")),size=(240, 50))
+        manufacturer_logo =             customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/omron_logo.png")),size=(240, 50))
         switch_manufacturer_image =     customtkinter.CTkLabel(master = switch_manufacturer_frame,text = "",image=manufacturer_logo)
         save_button =                   customtkinter.CTkButton(master = main_header_row2,text = "Uložit/ Nahrát",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,
                                                                command=lambda:self.call_save_metadata_gui())
@@ -3258,7 +3405,6 @@ class Catalogue_gui:
         button_settings                 .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         self.main_console =             tk.Text(console_frame, wrap="none", height=0, width=180,background="black",font=("Arial",22),state=tk.DISABLED)
         self.main_console               .pack(pady = 10, padx = (10,0),anchor="w",expand=True,side="bottom")
-
         column_labels =                 customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=50)
         self.project_tree =             customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
         column_labels                   .pack(pady=0,padx=5,fill="x",expand=False,side = "top")
@@ -3274,8 +3420,8 @@ class Catalogue_gui:
         controller_column_header        .pack(pady=(15,0),padx=15,expand=False,side = "left")
         accessory_column_header         .pack(pady=(15,0),padx=15,expand=False,side = "left")
         self.make_project_widgets(initial = initial)
-        add_colored_line(self.main_console,self.download_database_console_input[0],self.download_database_console_input[1],None,True)
-        
+        Tools.add_colored_line(self.main_console,self.download_database_console_input[0],self.download_database_console_input[1],None,True)
+
         def unfocus_entry(e):
             self.root.focus_set()
         self.project_name_input.bind("<Leave>",lambda e:unfocus_entry(e))
@@ -3565,6 +3711,7 @@ class Save_excel:
         self.controller_list = controller_list
         self.values_start_row = 6
         self.excel_file_name = excel_name
+        self.app_icon_path = Tools.resource_path('images\\logo_TRIMAZKON.ico')
         if self.excel_file_name == None:
             self.excel_file_name = "Katalog_kamerového_vybavení.xlsm"
         self.temp_excel_file_name = self.excel_file_name[:-5] + "_temp.xlsm"
@@ -3595,7 +3742,7 @@ class Save_excel:
         ws["E"+str(2)] = "AA"
         ws["D"+str(3)] = "Datum uvolnění:\n(dd.mm.rrrr)"
 
-        image = Image(resource_path("images/jhv_logo2.png"))
+        image = Image(Tools.resource_path("images/jhv_logo2.png"))
         ws.add_image(image,"A1")
    
     def init_objects(self):
@@ -4328,16 +4475,15 @@ class Save_excel:
             attempt = self.update_sheet_vba_code(new_code=new_vba_code)
             if attempt == False:
                 error_message1 = f"Nejprve prosím zavřete soubor {self.excel_file_name}"
-                add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}","red",None,True)
+                Tools.add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}","red",None,True)
                 return error_message1
             elif attempt == "rights_error":
                 error_message2 = f"Nemáte nastavená potřebná práva v excelu pro makra (VBA)"
-                add_colored_line(self.main_console,f"Nemáte nastavená potřebná práva v excelu pro makra (VBA)","red",None,True)
-                window = ToplevelWindow(self.root)
-                window.excel_manual_window()
+                Tools.add_colored_line(self.main_console,f"Nemáte nastavená potřebná práva v excelu pro makra (VBA)","red",None,True)
+                ToplevelWindow.excel_manual_window(self.root,self.app_icon_path)
                 return error_message2
             else:
-                add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
+                Tools.add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
                 os.startfile(self.excel_file_name)
                 return True
                 
@@ -4348,20 +4494,20 @@ class Save_excel:
             rows_to_merge = self.get_cells_to_merge()
             self.make_header(wb)
             self.merge_cells(wb,merge_list=rows_to_merge)
-            # try:
-            self.fill_values(wb)
-            self.fill_xlsx_column(wb)
-            self.fill_images(wb)
-            wb.save(self.excel_file_name)
-            wb.close()
-            add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
-            os.startfile(self.excel_file_name)
-            return True
+            try:
+                self.fill_values(wb)
+                self.fill_xlsx_column(wb)
+                self.fill_images(wb)
+                wb.save(self.excel_file_name)
+                wb.close()
+                Tools.add_colored_line(self.main_console,f"Projekt {self.project_name} byl úspěšně exportován","green",None,True)
+                os.startfile(self.excel_file_name)
+                return True
 
-            # except Exception as e:
-            error_message = f"Nejprve prosím zavřete soubor {self.excel_file_name}, chyba: {e}"
-            add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}, chyba: {e}","red",None,True)
-            return error_message # returns the failure information to main gui
+            except Exception as e:
+                error_message = f"Nejprve prosím zavřete soubor {self.excel_file_name}, chyba: {e}"
+                Tools.add_colored_line(self.main_console,f"Nejprve prosím zavřete soubor {self.excel_file_name}, chyba: {e}","red",None,True)
+                return error_message # returns the failure information to main gui
                 # wb.close()
 
 # download = download_database.database(database_filename)

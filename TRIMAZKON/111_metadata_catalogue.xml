@@ -20,48 +20,41 @@ kamerového systému FH 12"</description><excel_position>['E6', 'E9', 'E13', 'E1
 </description><excel_position>['E53', 'E57', 'E61']</excel_position><hidden_values>['QG', 'QH', 'QI', 'QP', 'QQ', 'QR', 'QY', 'QZ']</hidden_values></accessory><accessory><type>NAS</type><description>
 </description><excel_position>['E54', 'E58', 'E62']</excel_position><hidden_values>['QJ', 'QK', 'QL', 'QS', 'QT', 'QU']</hidden_values></accessory></accessory_list><notes>
 </notes><detailed_name>KG04(FH-2051-20)</detailed_name><excel_position>['D52', 'D56', 'D60']</excel_position><hidden_values>['JL', 'JM', 'JN']</hidden_values></controller><controller><type>FH-2051-10</type><name>KG05</name><color>#00CED1</color><ip>192.168.0.29</ip><username /><password /><accessory_list /><notes>
-</notes><detailed_name>KG05(FH-2051-10)</detailed_name><excel_position>['D65', 'D66']</excel_position><hidden_values>['JO', 'JP']</hidden_values></controller></controllers><station_list><station><name>ST010</name><inspection_description>kontrola tvaru/modelu senzoru (pohled ze strany senzoru) jsou dva modely – vzdálenost  
-</inspection_description><camera_list><camera><type>FH-SMX01</type><controller>KG01 (FH-2051-20)</controller><controller_color /><cable>FZ-VS3 5M</cable><optics_list><optic><type>3Z4S-LE SV-1614H</type><alternative>3Z4S-LE SV-10028H</alternative><accessory_list>[]</accessory_list><description>Objektiv - popis: Příslušenství pro 
-kamery, čočky, C montáž, pro kamery 
+</notes><detailed_name>KG05(FH-2051-10)</detailed_name><excel_position>['D65', 'D66']</excel_position><hidden_values>['JO', 'JP']</hidden_values></controller></controllers><station_list><station><name>ST010</name><inspection_description>kontrola tvaru/modelu senzoru (pohled 
+ze strany senzoru) jsou dva modely – 
+vzdálenost</inspection_description><camera_list><camera><type>FH-SMX01</type><controller>KG01 (FH-2051-20)</controller><controller_color /><cable>FZ-VS3 5M</cable><optics_list><optic><type>3Z4S-LE SV-1614H</type><alternative>3Z4S-LE SV-10028H</alternative><accessory_list>[]</accessory_list><description>Objektiv - popis: Příslušenství pro
+kamery, čočky, C montáž, pro kamery
 FZ-S_2M, FZ-S_5M3, FH-S_05R, FH-S_X05, 
-FHV7H, ohnisková vzdálenost 12 mm, 
+FHV7H, ohnisková vzdálenost 12 mm,
 nejmenší vzdálenost 100mm, světelnost 
 1,4 až 16, maximální kompatiblní CCD čip 
 2/3" nebo 1"
 
-Alternativní - popis: 
-Příslušenství pro kamery, čočky, C 
+Alternativní - popis:
+Příslušenství pro kamery, čočky, C
 montáž, pro kamery FZ-S_2M, FZ-S_5M3, 
 FH-S_05R, FH-S_X05, FHV7H, ohnisková 
 vzdálenost 75 mm, nejmenší vzdálenost 
-1200mm, světelnost 2,5 až zavřeno, 
+1200mm, světelnost 2,5 až zavřeno,
 maximální kompatiblní CCD čip 2/3" nebo 
-1", revize 1
-
-</description><excel_position>C6</excel_position><hidden_values>GA</hidden_values></optic><optic><type /><alternative /><excel_position>C7</excel_position><description /><hidden_values>GB</hidden_values></optic></optics_list><description>Kamera - popis: FH kamera, 
+1", revize 1</description><excel_position>C6</excel_position><hidden_values>GA</hidden_values></optic><optic><type /><alternative /><excel_position>C7</excel_position><description /><hidden_values>GB</hidden_values></optic></optics_list><description>Kamera - popis: FH kamera,
 vysokorychlostní, 0.4 Mpixel, C montáž, 
 celková uzávěrka, monochromatická
 
 
-Kabel (FZ-VS3 5M): příslušenství 
+Kabel (FZ-VS3 5M): příslušenství
 kamerových systémů, FH a FZ, kabel ke 
-standardní kameře, 
+standardní kameře,
 5m
-http://industrial.omron.eu/en/search?q=G639
-</description><row_count>2</row_count><controller_index>0</controller_index><excel_position>B6</excel_position><hidden_values>DA</hidden_values></camera></camera_list><row_count>2</row_count><excel_position>A6</excel_position><hidden_values>AA</hidden_values></station><station><name>ST030</name><inspection_description>Guma – ověřit barvu (bude modrá) původní je oranžová 
-Pozice gumy na ploše cca 50x50 mm - kamera zespodu pod sklem 
-</inspection_description><camera_list><camera><type>FH-SCX05</type><controller>KG01 (FH-2051-20)</controller><controller_color /><cable /><optics_list><optic><type>3Z4S-LE SV-2514H</type><alternative /><accessory_list>[]</accessory_list><description>
-</description><excel_position>C9</excel_position><hidden_values>GC</hidden_values></optic><optic><type /><alternative /><excel_position>C10</excel_position><description /><hidden_values>GD</hidden_values></optic></optics_list><description>5Mpx kamera
+http://industrial.omron.eu/en/search?q=G639 </description><row_count>2</row_count><controller_index>0</controller_index><excel_position>B6</excel_position><hidden_values>DA</hidden_values></camera></camera_list><row_count>2</row_count><excel_position>A6</excel_position><hidden_values>AA</hidden_values></station><station><name>ST030</name><inspection_description>Guma – ověřit barvu (bude modrá) původní 
+je oranžová
+Pozice gumy na ploše cca 50x50
+mm - kamera zespodu pod sklem</inspection_description><camera_list><camera><type>FH-SCX05</type><controller>KG01 (FH-2051-20)</controller><controller_color /><cable /><optics_list><optic><type>3Z4S-LE SV-2514H</type><alternative /><accessory_list>[]</accessory_list><description /><excel_position>C9</excel_position><hidden_values>GC</hidden_values></optic><optic><type /><alternative /><excel_position>C10</excel_position><description /><hidden_values>GD</hidden_values></optic></optics_list><description>5Mpx kamera
 
-Low-angle světlo (testováno s LA-120W)
-Svìtlo: LA-120W
-</description><row_count>2</row_count><controller_index>0</controller_index><excel_position>B9</excel_position><hidden_values>DB</hidden_values></camera><camera><type /><controller /><controller_color /><cable /><optics_list><optic><type /><alternative /><accessory_list>[]</accessory_list><description>
-</description><excel_position>C11</excel_position><hidden_values>GE</hidden_values></optic></optics_list><description>
-</description><controller_index>None</controller_index><row_count>1</row_count><excel_position>B11</excel_position><hidden_values>DC</hidden_values></camera></camera_list><row_count>3</row_count><excel_position>A9</excel_position><hidden_values>AB</hidden_values></station><station><name>ST040</name><inspection_description>Kontrola barvy senzoru – chtějí dva kusy najednou… 
-</inspection_description><camera_list><camera><type>FH-SCX05</type><controller>KG01 (FH-2051-20)</controller><controller_color /><cable /><optics_list><optic><type>3Z4S-LE SV-2514H</type><alternative /><accessory_list>[]</accessory_list><description>
-</description><excel_position>C13</excel_position><hidden_values>GF</hidden_values></optic><optic><type /><alternative /><excel_position>C14</excel_position><description /><hidden_values>GG</hidden_values></optic></optics_list><description>Svìtlo: DLU-140W-HI
-- v modelu
-</description><row_count>2</row_count><controller_index>0</controller_index><excel_position>B13</excel_position><hidden_values>DD</hidden_values></camera></camera_list><row_count>2</row_count><excel_position>A13</excel_position><hidden_values>AC</hidden_values></station><station><name>ST050</name><inspection_description>Kontrola natočení kalíšku (na dně kalíšku je malá ploška) pohled kamery přes nástroj cca 10mm otvorem do 50mm hloubky
+Low-angle světlo (testováno s LA-120W) 
+Svìtlo: LA-120W</description><row_count>2</row_count><controller_index>0</controller_index><excel_position>B9</excel_position><hidden_values>DB</hidden_values></camera><camera><type /><controller /><controller_color /><cable /><optics_list><optic><type /><alternative /><accessory_list>[]</accessory_list><description /><excel_position>C11</excel_position><hidden_values>GE</hidden_values></optic></optics_list><description /><controller_index>None</controller_index><row_count>1</row_count><excel_position>B11</excel_position><hidden_values>DC</hidden_values></camera></camera_list><row_count>3</row_count><excel_position>A9</excel_position><hidden_values>AB</hidden_values></station><station><name>ST040</name><inspection_description>Kontrola barvy senzoru – chtějí dva kusy 
+najednou…</inspection_description><camera_list><camera><type>FH-SCX05</type><controller>KG01 (FH-2051-20)</controller><controller_color /><cable /><optics_list><optic><type>3Z4S-LE SV-2514H</type><alternative /><accessory_list>[]</accessory_list><description /><excel_position>C13</excel_position><hidden_values>GF</hidden_values></optic><optic><type /><alternative /><excel_position>C14</excel_position><description /><hidden_values>GG</hidden_values></optic></optics_list><description>Svìtlo: DLU-140W-HI
+- v modelu</description><row_count>2</row_count><controller_index>0</controller_index><excel_position>B13</excel_position><hidden_values>DD</hidden_values></camera></camera_list><row_count>2</row_count><excel_position>A13</excel_position><hidden_values>AC</hidden_values></station><station><name>ST050</name><inspection_description>Kontrola natočení kalíšku (na dně kalíšku je malá ploška) pohled kamery přes nástroj cca 10mm otvorem do 50mm hloubky
 </inspection_description><camera_list><camera><type>FH-SMX01</type><controller>KG01 (FH-2051-20)</controller><controller_color /><cable /><optics_list><optic><type>3Z4S-LE SV-5014H</type><alternative /><accessory_list>[]</accessory_list><description>
 </description><excel_position>C16</excel_position><hidden_values>GH</hidden_values></optic><optic><type /><alternative /><excel_position>C17</excel_position><description /><hidden_values>GI</hidden_values></optic></optics_list><description>1,6 nebo 3Mpix kamera + Koaxiální světlo
 Svìtlo: CL-50
