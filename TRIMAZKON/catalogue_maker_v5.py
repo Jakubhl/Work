@@ -18,7 +18,7 @@ import sys
 import pyperclip
 import copy
 
-testing = True
+testing = False
 if testing:
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")
@@ -1940,26 +1940,26 @@ class Catalogue_gui:
 
     def show_context_menu(self,event,widget_id):
         button_strings = Catalogue_gui.get_device_strings(str(widget_id))
-        self.context_menu = tk.Menu(self.root,tearoff=0,fg="white",bg="black")
+        context_menu = tk.Menu(self.root,tearoff=0,fg="white",bg="black")
         if len(str(widget_id)) == 2: # Station extra options
-            self.context_menu.add_command(label="Nová stanice",font=("Arial",22,"bold"), command=lambda: self.manage_widgets("",str(widget_id),btn="add_line"))
-            self.context_menu.add_separator()
+            context_menu.add_command(label="Nová stanice",font=("Arial",22,"bold"), command=lambda: self.manage_widgets("",str(widget_id),btn="add_line"))
+            context_menu.add_separator()
             station_index = int(widget_id)
             if "image_list" in self.station_list[station_index]:
-                self.context_menu.add_command(label="Načíst obrázky",font=("Arial",22,"bold"), command=lambda: self.show_station_images("",str(widget_id)))
-                self.context_menu.add_separator()
+                context_menu.add_command(label="Načíst obrázky",font=("Arial",22,"bold"), command=lambda: self.show_station_images("",str(widget_id)))
+                context_menu.add_separator()
             else:
-                self.context_menu.add_command(label="Přidat obrázky",font=("Arial",22,"bold"), command=lambda: self.show_station_images("",str(widget_id)))
-                self.context_menu.add_separator()
+                context_menu.add_command(label="Přidat obrázky",font=("Arial",22,"bold"), command=lambda: self.show_station_images("",str(widget_id)))
+                context_menu.add_separator()
         if button_strings[0] != "":
-            self.context_menu.add_command(label=button_strings[0],font=("Arial",22,"bold"),command=lambda: self.manage_widgets("",str(widget_id),btn="add_object"))
-            self.context_menu.add_separator()
-        self.context_menu.add_command(label=button_strings[1],font=("Arial",22,"bold"),command=lambda: self.edit_object("",str(widget_id),rewrite_temp = True))
-        self.context_menu.add_separator()
-        self.context_menu.add_command(label=button_strings[2],font=("Arial",22,"bold"),command=lambda: self.delete_block("",str(widget_id)))
+            context_menu.add_command(label=button_strings[0],font=("Arial",22,"bold"),command=lambda: self.manage_widgets("",str(widget_id),btn="add_object"))
+            context_menu.add_separator()
+        context_menu.add_command(label=button_strings[1],font=("Arial",22,"bold"),command=lambda: self.edit_object("",str(widget_id),rewrite_temp = True))
+        context_menu.add_separator()
+        context_menu.add_command(label=button_strings[2],font=("Arial",22,"bold"),command=lambda: self.delete_block("",str(widget_id)))
         if button_strings[3] != "":
-            self.context_menu.add_separator()
-            self.context_menu.add_command(label=button_strings[3],font=("Arial",22,"bold"), command=lambda: self.copy_objects(str(widget_id)))
+            context_menu.add_separator()
+            context_menu.add_command(label=button_strings[3],font=("Arial",22,"bold"), command=lambda: self.copy_objects(str(widget_id)))
 
         if len(str(widget_id)) == 7: # Controller extra options
 
@@ -1968,17 +1968,17 @@ class Catalogue_gui:
             controller_username = self.controller_object_list[controller_index]["username"]
             controller_password = self.controller_object_list[controller_index]["password"]
             if controller_ip != "" and controller_ip != "192.168.000.000":
-                self.context_menu.add_separator()
-                self.context_menu.add_command(label="Kopírovat IP adresu",font=("Arial",22,"bold"), command=lambda: pyperclip.copy(controller_ip))
+                context_menu.add_separator()
+                context_menu.add_command(label="Kopírovat IP adresu",font=("Arial",22,"bold"), command=lambda: pyperclip.copy(controller_ip))
                 
             if controller_username != "":
-                self.context_menu.add_separator()
-                self.context_menu.add_command(label="Kopírovat uživ. jméno",font=("Arial",22,"bold"), command=lambda: pyperclip.copy(controller_username))
+                context_menu.add_separator()
+                context_menu.add_command(label="Kopírovat uživ. jméno",font=("Arial",22,"bold"), command=lambda: pyperclip.copy(controller_username))
             if controller_password != "":
-                self.context_menu.add_separator()
-                self.context_menu.add_command(label="Kopírovat heslo",font=("Arial",22,"bold"), command=lambda: pyperclip.copy(controller_password))
+                context_menu.add_separator()
+                context_menu.add_command(label="Kopírovat heslo",font=("Arial",22,"bold"), command=lambda: pyperclip.copy(controller_password))
         
-        self.context_menu.tk_popup(event.x_root, event.y_root)
+        context_menu.tk_popup(event.x_root, event.y_root)
         
     def make_block(self,master_widget,height,width,fg_color,text,side,dummy_block = False,tier = "",border_color="#636363",anchor="w",fill=None):
         if dummy_block:
@@ -3421,6 +3421,15 @@ class Catalogue_gui:
         accessory_column_header         .pack(pady=(15,0),padx=15,expand=False,side = "left")
         self.make_project_widgets(initial = initial)
         Tools.add_colored_line(self.main_console,self.download_database_console_input[0],self.download_database_console_input[1],None,True)
+
+        def show_initial_context_menu(event):
+            if len(self.station_list) == 0:
+                context_menu = tk.Menu(self.root,tearoff=0,fg="white",bg="black")
+                context_menu.add_command(label="Nová stanice",font=("Arial",22,"bold"),command=lambda: self.manage_widgets("","00",btn="add_line"))
+                context_menu.add_separator()
+                context_menu.tk_popup(event.x_root, event.y_root)
+
+        self.root.bind("<Button-3>",lambda e: show_initial_context_menu(e))
 
         def unfocus_entry(e):
             self.root.focus_set()

@@ -231,6 +231,21 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     zahodí se provedené změny (mimo přepínání stanic)
   TRIMAZKON:
     - oprava + doladění zoomu celé aplikace"""
+        ,"\nVerze 4.1.1 (18.11.2024)"
+        ,
+    """ 
+  Katalog:
+    - nově je přidaná kontextová nabídka pod
+    pravým tlačítkem
+    - detail cely se teď zobrazí levým tlačítkem
+    - oprava stripování textu na řádek
+    - oprava rozhozeného řádkování u xlsm
+    - adaptace výšky řádků v excelu na počet řádků 
+    (u xlsm i xlsx)
+    - oprava ukládání při přepínání stanic šipkami
+    - ponechaný otevřený excel už neshodí okno
+    - automatické rozměry oken v závislosti na zoomu
+    """
 ]
 
 

@@ -689,14 +689,25 @@ catalogue - upravit ramecek na focusnutym svetle - hotovo
 catalogue - v kontext nabídce mít možnost kopírovat třeba ip adresu - hotovo
 catalogue - detail předělat na doubleclick, přidat kontext nabídku - hotovo
 
+10:09 AM 11/16/2024
+ip setting - vyresit manage bin - hotovo
+ip setting - runtime error moc nízký - hotovo
+prohlizec - když moc rychle rozhodí se pás - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 ip setting - rozdělit do tříd
 ip setting - grid předělat na pack
+
+
+ip setting - make project first u disku pri editu
 ip setting - kontext menu + optimalizace vykreslování
-ip setting - runtime error moc nízký
+
+ip setting - zneviditelnit heslo
+
 ip setting - nepsat u disku do konzole současná připojení interfaců, ale disků
+
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon

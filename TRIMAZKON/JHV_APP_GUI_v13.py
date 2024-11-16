@@ -20,7 +20,6 @@ import win32pipe, win32file, pywintypes, psutil
 
 testing = True
 
-
 def path_check(path_raw,only_repair = None):
     path=path_raw
     backslash = "\\"
@@ -191,7 +190,7 @@ if not app_running_status:
     customtkinter.set_default_color_theme("dark-blue")
     root=customtkinter.CTk()
     root.geometry("1200x900")
-    root.title("TRIMAZKON v_4.1.0")
+    root.title("TRIMAZKON v_4.1.1")
     root.wm_iconbitmap(resource_path(app_icon))
 else:
     # předání parametrů v případě spuštění obrázkem (základní obrázkový prohlížeč)
@@ -1313,6 +1312,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.last_coords = (0,0)
         self.zoom_given = 100
         self.settings_applied = False
+        self.loaded_image_status = True
+
+
         if params_given != None:
             print("params given",params_given)
             coords_given = params_given[0]
@@ -1680,13 +1682,16 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.previous_zoom = zoom
         return [new_width, new_height]
     
-    def view_image(self,increment_of_image,direct_path = None,only_refresh=None,reset = False,reload_buffer = False): # Samotné zobrazení obrázku
+    def view_image(self,increment_of_image,direct_path = None,only_refresh=None,reset = False,reload_buffer = False,only_next_ifz = False): # Samotné zobrazení obrázku
         """
         Samotné zobrazení obrázku
 
         -vstupními daty jsou informace o pozici obrázku v poli se všemi obrázky
         -přepočítávání rotace
         """
+        
+        if not only_next_ifz:
+            self.loaded_image_status = False
         
         def corrupted_image_handling():
             with Image.open(resource_path("images/loading3.png")) as opened_image:
@@ -1740,7 +1745,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     self.images_film_center.update_idletasks()
             except Exception as e: 
                 print("moc rychle: ",e)
-                return
+                
             
             if only_refresh == None: # jen pokud rotuju obrazek, aktualizuj prostřední
                 def open_image(increment_of_image_given,position):
@@ -1820,7 +1825,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                             self.left_labels[i].update_idletasks()
                         except Exception as e: 
                             print("moc rychle: ",e)
-                            return
+                            
 
                 if self.image_film_frame_right.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
                     for i in range(0,half_image_queue):
@@ -1829,8 +1834,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                             self.right_labels[i].image = self.image_queue[half_image_queue+i+1]
                             self.right_labels[i].update_idletasks()
                         except Exception as e:
-                            print("moc rychle: ",e)
-                            return
+                            print("moc rychle: ",e)                       
 
         if len(self.all_images) != 0:
             if direct_path == None:
@@ -1847,9 +1851,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 print(error_message)
                 corrupted_image_handling()
                 return error_message
-
-
-
 
             dimensions = self.calc_current_format(width,height)
             resized = rotated_image.resize(size=(int(dimensions[0]),int(dimensions[1])))
@@ -1882,13 +1883,20 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 # self.main_frame.update()
 
                 if self.image_film == True: #refreshujeme pouze stredovy obrazek jinak i okolni
-                    run_background = threading.Thread(target=make_image_strip, args=(rotated_image,),daemon = True)
-                    run_background.start()
-                    
+                    # run_background = threading.Thread(target=make_image_strip, args=(rotated_image,),daemon = True)
+                    # run_background = threading.Thread(target=make_image_strip, args=(rotated_image,))
+                    # run_background.start()
+                    make_image_strip(rotated_image)
+
+        self.loaded_image_status = True
+
     def next_image(self,silent=False,reload_buffer =False): # Další obrázek v pořadí (šipka vpravo)
         """
         Další obrázek v pořadí (šipka vpravo)
         """
+        if not self.loaded_image_status:
+            return
+        load_status = None
         self.flow_direction = "right"
         number_of_found_images = len(self.all_images)
         if number_of_found_images != 0:
@@ -1932,7 +1940,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
 
             center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
             # load_status = self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],True,reload_buffer=True)
-            load_status = self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],reload_buffer=True)
+            load_status = self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],reload_buffer=True,only_next_ifz = True)
             if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
                 self.current_image_num_ifz.configure(text ="/" + str(self.ifz_count))
                 self.changable_image_num_ifz.delete("0","100")
@@ -1950,7 +1958,10 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         """
         Předchozí obrázek v pořadí (šipka vlevo)
         """
+        if not self.loaded_image_status:
+            return
         self.flow_direction = "left"
+        load_status = None
         number_of_found_images = len(self.all_images)
         if number_of_found_images != 0:
             if self.increment_of_image > 0:
@@ -1990,7 +2001,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             
             center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
             # load_status = self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],True,reload_buffer=True)
-            load_status = self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],reload_buffer=True)
+            load_status = self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],reload_buffer=True,only_next_ifz = True)
             if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
                 self.current_image_num_ifz.configure(text ="/" + str(self.ifz_count))
                 self.changable_image_num_ifz.delete("0","100")
@@ -2016,10 +2027,10 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             self.next_image()
             if self.state != "stop":
                 self.main_frame.update_idletasks()
-                if self.ifz_located and int(calculated_time) < 200:
-                    calculated_time = 200
-                if int(calculated_time) < 20:
-                    calculated_time = 20
+                # if self.ifz_located and int(calculated_time) < 200:
+                #     calculated_time = 200
+                # if int(calculated_time) < 20:
+                #     calculated_time = 20
                 self.root.after(int(calculated_time),load_image_loop)
 
         self.state = "running"
@@ -5267,7 +5278,7 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
             current_window_size = "min"
         
         if not self.database_downloaded:
-            # download = download_database.database(self.database_filename)
+            download = download_database.database(self.database_filename)
             input_message = str(download.output)
             menu.database_downloaded = True
         else:
