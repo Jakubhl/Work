@@ -694,6 +694,9 @@ ip setting - vyresit manage bin - hotovo
 ip setting - runtime error moc nízký - hotovo
 prohlizec - když moc rychle rozhodí se pás - hotovo
 
+8:20 PM 11/21/2024
+ip setting - nepsat u disku do konzole současná připojení interfaců, ale disků - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -706,8 +709,7 @@ ip setting - kontext menu + optimalizace vykreslování
 
 ip setting - zneviditelnit heslo
 
-ip setting - nepsat u disku do konzole současná připojení interfaců, ale disků
-
+ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon

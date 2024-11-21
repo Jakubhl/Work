@@ -16,6 +16,7 @@ import ctypes
 import winreg
 import win32net
 import win32netcon
+import copy
 
 testing_mode = True
 if testing_mode:
@@ -92,6 +93,85 @@ class Tools:
         workbook.close()
 
     @classmethod
+    def read_setting_parameters(cls,excel_file_path):
+        """
+        - [0] = default connection option (0/1)
+        - [1] = show favourite ip as default (0/1)
+        - [2] = show disk environment as default (0/1)
+        - [3] = last set widnow size  (0/1/2 - 2 is the narrow and long one)
+        - [4] = check disk statutes automatically status (0/1)
+        - [5] = editable/ non-editable notes (0/1)
+        - [6] = persistent/ non-persistent disk (0/1)
+        - [7] = shift edited project on top status (0/1)
+        - [8] = delete - pop up window main window (110), when edit (101)
+        """
+        def insert_new_excel_param(wb,ws,row,param,text):
+            """
+            Oveřuje zda konfigurační excel již obsahuje tyto parametry, případně zapíše
+            """
+            ws['B' + str(row)] = param
+            ws['A' + str(row)] = text
+            wb.save(excel_file_path)
+            print('inserting new parameter to excel')
+
+        try:
+            workbook = load_workbook(excel_file_path)
+            worksheet = workbook["Settings"]
+            saved_def_con_option = worksheet['B' + str(1)].value
+            def_show_favourite = worksheet['B' + str(3)].value
+            def_show_disk = worksheet['B' + str(4)].value
+            def_window_size = worksheet['B' + str(5)].value
+            
+            value_check = worksheet['B' + str(6)].value
+            if value_check is None or str(value_check) == "":
+                insert_new_excel_param(workbook,worksheet,row=6,param=0,text="aktualizovat statusy disků při vstupu do okna s disky (default)")
+            else:
+                default_disk_status_behav = int(worksheet['B' + str(6)].value)
+
+            value_check = worksheet['B' + str(7)].value
+            if value_check is None or str(value_check) == "":
+                insert_new_excel_param(workbook,worksheet,row=7,param=0,text="editovatelné(1)/ needitovatelné(0) poznámky (default)")
+            else:
+                default_note_behav = int(worksheet['B' + str(7)].value)
+
+            value_check = worksheet['B' + str(8)].value
+            if value_check is None or str(value_check) == "":
+                insert_new_excel_param(workbook,worksheet,row=8,param=0,text="disk persistentní - yes(1)/ no(0)")
+            else:
+                mapping_condition = int(worksheet['B' + str(8)].value)
+
+            value_check = worksheet['B' + str(9)].value
+            if value_check is None or str(value_check) == "":
+                insert_new_excel_param(workbook,worksheet,row=9,param=1,text="automaticky přesouvat upravené projekty na začátek")
+            else:
+                excel_value =  int(worksheet['B' + str(9)].value)
+                if excel_value == 1:
+                    make_edited_project_first = True
+                else:
+                    make_edited_project_first = False
+            
+            value_check = worksheet['B' + str(10)].value
+            if value_check is None or str(value_check) == "":
+                insert_new_excel_param(workbook,worksheet,row=10,param=100,text="statusy odvolby dotazování při mazání")
+            else:
+                deletion_behav = int(worksheet['B' + str(10)].value)
+            workbook.close()
+
+            return [int(saved_def_con_option),
+                    int(def_show_favourite),
+                    int(def_show_disk),
+                    int(def_window_size),
+                    default_disk_status_behav,
+                    default_note_behav,
+                    mapping_condition,
+                    make_edited_project_first,
+                    deletion_behav]
+
+        except Exception as e:
+            print(f"Nejdřív zavřete soubor {excel_file_path} Chyba: {e}")
+            return 
+
+    @classmethod
     def clear_frame(cls,frame):
         frame.update()
         frame.update_idletasks()
@@ -151,7 +231,7 @@ class Disk_management_tools:
             time_start = time.time()
             while checking_done==False:
                 time.sleep(0.05)
-                if time.time() - time_start > 2:
+                if time.time() - time_start > 1:
                     print("terminated due to runtime error")
                     return False
             
@@ -200,7 +280,6 @@ class Disk_management_tools:
         
         return non_persistent_drives
 
-class Disk_management_gui:
     @classmethod
     def save_excel_data_disk(cls,excel_file_path,len_of_disk_array,last_project_id,project_name,disk_letter,ftp_address,username,password,notes,only_edit = None,force_row_to_print=None,force_ws = None,wb_given = None):
         if wb_given == None:
@@ -237,7 +316,7 @@ class Disk_management_gui:
         workbook.save(filename = excel_file_path)
         if wb_given == None:
             workbook.close()
-
+    
     @classmethod
     def read_excel_data(cls,excel_file_path):
         """
@@ -266,11 +345,14 @@ class Disk_management_gui:
 
         return [disk_all_rows,disk_project_list,default_disk_status_behav]
 
-    def __init__(self,root,callback_function,window_mode,initial_path):
+class Disk_management_gui:
+    def __init__(self,root,menu_callback_function,window_mode,initial_path):
         self.root = root
-        self.callback = callback_function
+        self.menu_callback = menu_callback_function
         self.window_mode = window_mode
         self.excel_file_path = initial_path + "config_TRIMAZKON.xlsx"
+        self.ip_instance = None
+        self.disk_instance = None
         self.app_icon = Tools.resource_path('images\\logo_TRIMAZKON.ico')
         self.disk_all_rows = []
         self.disk_project_list = []
@@ -289,18 +371,29 @@ class Disk_management_gui:
         self.last_project_username = ""
         self.last_project_password = ""
         self.last_selected_widget_id = 0
-        self.default_disk_status_behav = 0
-        self.default_note_behav = 0
-        self.mapping_condition = 0
         self.changed_notes_disk = []
         self.selected_list_disk = []
         self.remember_to_change_back = []
-
-        self.deletion_behav = 100
-
-
-
-        self.create_widgets_disk()
+        self.notes_frame_height = 50
+        read_parameters = Tools.read_setting_parameters(self.excel_file_path)
+        if read_parameters != None:
+            if read_parameters[3] == 2:
+                self.root.state('normal')
+                self.root.geometry(f"260x1000+{0}+{0}")
+            self.default_disk_status_behav = read_parameters[4]
+            self.default_note_behav = read_parameters[5]
+            self.mapping_condition = read_parameters[6]
+            if read_parameters[7] == 1:
+                self.make_edited_project_first = True
+            else:
+                self.make_edited_project_first = False
+            self.deletion_behav = read_parameters[8]
+        else:
+            self.default_disk_status_behav = 0
+            self.default_note_behav = 0
+            self.mapping_condition = 0
+            self.make_edited_project_first = True
+            self.deletion_behav = 100
 
     def call_menu(self): # Tlačítko menu (konec, návrat do menu)
         """
@@ -319,9 +412,8 @@ class Disk_management_gui:
         self.root.unbind("<Delete>")
         self.root.update()
         self.root.update_idletasks()
-        self.callback()
+        self.menu_callback()
     
-   
     def clicked_on_project(self,event,widget_id,widget,textbox = "",flag = ""):
         """
         flag = notes:
@@ -435,6 +527,8 @@ class Disk_management_gui:
             self.last_selected_widget_id = widget_id
 
     def refresh_disk_statuses(self):
+        online_disks = []
+        offline_disks = []
         self.refresh_btn.configure(text = "🔄",font=("",25))
         self.refresh_btn.update()
         self.refresh_btn.update_idletasks()
@@ -448,19 +542,30 @@ class Disk_management_gui:
                 if non_persistant_disks[i][0:1] == str(self.disk_all_rows[y][1]):
                     drive_status = Disk_management_tools.check_network_drive_status(non_persistant_disks[i])
                     if drive_status == True:
+                        online_disks.append(non_persistant_disks[i][0:1])
                         param_frame.configure(fg_color = "#00CED1")
                     else:
+                        offline_disks.append(non_persistant_disks[i][0:1])
                         param_frame.configure(fg_color = "red")
 
             for i in range(0,len(mapped_disks)):
                 if mapped_disks[i][0:1] == str(self.disk_all_rows[y][1]):
                     drive_status = Disk_management_tools.check_network_drive_status(mapped_disks[i])
                     if drive_status == True:
+                        online_disks.append(mapped_disks[i][0:1])
                         param_frame.configure(fg_color = "green")
                     else:
+                        offline_disks.append(mapped_disks[i][0:1])
                         param_frame.configure(fg_color = "red")
         if len(mapped_disks) == 0 and len(non_persistant_disks) == 0:
             Tools.add_colored_line(self.main_console,f"Nejsou namapované žádné disky","red",None,True)
+        else:
+            if len(online_disks) != 0 and len(offline_disks) != 0:
+                Tools.add_colored_line(self.main_console,f"Namapované disky: online: {list(set(online_disks))}, offline: {list(set(offline_disks))}","white",None,True)
+            elif len(online_disks) == 0 and  len(offline_disks) != 0:
+                Tools.add_colored_line(self.main_console,f"Namapované disky: offline: {list(set(offline_disks))}","white",None,True)
+            else:
+                Tools.add_colored_line(self.main_console,f"Namapované disky: online: {list(set(online_disks))}","white",None,True)
 
         self.refresh_btn.configure(text = "Refresh statusů",font=("Arial",20,"bold"))
 
@@ -499,13 +604,13 @@ class Disk_management_gui:
                 ws = wb[bin_worksheet]
                 row_data_disk = list(ws.iter_rows(min_row=2, max_row=2, values_only=True))[0]
                 wb.close()
-                return [list(row_data_disk),[None]]
+                return [list(row_data_disk),[None]] # provedene zmeny v editu pri spusteni programu nanacitam. Jen smazané projekty...
             
         def save_project_disk():
             nonlocal wb
             if wb == None:
                 return False
-            Disk_management_gui.save_excel_data_disk(self.excel_file_path,
+            Disk_management_tools.save_excel_data_disk(self.excel_file_path,
                                                      len(self.disk_all_rows),
                                                      self.last_project_id,
                                                      parameters[0],
@@ -522,7 +627,7 @@ class Disk_management_gui:
         
         def save_edited_disk():
             self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="load_edited_disk"))
-            Disk_management_gui.save_excel_data_disk(self.excel_file_path,
+            Disk_management_tools.save_excel_data_disk(self.excel_file_path,
                                             len(self.disk_all_rows),
                                             self.last_project_id,
                                             parameters[0],
@@ -561,7 +666,7 @@ class Disk_management_gui:
             ws.delete_rows(2)
             wb.save(self.excel_file_path)
             wb.close()
-            Disk_management_gui.save_excel_data_disk(self.excel_file_path,
+            Disk_management_tools.save_excel_data_disk(self.excel_file_path,
                                             len(self.disk_all_rows),
                                             self.last_project_id,
                                             project_name,
@@ -627,7 +732,7 @@ class Disk_management_gui:
                 if self.edited_project_name_disk == self.disk_all_rows[i][0]:
                     id = i
             
-            Disk_management_gui.save_excel_data_disk(self.excel_file_path,
+            Disk_management_tools.save_excel_data_disk(self.excel_file_path,
                                             len(self.disk_all_rows),
                                             self.last_project_id,
                                             param[0],
@@ -756,7 +861,6 @@ class Disk_management_gui:
         except Exception:
             pass
 
-
     def delete_project_disk(self,button_trigger = False,wanted_project=None,flag=""):
         project_found = False
         name_list = []
@@ -770,7 +874,7 @@ class Disk_management_gui:
                 for names in name_list:
                     print(names)
                     project_found = False
-                    self.disk_all_rows, self.disk_project_list, self.default_disk_status_behav = Disk_management_gui.read_excel_data(self.excel_file_path)
+                    self.disk_all_rows, self.disk_project_list, self.default_disk_status_behav = Disk_management_tools.read_excel_data(self.excel_file_path)
                     proceed(names,window,True)
                         
                 Tools.add_colored_line(self.main_console,f"Byly úspěšně odstraněny tyto projekty: {name_list}","orange",None,True)
@@ -787,7 +891,7 @@ class Disk_management_gui:
             # nonlocal wanted_project
 
             if wanted_project == None:
-                self.disk_all_rows, self.disk_project_list, self.default_disk_status_behav = Disk_management_gui.read_excel_data(self.excel_file_path)
+                self.disk_all_rows, self.disk_project_list, self.default_disk_status_behav = Disk_management_tools.read_excel_data(self.excel_file_path)
                 wanted_project = str(self.search_input.get())
             workbook = load_workbook(self.excel_file_path)
             for i in range(0,len(self.disk_project_list)):
@@ -833,11 +937,10 @@ class Disk_management_gui:
             return
         elif wanted_project == None:
             wanted_project = self.last_project_name
-
+        
         child_root = customtkinter.CTkToplevel()
         self.opened_window = child_root
-        x = self.root.winfo_rootx()
-        y = self.root.winfo_rooty()
+
         # child_root.geometry(f"650x130+{x+80}+{y+150}")
         child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(self.app_icon)))
         child_root.title("Upozornění")
@@ -849,14 +952,19 @@ class Disk_management_gui:
         proceed_label = customtkinter.CTkLabel(master = child_root,text = proceed_label_text,font=("Arial",22,"bold"),justify = "left",anchor="w")
         button_yes =    customtkinter.CTkButton(master = child_root,text = "ANO",font=("Arial",20,"bold"),width = 180,height=40,corner_radius=0,command=lambda: check_multiple_projects(True))
         button_no =     customtkinter.CTkButton(master = child_root,text = "NE",font=("Arial",20,"bold"),width = 180,height=40,corner_radius=0,command=lambda:  child_root.destroy())
-        proceed_label   .pack(pady=(15,0),padx=10,expand=False,side = "top")
-        button_no       .pack(pady = 5, padx = 10,anchor="w",expand=False,side="right")
-        button_yes      .pack(pady = 5, padx = 10,anchor="w",expand=False,side="right")
+        proceed_label   .pack(pady=(15,0),padx=10,side = "top",fill="x")
+        button_no       .pack(pady = 5, padx = 10,anchor="w",side="right",expand = False)
+        button_yes      .pack(pady = 5, padx = 10,anchor="w",side="right",expand = False)
         self.root.bind("<Button-1>",lambda e: child_root.destroy(),"+")
         child_root.update()
         child_root.update_idletasks()
-        child_root.geometry(f"{child_root.winfo_width()}x{child_root.winfo_height()}+{x+80}+{y+150}")
-        
+        # x = self.root.winfo_rootx()
+        # y = self.root.winfo_rooty()
+        # def_window_width = 500
+        # print("trudu",int(proceed_label.winfo_width()))
+        # if int(proceed_label.cget("width")) > def_window_width:
+        #     def_window_width = int(proceed_label.cget("width"))
+        # child_root.geometry(f"{def_window_width}x{child_root.winfo_height()}+{x+80}+{y+150}")
         child_root.grab_set()
         child_root.focus()
         child_root.focus_force()
@@ -886,9 +994,9 @@ class Disk_management_gui:
         
         # poznamky nejsou povinne
         if errors ==0:
-            Disk_management_gui.read_excel_data(self.excel_file_path)
+            Disk_management_tools.read_excel_data(self.excel_file_path)
             if only_edit == None:
-                Disk_management_gui.save_excel_data_disk(self.excel_file_path,
+                Disk_management_tools.save_excel_data_disk(self.excel_file_path,
                                                         len(self.disk_all_rows),
                                                         self.last_project_id,
                                                         project_name,
@@ -898,7 +1006,7 @@ class Disk_management_gui:
                                                         password,
                                                         notes)
             else:
-                Disk_management_gui.save_excel_data_disk(self.excel_file_path,
+                Disk_management_tools.save_excel_data_disk(self.excel_file_path,
                                                         len(self.disk_all_rows),
                                                         self.last_project_id,
                                                         project_name,
@@ -1077,7 +1185,7 @@ class Disk_management_gui:
 
             for i in range(0,len(self.disk_all_rows)):
                 row = (len(self.disk_all_rows)-1)-i
-                Disk_management_gui.save_excel_data_disk(self.excel_file_path,
+                Disk_management_tools.save_excel_data_disk(self.excel_file_path,
                                             len(self.disk_all_rows),
                                             self.last_project_id,
                                             self.disk_all_rows[i][0],
@@ -1155,7 +1263,6 @@ class Disk_management_gui:
             open_explorer(Drive_letter + ":\\")
         else:
              Tools.add_colored_line(self.main_console,f"Připojení selhalo (ixon? musí být zvolena alespoň 1 složka na disku...)","red",None,True)
-
 
     def make_project_cells_disk(self,no_read = None,disk_statuses = False):
         def opened_window_check():
@@ -1269,7 +1376,7 @@ class Disk_management_gui:
             widget[1].configure(height = expanded_dim-10)
 
         if no_read == None:
-            self.disk_all_rows, self.disk_project_list, self.default_disk_status_behav = Disk_management_gui.read_excel_data(self.excel_file_path)
+            self.disk_all_rows, self.disk_project_list, self.default_disk_status_behav = Disk_management_tools.read_excel_data(self.excel_file_path)
 
         Tools.clear_frame(self.project_tree)
         if self.default_disk_status_behav == 1:
@@ -1349,7 +1456,10 @@ class Disk_management_gui:
         self.project_tree.update()
         self.project_tree.update_idletasks()
         self.notes_frame_height = int(notes_frame._current_height)
-        self.project_tree._parent_canvas.yview_moveto(0.0)
+        try:
+            self.project_tree._parent_canvas.yview_moveto(0.0)
+        except Exception:
+            pass
         if disk_statuses:
             self.refresh_disk_statuses()   
 
@@ -1495,7 +1605,17 @@ class Disk_management_gui:
         child_root.focus_force()
         self.root.bind("<Button-1>",lambda e: child_root.destroy(),"+")
 
-    def create_widgets_disk(self,init=None):
+    def create_widgets_disk(self,init=None,disk_instance = None,ip_instance = None):
+        if disk_instance != None:
+            # self.disk_instance = disk_instance
+            self.disk_instance = copy.copy(disk_instance)
+
+        if ip_instance != None:
+            # self.ip_instance = ip_instance
+            self.ip_instance = copy.copy(ip_instance)
+
+        Tools.clear_frame(self.root)
+
         def get_none_count(array_given):
             none_count = 0
             for items in array_given:
@@ -1533,9 +1653,9 @@ class Disk_management_gui:
         self.main_widgets.      pack(pady=0,padx=5,fill="x",expand=False,side = "top")
         self.project_tree.      pack(pady=5,padx=5,fill="both",expand=True,side = "top")
         main_menu_button =              customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "MENU",command =  lambda: self.call_menu(),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
-        button_switch_all_ip =          customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "IP - všechny",command =  lambda: self.create_widgets(fav_status=False),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
-        button_switch_favourite_ip =    customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "IP - oblíbené",command =  lambda: self.create_widgets(fav_status=True),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
-        button_switch_disk =            customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "Síťové disky",command =  lambda: self.create_widgets_disk(),font=("Arial",25,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
+        button_switch_all_ip =          customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "IP - všechny",command =  lambda: self.ip_instance.create_widgets(fav_status=False,disk_instance = self.disk_instance),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        button_switch_favourite_ip =    customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "IP - oblíbené",command =  lambda: self.ip_instance.create_widgets(fav_status=True,disk_instance = self.disk_instance),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        button_switch_disk =            customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "Síťové disky",font=("Arial",25,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
         project_label =         customtkinter.CTkLabel(master = self.main_widgets, width = 100,height=40,text = "Projekt: ",font=("Arial",20,"bold"))
         self.search_input =     customtkinter.CTkEntry(master = self.main_widgets,font=("Arial",20),width=160,height=40,placeholder_text="Název projektu",corner_radius=0)
         button_search =         customtkinter.CTkButton(master = self.main_widgets, width = 150,height=40,text = "Vyhledat",command =  lambda: self.make_project_first_disk("search"),font=("Arial",20,"bold"),corner_radius=0)
@@ -1652,19 +1772,19 @@ class Disk_management_gui:
         self.make_project_cells_disk()
         # self.root.mainloop()
 
-class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
+class IP_assignment: # Umožňuje měnit statickou IP
     """
     Umožňuje měnit nastavení statických IP adres
     """
 
-    def __init__(self,root,callback_function,window_mode,initial_path,zoom_factor):
-        self.initial_path = initial_path
-        self.window_mode = window_mode
-        self.callback = callback_function
+    def __init__(self,root,menu_callback_function,window_mode,initial_path):
         self.root = root
-        self.app_zoom_factor = zoom_factor
+        self.menu_callback = menu_callback_function
+        self.window_mode = window_mode
+        self.initial_path = initial_path
+        self.disk_instance = None
+        self.ip_instance = None
         self.app_icon = 'images\\logo_TRIMAZKON.ico'
-        self.rows_taken = 0
         self.all_rows = []
         self.project_list = []
         self.excel_file_path = initial_path + "config_TRIMAZKON.xlsx"
@@ -1673,129 +1793,56 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.last_project_mask = ""
         self.last_project_notes = ""
         self.last_project_id = ""
-        self.last_project_disk_letter = ""
-        self.last_project_ftp = ""
-        self.last_project_username = ""
-        self.last_project_password = ""
-        self.managing_disk = False
+        # self.last_project_disk_letter = ""
+        # self.last_project_ftp = ""
+        # self.last_project_username = ""
+        # self.last_project_password = ""
+        # self.managing_disk = False
         # self.connection_status = None
         self.make_project_favourite = False
         self.favourite_list = []
-        self.default_connection_option = 0
         self.connection_option_list = []
-        self.default_disk_status_behav = 0
-        self.default_note_behav = 0
-        self.mapping_condition = 0
+        # self.mapping_condition = 0
         self.last_selected_widget = ""
         self.last_selected_notes_widget = ""
         self.last_selected_textbox = ""
         self.last_selected_widget_id = 0
         self.opened_window = ""
         self.ip_frame_list = []
-        self.disk_letter_frame_list = []
-        self.make_edited_project_first = True
-        self.deletion_behav = 100
+        # self.disk_letter_frame_list = []
         self.selected_list = []
-        self.selected_list_disk = []
+        # self.selected_list_disk = []
         self.remember_to_change_back = []
         self.control_pressed = False
         self.edited_project_name = None
-        self.edited_project_name_disk = None
-        self.bin_projects = [[None],[None],[None],[None]]
+        # self.edited_project_name_disk = None
+        self.bin_projects = [[None],[None]]
         self.changed_notes = []
-        self.changed_notes_disk = []
+        # self.changed_notes_disk = []
         self.notes_frame_height = 50
 
-        def call_main(what:str):
-            try:
-                if what == "disk":
-                    self.create_widgets_disk(init=True)
-                else:
-                    self.create_widgets(init=True)
-            except Exception as e:
-                # Tools.add_colored_line(self.main_console,f"Neočekávaná chyba: {e}","red",None,True)
-                print(f"Neočekávaná chyba: {e}")
-
-        def insert_new_excel_param(wb,ws,row,param,text):
-            """
-            Oveřuje zda konfigurační excel již obsahuje tyto parametry, případně zapíše
-            """
-            ws['B' + str(row)] = param
-            ws['A' + str(row)] = text
-            wb.save(self.excel_file_path)
-            print('inserting new parameter to excel')
-
-        try:
-            workbook = load_workbook(self.excel_file_path)
-            worksheet = workbook["Settings"]
-            # z worksheetu nastavení čtu základní zvolený interface připojení
-            # - všechny možné interfaces
-            # - defaultní okno zobrazení (oblíbené/ všechny/ disky)
-            # - defaultní velikost okna - pamatuje si nejmenší zvolenou
-            saved_def_con_option = worksheet['B' + str(1)].value
-            self.default_connection_option = int(saved_def_con_option)
-
-            def_show_favourite = worksheet['B' + str(3)].value
-            if int(def_show_favourite) == 1:
+        read_parameters = Tools.read_setting_parameters(self.excel_file_path)
+        if read_parameters != None:
+            self.default_connection_option = read_parameters[0]
+            if read_parameters[1] == 1:
                 self.show_favourite = True
             else:
                 self.show_favourite = False
-
-            def_window_size = worksheet['B' + str(5)].value
-            if def_window_size == 2:
+            if read_parameters[3] == 2:
                 self.root.state('normal')
                 self.root.geometry(f"260x1000+{0}+{0}")
-            
-            value_check = worksheet['B' + str(6)].value
-            if value_check is None or str(value_check) == "":
-                insert_new_excel_param(workbook,worksheet,row=6,param=0,text="aktualizovat statusy disků při vstupu do okna s disky (default)")
+            self.default_note_behav = read_parameters[5]
+            if read_parameters[7] == 1:
+                self.make_edited_project_first = True
             else:
-                self.default_disk_status_behav = int(worksheet['B' + str(6)].value)
-
-            value_check = worksheet['B' + str(7)].value
-            if value_check is None or str(value_check) == "":
-                insert_new_excel_param(workbook,worksheet,row=7,param=0,text="editovatelné(1)/ needitovatelné(0) poznámky (default)")
-            else:
-                self.default_note_behav = int(worksheet['B' + str(7)].value)
-
-            value_check = worksheet['B' + str(8)].value
-            if value_check is None or str(value_check) == "":
-                insert_new_excel_param(workbook,worksheet,row=8,param=0,text="disk persistentní - yes(1)/ no(0)")
-            else:
-                self.mapping_condition = int(worksheet['B' + str(8)].value)
-
-            value_check = worksheet['B' + str(9)].value
-            if value_check is None or str(value_check) == "":
-                insert_new_excel_param(workbook,worksheet,row=9,param=1,text="automaticky přesouvat upravené projekty na začátek")
-            else:
-                excel_value =  int(worksheet['B' + str(9)].value)
-                if excel_value == 1:
-                    self.make_edited_project_first = True
-                else:
-                    self.make_edited_project_first = False
-            
-            value_check = worksheet['B' + str(10)].value
-            if value_check is None or str(value_check) == "":
-                insert_new_excel_param(workbook,worksheet,row=10,param=100,text="statusy odvolby dotazování při mazání")
-            else:
-                self.deletion_behav = int(worksheet['B' + str(10)].value)
-
-            def_show_disk = worksheet['B' + str(4)].value
-            workbook.close()
-
-            self.bin_projects = self.manage_bin(flag="read_sheet")
-            print(self.bin_projects)
-
-            if int(def_show_disk) == 1:
-                call_main("disk")
-            else:
-                call_main("ip")
-                
-        except Exception as e:
-            self.connection_option_list = ["data nenalezena"]
+                self.make_edited_project_first = False
+            self.deletion_behav = read_parameters[8]
+        else:
+            self.default_connection_option = 0
             self.show_favourite = False
-            self.create_widgets(init=True,excel_load_error=True)
-            print(f"Nejdřív zavřete soubor {self.excel_file_path} Chyba: {e}")
+            self.default_note_behav = 0
+            self.make_edited_project_first = True
+            self.deletion_behav = 100   
 
     def call_menu(self): # Tlačítko menu (konec, návrat do menu)
         """
@@ -1814,7 +1861,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.root.unbind("<Delete>")
         self.root.update()
         self.root.update_idletasks()
-        self.callback()
+        self.menu_callback()
 
     def clear_frame(self,frame):
         frame.update()
@@ -1839,18 +1886,15 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         """
         First_row in bin worksheet = last deleted ip\n
         Second_row in bin worksheet = last deleted disk\n
+        self.bin_projects = [0] deleted projects\n
+        self.bin_projects = [1] edited projects\n
         flag:\n
         - read_sheet
         - save_project_ip
-        - save_project_disk
         - load_deleted_ip
-        - load_deleted_disk
         - save_edited_ip
         - load_edited_ip
-        - save_edited_disk
-        - load_edited_disk
         - change_notes_back
-        - change_notes_back_disk
         """
         bin_worksheet = "projects_bin2"
         def get_none_count(array_given):
@@ -1868,17 +1912,12 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 wb.save(self.excel_file_path)
                 wb.close()
                 print("adding new bin sheet to excel")
-                return [[None],[None],[None],[None]]
+                return [[None],[None]]
             else:
                 ws = wb[bin_worksheet]
                 row_data_ip = list(ws.iter_rows(min_row=1, max_row=1, values_only=True))[0]
-                row_data_disk = list(ws.iter_rows(min_row=2, max_row=2, values_only=True))[0]
-                # row_data_ip_edited = list(ws.iter_rows(min_row=3, max_row=3, values_only=True))[0]
-                # row_data_disk_edited = list(ws.iter_rows(min_row=4, max_row=4, values_only=True))[0]
                 wb.close()
-                # return [list(row_data_ip),list(row_data_disk),list(row_data_ip_edited),list(row_data_disk_edited)]
-                # provedene zmeny pri spusteni programu nanacitam:
-                return [list(row_data_ip),list(row_data_disk),[None],[None]]
+                return [list(row_data_ip),[None]] # provedene zmeny v editu pri spusteni programu nanacitam. Jen smazané projekty...
             
         def save_project_ip():
             nonlocal wb
@@ -1896,21 +1935,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="load_edited_ip"))
                 print("saving changes to excel: ",parameters)
                 self.save_excel_data(parameters[0],parameters[1],parameters[2],parameters[3],force_row_to_print=excel_row,force_ws=bin_worksheet,wb_given=wb,fav_status=parameters[4])
-                self.bin_projects[2] = [parameters[0],parameters[1],parameters[2],parameters[3],parameters[4]]
-
-        def save_project_disk():
-            nonlocal wb
-            if wb == None:
-                return False
-            self.save_excel_data_disk(parameters[0],parameters[1],parameters[2],parameters[3],parameters[4],parameters[5],force_row_to_print=2,force_ws=bin_worksheet,wb_given=wb)
-            self.bin_projects[1] = [parameters[0],parameters[1],parameters[2],parameters[3],parameters[4],parameters[5]]
-            self.undo_button.configure(state = "normal")
-        
-        def save_edited_disk():
-            self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="load_edited_disk"))
-            print("saving: ",parameters)
-            self.save_excel_data_disk(parameters[0],parameters[1],parameters[2],parameters[3],parameters[4],parameters[5],force_row_to_print=4,force_ws=bin_worksheet,wb_given=wb)
-            self.bin_projects[3] = [parameters[0],parameters[1],parameters[2],parameters[3],parameters[4],parameters[5]]
+                self.bin_projects[1] = [parameters[0],parameters[1],parameters[2],parameters[3],parameters[4]]
 
         def change_notes_back():
             print("loading back: ",self.changed_notes)    
@@ -1970,7 +1995,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             Tools.add_colored_line(self.main_console,f"Poznámky u projektu: {project_name} byly úspěšně obnoveny","green",None,True)
             self.make_project_cells()
 
-            if get_none_count(self.bin_projects[2]) < 2 and len(self.bin_projects[2]) == 5:
+            if get_none_count(self.bin_projects[1]) < 2 and len(self.bin_projects[1]) == 5:
                 self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="load_edited_ip"))
             else:
                 self.undo_edit.configure(state = "disabled")
@@ -2002,36 +2027,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             Tools.add_colored_line(self.main_console,f"Projekt: {project_name} byl úspěšně obnoven","green",None,True)
             self.make_project_cells()
 
-        def load_deleted_disk():
-            """
-            adds new project from history and deletes the history
-            """
-            wb = load_workbook(self.excel_file_path)
-            ws = wb[bin_worksheet]
-            row_data_disk = list(ws.iter_rows(min_row=2, max_row=2, values_only=True))[0]
-
-            print("\nrow data disk: ",row_data_disk,"\n")
-
-            project_name = row_data_disk[0]
-            if project_name in self.disk_project_list:
-                Tools.add_colored_line(self.main_console,f"Jméno projektu: {project_name} je již používané, nelze ho tedy obnovit","red",None,True)
-                wb.close()
-                return
-            
-            self.bin_projects[1] = []
-            if len(row_data_disk) <6:
-                notes = ""
-            else:
-                notes = row_data_disk[5]
-            self.undo_button.configure(state = "disabled")
-            ws.delete_rows(2)
-            wb.save(self.excel_file_path)
-            wb.close()
-
-            self.save_excel_data_disk(project_name,row_data_disk[1],row_data_disk[2],row_data_disk[3],row_data_disk[4],notes)
-            Tools.add_colored_line(self.main_console,f"Projekt: {project_name} byl úspěšně obnoven","green",None,True)
-            self.make_project_cells_disk()
-
         def load_edited_ip():
             wb = load_workbook(self.excel_file_path)
             ws = wb[bin_worksheet]
@@ -2043,7 +2038,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 wb.close()
                 return
             
-            self.bin_projects[2] = []
+            self.bin_projects[1] = []
             self.undo_edit.configure(state = "disabled")
             ws.delete_rows(3)
             wb.save(self.excel_file_path)
@@ -2067,81 +2062,13 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 Tools.add_colored_line(self.main_console,f"U projektu: {self.edited_project_name} byly odebrány provedené změny","green",None,True)
             self.make_project_cells()
 
-        def change_notes_back_disk():
-            print("loading back: ",self.changed_notes_disk)    
-        
-            def save_changed_notes(notes,row):
-                workbook = load_workbook(self.excel_file_path)
-                worksheet = workbook["disk_list"]
-                worksheet['F' + str(len(self.disk_all_rows)-row)] = notes
-                workbook.save(filename=self.excel_file_path)
-                workbook.close()
-            
-            project_name = self.changed_notes_disk[0]
-            notes_before = self.changed_notes_disk[1]
-            id = None
-            for i in range(0,len(self.disk_all_rows)):
-                if self.disk_all_rows[i][0] == project_name:
-                    id = i
-
-            save_changed_notes(notes_before,id)
-            Tools.add_colored_line(self.main_console,f"Poznámky u projektu: {project_name} byly úspěšně obnoveny","green",None,True)
-            self.make_project_cells_disk()
-
-            if get_none_count(self.bin_projects[3]) < 4 and len(self.bin_projects[3]) == 6:
-                self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="load_edited_disk"))
-            else:
-                self.undo_edit.configure(state = "disabled")
-            self.changed_notes_disk = []
-
-        def load_edited_disk():
-            wb = load_workbook(self.excel_file_path)
-            ws = wb[bin_worksheet]
-            not_edited_data_disk = list(ws.iter_rows(min_row=4, max_row=4, values_only=True))[0]
-
-            print("\nrow data disk: ",not_edited_data_disk,"\n")
-            if self.edited_project_name_disk not in self.disk_project_list:
-                Tools.add_colored_line(self.main_console,f"Jméno projektu: {self.edited_project_name_disk} nenalezeno, nelze ho tedy obnovit","red",None,True)
-                wb.close()
-                return
-            
-            self.bin_projects[3] = []
-            self.undo_edit.configure(state = "disabled")
-            ws.delete_rows(3)
-            wb.save(self.excel_file_path)
-            wb.close()
-
-            param = [not_edited_data_disk[0],not_edited_data_disk[1],not_edited_data_disk[2],not_edited_data_disk[3],not_edited_data_disk[4],not_edited_data_disk[5]]
-            for i in range(0,len(param)):
-                if param[i] == None:
-                    param[i] = ""
-
-            id = None
-            for i in range(0,len(self.disk_all_rows)):
-                if self.edited_project_name_disk == self.disk_all_rows[i][0]:
-                    id = i
-            
-            self.save_excel_data_disk(param[0],param[1],param[2],param[3],param[4],param[5],
-                                      force_row_to_print=len(self.disk_all_rows)-id)
-
-            if self.edited_project_name_disk != param[0]:
-                Tools.add_colored_line(self.main_console,f"U projektu: {self.edited_project_name_disk} (původně: {param[0]}) byly odebrány provedené změny","green",None,True)
-            else:
-                Tools.add_colored_line(self.main_console,f"U projektu: {self.edited_project_name_disk} byly odebrány provedené změny","green",None,True)
-            self.make_project_cells_disk()
-
         mapping_logic = {
             "read_sheet": read_sheet,
             "save_project_ip": save_project_ip,
-            "save_project_disk": save_project_disk,
             "load_deleted_ip": load_deleted_ip,
-            "load_deleted_disk": load_deleted_disk,
             "save_edited_ip": save_project_ip,
             "load_edited_ip": load_edited_ip,
-            "change_notes_back": change_notes_back,
-            "save_edited_disk": save_edited_disk,
-            "load_edited_disk": load_edited_disk,
-            "change_notes_back_disk": change_notes_back_disk,
+            "change_notes_back": change_notes_back
         }
 
         output = mapping_logic[flag]()  # This will call the corresponding function
@@ -2219,7 +2146,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
             for items in row[4:5]:
                 self.favourite_list.insert(0,items)
             
-
         # seznam vsech ftp pripojeni k diskum
         self.disk_all_rows = []
         self.disk_project_list = []  
@@ -2241,7 +2167,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         saved_def_con_option = worksheet['B' + str(1)].value
         self.default_connection_option = int(saved_def_con_option)
 
-        self.default_disk_status_behav = int(worksheet['B' + str(6)].value)
+        # self.default_disk_status_behav = int(worksheet['B' + str(6)].value)
         workbook.close()
                      
     def save_excel_data(self,project_name,IP_adress,mask,notes,only_edit = None,force_row_to_print=None,fav_status = None,force_ws = None,wb_given = None):
@@ -2289,43 +2215,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         if wb_given == None:
             workbook.close()
 
-    def save_excel_data_disk(self,project_name,disk_letter,ftp_address,username,password,notes,only_edit = None,force_row_to_print=None,force_ws = None,wb_given = None):
-        if wb_given == None:
-            workbook = load_workbook(self.excel_file_path)
-        else:
-            workbook = wb_given
-
-        if force_ws == None:
-            worksheet = workbook["disk_list"]
-        else:
-            worksheet = workbook[force_ws]
-        # excel je od jednicky...
-        if force_row_to_print == None:
-            row_to_print = int(len(self.disk_all_rows)) +1
-            if only_edit != None:
-                #pouze změna na temtýž řádku
-                row_to_print = (len(self.disk_all_rows)- self.last_project_id)
-        else:
-            row_to_print = force_row_to_print
-        #A = nazev projektu
-        worksheet['A' + str(row_to_print)] = project_name
-        #B = písmeno disku, označení...
-        worksheet['B' + str(row_to_print)] = disk_letter
-        #C = ftp adresa
-        worksheet['C' + str(row_to_print)] = ftp_address
-        #D = uživatelské jméno
-        worksheet['D' + str(row_to_print)] = username
-        #E = heslo
-        worksheet['E' + str(row_to_print)] = password
-        #F = poznamky
-        worksheet['F' + str(row_to_print)] = notes
-
-        workbook.save(filename=self.excel_file_path)
-        if wb_given == None:
-            workbook.close()
-
-
-    
     def switch_fav_status(self,operation:str,project_given=None,change_status = False):
         if project_given == None:
             selected_project = str(self.search_input.get())
@@ -2631,7 +2520,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                         child_root.destroy()
                     self.make_project_cells()
 
-
     def delete_project(self,wanted_project=None,silence=None,button_trigger = False,flag="",del_favourite=False):
         if "!ctktextbox" in str(self.root.focus_get()):
             return
@@ -2741,9 +2629,9 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
         child_root = customtkinter.CTkToplevel()
         self.opened_window = child_root
-        x = self.root.winfo_rootx()
-        y = self.root.winfo_rooty()
-        child_root.geometry(f"650x130+{x+80}+{y+150}")
+        # x = self.root.winfo_rootx()
+        # y = self.root.winfo_rooty()
+        # child_root.geometry(f"650x130+{x+80}+{y+150}")
         child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(self.app_icon)))
         child_root.title("Upozornění")
         proceed_label_text = f"Opravdu si přejete odstranit projekt {self.last_project_name}?"
@@ -2766,7 +2654,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         child_root.focus_force()
         child_root.wait_window()
         return project_found
-
 
     def copy_previous_project(self,disk=None):
         if self.last_project_name == "":
@@ -2948,7 +2835,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         child_root.focus()
         child_root.focus_force()
         self.root.bind("<Button-1>",lambda e: child_root.destroy(),"+")
-
 
     def focused_entry_widget(self):
         currently_focused = str(self.root.focus_get())
@@ -3620,7 +3506,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.project_tree.update()
         self.project_tree.update_idletasks()
         self.notes_frame_height = int(notes_frame._current_height)
-        self.project_tree._parent_canvas.yview_moveto(0.0)
+        try:
+            self.project_tree._parent_canvas.yview_moveto(0.0)
+        except Exception:
+            pass
     
     def edit_project(self):
         result = self.check_given_input()
@@ -3631,13 +3520,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         else:
             Tools.add_colored_line(self.main_console,f"Projekt nenalezen","red",None,True)
         
-
-
-    
-
-    
-
-
     def get_ipv4_addresses(self):
         process = subprocess.Popen("ipconfig",
                                     stdout=subprocess.PIPE,
@@ -3738,7 +3620,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         elif purpouse != "silent":
             Tools.add_colored_line(self.main_console,"Projekt nenalezen","red",None,True)
             print("projekt nenalezen")
-
 
     def get_current_ip_list(self):
         def get_current_ip_address(interface_name):
@@ -3896,44 +3777,18 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
         return interfaces_data[1]
 
-    def setting_window(self,ip_window = False):
-        def save_new_behav_disk():
-            nonlocal checkbox2
-            if int(checkbox2.get()) == 0:
-                self.default_disk_status_behav = 0
-                self.save_setting_parameter(parameter="change_def_disk_behav",status=0)
-            elif int(checkbox2.get()) == 1:
-                self.default_disk_status_behav = 1
-                self.save_setting_parameter(parameter="change_def_disk_behav",status=1)
-                self.make_project_cells_disk(no_read=True)
-
+    def setting_window(self):
         def save_new_behav_notes():
             nonlocal checkbox
-            nonlocal ip_window
             if int(checkbox.get()) == 0:
                 self.default_note_behav = 0
                 self.save_setting_parameter(parameter="change_def_notes_behav",status=0)
-                if ip_window:
-                    self.make_project_cells()
-                else:
-                    self.make_project_cells_disk()
+                self.make_project_cells()
 
             elif int(checkbox.get()) == 1:
                 self.default_note_behav = 1
                 self.save_setting_parameter(parameter="change_def_notes_behav",status=1)
-                if ip_window:
-                    self.make_project_cells()
-                else:
-                    self.make_project_cells_disk()
-
-        def save_new_disk_map_cond():
-            nonlocal checkbox3
-            if int(checkbox3.get()) == 0:
-                self.mapping_condition = 0
-                self.save_setting_parameter(parameter="change_mapping_cond",status=0)
-            elif int(checkbox3.get()) == 1:
-                self.mapping_condition = 1
-                self.save_setting_parameter(parameter="change_mapping_cond",status=1)
+                self.make_project_cells()
 
         def change_make_first_behav():
             nonlocal checkbox4
@@ -3960,13 +3815,9 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
 
         child_root = customtkinter.CTkToplevel()
         self.opened_window = child_root
-        x = self.root.winfo_rootx()
-        y = self.root.winfo_rooty()
-        if ip_window:
-            child_root.geometry(f"580x400+{x+350}+{y+180}")
-        else:
-            child_root.geometry(f"620x580+{x+350}+{y+180}")
-
+        # x = self.root.winfo_rootx()
+        # y = self.root.winfo_rooty()
+        # child_root.geometry(f"580x400+{x+350}+{y+180}")
         child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(self.app_icon)))
         child_root.title("Nastavení")
         main_frame =    customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
@@ -3974,30 +3825,6 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         checkbox =      customtkinter.CTkCheckBox(master = main_frame, text = "Přímo zapisovat a ukládat do poznámek na úvodní obrazovce",font=("Arial",16,"bold"),command=lambda: save_new_behav_notes())
         label.          pack(pady = 10,padx=10,side="top",anchor = "w")
         checkbox.       pack(pady = 10,padx=10,side="top",anchor = "w")
-
-        main_frame2 =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
-        label2 =        customtkinter.CTkLabel(master = main_frame2, width = 100,height=40,text = "- Chování při vstupu do menu \"Síťové disky\":",font=("Arial",20,"bold"))
-        checkbox2 =     customtkinter.CTkCheckBox(master = main_frame2, text = "Při spuštění aktualizovat statusy disků",font=("Arial",16,"bold"),command=lambda: save_new_behav_disk())
-        label2.         pack(pady = 10,padx=10,side="top",anchor = "w")
-        checkbox2.      pack(pady = 10,padx=10,side="top",anchor = "w")
-
-        main_frame3 =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
-        label3 =        customtkinter.CTkLabel(master = main_frame3, width = 100,height=40,text = "- Nastavení mapování disků:",font=("Arial",20,"bold"))
-        checkbox3 =     customtkinter.CTkCheckBox(master = main_frame3, text = "Automaticky připojovat po restartu PC",font=("Arial",16,"bold"),command=lambda: save_new_disk_map_cond())
-        frame_drive1 =  customtkinter.CTkFrame(master=main_frame3,corner_radius=0,fg_color="#212121")
-        drive_color1 =  customtkinter.CTkFrame(master=frame_drive1,corner_radius=0,width = 30,height = 30,fg_color="green")
-        drive_label1 =  customtkinter.CTkLabel(master = frame_drive1, width = 100,height=40,text = "= disk je online, persistentní (po vypnutí bude znovu načten)",font=("Arial",18))
-        drive_color1.   pack(pady = (2,0),padx=10,side="left",anchor = "w")
-        drive_label1.   pack(pady = (2,0),padx=0,side="left",anchor = "w")
-        frame_drive2 =  customtkinter.CTkFrame(master=main_frame3,corner_radius=0,fg_color="#212121")
-        drive_color2 =  customtkinter.CTkFrame(master=frame_drive2,corner_radius=0,width = 30,height = 30,fg_color="#00CED1")
-        drive_label2 =  customtkinter.CTkLabel(master = frame_drive2, width = 100,height=40,text = "= disk je online, nepersistentní (bude odpojen po vypnutí)",font=("Arial",18))
-        drive_color2.   pack(pady = (2,0),padx=10,side="left",anchor = "w")
-        drive_label2.   pack(pady = (2,0),padx=0,side="left",anchor = "w")
-        label3.         pack(pady = 10,padx=10,side="top",anchor = "w")
-        checkbox3.      pack(pady = 10,padx=10,side="top",anchor = "w")
-        frame_drive1.   pack(pady = 0,padx=0,side="top",anchor = "w",fill="x")
-        frame_drive2.   pack(pady = 0,padx=0,side="top",anchor = "w",fill="x")
         
         main_frame4 =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
         label4 =        customtkinter.CTkLabel(master = main_frame4, width = 100,height=40,text = "- Nastavení chování při editaci projektů:",font=("Arial",20,"bold"))
@@ -4017,31 +3844,15 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         button_close =  customtkinter.CTkButton(master = close_frame, width = 150,height=40,text = "Zavřít",command = child_root.destroy,font=("Arial",20,"bold"),corner_radius=0)
         button_close.   pack(pady = 10,padx=10,side="bottom",anchor = "e")
 
-        if ip_window:
-            main_frame.     pack(expand=False,fill="x",side="top")
-            main_frame4.    pack(expand=False,fill="x",side="top")
-            main_frame5.    pack(expand=False,fill="x",side="top")
-            close_frame.    pack(expand=True,fill="both",side="top")
-            
-        else: #disk window...
-            main_frame.     pack(expand=False,fill="x",side="top")
-            main_frame2.    pack(expand=False,fill="x",side="top")
-            main_frame3.    pack(expand=False,fill="x",side="top")
-            main_frame5.    pack(expand=False,fill="x",side="top")
-            close_frame.    pack(expand=True,fill="both",side="top")
+        main_frame.     pack(expand=False,fill="x",side="top")
+        main_frame4.    pack(expand=False,fill="x",side="top")
+        main_frame5.    pack(expand=False,fill="x",side="top")
+        close_frame.    pack(expand=True,fill="both",side="top")
 
         if self.default_note_behav == 1:
             checkbox.select()
-        
         if self.make_edited_project_first:
             checkbox4.select()
-
-        if self.default_disk_status_behav == 1 and ip_window == False:
-            checkbox2.select()
-
-        if self.mapping_condition == 1 and ip_window == False:
-            checkbox3.select()
-
         if self.deletion_behav == 110 or self.deletion_behav == 111:
             checkbox5.select()
         if self.deletion_behav == 101 or self.deletion_behav == 111:
@@ -4171,8 +3982,15 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         window.focus_force()
         window.focus()
 
-    def create_widgets(self,fav_status = None,init=None,excel_load_error = False):
-        
+    def create_widgets(self,fav_status = None,init=None,excel_load_error = False,ip_instance = None,disk_instance = None):
+        if ip_instance != None:
+            self.ip_instance = copy.copy(ip_instance)
+        if disk_instance != None:
+            # self.disk_instance = disk_instance
+            self.disk_instance = copy.copy(disk_instance)
+
+        Tools.clear_frame(self.root)
+
         def get_none_count(array_given):
             none_count = 0
             for items in array_given:
@@ -4214,8 +4032,10 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         main_menu_button =                  customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "MENU",command =  lambda: self.call_menu(),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
         self.button_switch_all_ip =         customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "IP - všechny",command =  lambda: self.show_favourite_toggle(determine_status="all"),font=("Arial",25,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
         self.button_switch_favourite_ip =   customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "IP - oblíbené",command =  lambda: self.show_favourite_toggle(determine_status="fav"),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
-        button_switch_disk =                customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "Síťové disky",command =  lambda: self.create_widgets_disk(),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        button_switch_disk =                customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "Síťové disky",command =  lambda: self.disk_instance.create_widgets_disk(ip_instance = self.ip_instance),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
         if excel_load_error:
+            self.connection_option_list = ["data nenalezena"]
+            self.show_favourite = False
             self.button_switch_all_ip.configure(state = "disabled")
             self.button_switch_favourite_ip.configure(state = "disabled")
             button_switch_disk.configure(state = "disabled")
@@ -4229,7 +4049,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         button_edit_main =          customtkinter.CTkButton(master = self.main_widgets, width = 110,height=40,text = "Editovat",command =  lambda: self.edit_project(),font=("Arial",20,"bold"),corner_radius=0)
         self.undo_edit =            customtkinter.CTkButton(master = self.main_widgets, width = 50,height=40,text = "↶", command =  lambda: self.manage_bin(flag="load_edited_ip"),font=("",28,"bold"),corner_radius=0,border_width=1,text_color="red")
         button_make_first =         customtkinter.CTkButton(master = self.main_widgets, width = 200,height=40,text = "Přesunout na začátek",command =  lambda: self.make_project_first(),font=("Arial",20,"bold"),corner_radius=0)
-        button_settings_behav =     customtkinter.CTkButton(master = self.main_widgets, width = 40,height=40,text="⚙️",command =  lambda: self.setting_window(ip_window=True),font=("",22),corner_radius=0)
+        button_settings_behav =     customtkinter.CTkButton(master = self.main_widgets, width = 40,height=40,text="⚙️",command =  lambda: self.setting_window(),font=("",22),corner_radius=0)
         manual_ip_set =             customtkinter.CTkButton(master = self.main_widgets, width = 40,height=40,text="Manuálně",command =  lambda: self.manual_ip_setting(),font=("Arial",20,"bold"),corner_radius=0)
         
         if self.show_favourite:
@@ -4248,7 +4068,7 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
                 self.undo_button.configure(state = "disabled")
 
         # edit undo
-        if get_none_count(self.bin_projects[2]) < 2 and len(self.bin_projects[2]) == 5:
+        if get_none_count(self.bin_projects[1]) < 2 and len(self.bin_projects[1]) == 5:
             self.undo_edit.configure(state = "normal")
         else:
             self.undo_edit.configure(state = "disabled")
@@ -4360,11 +4180,54 @@ class IP_assignment: # Umožňuje měnit statickou IP a mountit disky
         self.root.bind("<Control-Button-1>",lambda e: multi_select())
         self.root.bind("<KeyRelease-Control_L>",lambda e: control_button(False))
         self.root.bind("<Delete>",lambda e: self.delete_project(button_trigger=True,flag="main_menu"))
-        self.root.mainloop()
+        # self.root.mainloop()
 
-    def create_widgets_disk(self,init=None):
-        dm = Disk_management_gui(self.root,self.callback,self.window_mode,self.initial_path)
+class main:
+    def __init__(self,root,menu_callback_function,window_mode,initial_path,zoom_factor):
+        self.root = root
+        self.menu_callback = menu_callback_function
+        self.initial_path = initial_path
+        self.window_mode = window_mode
+        self.zoom_factor = zoom_factor
+        self.show_favourite_ip = False
+        self.excel_file_path = initial_path + "config_TRIMAZKON.xlsx"
+        ip_instance = IP_assignment(self.root,self.menu_callback,self.window_mode,self.initial_path)
+        disk_instance = Disk_management_gui(self.root,self.menu_callback,self.window_mode,self.initial_path)
+        default_environment = self.check_default_env()
+        if default_environment == "disk":
+            disk_instance.ip_instance = ip_instance
+            disk_instance.create_widgets_disk(init=True,disk_instance=disk_instance)
+
+        elif default_environment == "config_load_error":
+            ip_instance.disk_instance = disk_instance
+            ip_instance.create_widgets(init=True,excel_load_error=True,ip_instance=ip_instance)     
+        else:
+            ip_instance.disk_instance = disk_instance
+            ip_instance.create_widgets(fav_status=self.show_favourite_ip,init=True,ip_instance=ip_instance)
+
+    def check_default_env(self):
+        try:
+            workbook = load_workbook(self.excel_file_path)
+            worksheet = workbook["Settings"]
+            def_environment = worksheet['B' + str(4)].value
+            if int(def_environment) == 0:
+                def_environment = "disk"
+
+            def_show_favourite = worksheet['B' + str(3)].value
+            if int(def_show_favourite) == 1:
+                self.show_favourite_ip = True
+            else:
+                self.show_favourite_ip = False
+
+            workbook.save(self.excel_file_path) #check if it is opened currently
+            workbook.close()
+            return def_environment
+        
+        except Exception as e:
+            print(f"Nejprve zavřete soubor {self.excel_file_path} Chyba: {e}")
+            return "config_load_error"
 
 if testing_mode:
-    IP_assignment(root,"","max",str(os.getcwd())+"\\",100)
+    # IP_assignment(root,"","max",str(os.getcwd())+"\\",100)
+    main(root,"","max",str(os.getcwd())+"\\",100)
     root.mainloop()

@@ -8,7 +8,7 @@ import Deleting_option_v1 as Deleting
 import Converting_option_v3 as Converting
 import catalogue_maker_v5 as Catalogue
 # import sharepoint_download as download_database
-import IP_setting_v2 as IP_setting
+import IP_setting_v3 as IP_setting
 import string_database
 from tkinter import filedialog
 import tkinter as tk
@@ -5238,7 +5238,8 @@ class IP_manager: # Umožňuje nastavit možnosti třídění souborů
         app_data = read_config_data()
         zoom_factor = app_data[21] 
 
-        IP_setting.IP_assignment(self.root,self.callback,current_window_size,initial_path,zoom_factor)
+        # IP_setting.IP_assignment(self.root,self.callback,current_window_size,initial_path,zoom_factor)
+        IP_setting.main(self.root,self.callback,current_window_size,initial_path,zoom_factor)
 
 class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
     """
