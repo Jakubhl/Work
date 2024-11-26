@@ -25,6 +25,7 @@ if testing_mode:
     root=customtkinter.CTk()
     root.geometry("1200x900")
     root.title("ip_setting - testing")
+    root.state('zoomed')
 
 class Tools:
     @classmethod
@@ -203,6 +204,22 @@ class Tools:
                 string_for_excel = string_for_excel + str(notes_legit_rows[i])
 
         return string_for_excel
+    
+    @classmethod
+    def focused_entry_widget(cls,root):
+        currently_focused = str(root.focus_get())
+        if ".!ctkentry" in currently_focused or ".!ctktextbox" in currently_focused:
+            return True
+        else:
+            return False
+
+    @classmethod
+    def get_none_count(cls,array_given):
+        none_count = 0
+        for items in array_given:
+            if items == None:
+                none_count += 1
+        return none_count
 
 class Disk_management_tools:  
     @classmethod
@@ -281,7 +298,20 @@ class Disk_management_tools:
         return non_persistent_drives
 
     @classmethod
-    def save_excel_data_disk(cls,excel_file_path,len_of_disk_array,last_project_id,project_name,disk_letter,ftp_address,username,password,notes,only_edit = None,force_row_to_print=None,force_ws = None,wb_given = None):
+    def save_excel_data_disk(cls,
+                             excel_file_path,
+                             len_of_disk_array,
+                             last_project_id,
+                             project_name,
+                             disk_letter,
+                             ftp_address,
+                             username,
+                             password,
+                             notes,
+                             only_edit = None,
+                             force_row_to_print=None,
+                             force_ws = None,
+                             wb_given = None):
         if wb_given == None:
             workbook = load_workbook(excel_file_path)
         else:
@@ -421,33 +451,19 @@ class Disk_management_gui:
         flag = unfocus:
         - při kliku mimo se odebere focus z nakliknutých widgetů
         """
-        print("widget_id",widget_id)
-        if widget_id == None:
-            return
-
         def on_leave_entry(widget,row_of_widget):
             """
             při kliku na jiný widget:
             - upraví text pouze na první řádek
             """
-            if self.managing_disk:
-                widget.configure(state = "normal")
-                if "\n" in self.disk_all_rows[row_of_widget][5]:
-                    notes_rows = self.disk_all_rows[row_of_widget][5].split("\n")
-                    first_row = notes_rows[0]
-                    widget.delete("1.0",tk.END)
-                    widget.insert(tk.END,str(first_row))
-                if self.default_note_behav == 0:
-                    widget.configure(state = "disabled")
-            else:
-                widget.configure(state = "normal")
-                if "\n" in self.all_rows[row_of_widget][3]:
-                    notes_rows = self.all_rows[row_of_widget][3].split("\n")
-                    first_row = notes_rows[0]
-                    widget.delete("1.0",tk.END)
-                    widget.insert(tk.END,str(first_row))
-                if self.default_note_behav == 0:
-                    widget.configure(state = "disabled")
+            widget.configure(state = "normal")
+            if "\n" in self.disk_all_rows[row_of_widget][5]:
+                notes_rows = self.disk_all_rows[row_of_widget][5].split("\n")
+                first_row = notes_rows[0]
+                widget.delete("1.0",tk.END)
+                widget.insert(tk.END,str(first_row))
+            if self.default_note_behav == 0:
+                widget.configure(state = "disabled")
 
         def shrink_frame(widget_frame,widget_notes):
             widget_notes.configure(state = "normal")
@@ -473,6 +489,9 @@ class Disk_management_gui:
                 print("chyba při odebírání focusu: ",e)
             return
 
+        if widget_id == None:
+            return
+        print("widget_id",widget_id)
         self.search_input.delete("0","300")
         self.search_input.insert("0",str(self.disk_all_rows[widget_id][0]))
         self.check_given_input()
@@ -584,12 +603,6 @@ class Disk_management_gui:
         - change_notes_back_disk
         """
         bin_worksheet = "projects_bin2"
-        def get_none_count(array_given):
-            none_count = 0
-            for items in array_given:
-                if items == None:
-                    none_count += 1
-            return none_count
         
         def read_sheet():
             wb = load_workbook(self.excel_file_path)
@@ -699,7 +712,7 @@ class Disk_management_gui:
             Tools.add_colored_line(self.main_console,f"Poznámky u projektu: {project_name} byly úspěšně obnoveny","green",None,True)
             self.make_project_cells_disk()
 
-            if get_none_count(self.bin_projects[1]) < 4 and len(self.bin_projects[1]) == 6:
+            if Tools.get_none_count(self.bin_projects[1]) < 4 and len(self.bin_projects[1]) == 6:
                 self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="load_edited_disk"))
             else:
                 self.undo_edit.configure(state = "disabled")
@@ -1020,12 +1033,11 @@ class Disk_management_gui:
             if only_edit == None:
                 self.make_project_cells_disk()
                 Tools.add_colored_line(self.main_console,f"Přidán nový projekt: {project_name}","green",None,True)
-            else: #musi byt proveden reset
+            else: # edit - musi byt proveden reset
                 self.edited_project_name_disk = project_name
                 self.manage_bin("save_edited_disk",parameters=[self.last_project_name,self.last_project_disk_letter,self.last_project_ftp,
                                                                self.last_project_username,self.last_project_password,self.last_project_notes])
                 self.make_project_cells_disk()
-
                 if self.last_project_name != project_name:
                     status_text = f"Projekt: {self.last_project_name} (nově: {project_name}) úspěšně pozměněn"
                 else:
@@ -1615,14 +1627,6 @@ class Disk_management_gui:
             self.ip_instance = copy.copy(ip_instance)
 
         Tools.clear_frame(self.root)
-
-        def get_none_count(array_given):
-            none_count = 0
-            for items in array_given:
-                if items == None:
-                    none_count += 1
-            return none_count
-        
         def edit_project():
             result = self.check_given_input()
             if result == True:
@@ -1639,7 +1643,6 @@ class Disk_management_gui:
                 Tools.save_setting_parameter(parameter="change_def_window_size",status=0,excel_path=self.excel_file_path)
                 
         Tools.clear_frame(self.root)
-        self.managing_disk = True
         self.selected_list_disk = []
         self.control_pressed = False
         Tools.save_setting_parameter(parameter="change_def_main_window",status=1,excel_path=self.excel_file_path)
@@ -1693,13 +1696,13 @@ class Disk_management_gui:
         self.main_console.grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
         # self.option_change("",only_console=True)
 
-        if get_none_count(self.bin_projects[1]) < 4 and len(self.bin_projects[1]) == 6:
+        if Tools.get_none_count(self.bin_projects[1]) < 4 and len(self.bin_projects[1]) == 6:
             self.undo_edit.configure(state = "normal")
         else:
             self.undo_edit.configure(state = "disabled")
 
         # poznámky, username, password mohou být None
-        if get_none_count(self.bin_projects[0]) < 4 and len(self.bin_projects[0]) > 2:
+        if Tools.get_none_count(self.bin_projects[0]) < 4 and len(self.bin_projects[0]) > 2:
             self.undo_button.configure(state = "normal")
         else:
             self.undo_button.configure(state = "disabled")
@@ -1718,7 +1721,7 @@ class Disk_management_gui:
             self.root.update()
             current_width = int(self.root.winfo_width())
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
-            if self.focused_entry_widget(): # pokud nabindovane pismeno neni vepisovano do entry widgetu
+            if Tools.focused_entry_widget(self.root): # pokud nabindovane pismeno neni vepisovano do entry widgetu
                 return
             if int(current_width) > 1200:
                 self.root.state('normal')
@@ -1772,6 +1775,248 @@ class Disk_management_gui:
         self.make_project_cells_disk()
         # self.root.mainloop()
 
+class IP_assignment_tools:
+    @classmethod
+    def save_excel_data(cls,
+                        excel_file_path,
+                        len_of_excel_array,
+                        last_project_id,
+                        show_favorite_status,
+                        project_name,
+                        IP_adress,
+                        mask,
+                        notes,
+                        only_edit = None,
+                        force_row_to_print=None,
+                        fav_status = None,
+                        force_ws = None,
+                        wb_given = None):
+        if wb_given == None:
+            workbook = load_workbook(excel_file_path)
+        else:
+            workbook = wb_given
+
+        if show_favorite_status:
+            excel_worksheet = "ip_address_fav_list"
+        else:
+            excel_worksheet = "ip_address_list"
+        if force_ws != None:
+            excel_worksheet = force_ws
+        worksheet = workbook[excel_worksheet]
+
+        # excel je od jednicky...
+        if force_row_to_print == None:
+            row_to_print = len_of_excel_array +1
+            if only_edit != None:
+                #pouze změna na temtýž řádku
+                row_to_print = (len_of_excel_array- last_project_id)
+        else:
+            row_to_print = force_row_to_print
+        if notes == None or notes.replace(" ","") == "":
+            notes = ""
+        #A = nazev projektu
+        print("saving",row_to_print,project_name)
+        worksheet['A' + str(row_to_print)] = project_name
+        #B = ip adresa
+        worksheet['B' + str(row_to_print)] = IP_adress
+        #C = maska
+        worksheet['C' + str(row_to_print)] = mask
+        #D = poznamky
+        worksheet['D' + str(row_to_print)] = notes
+        #E = oblibenost
+        if fav_status != None:
+            if fav_status == True:
+                fav_status = 1
+            worksheet['E' + str(row_to_print)] = fav_status
+        else:
+            worksheet['E' + str(row_to_print)] = 0
+
+        workbook.save(filename=excel_file_path)
+        if wb_given == None:
+            workbook.close()
+
+    @classmethod
+    def read_excel_data(cls,excel_file_path,show_favorite_status):
+        """
+        returns:
+        - [0] all_rows_ip list
+        - [1] project_list
+        - [2] favorite_list
+        """
+        if show_favorite_status:
+            excel_worksheet = "ip_address_fav_list"
+        else:
+            excel_worksheet = "ip_address_list"
+        workbook = load_workbook(excel_file_path)
+        # seznam vsech statickych ip adres
+        all_rows_ip = []
+        project_list = []
+        favourite_list = []
+        worksheet = workbook[excel_worksheet]
+        for row in worksheet.iter_rows(values_only=True):
+            row_array = []
+            for items in row[:4]:
+                if items is None:
+                    row_array.append("")
+                else:
+                    row_array.append(str(items))
+            if len(row_array) < 4:
+                row_array.append("")
+            project_list.insert(0,row_array[0])
+            all_rows_ip.insert(0,row_array)
+            for items in row[4:5]:
+                favourite_list.insert(0,items)
+        workbook.close()
+        return [all_rows_ip,project_list,favourite_list]
+
+    @classmethod
+    def get_current_ip_list(cls,connection_option_list):
+        def get_current_ip_address(interface_name):
+        # Get network interfaces and their addresses
+            addresses = psutil.net_if_addrs()
+            # Check if the specified interface exists
+            if interface_name in addresses:
+                addr_count = 0
+                # print(f"Adresy interfacu: {interface_name}")
+                for addr in addresses[interface_name]:
+                    # prvni AF_INET je pridelena automaticky, druha je privatni, nastavena DHCP
+                    if addr.family == socket.AF_INET:  # IPv4 address
+                        if addr_count == 1:
+                            return addr.address
+                        addr_count +=1
+                        remembered_addr = addr
+                if addr_count == 1:
+                    if "AddressFamily.AF_INET:" in str(remembered_addr):
+                        return remembered_addr.address
+                    else:
+                        return "Nenalezeno"
+            else:
+                return "Nenalezeno"
+        current_address_list = []
+        for items in connection_option_list:
+            found_address = get_current_ip_address(items)
+            current_address_list.append(found_address)
+        return current_address_list
+    
+    @classmethod
+    def fill_interfaces(cls):
+        """
+        Vrátí:
+        - seznam interfaců [0]
+        - seznam připojených interfaců [1]
+        """
+        process = subprocess.Popen("netsh interface show interface",
+                                                    stdout=subprocess.PIPE,
+                                                    stderr=subprocess.PIPE,
+                                                    creationflags=subprocess.CREATE_NO_WINDOW)
+        stdout, stderr = process.communicate()
+        try:
+            stdout_str = stdout.decode('utf-8')
+            data = str(stdout_str)
+        except UnicodeDecodeError:
+            try:
+                stdout_str = stdout.decode('cp1250')
+                data = str(stdout_str)
+            except UnicodeDecodeError:
+                data = str(stdout)
+            
+        lines = data.strip().splitlines()
+        interfaces = []
+        interface_statuses =[]
+        # Process each line starting from the second line
+        for line in lines[2:]:  # Skip the first two lines (headers and separator)
+            # Split the line based on spaces
+            values = line.split()
+            if len(values) >= 4:  # Ensure there are enough columns
+                # Combine the last columns into Interface Name, handle spaces in the name
+                interface_name = ' '.join(values[3:])
+                interface_statuses.append(values[1])
+                interfaces.append(interface_name)
+
+        print("interface list: ",interfaces)
+        print("status: ", interface_statuses)
+        connected_interfaces =[]
+        for i in range(0,len(interface_statuses)):
+            if interface_statuses[i] != "Odpojen" and interface_statuses[i] != "Odpojeno" and interface_statuses[i] != "Disconnected":
+                if interfaces[i] not in connected_interfaces:
+                    connected_interfaces.append(interfaces[i])
+        print("online: ", connected_interfaces)
+        
+        return [interfaces,connected_interfaces]
+
+    @classmethod
+    def get_ipv4_addresses(cls):
+        """
+        returns list of ipv4 addresses of all interfaces
+        """
+        process = subprocess.Popen("ipconfig",
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    creationflags=subprocess.CREATE_NO_WINDOW)
+        stdout, stderr = process.communicate()
+        result2 = "" 
+        try:
+            stdout_str = stdout.decode('cp1250')
+            result2 = str(stdout_str)
+            
+        except Exception as e:
+            print("chyba ",e)
+
+        # Regular expression to match the IPv4 address
+        ipv4_pattern = re.compile(r'IPv4 Address[.\s]*: ([\d.]+)')
+        ipv4_addresses = []
+        lines = result2.splitlines()
+        current_interface = None
+        # Iterate over each line to find interface names and IPv4 addresses
+        for line in lines:
+            if line.strip():
+                # Detect interface name
+                if line[0].isalpha():
+                    current_interface = line.strip()
+                else:
+                    # Detect IPv4 address for the current interface
+                    match = ipv4_pattern.search(line)
+                    if match and current_interface:
+                        ipv4_addresses.append(current_interface)
+                        ipv4_addresses.append(match.group(1))
+        return ipv4_addresses
+
+    @classmethod
+    def check_DHCP(cls,interface):
+        process = subprocess.Popen(f'netsh interface ip show config name="{interface}"',
+                                                    stdout=subprocess.PIPE,
+                                                    stderr=subprocess.PIPE,
+                                                    creationflags=subprocess.CREATE_NO_WINDOW)
+        stdout, stderr = process.communicate()
+        try:
+            stdout_str = stdout.decode('utf-8')
+            output_data = str(stdout_str)
+        except UnicodeDecodeError:
+            try:
+                stdout_str = stdout.decode('cp1250')
+                output_data = str(stdout_str)
+            except UnicodeDecodeError:
+                output_data = str(stdout)
+
+        output_data_lines = output_data.split("\n")
+        for lines in output_data_lines:
+            if "DHCP enabled" in lines and "Yes" in lines:
+                print(f"{interface} DHCP: yes")
+                return True
+        print(f"{interface} DHCP: no")
+
+    @classmethod
+    def is_project_favourite(cls,favourite_list,array_index):
+        try:
+            fav_status = int(favourite_list[array_index])
+            if fav_status == 1:
+                return True
+            else:
+                return False
+            
+        except Exception:
+            return False
+
 class IP_assignment: # Umožňuje měnit statickou IP
     """
     Umožňuje měnit nastavení statických IP adres
@@ -1793,32 +2038,21 @@ class IP_assignment: # Umožňuje měnit statickou IP
         self.last_project_mask = ""
         self.last_project_notes = ""
         self.last_project_id = ""
-        # self.last_project_disk_letter = ""
-        # self.last_project_ftp = ""
-        # self.last_project_username = ""
-        # self.last_project_password = ""
-        # self.managing_disk = False
-        # self.connection_status = None
         self.make_project_favourite = False
         self.favourite_list = []
         self.connection_option_list = []
-        # self.mapping_condition = 0
         self.last_selected_widget = ""
         self.last_selected_notes_widget = ""
         self.last_selected_textbox = ""
         self.last_selected_widget_id = 0
         self.opened_window = ""
         self.ip_frame_list = []
-        # self.disk_letter_frame_list = []
         self.selected_list = []
-        # self.selected_list_disk = []
         self.remember_to_change_back = []
         self.control_pressed = False
         self.edited_project_name = None
-        # self.edited_project_name_disk = None
         self.bin_projects = [[None],[None]]
         self.changed_notes = []
-        # self.changed_notes_disk = []
         self.notes_frame_height = 50
 
         read_parameters = Tools.read_setting_parameters(self.excel_file_path)
@@ -1849,8 +2083,8 @@ class IP_assignment: # Umožňuje měnit statickou IP
         Funkce čistí všechny zaplněné rámečky a funguje, jako tlačítko zpět do hlavního menu trimazkonu
         """
 
-        self.clear_frame(self.main_widgets)
-        self.clear_frame(self.root)
+        Tools.clear_frame(self.main_widgets)
+        Tools.clear_frame(self.root)
         # self.root.unbind("<f>")
         self.root.unbind("<Escape>")
         self.root.unbind("<F5>")
@@ -1862,26 +2096,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
         self.root.update()
         self.root.update_idletasks()
         self.menu_callback()
-
-    def clear_frame(self,frame):
-        frame.update()
-        frame.update_idletasks()
-        for widget in frame.winfo_children():
-            try:
-                if widget.winfo_exists():
-                    widget.unbind("<Enter>")
-                    widget.unbind("<Leave>")
-                    widget.unbind("<Return>")
-                    widget.unbind("<Button-1>")
-                    widget.unbind("<Button-3>")
-                    widget.unbind("<Double-1>")
-                    widget.unbind("<MouseWheel>")
-                    widget.pack_forget()
-                    widget.grid_forget()
-                    widget.destroy()
-            except Exception:
-                pass
-        
+ 
     def manage_bin(self,flag="",parameters=[],wb=None):
         """
         First_row in bin worksheet = last deleted ip\n
@@ -1897,12 +2112,6 @@ class IP_assignment: # Umožňuje měnit statickou IP
         - change_notes_back
         """
         bin_worksheet = "projects_bin2"
-        def get_none_count(array_given):
-            none_count = 0
-            for items in array_given:
-                if items == None:
-                    none_count += 1
-            return none_count
         
         def read_sheet():
             wb = load_workbook(self.excel_file_path)
@@ -1927,14 +2136,35 @@ class IP_assignment: # Umožňuje měnit statickou IP
                 if wb == None:
                     return False
                 self.undo_button.configure(state = "normal")
-                self.save_excel_data(parameters[0],parameters[1],parameters[2],parameters[3],force_row_to_print=excel_row,force_ws=bin_worksheet,wb_given=wb)
+                IP_assignment_tools.save_excel_data(self.excel_file_path,
+                                                    len(self.all_rows),
+                                                    self.last_project_id,
+                                                    self.show_favourite,
+                                                    parameters[0],
+                                                    parameters[1],
+                                                    parameters[2],
+                                                    parameters[3],
+                                                    force_row_to_print=excel_row,
+                                                    force_ws=bin_worksheet,
+                                                    wb_given=wb)
                 self.bin_projects[0] = [parameters[0],parameters[1],parameters[2],parameters[3]]
             # saving after editing:
             elif flag == "save_edited_ip":
                 excel_row = 3
                 self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="load_edited_ip"))
                 print("saving changes to excel: ",parameters)
-                self.save_excel_data(parameters[0],parameters[1],parameters[2],parameters[3],force_row_to_print=excel_row,force_ws=bin_worksheet,wb_given=wb,fav_status=parameters[4])
+                IP_assignment_tools.save_excel_data(self.excel_file_path,
+                                                    len(self.all_rows),
+                                                    self.last_project_id,
+                                                    self.show_favourite,
+                                                    parameters[0],
+                                                    parameters[1],
+                                                    parameters[2],
+                                                    parameters[3],
+                                                    force_row_to_print=excel_row,
+                                                    fav_status=parameters[4],
+                                                    force_ws=bin_worksheet,
+                                                    wb_given=wb)
                 self.bin_projects[1] = [parameters[0],parameters[1],parameters[2],parameters[3],parameters[4]]
 
         def change_notes_back():
@@ -1948,7 +2178,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
                     try:
                         wanted_project = self.all_rows[row][0]
                         self.show_favourite = new_fav_status
-                        self.read_excel_data()
+                        self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
                         for i in range(0,len(self.all_rows)):
                             if self.all_rows[i][0] == wanted_project:
                                 index_of_project = i
@@ -1982,7 +2212,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
 
                 workbook.save(filename=self.excel_file_path)
                 workbook.close()
-                self.read_excel_data()
+                self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
             
             project_name = self.changed_notes[0]
             notes_before = self.changed_notes[1]
@@ -1995,7 +2225,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
             Tools.add_colored_line(self.main_console,f"Poznámky u projektu: {project_name} byly úspěšně obnoveny","green",None,True)
             self.make_project_cells()
 
-            if get_none_count(self.bin_projects[1]) < 2 and len(self.bin_projects[1]) == 5:
+            if Tools.get_none_count(self.bin_projects[1]) < 2 and len(self.bin_projects[1]) == 5:
                 self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="load_edited_ip"))
             else:
                 self.undo_edit.configure(state = "disabled")
@@ -2022,8 +2252,18 @@ class IP_assignment: # Umožňuje měnit statickou IP
             ws.delete_rows(1)
             wb.save(self.excel_file_path)
             wb.close()
-
-            self.save_excel_data(project_name,row_data_ip[1],row_data_ip[2],row_data_ip[3],only_edit=True,force_row_to_print=len(self.all_rows)+1,fav_status=0,force_ws="ip_address_list")
+            IP_assignment_tools.save_excel_data(self.excel_file_path,
+                                                len(self.all_rows),
+                                                self.last_project_id,
+                                                self.show_favourite,
+                                                project_name,
+                                                row_data_ip[1],
+                                                row_data_ip[2],
+                                                row_data_ip[3],
+                                                only_edit=True,
+                                                force_row_to_print=len(self.all_rows)+1,
+                                                fav_status=0,
+                                                force_ws="ip_address_list")
             Tools.add_colored_line(self.main_console,f"Projekt: {project_name} byl úspěšně obnoven","green",None,True)
             self.make_project_cells()
 
@@ -2074,147 +2314,6 @@ class IP_assignment: # Umožňuje měnit statickou IP
         output = mapping_logic[flag]()  # This will call the corresponding function
         return output
 
-    def fill_interfaces(self):
-        """
-        Vrátí:
-        - seznam interfaců [0]
-        - seznam připojených interfaců [1]
-        """
-        process = subprocess.Popen("netsh interface show interface",
-                                                    stdout=subprocess.PIPE,
-                                                    stderr=subprocess.PIPE,
-                                                    creationflags=subprocess.CREATE_NO_WINDOW)
-        stdout, stderr = process.communicate()
-        try:
-            stdout_str = stdout.decode('utf-8')
-            data = str(stdout_str)
-        except UnicodeDecodeError:
-            try:
-                stdout_str = stdout.decode('cp1250')
-                data = str(stdout_str)
-            except UnicodeDecodeError:
-                data = str(stdout)
-            
-        lines = data.strip().splitlines()
-        interfaces = []
-        interface_statuses =[]
-        # Process each line starting from the second line
-        for line in lines[2:]:  # Skip the first two lines (headers and separator)
-            # Split the line based on spaces
-            values = line.split()
-            if len(values) >= 4:  # Ensure there are enough columns
-                # Combine the last columns into Interface Name, handle spaces in the name
-                interface_name = ' '.join(values[3:])
-                interface_statuses.append(values[1])
-                interfaces.append(interface_name)
-
-        print("interface list: ",interfaces)
-        print("status: ", interface_statuses)
-        connected_interfaces =[]
-        for i in range(0,len(interface_statuses)):
-            if interface_statuses[i] != "Odpojen" and interface_statuses[i] != "Odpojeno" and interface_statuses[i] != "Disconnected":
-                if interfaces[i] not in connected_interfaces:
-                    connected_interfaces.append(interfaces[i])
-        print("online: ", connected_interfaces)
-        
-        return [interfaces,connected_interfaces]
-
-    def read_excel_data(self,force_ws = None):
-        if self.show_favourite:
-            excel_worksheet = "ip_address_fav_list"
-        else:
-            excel_worksheet = "ip_address_list"
-        if force_ws != None:
-            excel_worksheet = force_ws
-        workbook = load_workbook(self.excel_file_path)
-        # seznam vsech statickych ip adres
-        self.all_rows = []
-        self.project_list = []
-        self.favourite_list = []
-        worksheet = workbook[excel_worksheet]
-        for row in worksheet.iter_rows(values_only=True):
-            row_array = []
-            for items in row[:4]:
-                if items is None:
-                    row_array.append("")
-                else:
-                    row_array.append(str(items))
-            if len(row_array) < 4:
-                row_array.append("")
-            self.project_list.insert(0,row_array[0])
-            self.all_rows.insert(0,row_array)
-            for items in row[4:5]:
-                self.favourite_list.insert(0,items)
-            
-        # seznam vsech ftp pripojeni k diskum
-        self.disk_all_rows = []
-        self.disk_project_list = []  
-        worksheet = workbook["disk_list"]
-        for row in worksheet.iter_rows(values_only=True):
-            row_array = []
-            for items in row[:6]:
-                if items is None:
-                    row_array.append("")
-                else:
-                    row_array.append(str(items))
-            """if len(row_array) < 4:
-                row_array.append("")"""
-            self.disk_project_list.insert(0,row_array[0])
-            self.disk_all_rows.insert(0,row_array)
-
-        # ukladani nastavenych hodnot
-        worksheet = workbook["Settings"]
-        saved_def_con_option = worksheet['B' + str(1)].value
-        self.default_connection_option = int(saved_def_con_option)
-
-        # self.default_disk_status_behav = int(worksheet['B' + str(6)].value)
-        workbook.close()
-                     
-    def save_excel_data(self,project_name,IP_adress,mask,notes,only_edit = None,force_row_to_print=None,fav_status = None,force_ws = None,wb_given = None):
-        if wb_given == None:
-            workbook = load_workbook(self.excel_file_path)
-        else:
-            workbook = wb_given
-
-        if self.show_favourite:
-            excel_worksheet = "ip_address_fav_list"
-        else:
-            excel_worksheet = "ip_address_list"
-        if force_ws != None:
-            excel_worksheet = force_ws
-        worksheet = workbook[excel_worksheet]
-
-        # excel je od jednicky...
-        if force_row_to_print == None:
-            row_to_print = int(len(self.all_rows)) +1
-            if only_edit != None:
-                #pouze změna na temtýž řádku
-                row_to_print = (len(self.all_rows)- self.last_project_id)
-        else:
-            row_to_print = force_row_to_print
-        if notes == None or notes.replace(" ","") == "":
-            notes = ""
-        #A = nazev projektu
-        print("saving",row_to_print,project_name)
-        worksheet['A' + str(row_to_print)] = project_name
-        #B = ip adresa
-        worksheet['B' + str(row_to_print)] = IP_adress
-        #C = maska
-        worksheet['C' + str(row_to_print)] = mask
-        #D = poznamky
-        worksheet['D' + str(row_to_print)] = notes
-        #E = oblibenost
-        if fav_status != None:
-            if fav_status == True:
-                fav_status = 1
-            worksheet['E' + str(row_to_print)] = fav_status
-        else:
-            worksheet['E' + str(row_to_print)] = 0
-
-        workbook.save(filename=self.excel_file_path)
-        if wb_given == None:
-            workbook.close()
-
     def switch_fav_status(self,operation:str,project_given=None,change_status = False):
         if project_given == None:
             selected_project = str(self.search_input.get())
@@ -2228,34 +2327,62 @@ class IP_assignment: # Umožňuje měnit statickou IP
         if self.show_favourite == False:
             if operation == "add_favourite":
                 if change_status:
-                    self.save_excel_data(selected_project[0],selected_project[1],selected_project[2],selected_project[3],True,None,fav_status=1)
+                    IP_assignment_tools.save_excel_data(self.excel_file_path,
+                                                        len(self.all_rows),
+                                                        self.last_project_id,
+                                                        self.show_favourite,
+                                                        selected_project[0],
+                                                        selected_project[1],
+                                                        selected_project[2],
+                                                        selected_project[3],
+                                                        only_edit=True,
+                                                        fav_status=1)
                 self.show_favourite = True
-                self.read_excel_data()
+                self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
                 # do tohoto prostředí uložím na začátek
                 self.all_rows.insert(0,selected_project)
                 for i in range(0,len(self.all_rows)):
                     row = (len(self.all_rows)-1)-i
-                    self.save_excel_data(self.all_rows[i][0],self.all_rows[i][1],self.all_rows[i][2],self.all_rows[i][3],None,row+1,fav_status=1)
+                    IP_assignment_tools.save_excel_data(self.excel_file_path,
+                                                        len(self.all_rows),
+                                                        self.last_project_id,
+                                                        self.show_favourite,
+                                                        self.all_rows[i][0],
+                                                        self.all_rows[i][1],
+                                                        self.all_rows[i][2],
+                                                        self.all_rows[i][3],
+                                                        force_row_to_print=row+1,
+                                                        fav_status=1)
                 # přepnutí zpět
                 self.show_favourite = False
-                self.read_excel_data()
+                self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
+
             
             elif operation == "del_favourite":
                 if change_status:
-                    self.save_excel_data(selected_project[0],selected_project[1],selected_project[2],selected_project[3],True,None,fav_status=0)
+                    IP_assignment_tools.save_excel_data(self.excel_file_path,
+                                                        len(self.all_rows),
+                                                        self.last_project_id,
+                                                        self.show_favourite,
+                                                        selected_project[0],
+                                                        selected_project[1],
+                                                        selected_project[2],
+                                                        selected_project[3],
+                                                        only_edit=True,
+                                                        fav_status=0)
                 # přepnutí
                 self.show_favourite = True
-                self.read_excel_data()
+                self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
                 # z tohoto prostředí smažu
                 self.delete_project(wanted_project=selected_project[0],silence=True,del_favourite = True)
                 # přepnutí zpět
                 self.show_favourite = False
-                self.read_excel_data()
+                self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
 
             elif operation == "rewrite_favourite":
                 # přepnutí
                 self.show_favourite = True
-                self.read_excel_data()
+                self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
                 # nejprve popnu stary projekt, s povodnim jmenem
                 # poté insertnu pozměněný
                 the_id_to_pop = self.project_list.index(self.last_project_name)
@@ -2263,17 +2390,26 @@ class IP_assignment: # Umožňuje měnit statickou IP
                 self.all_rows.insert(0,selected_project)
                 for i in range(0,len(self.all_rows)):
                     row = (len(self.all_rows)-1)-i
-                    self.save_excel_data(self.all_rows[i][0],self.all_rows[i][1],self.all_rows[i][2],self.all_rows[i][3],None,row+1,fav_status=1)
+                    IP_assignment_tools.save_excel_data(self.excel_file_path,
+                                                        len(self.all_rows),
+                                                        self.last_project_id,
+                                                        self.show_favourite,
+                                                        self.all_rows[i][0],
+                                                        self.all_rows[i][1],
+                                                        self.all_rows[i][2],
+                                                        self.all_rows[i][3],
+                                                        force_row_to_print=row+1,
+                                                        fav_status=1)
                 # přepnutí zpět
                 self.show_favourite = False
-                self.read_excel_data()
+                self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
 
         elif self.show_favourite:
             # z aktuálního prostředí smažu
             self.delete_project(wanted_project=selected_project[0],silence=True)
             # musim prepnout prostředí jen kvůli změně statusu
             self.show_favourite = False
-            self.read_excel_data()
+            self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
             match_found = False
             for i in range(0,len(self.project_list)):
                 if self.project_list[i] == selected_project[0] and len(str(self.project_list[i])) == len(str(selected_project[0])):
@@ -2281,11 +2417,20 @@ class IP_assignment: # Umožňuje měnit statickou IP
                     match_found = True
             if match_found:
                 row = len(self.all_rows) - row_index
-                self.save_excel_data(self.all_rows[row_index][0],self.all_rows[row_index][1],self.all_rows[row_index][2],self.all_rows[row_index][3],None,row,fav_status=0)
-
+                IP_assignment_tools.save_excel_data(self.excel_file_path,
+                                                    len(self.all_rows),
+                                                    self.last_project_id,
+                                                    self.show_favourite,
+                                                    self.all_rows[row_index][0],
+                                                    self.all_rows[row_index][1],
+                                                    self.all_rows[row_index][2],
+                                                    self.all_rows[row_index][3],
+                                                    force_row_to_print=row,
+                                                    fav_status=0)
             # přepnutí zpět
             self.show_favourite = True
-            self.read_excel_data()
+            self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
+
         
         if operation == "with_refresh":
             Tools.add_colored_line(self.main_console,f"Projekt: {selected_project[0]} byl odebrán z oblíbených","green",None,True)
@@ -2308,7 +2453,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
                 try:
                     if new_fav_status != None:
                         self.show_favourite = new_fav_status
-                        self.read_excel_data()
+                        self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
                     for i in range(0,len(self.all_rows)):
                         if self.all_rows[i][0] == wanted_project:
                             index_of_project = i
@@ -2333,16 +2478,16 @@ class IP_assignment: # Umožňuje měnit statickou IP
                 index_of_fav_project = find_project_index(wanted_project,new_fav_status = True)
                 self.show_favourite = False
 
-            self.read_excel_data()
+            self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
             return [index_of_project,index_of_fav_project]
 
         def switch_database():
             if self.show_favourite:
                 self.show_favourite = False
-                self.read_excel_data()
+                self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
             else:
                 self.show_favourite = True
-                self.read_excel_data()
+                self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
 
         def save_history_data():
             if not bin_manage:
@@ -2385,30 +2530,62 @@ class IP_assignment: # Umožňuje měnit statickou IP
             errors += 1
         # poznamky nejsou povinne
         if errors ==0:
-            self.read_excel_data()
+            self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
             # pridavam novy projekt 1: rovnou do oblibených, 2:jen do všech
             if only_edit == None: 
                 row_index_list = get_both_row_indexes(new_project=True)
                 if make_fav:
-                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[0]+1,fav_status=1,force_ws="ip_address_list")
-                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[1]+1,fav_status=1,force_ws="ip_address_fav_list")
+                    IP_assignment_tools.save_excel_data(self.excel_file_path,
+                                                        len(self.all_rows),
+                                                        self.last_project_id,
+                                                        self.show_favourite,
+                                                        project_name,
+                                                        IP_adress,
+                                                        mask,
+                                                        notes,
+                                                        only_edit=True,
+                                                        force_row_to_print=row_index_list[0]+1,
+                                                        fav_status=1,
+                                                        force_ws="ip_address_list")
+                    IP_assignment_tools.save_excel_data(self.excel_file_path,
+                                                        len(self.all_rows),
+                                                        self.last_project_id,
+                                                        self.show_favourite,
+                                                        project_name,
+                                                        IP_adress,
+                                                        mask,
+                                                        notes,
+                                                        only_edit=True,
+                                                        force_row_to_print=row_index_list[1]+1,
+                                                        fav_status=1,
+                                                        force_ws="ip_address_fav_list")
                     Tools.add_colored_line(self.main_console,f"Přidán nový oblíbený projekt: {project_name}","green",None,True)
                 else:
-                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[0]+1,fav_status=0,force_ws="ip_address_list")
+                    IP_assignment_tools.save_excel_data(self.excel_file_path,
+                                                        len(self.all_rows),
+                                                        self.last_project_id,
+                                                        self.show_favourite,
+                                                        project_name,
+                                                        IP_adress,
+                                                        mask,
+                                                        notes,
+                                                        only_edit=True,
+                                                        force_row_to_print=row_index_list[0]+1,
+                                                        fav_status=0,
+                                                        force_ws="ip_address_list")
                     Tools.add_colored_line(self.main_console,f"Přidán nový projekt: {project_name}","green",None,True)
 
             elif only_edit:
                 # kdyz edituji muze mit projekt jiz prideleny status
                 if not bin_manage:
-                    current_fav_status = self.is_project_favourite(self.last_project_id)
+                    current_fav_status = IP_assignment_tools.is_project_favourite(self.favourite_list,self.last_project_id)
                 else:
                     id = 0
                     for i in range(0,len(self.all_rows)):
                         if self.all_rows[i][0] == self.last_project_name:
                             id = i
                     print("last project name", self.last_project_name,"id: ",id)
-
-                    current_fav_status = self.is_project_favourite(id)
+                    current_fav_status = IP_assignment_tools.is_project_favourite(self.favourite_list,id)
                     self.last_project_id = id
 
                 print("current fav status: ",current_fav_status)
@@ -2418,8 +2595,29 @@ class IP_assignment: # Umožňuje měnit statickou IP
                     # zaskrtnuto oblibene + nebyl oblibeny  = ZMENA:
                     row_index_list = get_both_row_indexes(new_project=True)
                     print("pridan do oblibenych", row_index_list)
-                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[1]+1,fav_status=1,force_ws="ip_address_fav_list")
-                    self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=None,fav_status=1)
+                    IP_assignment_tools.save_excel_data(self.excel_file_path,
+                                                        len(self.all_rows),
+                                                        self.last_project_id,
+                                                        self.show_favourite,
+                                                        project_name,
+                                                        IP_adress,
+                                                        mask,
+                                                        notes,
+                                                        only_edit=True,
+                                                        force_row_to_print=row_index_list[1]+1,
+                                                        fav_status=1,
+                                                        force_ws="ip_address_fav_list")
+                    
+                    IP_assignment_tools.save_excel_data(self.excel_file_path,
+                                                        len(self.all_rows),
+                                                        self.last_project_id,
+                                                        self.show_favourite,
+                                                        project_name,
+                                                        IP_adress,
+                                                        mask,
+                                                        notes,
+                                                        only_edit=True,
+                                                        fav_status=1)
 
                     if self.last_project_name != project_name:
                         status_text = f"Projekt: {self.last_project_name} (nově: {project_name}) úspěšně pozměněn a přidán do oblíbených"
@@ -2446,7 +2644,18 @@ class IP_assignment: # Umožňuje měnit statickou IP
 
                     if self.show_favourite:
                         self.delete_project(wanted_project=self.last_project_name,silence=True)
-                        self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[0],fav_status=0,force_ws="ip_address_list")
+                        IP_assignment_tools.save_excel_data(self.excel_file_path,
+                                                        len(self.all_rows),
+                                                        self.last_project_id,
+                                                        self.show_favourite,
+                                                        project_name,
+                                                        IP_adress,
+                                                        mask,
+                                                        notes,
+                                                        only_edit=True,
+                                                        force_row_to_print=row_index_list[0],
+                                                        fav_status=0,
+                                                        force_ws="ip_address_list")
 
                     else:
                         # nejprve smazat z oblíbených:
@@ -2455,7 +2664,16 @@ class IP_assignment: # Umožňuje měnit statickou IP
                         worksheet.delete_rows(row_index_list[1])
                         workbook.save(self.excel_file_path)
                         # poté uložit změnu statusu do všech:
-                        self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=None,fav_status=0)
+                        IP_assignment_tools.save_excel_data(self.excel_file_path,
+                                                        len(self.all_rows),
+                                                        self.last_project_id,
+                                                        self.show_favourite,
+                                                        project_name,
+                                                        IP_adress,
+                                                        mask,
+                                                        notes,
+                                                        only_edit=True,
+                                                        fav_status=0)
 
                     if self.last_project_name != project_name:
                         status_text = f"Projekt: {self.last_project_name} (nově: {project_name}) úspěšně pozměněn a odebrán z oblíbených"
@@ -2477,9 +2695,31 @@ class IP_assignment: # Umožňuje měnit statickou IP
                     row_index_list = get_both_row_indexes()
                     print("pozmenen 1",row_index_list)
                     if row_index_list[0] != "no data":
-                        self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[0],fav_status=current_fav_status,force_ws="ip_address_list")
+                        IP_assignment_tools.save_excel_data(self.excel_file_path,
+                                                            len(self.all_rows),
+                                                            self.last_project_id,
+                                                            self.show_favourite,
+                                                            project_name,
+                                                            IP_adress,
+                                                            mask,
+                                                            notes,
+                                                            only_edit=True,
+                                                            force_row_to_print=row_index_list[0],
+                                                            fav_status=current_fav_status,
+                                                            force_ws="ip_address_list")
                     if row_index_list[1] != "no data":
-                        self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[1],fav_status=current_fav_status,force_ws="ip_address_fav_list")
+                        IP_assignment_tools.save_excel_data(self.excel_file_path,
+                                                            len(self.all_rows),
+                                                            self.last_project_id,
+                                                            self.show_favourite,
+                                                            project_name,
+                                                            IP_adress,
+                                                            mask,
+                                                            notes,
+                                                            only_edit=True,
+                                                            force_row_to_print=row_index_list[1],
+                                                            fav_status=current_fav_status,
+                                                            force_ws="ip_address_fav_list")
                     if self.last_project_name != project_name:
                         status_text = f"Projekt: {self.last_project_name} (nově: {project_name}) úspěšně pozměněn"
                     else:
@@ -2500,7 +2740,18 @@ class IP_assignment: # Umožňuje měnit statickou IP
                     row_index_list = get_both_row_indexes()
                     print("pozmenen 2",row_index_list)
                     if row_index_list[0] != "no data":
-                        self.save_excel_data(project_name,IP_adress,mask,notes,only_edit=True,force_row_to_print=row_index_list[0],fav_status=current_fav_status,force_ws="ip_address_list")
+                        IP_assignment_tools.save_excel_data(self.excel_file_path,
+                                                            len(self.all_rows),
+                                                            self.last_project_id,
+                                                            self.show_favourite,
+                                                            project_name,
+                                                            IP_adress,
+                                                            mask,
+                                                            notes,
+                                                            only_edit=True,
+                                                            force_row_to_print=row_index_list[0],
+                                                            fav_status=current_fav_status,
+                                                            force_ws="ip_address_list")
                     
                     if self.last_project_name != project_name:
                         status_text = f"Projekt: {self.last_project_name} (nově: {project_name}) úspěšně pozměněn"
@@ -2536,7 +2787,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
                 for names in name_list:
                     print(names)
                     project_found = False
-                    self.read_excel_data()
+                    self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
                     proceed(names,window,True)
                     # print(deleted_project)
                         
@@ -2556,7 +2807,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
             deleted_project = None
             remove_favourite_as_well = False
             if wanted_project == None:
-                self.read_excel_data()
+                self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
                 wanted_project = str(self.search_input.get())
             workbook = load_workbook(self.excel_file_path)
             if self.show_favourite:
@@ -2655,53 +2906,25 @@ class IP_assignment: # Umožňuje měnit statickou IP
         child_root.wait_window()
         return project_found
 
-    def copy_previous_project(self,disk=None):
-        if self.last_project_name == "":
-            Tools.add_colored_line(self.console,"Není vybrán žádný projekt","red",None,True)
-        else:
-            self.name_input.delete("0","300")
-            self.name_input.insert("0",str(self.last_project_name))
-            if disk == None:
-                self.IP_adress_input.delete("0","300")
-                self.IP_adress_input.insert("0",str(self.last_project_ip))
-                self.mask_input.delete("0","300")
-                self.mask_input.insert("0",str(self.last_project_mask))
-                self.notes_input.delete("1.0",tk.END)
-                self.notes_input.insert(tk.END,str(self.last_project_notes))
-            else:
-                self.disk_letter_input.delete("0","300")
-                self.disk_letter_input.insert("0",str(self.last_project_disk_letter))
-                self.FTP_adress_input.delete("0","300")
-                self.FTP_adress_input.insert("0",str(self.last_project_ftp))
-                self.username_input.delete("0","300")
-                self.username_input.insert("0",str(self.last_project_username))
-                self.password_input.delete("0","300")
-                self.password_input.insert("0",str(self.last_project_password))
-                self.notes_input.delete("1.0",tk.END)
-                self.notes_input.insert(tk.END,str(self.last_project_notes))
-
-    def make_favourite_toggle_via_edit(self,e):
-        def do_favourite():
-            self.make_fav_btn.configure(text = "🐘",font=("Arial",38),text_color = "pink")
-            self.make_fav_label.configure(text = "Oblíbený ❤️")
-        
-        def unfavourite():
-            self.make_fav_btn.configure(text = "❌",font=("Arial",28),text_color = "red")
-            self.make_fav_label.configure(text = "Neoblíbený")
-
-        if self.make_project_favourite:
-            self.make_project_favourite = False
-            unfavourite()
-        else:
-            self.make_project_favourite = True
-            do_favourite()
-
     def add_new_project(self,edit = None):
         def mouse_wheel_change(e):
             if -e.delta < 0:
                 switch_up()
             else:
                 switch_down()
+
+        def copy_previous_project():
+            if self.last_project_name == "":
+                Tools.add_colored_line(self.console,"Není vybrán žádný projekt","red",None,True)
+                return
+            self.name_input.delete("0","300")
+            self.name_input.insert("0",str(self.last_project_name))
+            self.IP_adress_input.delete("0","300")
+            self.IP_adress_input.insert("0",str(self.last_project_ip))
+            self.mask_input.delete("0","300")
+            self.mask_input.insert("0",str(self.last_project_mask))
+            self.notes_input.delete("1.0",tk.END)
+            self.notes_input.insert(tk.END,str(self.last_project_notes))
 
         def switch_up():
             print("up ",self.last_project_id)
@@ -2710,7 +2933,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
                 self.last_project_id = len(self.all_rows)-1
                 
             self.check_given_input(given_data=self.all_rows[self.last_project_id][0])
-            self.copy_previous_project()
+            copy_previous_project()
             refresh_favourite_status()
             refresh_title()
 
@@ -2721,7 +2944,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
                 self.last_project_id = 0
 
             self.check_given_input(given_data=self.all_rows[self.last_project_id][0])
-            self.copy_previous_project()
+            copy_previous_project()
             refresh_favourite_status()
             refresh_title()
 
@@ -2739,7 +2962,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
             child_root.grab_set()
 
         def refresh_favourite_status():
-            if self.is_project_favourite(self.last_project_id):
+            if IP_assignment_tools.is_project_favourite(self.favourite_list,self.last_project_id):
                 self.make_project_favourite = True #init hodnota
                 self.make_fav_label.configure(text = "Oblíbený ❤️",font=("Arial",22))
                 self.make_fav_btn.configure(text = "🐘",font=("Arial",38),text_color = "pink")
@@ -2753,6 +2976,22 @@ class IP_assignment: # Umožňuje měnit statickou IP
                 child_root.title("Editovat projekt: "+self.last_project_name)
             else:
                 child_root.title("Nový projekt")
+
+        def make_favourite_toggle_via_edit(e):
+            def do_favourite():
+                self.make_fav_btn.configure(text = "🐘",font=("Arial",38),text_color = "pink")
+                self.make_fav_label.configure(text = "Oblíbený ❤️")
+            
+            def unfavourite():
+                self.make_fav_btn.configure(text = "❌",font=("Arial",28),text_color = "red")
+                self.make_fav_label.configure(text = "Neoblíbený")
+
+            if self.make_project_favourite:
+                self.make_project_favourite = False
+                unfavourite()
+            else:
+                self.make_project_favourite = True
+                do_favourite()
 
         child_root = customtkinter.CTkToplevel()
         self.opened_window = child_root
@@ -2777,7 +3016,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
         self.IP_adress_input = customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0)
         mask =                 customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Maska: ",font=("Arial",20,"bold"))
         self.mask_input =      customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0)
-        copy_check =           customtkinter.CTkButton(master = child_root,font=("Arial",20),width=250,height=30,corner_radius=0,text="Kopírovat předchozí projekt",command= lambda: self.copy_previous_project())
+        copy_check =           customtkinter.CTkButton(master = child_root,font=("Arial",20),width=250,height=30,corner_radius=0,text="Kopírovat předchozí projekt",command= lambda: copy_previous_project())
         del_project_btn =      customtkinter.CTkButton(master = child_root,font=("Arial",20),width=250,height=30,corner_radius=0,text="Smazat tento projekt",command= lambda: del_project(),fg_color="red")
         fav_status =           customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Status oblíbenosti: ",font=("Arial",20,"bold"))
         fav_frame =            customtkinter.CTkFrame(master=child_root,corner_radius=0,border_width=0,height=50,width=200,fg_color="#353535")
@@ -2810,9 +3049,9 @@ class IP_assignment: # Umožňuje měnit statickou IP
         fav_frame.              grid(column = 0,row=7,padx= 10,sticky=tk.W)
         fav_frame.              grid_propagate(0)
         self.make_fav_btn.      grid(column=0,row=0,pady = 0,padx =0,sticky = tk.W)
-        self.make_fav_btn.      bind("<Button-1>",lambda e: self.make_favourite_toggle_via_edit(e))
+        self.make_fav_btn.      bind("<Button-1>",lambda e: make_favourite_toggle_via_edit(e))
         self.make_fav_label.    grid(column = 0,row=0,pady = 0,padx =60,sticky = tk.W)
-        self.make_fav_label.    bind("<Button-1>",lambda e: self.make_favourite_toggle_via_edit(e))
+        self.make_fav_label.    bind("<Button-1>",lambda e: make_favourite_toggle_via_edit(e))
         notes.                  grid(column = 0,row=8,pady = 5,padx =10,sticky = tk.W)
         self.notes_input.       grid(column = 0,row=9,pady = 5,padx =10,sticky = tk.W)
         self.console.           grid(column = 0,row=10,pady = 5,padx =10,sticky = tk.W)
@@ -2820,7 +3059,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
         exit_button.            grid(column = 0,row=11,pady = 5,padx =310,sticky = tk.W)
 
         if edit:
-            self.copy_previous_project()
+            copy_previous_project()
         else:
             self.IP_adress_input.delete("0","300")
             self.IP_adress_input.insert("0","192.168.000.000")
@@ -2835,14 +3074,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
         child_root.focus()
         child_root.focus_force()
         self.root.bind("<Button-1>",lambda e: child_root.destroy(),"+")
-
-    def focused_entry_widget(self):
-        currently_focused = str(self.root.focus_get())
-        if ".!ctkentry" in currently_focused or ".!ctktextbox" in currently_focused:
-            return True
-        else:
-            return False
-        
+       
     def make_sure_ip_changed(self,interface_name,ip):
         def run_as_admin():
             # Vyžádání admin práv: nefunkční ve vscode
@@ -2909,29 +3141,6 @@ class IP_assignment: # Umožňuje měnit statickou IP
         run_background = threading.Thread(target=call_subprocess,)
         run_background.start()
 
-    def check_DHCP(self,interface):
-        process = subprocess.Popen(f'netsh interface ip show config name="{interface}"',
-                                                    stdout=subprocess.PIPE,
-                                                    stderr=subprocess.PIPE,
-                                                    creationflags=subprocess.CREATE_NO_WINDOW)
-        stdout, stderr = process.communicate()
-        try:
-            stdout_str = stdout.decode('utf-8')
-            output_data = str(stdout_str)
-        except UnicodeDecodeError:
-            try:
-                stdout_str = stdout.decode('cp1250')
-                output_data = str(stdout_str)
-            except UnicodeDecodeError:
-                output_data = str(stdout)
-
-        output_data_lines = output_data.split("\n")
-        for lines in output_data_lines:
-            if "DHCP enabled" in lines and "Yes" in lines:
-                print(f"{interface} DHCP: yes")
-                return True
-        print(f"{interface} DHCP: no")
-
     def change_to_DHCP(self):
         def delay_the_refresh():
             nonlocal previous_addr
@@ -2955,7 +3164,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
             return
         
         interface = str(self.interface_drop_options.get())
-        if not self.check_DHCP(interface):
+        if not IP_assignment_tools.check_DHCP(interface):
             if interface != None or interface != "":
                 interface_index = self.connection_option_list.index(interface)
                 previous_addr = self.current_address_list[interface_index]
@@ -3078,26 +3287,14 @@ class IP_assignment: # Umožňuje měnit statickou IP
             return found
         found = False
 
-        if self.managing_disk == False:
-            for i in range(0,len(self.all_rows)):
-                if given_data == self.all_rows[i][0]:
-                    self.last_project_name =    str(self.all_rows[i][0])
-                    self.last_project_ip =      str(self.all_rows[i][1])
-                    self.last_project_mask =    str(self.all_rows[i][2])
-                    self.last_project_notes =   str(self.all_rows[i][3])
-                    self.last_project_id = i
-                    found = True
-        else:
-            for i in range(0,len(self.disk_all_rows)):
-                if given_data == self.disk_all_rows[i][0]:
-                    self.last_project_name =        str(self.disk_all_rows[i][0])
-                    self.last_project_disk_letter = str(self.disk_all_rows[i][1])
-                    self.last_project_ftp =         str(self.disk_all_rows[i][2])
-                    self.last_project_username =    str(self.disk_all_rows[i][3])
-                    self.last_project_password =    str(self.disk_all_rows[i][4])
-                    self.last_project_notes =       str(self.disk_all_rows[i][5])
-                    self.last_project_id = i
-                    found = True
+        for i in range(0,len(self.all_rows)):
+            if given_data == self.all_rows[i][0]:
+                self.last_project_name =    str(self.all_rows[i][0])
+                self.last_project_ip =      str(self.all_rows[i][1])
+                self.last_project_mask =    str(self.all_rows[i][2])
+                self.last_project_notes =   str(self.all_rows[i][3])
+                self.last_project_id = i
+                found = True
             
         return found    
 
@@ -3108,33 +3305,19 @@ class IP_assignment: # Umožňuje měnit statickou IP
         flag = unfocus:
         - při kliku mimo se odebere focus z nakliknutých widgetů
         """
-        print("widget_id",widget_id)
-        if widget_id == None:
-            return
-
         def on_leave_entry(widget,row_of_widget):
             """
             při kliku na jiný widget:
             - upraví text pouze na první řádek
             """
-            if self.managing_disk:
-                widget.configure(state = "normal")
-                if "\n" in self.disk_all_rows[row_of_widget][5]:
-                    notes_rows = self.disk_all_rows[row_of_widget][5].split("\n")
-                    first_row = notes_rows[0]
-                    widget.delete("1.0",tk.END)
-                    widget.insert(tk.END,str(first_row))
-                if self.default_note_behav == 0:
-                    widget.configure(state = "disabled")
-            else:
-                widget.configure(state = "normal")
-                if "\n" in self.all_rows[row_of_widget][3]:
-                    notes_rows = self.all_rows[row_of_widget][3].split("\n")
-                    first_row = notes_rows[0]
-                    widget.delete("1.0",tk.END)
-                    widget.insert(tk.END,str(first_row))
-                if self.default_note_behav == 0:
-                    widget.configure(state = "disabled")
+            widget.configure(state = "normal")
+            if "\n" in self.all_rows[row_of_widget][3]:
+                notes_rows = self.all_rows[row_of_widget][3].split("\n")
+                first_row = notes_rows[0]
+                widget.delete("1.0",tk.END)
+                widget.insert(tk.END,str(first_row))
+            if self.default_note_behav == 0:
+                widget.configure(state = "disabled")
 
         def shrink_frame(widget_frame,widget_notes):
             widget_notes.configure(state = "normal")
@@ -3160,12 +3343,12 @@ class IP_assignment: # Umožňuje měnit statickou IP
                 print("chyba při odebírání focusu: ",e)
             return
 
+        if widget_id == None:
+            return
+        
+        print("widget_id",widget_id)
         self.search_input.delete("0","300")
-        if self.managing_disk == False:
-            self.search_input.insert("0",str(self.all_rows[widget_id][0]))
-        else:
-            self.search_input.insert("0",str(self.disk_all_rows[widget_id][0]))
-
+        self.search_input.insert("0",str(self.all_rows[widget_id][0]))
         self.check_given_input()
         # only if it is not pressed againt the same:
         if widget != self.last_selected_widget:
@@ -3217,17 +3400,6 @@ class IP_assignment: # Umožňuje měnit statickou IP
 
             self.last_selected_widget_id = widget_id
 
-    def is_project_favourite(self,array_index):
-        try:
-            fav_status = int(self.favourite_list[array_index])
-            if fav_status == 1:
-                return True
-            else:
-                return False
-            
-        except Exception:
-            return False
-
     def refresh_ip_statuses(self):
         def unbind_connected_ip(widget,frame):
             widget.unbind("<Enter>")
@@ -3258,7 +3430,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
                 unbind_connected_ip(parameter,ip_frame)
 
     def make_project_cells(self,no_read = None):
-        self.clear_frame(self.project_tree)
+        Tools.clear_frame(self.project_tree)
 
         def opened_window_check():
             if self.opened_window == "":
@@ -3310,7 +3482,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
                 try:
                     wanted_project = self.all_rows[row][0]
                     self.show_favourite = new_fav_status
-                    self.read_excel_data()
+                    self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
                     for i in range(0,len(self.all_rows)):
                         if self.all_rows[i][0] == wanted_project:
                             index_of_project = i
@@ -3342,7 +3514,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
 
             workbook.save(filename=self.excel_file_path)
             workbook.close()
-            self.read_excel_data()
+            self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
 
         def on_enter_entry(widget,row_of_widget):
             if not opened_window_check():
@@ -3429,7 +3601,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
             widget[1].configure(height = expanded_dim-10)
 
         if no_read == None:
-            self.read_excel_data()
+            self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
 
         column1 =           customtkinter.CTkFrame(master = self.project_tree,corner_radius=0,border_width=0)
         column2 =           customtkinter.CTkFrame(master = self.project_tree,corner_radius=0,border_width=0)
@@ -3460,7 +3632,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
                     button.     bind("<Double-1>",lambda e,widget_id = y: self.change_computer_ip(widget_id))
                     button.     bind("<Button-3>",lambda e,widget_id = y: self.change_computer_ip(widget_id))
 
-                    if self.is_project_favourite(y):
+                    if IP_assignment_tools.is_project_favourite(self.favourite_list,y):
                         button.configure(fg_color = "#1E90FF")
 
                 elif x == 1: # frame s ip adresou
@@ -3520,39 +3692,6 @@ class IP_assignment: # Umožňuje měnit statickou IP
         else:
             Tools.add_colored_line(self.main_console,f"Projekt nenalezen","red",None,True)
         
-    def get_ipv4_addresses(self):
-        process = subprocess.Popen("ipconfig",
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE,
-                                    creationflags=subprocess.CREATE_NO_WINDOW)
-        stdout, stderr = process.communicate()
-        result2 = "" 
-        try:
-            stdout_str = stdout.decode('cp1250')
-            result2 = str(stdout_str)
-            
-        except Exception as e:
-            print("chyba ",e)
-
-        # Regular expression to match the IPv4 address
-        ipv4_pattern = re.compile(r'IPv4 Address[.\s]*: ([\d.]+)')
-        ipv4_addresses = []
-        lines = result2.splitlines()
-        current_interface = None
-        # Iterate over each line to find interface names and IPv4 addresses
-        for line in lines:
-            if line.strip():
-                # Detect interface name
-                if line[0].isalpha():
-                    current_interface = line.strip()
-                else:
-                    # Detect IPv4 address for the current interface
-                    match = ipv4_pattern.search(line)
-                    if match and current_interface:
-                        ipv4_addresses.append(current_interface)
-                        ipv4_addresses.append(match.group(1))
-        return ipv4_addresses
-
     def option_change(self,args,only_console = False,silent = False):
         """
         Volá get_current_ip_list(), aktualizuje současně nastavené adresy (self.current_address_list)
@@ -3567,13 +3706,13 @@ class IP_assignment: # Umožňuje měnit statickou IP
                 self.default_connection_option = 0
 
             #pamatovat si naposledy zvoleny zpusob pripojeni:
-            self.save_setting_parameter(parameter="change_def_conn_option",status=int(self.default_connection_option))
-            self.get_current_ip_list()
+            Tools.save_setting_parameter(parameter="change_def_conn_option",status=int(self.default_connection_option),excel_path=self.excel_file_path)
+            self.current_address_list = IP_assignment_tools.get_current_ip_list(self.connection_option_list)
             if self.static_label2.winfo_exists():
                 self.static_label2.configure(text=self.current_address_list[self.default_connection_option])
         if not silent:
             # ziskat data o aktualnim pripojeni
-            current_connection = self.get_ipv4_addresses()
+            current_connection = IP_assignment_tools.get_ipv4_addresses()
             message = ""
             for items in current_connection:
                 message = message + items + " "
@@ -3604,7 +3743,16 @@ class IP_assignment: # Umožňuje měnit statickou IP
 
             for i in range(0,len(self.all_rows)):
                 row = (len(self.all_rows)-1)-i
-                self.save_excel_data(self.all_rows[i][0],self.all_rows[i][1],self.all_rows[i][2],self.all_rows[i][3],None,row+1,fav_status=self.favourite_list[i])
+                IP_assignment_tools.save_excel_data(self.excel_file_path,
+                                                    len(self.all_rows),
+                                                    self.last_project_id,
+                                                    self.show_favourite,
+                                                    self.all_rows[i][0],
+                                                    self.all_rows[i][1],
+                                                    self.all_rows[i][2],
+                                                    self.all_rows[i][3],
+                                                    force_row_to_print=row+1,
+                                                    fav_status=self.favourite_list[i])
             if make_cells:
                 self.make_project_cells()
             if purpouse == "search":
@@ -3621,82 +3769,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
             Tools.add_colored_line(self.main_console,"Projekt nenalezen","red",None,True)
             print("projekt nenalezen")
 
-    def get_current_ip_list(self):
-        def get_current_ip_address(interface_name):
-        # Get network interfaces and their addresses
-            addresses = psutil.net_if_addrs()
-            # Check if the specified interface exists
-            if interface_name in addresses:
-                addr_count = 0
-                # print(f"Adresy interfacu: {interface_name}")
-                for addr in addresses[interface_name]:
-                    # prvni AF_INET je pridelena automaticky, druha je privatni, nastavena DHCP
-                    if addr.family == socket.AF_INET:  # IPv4 address
-                        if addr_count == 1:
-                            return addr.address
-                        addr_count +=1
-                        remembered_addr = addr
-                if addr_count == 1:
-                    if "AddressFamily.AF_INET:" in str(remembered_addr):
-                        return remembered_addr.address
-                    else:
-                        return "Nenalezeno"
-            else:
-                return "Nenalezeno"
-        self.current_address_list = []
-        for items in self.connection_option_list:
-            found_address = get_current_ip_address(items)
-            self.current_address_list.append(found_address)
-
-    def save_setting_parameter(self,parameter,status):
-        """
-        list of parameters:\n
-
-        change_def_conn_option\n
-        new_conn_options\n
-        change_def_ip_window\n
-        change_def_main_window\n
-        change_def_window_size\n
-        change_def_disk_behav\n
-        change_def_notes_behav\n
-        change_mapping_cond\n
-        change_make_first_behav\n
-        delete_behav\n
-        """
-
-        parameter_row_mapping = {
-        "change_def_conn_option": 1,
-        "new_conn_options": 2,
-        "change_def_ip_window": 3,
-        "change_def_main_window": 4,
-        "change_def_window_size": 5,
-        "change_def_disk_behav": 6,
-        "change_def_notes_behav": 7,
-        "change_mapping_cond": 8,
-        "change_make_first_behav": 9,
-        "delete_behav": 10
-        }
-
-        row = parameter_row_mapping.get(parameter)
-        if row is None:
-            print(f"Invalid parameter: {parameter}")
-            return
-        
-        workbook = load_workbook(self.excel_file_path)
-        worksheet = workbook["Settings"]
-        worksheet['B' + str(row)] = status
-        workbook.save(filename=self.excel_file_path)
-        workbook.close()
-
     def show_favourite_toggle(self,keep_search_input = False,determine_status = None): # hlavni prepinaci tlacitko oblibene/ neoblibene
-        def get_none_count(array_given):
-            none_count = 0
-            for items in array_given:
-                if items == None:
-                    none_count += 1
-
-            return none_count
-        
         if self.show_favourite and (determine_status == None or determine_status == "all"):
             self.show_favourite = False
             window_status = 0
@@ -3715,16 +3788,16 @@ class IP_assignment: # Umožňuje měnit statickou IP
                 self.search_input.configure(placeholder_text="Název projektu")
                 self.make_project_cells()
             else:
-                self.read_excel_data()
+                self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
                 self.check_given_input() #check ve druhem prostredi
                 self.make_project_cells(no_read=True)
             self.button_remove_main.configure(command = lambda: self.delete_project(button_trigger=True,flag="main_menu"))
-            self.save_setting_parameter(parameter="change_def_ip_window",status=window_status)
+            Tools.save_setting_parameter(parameter="change_def_ip_window",status=window_status,excel_path=self.excel_file_path)
             self.button_switch_favourite_ip. configure(fg_color="black")
             self.button_switch_all_ip.       configure(fg_color="#212121")
             self.button_remove_main.         configure(text="Smazat")
             # poznámky mohou být None...
-            if get_none_count(self.bin_projects[0]) < 2 and len(self.bin_projects[0]) > 3:
+            if Tools.get_none_count(self.bin_projects[0]) < 2 and len(self.bin_projects[0]) > 3:
                 self.undo_button.configure(state = "normal")
             else:
                 self.undo_button.configure(state = "disabled")
@@ -3748,11 +3821,11 @@ class IP_assignment: # Umožňuje měnit statickou IP
                 self.search_input.configure(placeholder_text="Název projektu")
                 self.make_project_cells()
             else:
-                self.read_excel_data()
+                self.all_rows, self.project_list, self.favourite_list = IP_assignment_tools.read_excel_data(self.excel_file_path,self.show_favourite)
                 self.check_given_input() #check ve druhem prostredi
                 self.make_project_cells(no_read=True)
             self.button_remove_main.configure(command = lambda: self.switch_fav_status("with_refresh"))
-            self.save_setting_parameter(parameter="change_def_ip_window",status=window_status)
+            Tools.save_setting_parameter(parameter="change_def_ip_window",status=window_status,excel_path=self.excel_file_path)
             self.button_switch_favourite_ip. configure(fg_color="#212121")
             self.button_switch_all_ip.       configure(fg_color="black")
             self.button_remove_main.         configure(text="Odebrat")
@@ -3762,7 +3835,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
         """
         - All parametr refreshne i statusy ip adres
         """
-        interfaces_data = self.fill_interfaces()
+        interfaces_data = IP_assignment_tools.fill_interfaces()
         self.connection_option_list = interfaces_data[0]
         self.interface_drop_options.configure(values = self.connection_option_list)
         online_list_text = ""
@@ -3774,6 +3847,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
         self.online_list.configure(text=online_list_text)
         if all:
             self.option_change("")
+        self.refresh_ip_statuses()
 
         return interfaces_data[1]
 
@@ -3782,36 +3856,34 @@ class IP_assignment: # Umožňuje měnit statickou IP
             nonlocal checkbox
             if int(checkbox.get()) == 0:
                 self.default_note_behav = 0
-                self.save_setting_parameter(parameter="change_def_notes_behav",status=0)
+                Tools.save_setting_parameter(parameter="change_def_notes_behav",status=0,excel_path=self.excel_file_path)
                 self.make_project_cells()
 
             elif int(checkbox.get()) == 1:
-                self.default_note_behav = 1
-                self.save_setting_parameter(parameter="change_def_notes_behav",status=1)
+                self.default_note_behav = 1      
+                Tools.save_setting_parameter(parameter="change_def_notes_behav",status=1,excel_path=self.excel_file_path)
                 self.make_project_cells()
 
         def change_make_first_behav():
             nonlocal checkbox4
             if int(checkbox4.get()) == 0:
                 self.make_edited_project_first = False
-                self.save_setting_parameter(parameter="change_make_first_behav",status=0)
+                Tools.save_setting_parameter(parameter="change_make_first_behav",status=0,excel_path=self.excel_file_path)
             elif int(checkbox4.get()) == 1:
                 self.make_edited_project_first = True
-                self.save_setting_parameter(parameter="change_make_first_behav",status=1)
-
+                Tools.save_setting_parameter(parameter="change_make_first_behav",status=1,excel_path=self.excel_file_path)
         def delete_behav():
             if int(checkbox5.get()) == 0 and int(checkbox6.get()) == 0:
                 self.deletion_behav = 100
-                self.save_setting_parameter(parameter="delete_behav",status=self.deletion_behav)
             elif int(checkbox5.get()) == 0 and int(checkbox6.get()) == 1:
                 self.deletion_behav = 101
-                self.save_setting_parameter(parameter="delete_behav",status=self.deletion_behav)
             elif int(checkbox5.get()) == 1 and int(checkbox6.get()) == 0:
                 self.deletion_behav = 110
-                self.save_setting_parameter(parameter="delete_behav",status=self.deletion_behav)
             elif int(checkbox5.get()) == 1 and int(checkbox6.get()) == 1:
                 self.deletion_behav = 111
-                self.save_setting_parameter(parameter="delete_behav",status=self.deletion_behav)
+            else:
+                return
+            Tools.save_setting_parameter(parameter="delete_behav",status=self.deletion_behav,excel_path=self.excel_file_path)
 
         child_root = customtkinter.CTkToplevel()
         self.opened_window = child_root
@@ -3947,12 +4019,10 @@ class IP_assignment: # Umožňuje měnit statickou IP
         mask_entry =            customtkinter.CTkEntry(master = window,width=400,height=50,font=("Arial",20),corner_radius=0)
         manual_console =        tk.Text(window, wrap="none", height=0, width=36,background="black",font=("Arial",14),state=tk.DISABLED)
         buttons_frame =         customtkinter.CTkFrame(master = window,corner_radius=0,border_width=0,fg_color="#181818")
-        save_button =           customtkinter.CTkButton(master = buttons_frame, width = 200,height=40,text = "Nastavit", command = lambda: call_ip_change(),font=("Arial",20,"bold"),corner_radius=0)
-        exit_button =           customtkinter.CTkButton(master = buttons_frame, width = 200,height=40,text = "Zrušit", command = lambda: window.destroy(),font=("Arial",20,"bold"),corner_radius=0)
-
-        interface_label.        pack(pady=(10,0),padx=10,side = "top",anchor = "w",expand = True)
-
-        interface_frame.       pack(pady=(0),padx=0,side = "top",anchor = "w")
+        save_button =           customtkinter.CTkButton(master = buttons_frame, width = 190,height=40,text = "Nastavit", command = lambda: call_ip_change(),font=("Arial",20,"bold"),corner_radius=0)
+        exit_button =           customtkinter.CTkButton(master = buttons_frame, width = 190,height=40,text = "Zrušit", command = lambda: window.destroy(),font=("Arial",20,"bold"),corner_radius=0)
+        interface_label.        pack(pady=(10,0),padx=10,side = "top",anchor = "w",expand = False)
+        interface_frame.        pack(pady=(0),padx=0,side = "top",anchor = "w")
         mode_label.             pack(pady=(10,0),padx=10,side = "top",anchor = "w")
         select_mode.            pack(pady=(10,0),padx=10,side = "top",anchor = "w")
         ip_address.             pack(pady=(10,0),padx=10,side = "top",anchor = "w")
@@ -3961,8 +4031,8 @@ class IP_assignment: # Umožňuje měnit statickou IP
         mask_entry.             pack(pady=(10,0),padx=10,side = "top",anchor = "w")
         manual_console.         pack(pady=(10,0),padx=10,side = "top",anchor = "w")
         buttons_frame.          pack(pady=(10),padx=10,side = "top",anchor = "e")
-        save_button.            pack(pady=(10),padx=10,side = "right",anchor = "w")
-        exit_button.            pack(pady=(10),padx=10,side = "right",anchor = "e")
+        save_button.            pack(pady=0,padx=(10,0),side = "right",anchor = "w")
+        exit_button.            pack(pady=0,padx=0,side = "right",anchor = "e")
     
         online_list = self.refresh_interfaces()
         select_interface.configure(values = self.connection_option_list)
@@ -3974,10 +4044,9 @@ class IP_assignment: # Umožňuje měnit statickou IP
         self.root.bind("<Button-1>",lambda e: window.destroy(),"+")
         window.update()
         window.update_idletasks()
-        self.root.update_idletasks()
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
-        window.geometry(f"{window.winfo_width()+100}x{window.winfo_height()}+{x+150}+{y+5}")
+        window.geometry(f"{window.winfo_width()}x{window.winfo_height()}+{x+150}+{y+5}")
 
         window.focus_force()
         window.focus()
@@ -3986,37 +4055,23 @@ class IP_assignment: # Umožňuje měnit statickou IP
         if ip_instance != None:
             self.ip_instance = copy.copy(ip_instance)
         if disk_instance != None:
-            # self.disk_instance = disk_instance
             self.disk_instance = copy.copy(disk_instance)
 
-        Tools.clear_frame(self.root)
-
-        def get_none_count(array_given):
-            none_count = 0
-            for items in array_given:
-                if items == None:
-                    none_count += 1
-
-            return none_count
-        
         if not excel_load_error:
             if init:
                 if self.window_mode == "max":
-                    self.save_setting_parameter(parameter="change_def_window_size",status=1)
+                    Tools.save_setting_parameter(parameter="change_def_window_size",status=1,excel_path=self.excel_file_path)
                 else:
-                    self.save_setting_parameter(parameter="change_def_window_size",status=0)
+                    Tools.save_setting_parameter(parameter="change_def_window_size",status=0,excel_path=self.excel_file_path)
             if fav_status:
                 self.show_favourite = True
-                self.save_setting_parameter(parameter="change_def_ip_window",status=1)
+                Tools.save_setting_parameter(parameter="change_def_ip_window",status=1,excel_path=self.excel_file_path)
             if fav_status == False:
                 self.show_favourite = False
-                self.save_setting_parameter(parameter="change_def_ip_window",status=0)
-            
-            self.save_setting_parameter(parameter="change_def_main_window",status=0)
+                Tools.save_setting_parameter(parameter="change_def_ip_window",status=0,excel_path=self.excel_file_path)
+            Tools.save_setting_parameter(parameter="change_def_main_window",status=0,excel_path=self.excel_file_path)
         
-        self.clear_frame(self.root)
-        self.managing_disk = False
-        self.selected_list_disk = []
+        Tools.clear_frame(self.root)
         self.control_pressed = False
         menu_cards =            customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=50,border_width=0)
         self.main_widgets =     customtkinter.CTkFrame(master=self.root,corner_radius=0,border_width=0)
@@ -4062,13 +4117,13 @@ class IP_assignment: # Umožňuje měnit statickou IP
             self.button_switch_favourite_ip.    configure(fg_color="black")
             self.button_switch_all_ip.          configure(fg_color="#212121")
             # poznámky mohou být None (delete undo)
-            if get_none_count(self.bin_projects[0]) < 2 and len(self.bin_projects[0]) == 5:
+            if Tools.get_none_count(self.bin_projects[0]) < 2 and len(self.bin_projects[0]) == 5:
                 self.undo_button.configure(state = "normal")
             else:
                 self.undo_button.configure(state = "disabled")
 
         # edit undo
-        if get_none_count(self.bin_projects[1]) < 2 and len(self.bin_projects[1]) == 5:
+        if Tools.get_none_count(self.bin_projects[1]) < 2 and len(self.bin_projects[1]) == 5:
             self.undo_edit.configure(state = "normal")
         else:
             self.undo_edit.configure(state = "disabled")
@@ -4115,14 +4170,15 @@ class IP_assignment: # Umožňuje měnit statickou IP
             # nastavení naposledy zvoleného interfacu
             self.interface_drop_options.set(self.connection_option_list[self.default_connection_option])
         else:
-            self.default_connection_option = 0
-            self.save_setting_parameter(parameter="change_def_conn_option",status=0)
+            self.default_connection_option = 0             
+            Tools.save_setting_parameter(parameter="change_def_conn_option",status=0,excel_path=self.excel_file_path)
+
             self.interface_drop_options.set(self.connection_option_list[self.default_connection_option])
 
         if not excel_load_error:
             self.option_change("")
             self.make_project_cells()
-            self.get_current_ip_list()
+            self.current_address_list = IP_assignment_tools.get_current_ip_list(self.connection_option_list)
             self.static_label2.configure(text=self.current_address_list[self.default_connection_option])
         else:
             only_name = self.excel_file_path.split("/")
@@ -4133,18 +4189,18 @@ class IP_assignment: # Umožňuje měnit statickou IP
             self.root.update_idletasks()
             current_width = int(self.root.winfo_width())
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
-            if self.focused_entry_widget(): # pokud nabindovane pismeno neni vepisovano do entry widgetu
+            if Tools.focused_entry_widget(self.root): # pokud nabindovane pismeno neni vepisovano do entry widgetu
                 return
             if int(current_width) > 1200:
                 self.root.state('normal')
                 self.root.geometry(f"260x1000+{0}+{0}")
-                self.save_setting_parameter(parameter="change_def_window_size",status=2)
+                Tools.save_setting_parameter(parameter="change_def_window_size",status=2,excel_path=self.excel_file_path)
             elif int(current_width) ==260:
                 self.root.geometry("1200x900")
-                self.save_setting_parameter(parameter="change_def_window_size",status=0)
+                Tools.save_setting_parameter(parameter="change_def_window_size",status=0,excel_path=self.excel_file_path)
             else:
                 self.root.state('zoomed')
-                self.save_setting_parameter(parameter="change_def_window_size",status=1)
+                Tools.save_setting_parameter(parameter="change_def_window_size",status=1,excel_path=self.excel_file_path)
 
         self.root.bind("<f>",lambda e: maximalize_window(e))
 
@@ -4210,7 +4266,7 @@ class main:
             workbook = load_workbook(self.excel_file_path)
             worksheet = workbook["Settings"]
             def_environment = worksheet['B' + str(4)].value
-            if int(def_environment) == 0:
+            if int(def_environment) == 1:
                 def_environment = "disk"
 
             def_show_favourite = worksheet['B' + str(3)].value
@@ -4229,5 +4285,6 @@ class main:
 
 if testing_mode:
     # IP_assignment(root,"","max",str(os.getcwd())+"\\",100)
+    print(str(os.getcwd())+"\\")
     main(root,"","max",str(os.getcwd())+"\\",100)
     root.mainloop()

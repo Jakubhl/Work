@@ -697,12 +697,14 @@ prohlizec - když moc rychle rozhodí se pás - hotovo
 8:20 PM 11/21/2024
 ip setting - nepsat u disku do konzole současná připojení interfaců, ale disků - hotovo
 
+3:16 PM 11/26/2024
+ip setting - opraven unfocus
+ip setting - opraven refresh ip
+
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-
-ip setting - rozdělit do tříd
-ip setting - grid předělat na pack
-
+ip setting - dodelat, ze se pri editu projektu u disku nenacitaji disky
 
 ip setting - make project first u disku pri editu
 ip setting - kontext menu + optimalizace vykreslování
@@ -710,6 +712,12 @@ ip setting - kontext menu + optimalizace vykreslování
 ip setting - zneviditelnit heslo
 
 ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...
+
+ip setting - mít možnost posouvat projekty o jednu pozici
+ip setting - mít možnost seřadit podle abecedy
+
+TRIMAZKON - mazání - mít možnost nastavit si rutinu v task scheduleru
+TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon
