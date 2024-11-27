@@ -18,7 +18,7 @@ import win32net
 import win32netcon
 import copy
 
-testing_mode = True
+testing_mode = False
 if testing_mode:
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")

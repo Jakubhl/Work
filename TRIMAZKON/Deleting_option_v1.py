@@ -355,8 +355,21 @@ class whole_deleting_function:
                                     shutil.move(path + files , path + self.to_delete_folder + '/' + files)
                                 if self.testing_mode == False:
                                     os.remove(path + files)
-                                
+        
+        def check_min_file_age(path):
+            date_array=[]
+            for files in os.listdir(path):
+                mod_date_of_file = self.get_mod_date_of_file(path,files)
+                if mod_date_of_file != False:
+                    if not int(mod_date_of_file) in date_array:
+                        date_array.append(int(mod_date_of_file))
+
+            return max(date_array)
+
         if option == 1:
+            # pokud jsou všechny starší vydej varování - a zruš:
+            if check_min_file_age(path) <= cutoff_days:
+                return "warning data loss"
             for files in os.listdir(path):
                 mod_date_of_file = self.get_mod_date_of_file(path,files)
                 if mod_date_of_file != False:
@@ -420,6 +433,9 @@ class whole_deleting_function:
                     #print(f"- Prochazím cestu: {paths}")
                     self.output.append(f"- Probíhá mazání obrázků v cestě: {paths}")
                     deleted = self.del_files(paths,cutoff_days,0)
+                    if deleted == "warning data loss":
+                        self.output.append(f"- V této složce jsou všechny soubory starší, než nastvené datum (nebylo by nic ponecháno) - zrušeno")
+                        deleted = 0
                     total_deleted_count = total_deleted_count+deleted
                 
                 self.output.append(f"- Mazání dokončeno, celkem smazáno souborů: {total_deleted_count}\n")
@@ -432,6 +448,9 @@ class whole_deleting_function:
                     #print(f"- Probíhá mazání obrázků v cestě: {paths}")
                     self.output.append(f"- Probíhá mazání obrázků v cestě: {paths}")
                     deleted = self.del_files(paths,cutoff_days,1)
+                    if deleted == "warning data loss":
+                        self.output.append(f"- V této složce jsou všechny soubory starší, než nastvené datum (nebylo by nic ponecháno) - zrušeno")
+                        deleted = 0
                     total_deleted_count = total_deleted_count+deleted
 
                 self.output.append(f"- Mazání dokončeno, celkem smazáno souborů: {total_deleted_count}\n")
@@ -446,7 +465,9 @@ class whole_deleting_function:
                 self.output.append(f"- Probíhá mazání obrázků v cestě: {self.path}")
                 #print(f"- Ve složce bude zachováno: {self.files_to_keep} souborů\n")
                 self.output.append(f"- Ve složce bude zachováno: {self.files_to_keep} souborů")
-                self.del_files(self.path,cutoff_days,0)
+                del_status = self.del_files(self.path,cutoff_days,0)
+                if del_status == "warning data loss":
+                    self.output.append(f"- V této složce jsou všechny soubory starší, než nastvené datum (nebylo by nic ponecháno) - zrušeno")
                 self.output.append("- Mazání dokončeno\n")
 
             if self.del_option == 2: #///////////////////////////////////////////////////////// OPTION 2 /////////////////////////////////////////////////////////////////////////////
@@ -455,7 +476,9 @@ class whole_deleting_function:
                 self.output.append(f"- Probíhá mazání obrázků v cestě: {self.path}")
                 #print(f"- Ve složce bude zachováno: {self.files_to_keep} souborů, novějších než {result_cutoffdays[1]}\n")
                 self.output.append(f"- Ve složce bude zachováno: {self.files_to_keep} souborů, novějších než {result_cutoffdays[1]}")
-                self.del_files(self.path,cutoff_days,1)
+                del_status = self.del_files(self.path,cutoff_days,1)
+                if del_status == "warning data loss":
+                    self.output.append(f"- V této složce jsou všechny soubory starší, než nastvené datum (nebylo by nic ponecháno) - zrušeno")
                 self.output.append("- Mazání dokončeno\n")
                 
             if self.del_option == 3: #///////////////////////////////////////////////////////// OPTION 2 /////////////////////////////////////////////////////////////////////////////
