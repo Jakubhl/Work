@@ -705,13 +705,17 @@ ip setting - opraven refresh ip
 TRIMAZKON - mazání - uložení parametrů automaticky před spuštěním - hotovo
 TRIMAZKON - mazání - ošetřeno smazání všech starších souborů, pokud jsou všechny starší než nastavené datum - hotovo
 
+11:20 AM 11/29/2024
+ip setting - kontext menu + optimalizace vykreslování - hotovo
+
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 ip setting - dodelat, ze se pri editu projektu u disku nenacitaji disky
 ip setting - udělat parent class, kde se volají ostatní classy
 
 ip setting - make project first u disku pri editu
-ip setting - kontext menu + optimalizace vykreslování
+
 
 ip setting - zneviditelnit heslo
 
@@ -721,7 +725,9 @@ ip setting - mít možnost posouvat projekty o jednu pozici
 ip setting - mít možnost seřadit podle abecedy
 
 
+ip setting - unfocus více projektů pochechá ostatní s bílým rámečkem
 
+ip setting - opravit duplicity
 
 TRIMAZKON - mazání - mít možnost nastavit si rutinu v task scheduleru - aby to běželo, jako služba - v pravý dolní nabídce se zobrazí, že probíhá mazání - šel by zobrazit log vymazaných obrázků
 

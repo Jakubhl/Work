@@ -8,17 +8,15 @@ import time
 import threading
 import psutil
 import socket
-# import win32api
-# import win32file
 from PIL import Image
 import sys
 import ctypes
 import winreg
 import win32net
-import win32netcon
 import copy
+import pyperclip
 
-testing_mode = False
+testing_mode = True
 if testing_mode:
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")
@@ -2575,6 +2573,13 @@ class IP_assignment: # Umožňuje měnit statickou IP
                                                         force_ws="ip_address_list")
                     Tools.add_colored_line(self.main_console,f"Přidán nový projekt: {project_name}","green",None,True)
 
+                if not self.make_edited_project_first:
+                    save_history_data()
+                if not bin_manage:
+                    if  child_root != None:
+                        child_root.destroy()
+                    self.make_project_cells()
+
             elif only_edit:
                 # kdyz edituji muze mit projekt jiz prideleny status
                 if not bin_manage:
@@ -2861,9 +2866,10 @@ class IP_assignment: # Umožňuje měnit statickou IP
             # check_multiple_projects(False)
             return
 
-        if flag == "main_menu":
+        if flag == "main_menu" or flag == "context_menu":
             if self.deletion_behav == 110 or self.deletion_behav == 111:
                 # proceed(wanted_project,window=False)
+
                 check_multiple_projects(False)
                 return
             
@@ -2886,6 +2892,8 @@ class IP_assignment: # Umožňuje měnit statickou IP
         child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(self.app_icon)))
         child_root.title("Upozornění")
         proceed_label_text = f"Opravdu si přejete odstranit projekt {self.last_project_name}?"
+        if flag == "context_menu":
+            self.selected_list = []
         if len(self.selected_list) > 1:
             for ids in self.selected_list:
                 name_list.append(self.all_rows[ids][0])
@@ -2906,7 +2914,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
         child_root.wait_window()
         return project_found
 
-    def add_new_project(self,edit = None):
+    def add_new_project(self,edit = None,init_copy = False):
         def mouse_wheel_change(e):
             if -e.delta < 0:
                 switch_up()
@@ -3059,6 +3067,8 @@ class IP_assignment: # Umožňuje měnit statickou IP
         exit_button.            grid(column = 0,row=11,pady = 5,padx =310,sticky = tk.W)
 
         if edit:
+            copy_previous_project()
+        elif init_copy:
             copy_previous_project()
         else:
             self.IP_adress_input.delete("0","300")
@@ -3429,6 +3439,28 @@ class IP_assignment: # Umožňuje měnit statickou IP
             else:
                 unbind_connected_ip(parameter,ip_frame)
 
+    def show_context_menu(self,event,first_index,second_index):
+        """
+        - first index (y) = index celeho radku
+        - second index (x) = index jednoho parametru
+        """
+        context_menu = tk.Menu(self.root,tearoff=0,fg="white",bg="black",font=("Arial",20,"bold"))
+        self.check_given_input(given_data=self.all_rows[first_index][0])
+        
+        context_menu.add_command(label="Nastavit",font=("Arial",22,"bold"),command=lambda: self.change_computer_ip(first_index))
+        context_menu.add_separator()
+        context_menu.add_command(label="Kopírovat IP adresu",font=("Arial",22,"bold"), command=lambda: pyperclip.copy(self.all_rows[first_index][1]))
+        context_menu.add_separator()
+        context_menu.add_command(label="Editovat",font=("Arial",22,"bold"),command=lambda: self.add_new_project(True))
+        context_menu.add_separator()
+        context_menu.add_command(label="Kopírovat projekt",font=("Arial",22,"bold"),command=lambda: self.add_new_project(init_copy=True))
+        context_menu.add_separator()
+        context_menu.add_command(label="Přesunout na začátek",font=("Arial",22,"bold"),command=lambda: self.make_project_first(input_entry_bypass=self.all_rows[first_index][0]))
+        context_menu.add_separator()
+        context_menu.add_command(label="Odstranit",font=("Arial",22,"bold"),command=lambda: self.delete_project(button_trigger=True,flag="context_menu"))
+
+        context_menu.tk_popup(event.x_root, event.y_root)
+
     def make_project_cells(self,no_read = None):
         Tools.clear_frame(self.project_tree)
 
@@ -3609,9 +3641,6 @@ class IP_assignment: # Umožňuje měnit statickou IP
         column1_header =    customtkinter.CTkLabel(master = column1,text = "Projekt: ",font=("Arial",20,"bold"),justify = "left",anchor = "w")
         column2_header =    customtkinter.CTkLabel(master = column2,text = "IPv4 adresa: ",font=("Arial",20,"bold"),justify = "left",anchor = "w")
         column3_header =    customtkinter.CTkLabel(master = column3,text = "Poznámky: ",font=("Arial",20,"bold"),justify = "left",anchor = "w")
-        column1.            pack(fill="both",expand=False,side = "left")
-        column2.            pack(fill="both",expand=False,side = "left")
-        column3.            pack(fill="both",expand=True, side = "left")
         column1_header.     pack(padx = (5,0),side = "top",anchor = "w")
         column2_header.     pack(padx = (5,0),side = "top",anchor = "w")
         column3_header.     pack(padx = (5,0),side = "top",anchor = "w")
@@ -3630,7 +3659,8 @@ class IP_assignment: # Umožňuje měnit statickou IP
                     button.     bind("<Button-1>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
                     # připojit bud pravým klikem nebo doubleclickem na button:
                     button.     bind("<Double-1>",lambda e,widget_id = y: self.change_computer_ip(widget_id))
-                    button.     bind("<Button-3>",lambda e,widget_id = y: self.change_computer_ip(widget_id))
+                    button.bind("<Button-3>",lambda e, first_index = y, second_index = x: self.show_context_menu(e,first_index,second_index))
+                    # button.     bind("<Button-3>",lambda e,widget_id = y: self.change_computer_ip(widget_id))
 
                     if IP_assignment_tools.is_project_favourite(self.favourite_list,y):
                         button.configure(fg_color = "#1E90FF")
@@ -3675,6 +3705,10 @@ class IP_assignment: # Umožňuje měnit statickou IP
                     if self.default_note_behav == 0:
                         notes.configure(state = "disabled")
 
+
+        column1.            pack(fill="both",expand=False,side = "left")
+        column2.            pack(fill="both",expand=False,side = "left")
+        column3.            pack(fill="both",expand=True, side = "left")
         self.project_tree.update()
         self.project_tree.update_idletasks()
         self.notes_frame_height = int(notes_frame._current_height)
