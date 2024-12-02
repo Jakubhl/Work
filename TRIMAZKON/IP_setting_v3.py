@@ -16,7 +16,7 @@ import win32net
 import copy
 import pyperclip
 
-testing_mode = True
+testing_mode = False
 if testing_mode:
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")
@@ -351,7 +351,7 @@ class Disk_management_tools:
         Returns:
         - [disk_all_rows,disk_project_list,default_disk_status_behav]
         """
-        workbook = load_workbook(excel_file_path)
+        workbook = load_workbook(excel_file_path,read_only=True)
         # seznam vsech ftp pripojeni k diskum
         disk_all_rows = []
         disk_project_list = []  
@@ -1845,7 +1845,7 @@ class IP_assignment_tools:
             excel_worksheet = "ip_address_fav_list"
         else:
             excel_worksheet = "ip_address_list"
-        workbook = load_workbook(excel_file_path)
+        workbook = load_workbook(excel_file_path,read_only=True)
         # seznam vsech statickych ip adres
         all_rows_ip = []
         project_list = []

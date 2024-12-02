@@ -9,6 +9,7 @@ import Converting_option_v3 as Converting
 import catalogue_maker_v5 as Catalogue
 import sharepoint_download as download_database
 import IP_setting_v3 as IP_setting
+import trimazkon_tray
 import string_database
 from tkinter import filedialog
 import tkinter as tk
@@ -942,6 +943,7 @@ class Tools:
         except Exception as e:
             print(f"Nejdřív zavřete soubor {config_filename} Chyba: {e}")
 
+
 initial_path = Tools.path_check(os.getcwd())
 if len(sys.argv) > 1: #spousteni pres cmd (kliknuti na obrazek)
     raw_path = str(sys.argv[0])
@@ -953,19 +955,17 @@ if len(sys.argv) > 1: #spousteni pres cmd (kliknuti na obrazek)
     print("SYSTEM: ",sys.argv)
 
 #pro pripad vypisovani do konzole z exe:
-# sys.stdout = sys.__stdout__
 print("init path: ",initial_path)
 exe_path = sys.executable
 exe_name = os.path.basename(exe_path)
 print("exe name: ",exe_name)
 if testing:
     exe_name = "x x x"
-# input("continue")
 
 load_gui=True
 if len(sys.argv) > 1:
     if sys.argv[1] == "deleting":
-        print(f"mazáníčko, pocet soub: {sys.argv[2]}, datum: {sys.argv[3]}")
+        print(f"mazání, počet soub: {sys.argv[2]}, datum: {sys.argv[3]}")
         load_gui = False
         
 class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
@@ -1069,30 +1069,26 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
             return False
 
 if load_gui:
-    # Establishment of pipeline server for duplex communication between running applications:
-    pipeline_duplex = system_pipeline_communication(exe_name)
+    pipeline_duplex = system_pipeline_communication(exe_name)# Establishment of pipeline server for duplex communication between running applications
     app_running_status = Tools.check_runing_app_duplicity()
     print("already opened app status: ",app_running_status)
-    if len(sys.argv) > 1:
-        # VÝJIMKA: pukud nové spuštění s admin právy načti i gui...
+    if len(sys.argv) > 1: # VÝJIMKA: pukud nové spuštění s admin právy načti i gui...
         if sys.argv[0] == sys.argv[1]:
             app_running_status = False
 
     if not app_running_status:
-        app_icon = 'images/logo_TRIMAZKON.ico'
+        app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
         customtkinter.set_appearance_mode("dark")
         customtkinter.set_default_color_theme("dark-blue")
         root=customtkinter.CTk()
         root.geometry("1200x900")
-        root.title("TRIMAZKON v_4.1.1")
+        root.title("TRIMAZKON v_4.2.0")
         root.wm_iconbitmap(Tools.resource_path(app_icon))
-    else:
-        # předání parametrů v případě spuštění obrázkem (základní obrázkový prohlížeč)
+
+    else:# předání parametrů v případě spuštění obrázkem (základní obrázkový prohlížeč)
         if len(sys.argv) > 1:
-            raw_path = str(sys.argv[1])
-            #klik na spusteni trimazkonu s admin právy
-            if sys.argv[0] != sys.argv[1]:
-                # pokud se nerovnají jedná se nejspíše o volání základního prohlížeče obrázků (spuštění kliknutím na obrázek...)
+            raw_path = str(sys.argv[1]) #klik na spusteni trimazkonu s admin právy
+            if sys.argv[0] != sys.argv[1]: # pokud se nerovnají jedná se nejspíše o volání základního prohlížeče obrázků (spuštění kliknutím na obrázek...)
                 IB_as_def_browser_path=Tools.path_check(raw_path,True)
                 IB_as_def_browser_path_splitted = IB_as_def_browser_path.split("/")
                 IB_as_def_browser_path = ""
@@ -1111,6 +1107,15 @@ def set_zoom(zoom_factor):
     root.tk.call('tk', 'scaling', zoom_factor / 100)
 
 class main_menu:
+    @classmethod
+    def call_trimazkon_tray(cls,config_data):
+        def call_subprocess():
+            trimazkon_tray_instance.main()
+
+        trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,[],[])
+        running_tray = threading.Thread(target=call_subprocess,)
+        running_tray.start()
+
     def __init__(self,root):
         self.root = root
         # předání rootu do pipeline_duplex až ve chvílí, kdy je jasné, že aplikace není vícekrát spuštěná:
@@ -1121,7 +1126,8 @@ class main_menu:
         self.data_read_in_txt = Tools.read_config_data()
         self.database_downloaded = False
         self.ib_running = False
-    
+        main_menu.call_trimazkon_tray(self.data_read_in_txt)
+        
     def clear_frames(self):
         for widget in self.root.winfo_children():
             widget.destroy()
@@ -4556,6 +4562,71 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         else:
             self.info2.configure(text = "")
 
+    def save_new_task(self):
+        window = customtkinter.CTkToplevel()
+        window.geometry(f"800x400")
+        window.after(200, lambda: window.iconbitmap(app_icon))
+        window.title("Nastavení nového úkolu")
+        trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,[],[])
+
+        checkbox_frame =       customtkinter.CTkFrame(master = window,corner_radius=0)
+        option1 = customtkinter.CTkCheckBox(master = checkbox_frame,font=("Arial",20), text = "Redukce starších než...",command = lambda: self.selected(True))
+        option2 = customtkinter.CTkCheckBox(master = checkbox_frame,font=("Arial",20), text = "Redukce novějších, mazání starších než...",command = lambda: self.selected(True))
+        option1.pack(side="top",anchor="w")
+        option2.pack(side="top",anchor="w")
+
+        parameter_frame =       customtkinter.CTkFrame(master = window,corner_radius=0)
+        path_label =            customtkinter.CTkLabel(master = parameter_frame,text = "Zadejte cestu, kde bude úkol spouštěn:",font=("Arial",22,"bold"))
+        operating_path =        customtkinter.CTkEntry(master = parameter_frame,font=("Arial",20),width=730,height=50,corner_radius=0)
+        path_label.pack(side="top",anchor="w")
+        operating_path.pack(side="top",anchor="w")
+        older_then_frame =      customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
+        older_then_label =      customtkinter.CTkLabel(master = older_then_frame,text = "Odstanit soubory starší než:",font=("Arial",22,"bold"))
+        older_then_entry =      customtkinter.CTkEntry(master = older_then_frame,font=("Arial",20),width=730,height=50,corner_radius=0)
+        older_then_label2 =      customtkinter.CTkLabel(master = older_then_frame,text = "dní",font=("Arial",22,"bold"))
+        older_then_label.pack(side="left")
+        older_then_entry.pack(side="left")
+        older_then_label2.pack(side="left")
+        older_then_frame.pack(side="top")
+
+        minimum_file_frame =      customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
+        minimum_file_label =      customtkinter.CTkLabel(master = minimum_file_frame,text = "Ponechat souborů:",font=("Arial",22,"bold"))
+        minimum_file_entry =      customtkinter.CTkEntry(master = minimum_file_frame,font=("Arial",20),width=730,height=50,corner_radius=0)
+        minimum_file_label.pack(side="left")
+        minimum_file_entry.pack(side="left")
+        minimum_file_frame.pack(side="top")
+
+        frequency_frame =      customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
+        frequency_label =      customtkinter.CTkLabel(master = frequency_frame,text = "Frekvence: denně v ",font=("Arial",22,"bold"))
+        frequency_entry =      customtkinter.CTkEntry(master = frequency_frame,font=("Arial",20),width=100,height=50,corner_radius=0)
+        frequency_label2 =      customtkinter.CTkLabel(master = frequency_frame,text = "hodin",font=("Arial",22,"bold"))
+        frequency_label.pack(side="left")
+        frequency_entry.pack(side="left")
+        frequency_label2.pack(side="left")
+        frequency_frame.pack(side="top")
+
+        button_frame =          customtkinter.CTkFrame(master = window,corner_radius=0)
+        show_tasks_btn =        customtkinter.CTkButton(master = button_frame, width = 300,height=50,text = "Zobrazit nastavené úkoly", command =  lambda: trimazkon_tray_instance.show_all_tasks(toplevel=True),font=("Arial",20,"bold"),corner_radius=0)
+        show_tasks_btn.         pack(pady=10,padx=(10,0),side="right",anchor="e")
+        save_task_btn =         customtkinter.CTkButton(master = button_frame, width = 300,height=50,text = "Uložit nový úkol", command =  lambda: trimazkon_tray_instance.show_all_tasks(toplevel=True),font=("Arial",20,"bold"),corner_radius=0)
+        save_task_btn.          pack(pady=10,padx=(10,0),side="right",anchor="e")
+
+        checkbox_frame.pack(side="top",fill="x")
+        parameter_frame.pack(side="top",fill="both")
+        button_frame.pack(side="top",fill="x")
+
+        operating_path.insert("0",self.path_set.get())
+        older_then_entry.insert("0",30)
+        minimum_file_entry.insert("0",self.files_to_keep)
+        frequency_entry.insert("0","12:00")
+
+        window.update()
+        window.update_idletasks()
+        window.focus_force()
+        window.focus()
+        window.grab_set()
+
+
     def create_deleting_option_widgets(self):  # Vytváří veškeré widgets (delete option MAIN)
         #definice ramcu
         frame_with_logo =       customtkinter.CTkFrame(master=self.root,corner_radius=0)
@@ -4617,12 +4688,15 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         self.info2.             grid(column =0,row=0,sticky = tk.W,pady =5,padx=280)
         self.checkbox_testing.  grid(column =0,row=1,sticky = tk.W,pady =5,padx=10)
         self.info =             customtkinter.CTkLabel(master = self.bottom_frame2,text = "",font=("Arial",16,"bold"))
-        button =                customtkinter.CTkButton(master = self.bottom_frame2, text = "SPUSTIT", command = self.start,font=("Arial",20,"bold"))
+        execution_btn_frame =   customtkinter.CTkFrame(master=self.bottom_frame2,corner_radius=0)
+        button =                customtkinter.CTkButton(master = execution_btn_frame,width = 300,height = 60,text = "SPUSTIT", command = self.start,font=("Arial",20,"bold"))
+        create_task_btn =       customtkinter.CTkButton(master = execution_btn_frame,width = 300,height = 60,text = "Nastavit aut. spouštění",command = lambda: self.save_new_task(),font=("Arial",20,"bold"))
+        button.                 pack(pady=10,padx=(10,0),side="left",anchor="w")
+        create_task_btn.        pack(pady=10,padx=(10,0),side="left",anchor="w")
         self.console =          tk.Text(self.bottom_frame2, wrap="word", height=20, width=1200,background="black",font=("Arial",16),state=tk.DISABLED)
-        self.info.              pack(pady = 12,padx =10,anchor="w")
-        button.                 pack(pady =20,padx=10)
-        button.                 _set_dimensions(300,60)
-        self.console.           pack(pady =10,padx=10)
+        self.info.              pack(pady = 12,padx =10,anchor="w",side = "top")
+        execution_btn_frame.    pack(pady =20,padx=10,side = "top",anchor="n")
+        self.console.           pack(pady =10,padx=10,side = "top")
         #default:
         self.checkbox.select()
         self.checkbox_testing.select()

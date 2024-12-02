@@ -712,27 +712,30 @@ ip setting - kontext menu + optimalizace vykreslování - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 ip setting - dodelat, ze se pri editu projektu u disku nenacitaji disky
+ip setting - refresh disků do thread
 ip setting - udělat parent class, kde se volají ostatní classy
-
 ip setting - make project first u disku pri editu
-
-
 ip setting - zneviditelnit heslo
-
 ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...
-
 ip setting - mít možnost posouvat projekty o jednu pozici
 ip setting - mít možnost seřadit podle abecedy
+ip setting - unfocus více projektů ponechá ostatní s bílým rámečkem
+ip setting - opravit duplicity - manage bin
 
-
-ip setting - unfocus více projektů pochechá ostatní s bílým rámečkem
-
-ip setting - opravit duplicity
-
+TRIMAZKON - mazání - predelat confirm okno do toplevel
 TRIMAZKON - mazání - mít možnost nastavit si rutinu v task scheduleru - aby to běželo, jako služba - v pravý dolní nabídce se zobrazí, že probíhá mazání - šel by zobrazit log vymazaných obrázků
 
 
+
 TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
+
+
+
+pri spusteni - pres cmd nastavit icon tray - po vypnuti se smaze
+- do configu ulozit i seznam tasku
+- novy log smazanych obrazku - rozklikavaci sipka dolu
+
+
 
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon

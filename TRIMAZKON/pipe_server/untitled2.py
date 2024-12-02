@@ -102,9 +102,9 @@ class system_pipeline_communication:
                     except Exception:
                         pass
 
-root = tk.Tk()
-root.withdraw()
-pipeline_duplex = system_pipeline_communication(root)
+# root = tk.Tk()
+# root.withdraw()
+# pipeline_duplex = system_pipeline_communication(root)
 
 
 class drawing_option_window:
@@ -281,6 +281,8 @@ class drawing_option_window:
 
         # window.focus()
 
-draw = drawing_option_window(root,pipeline_duplex.pipe_name)
-root.mainloop()
-k = input("jojojoj")
+# draw = drawing_option_window(root,pipeline_duplex.pipe_name)
+# root.mainloop()
+# k = input("jojojoj")
+
+print("ahojda")
