@@ -23,12 +23,14 @@ def get_current_date():
         """
         - [0] = ymdhms
         - [1] = dmy
+        - [2] = date_timestamp
         """
         now = datetime.now()
         dt_string = now.strftime("%Y%m%d%H%M%S")
         readable_today = now.strftime("%d.%m.%Y")
+        date_timestamp = now.strftime("%d.%m.%Y %H:%M:%S")
         #print(f"\n- Dnes je: {readable_today}")
-        return [dt_string,readable_today]
+        return [dt_string,readable_today,date_timestamp]
 
 def get_max_days(cutoff_date):
     day = int(cutoff_date[0])
@@ -96,6 +98,10 @@ class whole_deleting_function:
         self.cutoff_date_given = cutoff_date_given
         self.supported_formats = supported_formats
         self.testing_mode = testing_mode
+
+        self.files_checked = 0
+        self.files_deleted = 0
+        self.older_files_checked = 0
 
         self.finish = False
 
@@ -442,6 +448,10 @@ class whole_deleting_function:
                 number_of_files +=1
             if number_of_files == 0:
                 os.rmdir(path+self.to_delete_folder)
+        
+        self.files_checked = files_checked
+        self.files_deleted = deleted_count
+        self.older_files_checked = older_files_checked
 
         if deleted_count == 0:
             self.output.append(f"- Zkontrolováno souborů: {files_checked}")
@@ -538,4 +548,6 @@ class whole_deleting_function:
                 self.output.append("- Mazání dokončeno\n")
 
         self.finish = True
+        
+        return [self.files_checked,self.older_files_checked,self.files_deleted,get_current_date()[2]] # pro případ spouštění přes cmd prompt, jinak sem nedojde
         

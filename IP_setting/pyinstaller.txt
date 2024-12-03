@@ -14,6 +14,13 @@ console:
 pyinstaller --noconfirm --onefile --add-data "C:\Users\jakub.hlavacek.local\AppData\Local\Programs\Python\Python312\Lib\site-packages\customtkinter;customtkinter/" IP_setting_v1.0.py
 
 
+commands pro cmd:
+python C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON\JHV_APP_GUI_v14.py deleting C:/Users/jakub.hlavacek.local/Desktop/JHV/test_images/Keyence/_503_Witte/datumovka/A/Height_test/ 30 1000
+
+schtasks /create /tn "trimazkontest1" /tr "python C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON\JHV_APP_GUI_v14.py deleting C:/Users/jakub.hlavacek.local/Desktop/JHV/test_images/Keyence/_503_Witte/datumovka/A/Height_test/ 30 1000" /sc daily /st 13:37
+
+schtasks /create /tn "trimazkontest2" /tr "C:\Users\jakub.hlavacek.local\AppData\Local\Programs\Python\Python312\python.exe C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON\JHV_APP_GUI_v14.py deleting C:/Users/jakub.hlavacek.local/Desktop/JHV/test_images/Keyence/_503_Witte/datumovka/A/Height_test/ 30 1000" /sc daily /st 13:37
+
 udelat vyjimku:
 1)folder:
 Add-MpPreference -ExclusionPath "C:\Path\To\Exclude"

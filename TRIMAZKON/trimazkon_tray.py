@@ -7,11 +7,20 @@ import tkinter as tk
 import pyperclip
 import os
 import subprocess
+import sys
+
+def resource_path(relative_path):
+    """ Get the absolute path to a resource, works for dev and for PyInstaller """
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 
 class tray_app_service:
-    def __init__(self,app_icon,task_list,deletion_log):
+    def __init__(self,app_icon,initial_path):
         self.app_icon = app_icon
+        self.app_icon = resource_path('images\\logo_TRIMAZKON.ico')
         self.config_filename = "config_TRIMAZKON.xlsx"
+        self.initial_path = initial_path
         # self.main()
         
     def clear_frame(self,frame):
@@ -27,7 +36,7 @@ class tray_app_service:
                 widget.destroy()
     
     def read_config(self):
-        wb = load_workbook(self.config_filename,read_only=True)
+        wb = load_workbook(self.initial_path +self.config_filename,read_only=True)
         ws = wb["task_settings"]
         all_tasks = []
         self.task_log_list = []
@@ -46,18 +55,36 @@ class tray_app_service:
         
         wb.close()
         return all_tasks
-    
+
+    def save_new_log(self,task_name:str,new_log:str): #musim mit na vstupu nazev tasku abych ho mohl najit a prepsat to u nej
+        wb = load_workbook(self.initial_path +self.config_filename)
+        ws = wb["task_settings"]
+        row_to_print = 1
+        current_tasks = self.read_config()
+        for tasks in current_tasks:
+            if str(tasks[0]) == task_name:
+                ws['F' + str(row_to_print)] = tasks[5] + "\n" + new_log # log mazání (pocet smazanych,datum,seznam smazanych)
+                break
+            row_to_print +=1
+        try:
+            wb.save(self.initial_path +self.config_filename)
+            wb.close()
+        except Exception as e:
+            print(e)
+            wb.close()
+            return False
+
     def save_task_to_config(self,current_tasks):
         def clear_document(wb,ws):
             for row in ws.iter_rows():
                 for cell in row:
                     cell.value = None
             try:
-                wb.save(self.config_filename)
+                wb.save(self.initial_path +self.config_filename)
             except Exception:
                 pass
 
-        wb = load_workbook(self.config_filename)
+        wb = load_workbook(self.initial_path +self.config_filename)
         ws = wb["task_settings"]
         clear_document(wb,ws)
         row_to_print = 1
@@ -71,7 +98,7 @@ class tray_app_service:
             ws['F' + str(row_to_print)] = tasks[5] # log mazání (pocet smazanych,datum,seznam smazanych)
             row_to_print +=1
         try:
-            wb.save(self.config_filename)
+            wb.save(self.initial_path +self.config_filename)
             wb.close()
         except Exception as e:
             print(e)
@@ -238,7 +265,7 @@ class tray_app_service:
 
     def main(self):
         def create_image():
-            image = Image.open(self.app_icon)
+            image = Image.open(resource_path(self.app_icon))
             return image
         
         self.create_menu()
@@ -252,8 +279,8 @@ class tray_app_service:
         # Run the tray icon
         self.icon.run()
 
-inst = tray_app_service('images/logo_TRIMAZKON.ico',[],[])
-inst.main()
+# inst = tray_app_service('images/logo_TRIMAZKON.ico',[],[])
+# inst.main()
 # CREATING TASK:
 # name_of_task = "dailyscript_test"
 # path_to_app = r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON\pipe_server\untitled2.py"

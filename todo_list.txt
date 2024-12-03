@@ -725,6 +725,8 @@ ip setting - opravit duplicity - manage bin
 TRIMAZKON - mazání - predelat confirm okno do toplevel
 TRIMAZKON - mazání - mít možnost nastavit si rutinu v task scheduleru - aby to běželo, jako služba - v pravý dolní nabídce se zobrazí, že probíhá mazání - šel by zobrazit log vymazaných obrázků
 
+TRIMAZKON - mazání - pridat datum pridani noveho tasku
+TRIMAZKON - mazání - vyzkouset exe volani tasku a ukladani novych logu
 
 
 TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)

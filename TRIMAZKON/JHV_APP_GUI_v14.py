@@ -18,6 +18,7 @@ import shutil
 import sys
 import ctypes
 import win32pipe, win32file, pywintypes, psutil
+import subprocess
 
 testing = True
 
@@ -945,7 +946,7 @@ class Tools:
 
 
 initial_path = Tools.path_check(os.getcwd())
-if len(sys.argv) > 1: #spousteni pres cmd (kliknuti na obrazek)
+if len(sys.argv) > 1: #spousteni pres cmd (kliknuti na obrazek) nebo task scheduler - mazání
     raw_path = str(sys.argv[0])
     initial_path = Tools.path_check(raw_path,True)
     initial_path_splitted = initial_path.split("/")
@@ -962,10 +963,38 @@ print("exe name: ",exe_name)
 if testing:
     exe_name = "x x x"
 
+def deleting_via_cmd():
+    task_name = str(sys.argv[2])
+    deleting_path = str(sys.argv[3])
+    max_days = int(sys.argv[4])
+    files_to_keep = int(sys.argv[5])
+    cutoff_date = Deleting.get_cutoff_date(days=max_days)
+    text_file_data = Tools.read_config_data()
+    supported_formats_deleting = text_file_data[1]
+    list_of_folder_names = text_file_data[9]
+    to_delete_folder_name = list_of_folder_names[2]
+
+    del_instance = Deleting.whole_deleting_function(
+        deleting_path,
+        more_dirs=False,
+        del_option=1,
+        files_to_keep=files_to_keep,
+        cutoff_date_given=cutoff_date,
+        supported_formats=supported_formats_deleting,
+        testing_mode=False,
+        to_delete_folder_name=to_delete_folder_name
+        )
+    output_data = del_instance.main()
+    output_message = f"Datum: {output_data[3]}\nZkontrolováno: {output_data[0]} souborů\nStarších: {output_data[1]} souborů\nSmazáno: {output_data[2]} souborů\n"
+    print(output_message)
+
+    trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,initial_path)
+    trimazkon_tray_instance.save_new_log(task_name,output_message)
+
 load_gui=True
 if len(sys.argv) > 1:
     if sys.argv[1] == "deleting":
-        print(f"mazání, počet soub: {sys.argv[2]}, datum: {sys.argv[3]}")
+        deleting_via_cmd()
         load_gui = False
         
 class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
@@ -1112,7 +1141,7 @@ class main_menu:
         def call_subprocess():
             trimazkon_tray_instance.main()
 
-        trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,[],[])
+        trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,initial_path)
         running_tray = threading.Thread(target=call_subprocess,)
         running_tray.start()
 
@@ -4000,7 +4029,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         Ověřování cesty, init, spuštění
         """
         if self.checkbox.get()+self.checkbox2.get()+self.checkbox3.get() == 0:
-            Tools.add_colored_line(self.console,"Nevybrali jste žádný způsob mazání :-)","red")
+            Tools.add_colored_line(self.console,"Nevybrali jste žádný způsob mazání","red")
             self.info.configure(text = "")
 
         else:
@@ -4607,11 +4636,45 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         def save_task_to_config():
             if check_entry("",hour_format=True,input_char=str(frequency_entry.get())) == False:
                 return
-            current_tasks = trimazkon_tray_instance.read_config()
-            new_task = [operating_path.get(),older_then_entry.get(),minimum_file_entry.get(),frequency_entry.get(),""]
-            current_tasks.insert(0,new_task)
+            def get_task_name(current_tasks):
+                names_taken = []
+                new_task_name = "TRIMAZKON_task_xx"
+                for tasks in current_tasks:
+                    names_taken.append(tasks[0])
+                for i in range(1,100):
+                    name_suggestion = "TRIMAZKON_task_" + str(i)
+                    if not name_suggestion in names_taken:
+                        new_task_name = name_suggestion
+                        break
+                return new_task_name
+
+            def set_up_task_in_ts():
+                def check_freq_format(freq_input):
+                    input_splitted = freq_input.split(":")
+                    if len(str(input_splitted[0])) == 1:
+                        corrected = "0"+str(input_splitted[0]) +":"+ str(input_splitted[1])
+                        return corrected
+                    else:
+                        return freq_input
+                        
+
+                name_of_task = new_task[0]
+                # path_to_exe_app = initial_path
+                repaired_freq_param = check_freq_format(str(new_task[4]))
+                task_command = str(initial_path+"/"+exe_name) + " deleting " + str(new_task[1]) +" "+ str(new_task[2]) +" "+ str(new_task[3]) + " /SC DAILY /ST " + repaired_freq_param
+                # path_to_app = r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON\pipe_server\untitled2.py"
+                cmd_command = f"schtasks /Create /TN {name_of_task} /TR {task_command}"
+                status = subprocess.call(cmd_command,shell=True,text=True)
+                print(status)
+                print(cmd_command)
+
             wb = load_workbook(self.config_filename)
             ws = wb["task_settings"]
+            current_tasks = trimazkon_tray_instance.read_config()
+            new_task_name = get_task_name(current_tasks)
+            new_task = [new_task_name,operating_path.get(),older_then_entry.get(),minimum_file_entry.get(),frequency_entry.get(),""]
+            current_tasks.insert(0,new_task)
+
             row_to_print = 1
             for tasks in current_tasks:
                 ws['A' + str(row_to_print)] = tasks[0] # název tasku
@@ -4624,12 +4687,15 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             try:
                 wb.save(self.config_filename)
                 wb.close()
+                set_up_task_in_ts()
                 Tools.add_colored_line(console,"Nový úkol byl uložen a zaveden do task scheduleru","green",None,True)
             except Exception as e:
                 Tools.add_colored_line(console,f"Prosím zavřete konfigurační soubor ({e})","red",None,True)
                 wb.close()
 
         def refresh_cutoff_date():
+            older_then_entry.update()
+            older_then_entry.update_idletasks()
             try:
                 cutoffdate_list = Deleting.get_cutoff_date(int(older_then_entry.get()))
                 new_date = "(starší než: "+str(cutoffdate_list[0])+"."+str(cutoffdate_list[1])+"."+str(cutoffdate_list[2])+")"
@@ -4667,7 +4733,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         # window.geometry(f"800x400")
         window.after(200, lambda: window.iconbitmap(app_icon))
         window.title("Nastavení nového úkolu")
-        trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,[],[])
+        trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,initial_path)
 
         # checkbox_frame = customtkinter.CTkFrame(master = window,corner_radius=0)
         # option1 = customtkinter.CTkCheckBox(master = checkbox_frame,font=("Arial",20), text = "Redukce starších než...",command = lambda: self.selected(True))
