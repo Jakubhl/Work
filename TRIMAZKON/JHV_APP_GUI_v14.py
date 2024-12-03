@@ -3966,6 +3966,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         self.to_delete_folder_name = list_of_folder_names[2]
         self.console_frame_right_1_text = "","white"
         self.console_frame_right_2_text = "","white"
+        self.config_filename = "config_TRIMAZKON.xlsx"
         self.temp_path_for_explorer = None
         self.create_deleting_option_widgets()
  
@@ -4233,8 +4234,14 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 if int(input_files_to_keep) >= 0:
                     self.files_to_keep = int(input_files_to_keep)
 
-        console_1_text, console_1_color = self.console_frame_right_1_text
+        def set_max_days():
+            new_cutoff = Deleting.get_cutoff_date(int(max_days_entry.get()))
+            set_day.insert(0,new_cutoff[0])
+            set_month.insert(0,new_cutoff[1])
+            set_year.insert(0,new_cutoff[2])
+            set_cutoff_date()
 
+        console_1_text, console_1_color = self.console_frame_right_1_text
         today = Deleting.get_current_date()
         row_index = 0
         label0      = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Dnešní datum: "+today[1],justify = "left",font=("Arial",16,"bold"))
@@ -4244,7 +4251,10 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         set_month   = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[1])
         sep2        = customtkinter.CTkLabel(master = self.frame_right,height=20,width=10,text = ".",font=("Arial",20))
         set_year    = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[2])
-        button_save1 = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Nastavit", command = lambda: set_cutoff_date(),font=("Arial",18,"bold"))
+        button_save1 = customtkinter.CTkButton(master = self.frame_right,width=100,height=30, text = "Nastavit", command = lambda: set_cutoff_date(),font=("Arial",18,"bold"))
+        max_days_entry = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[0])
+        max_days_label = customtkinter.CTkLabel(master = self.frame_right,text = "dní",font=("Arial",16))
+        max_days_save = customtkinter.CTkButton(master = self.frame_right,width=100,height=30, text = "Nastavit", command = lambda: set_max_days(),font=("Arial",18,"bold"))
         insert_button = customtkinter.CTkButton(master = self.frame_right,width=190,height=30, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",18,"bold"))
         console_frame_right_1 = customtkinter.CTkLabel(master = self.frame_right,height=30,text = console_1_text,justify = "left",font=("Arial",18),text_color=console_1_color)
         label0.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
@@ -4254,7 +4264,10 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         set_month.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=50)
         sep2.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=80)
         set_year.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=90)
-        button_save1.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=140)
+        button_save1.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=150)
+        max_days_entry.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=260)
+        max_days_label.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=320)
+        max_days_save.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=350)
         insert_button.grid(column =0,row=row_index+3,sticky = tk.W,pady =5,padx=10)
         console_frame_right_1.grid(column =0,row=row_index+4,sticky = tk.W,pady =0,padx=10)
         def new_date_enter_btn(e):
@@ -4262,6 +4275,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         set_day.bind("<Return>",new_date_enter_btn)
         set_month.bind("<Return>",new_date_enter_btn)
         set_year.bind("<Return>",new_date_enter_btn)
+        max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
 
         console_2_text, console_2_color = self.console_frame_right_2_text
         label2          = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte počet ponechaných souborů, vyhodnocených jako starších:",justify = "left",font=("Arial",16))
@@ -4395,6 +4409,13 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 if int(input_files_to_keep) >= 0:
                     self.files_to_keep = int(input_files_to_keep)
 
+        def set_max_days():
+            new_cutoff = Deleting.get_cutoff_date(int(max_days_entry.get()))
+            set_day.insert(0,new_cutoff[0])
+            set_month.insert(0,new_cutoff[1])
+            set_year.insert(0,new_cutoff[2])
+            set_cutoff_date()
+
         console_frame_right_1_text, console_frame_right_1_color = self.console_frame_right_1_text
         today = Deleting.get_current_date()
         row_index = 0
@@ -4405,7 +4426,10 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         set_month   = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[1])
         sep2        = customtkinter.CTkLabel(master = self.frame_right,height=20,width=10,text = ".",font=("Arial",20))
         set_year    = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[2])
-        button_save1 = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Nastavit", command = lambda: set_cutoff_date(),font=("Arial",18,"bold"))
+        button_save1 = customtkinter.CTkButton(master = self.frame_right,width=100,height=30, text = "Nastavit", command = lambda: set_cutoff_date(),font=("Arial",18,"bold"))
+        max_days_entry = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[0])
+        max_days_label = customtkinter.CTkLabel(master = self.frame_right,text = "dní",font=("Arial",16))
+        max_days_save = customtkinter.CTkButton(master = self.frame_right,width=100,height=30, text = "Nastavit", command = lambda: set_max_days(),font=("Arial",18,"bold"))
         insert_button = customtkinter.CTkButton(master = self.frame_right,width=190,height=30, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",18,"bold"))
         console_frame_right_1=customtkinter.CTkLabel(master = self.frame_right,height=30,text = console_frame_right_1_text,justify = "left",font=("Arial",18),text_color=console_frame_right_1_color)
         label0.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
@@ -4415,7 +4439,10 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         set_month.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=50)
         sep2.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=80)
         set_year.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=90)
-        button_save1.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=140)
+        button_save1.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=150)
+        max_days_entry.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=260)
+        max_days_label.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=320)
+        max_days_save.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=350)
         insert_button.grid(column =0,row=row_index+3,sticky = tk.W,pady =5,padx=10)
         console_frame_right_1.grid(column =0,row=row_index+4,sticky = tk.W,pady =0,padx=10)
         def new_date_enter_btn(e):
@@ -4423,6 +4450,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         set_day.bind("<Return>",new_date_enter_btn)
         set_month.bind("<Return>",new_date_enter_btn)
         set_year.bind("<Return>",new_date_enter_btn)
+        max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
         
         console_frame_right_2_text, console_frame_right_2_color = self.console_frame_right_2_text
         label2          = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte počet ponechaných novějších souborů:",justify = "left",font=("Arial",16))
@@ -4563,69 +4591,160 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             self.info2.configure(text = "")
 
     def save_new_task(self):
+        def call_browse_directories():
+            """
+            Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
+            """
+            output = Tools.browseDirectories("only_dirs")
+            if str(output[1]) != "/":
+                operating_path.delete(0,300)
+                operating_path.insert(0, str(output[1]))
+                Tools.add_colored_line(console,"Byla vložena cesta pro vykonávání úkolu","green",None,True)
+            print(output[0])
+            window.focus()
+            window.focus_force()
+
+        def save_task_to_config():
+            if check_entry("",hour_format=True,input_char=str(frequency_entry.get())) == False:
+                return
+            current_tasks = trimazkon_tray_instance.read_config()
+            new_task = [operating_path.get(),older_then_entry.get(),minimum_file_entry.get(),frequency_entry.get(),""]
+            current_tasks.insert(0,new_task)
+            wb = load_workbook(self.config_filename)
+            ws = wb["task_settings"]
+            row_to_print = 1
+            for tasks in current_tasks:
+                ws['A' + str(row_to_print)] = tasks[0] # název tasku
+                ws['B' + str(row_to_print)] = tasks[1] # cesta vykonavani
+                ws['C' + str(row_to_print)] = tasks[2] # max days
+                ws['D' + str(row_to_print)] = tasks[3] # min left
+                ws['E' + str(row_to_print)] = tasks[4] # frequency
+                ws['F' + str(row_to_print)] = tasks[5] # log mazání (pocet smazanych,datum,seznam smazanych)
+                row_to_print +=1
+            try:
+                wb.save(self.config_filename)
+                wb.close()
+                Tools.add_colored_line(console,"Nový úkol byl uložen a zaveden do task scheduleru","green",None,True)
+            except Exception as e:
+                Tools.add_colored_line(console,f"Prosím zavřete konfigurační soubor ({e})","red",None,True)
+                wb.close()
+
+        def refresh_cutoff_date():
+            try:
+                cutoffdate_list = Deleting.get_cutoff_date(int(older_then_entry.get()))
+                new_date = "(starší než: "+str(cutoffdate_list[0])+"."+str(cutoffdate_list[1])+"."+str(cutoffdate_list[2])+")"
+                if older_then_label3.cget("text") != new_date:
+                    older_then_label3.configure(text = new_date)
+            except Exception:
+                pass
+
+        def check_entry(event,number=False,hour_format=False,input_char=None):
+            if number:
+                if not event.char.isdigit():
+                    Tools.add_colored_line(console,"Vkládejte pouze čísla","red",None,True)
+                    event.widget.insert(tk.INSERT,"")
+                    return "break"  # Stop the event from inserting the original character
+                
+            elif hour_format:
+                input_char = str(input_char)
+                if not ":" in input_char:
+                    Tools.add_colored_line(console,"Neplatný formát, chybí separátor (vkládejte ve formátu: 00:00)","red",None,True)
+                    return False
+                elif len(input_char.split(":")) != 2:
+                    Tools.add_colored_line(console,"Neplatný formát (vkládejte ve formátu: 00:00)","red",None,True)
+                    return False
+                elif len(str(input_char.split(":")[1])) != 2:
+                    Tools.add_colored_line(console,"Neplatný formát (vkládejte ve formátu: 00:00)","red",None,True)
+                    return False
+                elif not input_char.split(":")[0].isdigit() or not input_char.split(":")[1].isdigit():
+                    Tools.add_colored_line(console,"Neplatné znaky (vkládejte ve formátu: 00:00)","red",None,True)
+                    return False
+                elif int(input_char.split(":")[0]) > 23 or int(input_char.split(":")[0]) < 0 or int(input_char.split(":")[1]) > 59 or int(input_char.split(":")[1]) < 0:
+                    Tools.add_colored_line(console,"Neplatný formát, mimo rozsah (vkládejte ve formátu: 00:00)","red",None,True)
+                    return False
+        
         window = customtkinter.CTkToplevel()
-        window.geometry(f"800x400")
+        # window.geometry(f"800x400")
         window.after(200, lambda: window.iconbitmap(app_icon))
         window.title("Nastavení nového úkolu")
         trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,[],[])
 
-        checkbox_frame =       customtkinter.CTkFrame(master = window,corner_radius=0)
-        option1 = customtkinter.CTkCheckBox(master = checkbox_frame,font=("Arial",20), text = "Redukce starších než...",command = lambda: self.selected(True))
-        option2 = customtkinter.CTkCheckBox(master = checkbox_frame,font=("Arial",20), text = "Redukce novějších, mazání starších než...",command = lambda: self.selected(True))
-        option1.pack(side="top",anchor="w")
-        option2.pack(side="top",anchor="w")
+        # checkbox_frame = customtkinter.CTkFrame(master = window,corner_radius=0)
+        # option1 = customtkinter.CTkCheckBox(master = checkbox_frame,font=("Arial",20), text = "Redukce starších než...",command = lambda: self.selected(True))
+        # option2 = customtkinter.CTkCheckBox(master = checkbox_frame,font=("Arial",20), text = "Redukce novějších, mazání starších než...",command = lambda: self.selected(True))
+        # option1.pack(side="top",anchor="w")
+        # option2.pack(side="top",anchor="w")
 
-        parameter_frame =       customtkinter.CTkFrame(master = window,corner_radius=0)
-        path_label =            customtkinter.CTkLabel(master = parameter_frame,text = "Zadejte cestu, kde bude úkol spouštěn:",font=("Arial",22,"bold"))
-        operating_path =        customtkinter.CTkEntry(master = parameter_frame,font=("Arial",20),width=730,height=50,corner_radius=0)
-        path_label.pack(side="top",anchor="w")
-        operating_path.pack(side="top",anchor="w")
-        older_then_frame =      customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
-        older_then_label =      customtkinter.CTkLabel(master = older_then_frame,text = "Odstanit soubory starší než:",font=("Arial",22,"bold"))
-        older_then_entry =      customtkinter.CTkEntry(master = older_then_frame,font=("Arial",20),width=730,height=50,corner_radius=0)
-        older_then_label2 =      customtkinter.CTkLabel(master = older_then_frame,text = "dní",font=("Arial",22,"bold"))
-        older_then_label.pack(side="left")
-        older_then_entry.pack(side="left")
-        older_then_label2.pack(side="left")
-        older_then_frame.pack(side="top")
+        parameter_frame = customtkinter.CTkFrame(master = window,corner_radius=0)
+        path_label = customtkinter.CTkLabel(master = parameter_frame,text = "Zadejte cestu, kde bude úkol spouštěn:",font=("Arial",22,"bold"))
+        path_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
+        operating_path = customtkinter.CTkEntry(master = path_frame,font=("Arial",20),height=50,corner_radius=0)
+        explorer_btn = customtkinter.CTkButton(master = path_frame,text = "...",font=("Arial",22,"bold"),width = 40,height=50,corner_radius=0,command=lambda: call_browse_directories())
+        path_label.pack(pady = (10,0),padx = (10,0),side="top",anchor="w")
+        operating_path.pack(pady = (10,0),padx = (10,0),side="left",anchor="w",expand = True,fill="x")
+        explorer_btn.pack(pady = (10,0),padx = (0,10),side="left",anchor="w")
+        path_frame.pack(side="top",anchor="w",fill="x",expand = True)
 
-        minimum_file_frame =      customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
-        minimum_file_label =      customtkinter.CTkLabel(master = minimum_file_frame,text = "Ponechat souborů:",font=("Arial",22,"bold"))
-        minimum_file_entry =      customtkinter.CTkEntry(master = minimum_file_frame,font=("Arial",20),width=730,height=50,corner_radius=0)
-        minimum_file_label.pack(side="left")
-        minimum_file_entry.pack(side="left")
-        minimum_file_frame.pack(side="top")
+        older_then_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
+        older_then_label = customtkinter.CTkLabel(master = older_then_frame,text = "Odstanit soubory starší než:",font=("Arial",22,"bold"))
+        older_then_entry = customtkinter.CTkEntry(master = older_then_frame,font=("Arial",20),width=100,height=40,corner_radius=0)
+        older_then_label2 = customtkinter.CTkLabel(master = older_then_frame,text = "dní",font=("Arial",22,"bold"))
+        older_then_label3 = customtkinter.CTkLabel(master = older_then_frame,text = "",font=("Arial",22,"bold"))
+        older_then_label.pack(pady = (10,0),padx = (10,10),side="left")
+        older_then_entry.pack(pady = (10,0),padx = (0,0),side="left")
+        older_then_label2.pack(pady = (10,0),padx = (10,0),side="left")
+        older_then_label3.pack(pady = (10,0),padx = (10,10),side="left")
+        older_then_frame.pack(side="top",fill="x",anchor="w")
+        older_then_entry.bind("<Key>",lambda e: refresh_cutoff_date())
+        older_then_entry.bind("<Key>",lambda e: check_entry(e,number=True))
 
-        frequency_frame =      customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
-        frequency_label =      customtkinter.CTkLabel(master = frequency_frame,text = "Frekvence: denně v ",font=("Arial",22,"bold"))
-        frequency_entry =      customtkinter.CTkEntry(master = frequency_frame,font=("Arial",20),width=100,height=50,corner_radius=0)
-        frequency_label2 =      customtkinter.CTkLabel(master = frequency_frame,text = "hodin",font=("Arial",22,"bold"))
-        frequency_label.pack(side="left")
-        frequency_entry.pack(side="left")
-        frequency_label2.pack(side="left")
-        frequency_frame.pack(side="top")
+        minimum_file_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
+        minimum_file_label = customtkinter.CTkLabel(master = minimum_file_frame,text = "Ponechat souborů:",font=("Arial",22,"bold"))
+        minimum_file_entry = customtkinter.CTkEntry(master = minimum_file_frame,font=("Arial",20),width=100,height=40,corner_radius=0)
+        minimum_file_label.pack(pady = (10,0),padx = (10,10),side="left")
+        minimum_file_entry.pack(pady = (10,0),padx = (0,10),side="left")
+        minimum_file_frame.pack(side="top",fill="x",anchor="w")
+        minimum_file_entry.bind("<Key>",lambda e: check_entry(e,number=True))
 
-        button_frame =          customtkinter.CTkFrame(master = window,corner_radius=0)
-        show_tasks_btn =        customtkinter.CTkButton(master = button_frame, width = 300,height=50,text = "Zobrazit nastavené úkoly", command =  lambda: trimazkon_tray_instance.show_all_tasks(toplevel=True),font=("Arial",20,"bold"),corner_radius=0)
-        show_tasks_btn.         pack(pady=10,padx=(10,0),side="right",anchor="e")
-        save_task_btn =         customtkinter.CTkButton(master = button_frame, width = 300,height=50,text = "Uložit nový úkol", command =  lambda: trimazkon_tray_instance.show_all_tasks(toplevel=True),font=("Arial",20,"bold"),corner_radius=0)
-        save_task_btn.          pack(pady=10,padx=(10,0),side="right",anchor="e")
+        frequency_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
+        frequency_label = customtkinter.CTkLabel(master = frequency_frame,text = "Frekvence: denně, ",font=("Arial",22,"bold"))
+        frequency_entry = customtkinter.CTkEntry(master = frequency_frame,font=("Arial",20),width=100,height=40,corner_radius=0)
+        frequency_label2 = customtkinter.CTkLabel(master = frequency_frame,text = "hodin (př.: 0:00, 6:00, 14:30)",font=("Arial",22,"bold"))
+        frequency_label.pack(pady = (10,0),padx = (10,10),side="left",anchor="w")
+        frequency_entry.pack(pady = (10,0),padx = (0,0),side="left",anchor="w")
+        frequency_label2.pack(pady = (10,0),padx = (10,10),side="left",anchor="w")
+        frequency_frame.pack(side="top",fill="x",anchor="w")
+        console = tk.Text(parameter_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED)
+        console.pack(pady = 10,padx =10,side="top",anchor="w",fill="x")
 
-        checkbox_frame.pack(side="top",fill="x")
+        button_frame =   customtkinter.CTkFrame(master = window,corner_radius=0)
+        show_tasks_btn = customtkinter.CTkButton(master = button_frame, width = 300,height=50,text = "Zobrazit nastavené úkoly", command =  lambda: trimazkon_tray_instance.show_all_tasks(toplevel=True),font=("Arial",20,"bold"),corner_radius=0)
+        save_task_btn =  customtkinter.CTkButton(master = button_frame, width = 300,height=50,text = "Uložit nový úkol", command =  lambda: save_task_to_config(),font=("Arial",20,"bold"),corner_radius=0)
+        cancel_btn =  customtkinter.CTkButton(master = button_frame, width = 300,height=50,text = "Zavřít", command =  lambda: window.destroy(),font=("Arial",20,"bold"),corner_radius=0)
+        cancel_btn.   pack(pady=10,padx=(10,10),side="right",anchor="e")
+        save_task_btn.   pack(pady=10,padx=(10,0),side="right",anchor="e")
+        show_tasks_btn.  pack(pady=10,padx=(10,0),side="right",anchor="e")
+
+        # checkbox_frame.pack(side="top",fill="x")
         parameter_frame.pack(side="top",fill="both")
         button_frame.pack(side="top",fill="x")
-
         operating_path.insert("0",self.path_set.get())
-        older_then_entry.insert("0",30)
+        max_days = Deleting.get_max_days(self.cutoff_date)
+        older_then_entry.insert("0",max_days)
         minimum_file_entry.insert("0",self.files_to_keep)
         frequency_entry.insert("0","12:00")
+        refresh_cutoff_date()
 
         window.update()
         window.update_idletasks()
+        window_width = window.winfo_width()
+        if window_width < 1200:
+            window_width = 1200
+        window.geometry(f"{window_width}x{window.winfo_height()}")
         window.focus_force()
         window.focus()
-        window.grab_set()
-
+        # window.grab_set()
+        window.wait_window()
 
     def create_deleting_option_widgets(self):  # Vytváří veškeré widgets (delete option MAIN)
         #definice ramcu

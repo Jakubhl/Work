@@ -284,5 +284,88 @@ class drawing_option_window:
 # draw = drawing_option_window(root,pipeline_duplex.pipe_name)
 # root.mainloop()
 # k = input("jojojoj")
+def calc_days_in_month(current_month):
+    months_30days = [4,6,9,11]
+    if current_month == 2:
+        days_in_month = 28
+    elif current_month in months_30days:
+        days_in_month = 30
+    else:
+        days_in_month = 31
+        
+    return days_in_month
 
-print("ahojda")
+def get_cutoff_date(days):
+
+    # current_date = Deleting.get_current_date()
+    current_date = "03.12.2024"
+    # current_day, current_month, current_year = current_date[1].split(".")
+    current_day, current_month, current_year = current_date.split(".")
+    day = int(current_day)
+    month = int(current_month)
+    year = int(current_year)
+
+    while days > 0:
+        day -= 1
+        if day == 0:
+            month -= 1
+            if month ==0:
+                month = 12
+                year -= 1
+            day = calc_days_in_month(month)
+
+        days -= 1
+    return [day,month,year]
+
+def get_max_days():
+    # print(self.cutoff_date)
+    day = 31
+    month = 12
+    year = 2023
+    # current_date = Deleting.get_current_date()
+    current_date = "01.01.2024"
+    # current_day, current_month, current_year = current_date[1].split(".")
+    current_day, current_month, current_year = current_date.split(".")
+    year_div = int(current_year) - int(year)
+    month_div = int(current_month) - int(month)
+    month_div += year_div*12
+
+    day_div = int(current_day) - int(day)
+    for i in range(0,month_div):
+        day_div += calc_days_in_month(month)
+        month +=1
+        if month > 12:
+            month=1
+
+    # for month in range(int(current_month),13):
+    #     print("month: ",month)
+    #     day_div += calc_days_in_month(month)
+    #     month +=1
+    #     if month > 12:
+    #         month=1
+    # if year_div > 0:
+    #     for month in range(1,13):
+    #         print("month: ",month)
+    #         day_div += calc_days_in_month(month)
+    #         month +=1
+    #         if month > 12:
+    #             month=1 
+
+
+    # print(f"starší o: {year_div} roky")
+    # print(f"starší o: {month_div} mes")
+    # print(f"starší o: {day_div} dni")
+def check_input(input_char):
+    def wrong_format():
+        return False
+
+    if not ":" in input_char:
+        wrong_format()
+    elif len(input_char.split(":")) != 2:
+        wrong_format()
+    elif len(str(input_char.split(":")[1])) != 2:
+        wrong_format()
+    elif int(input_char.split(":")[0]) > 23 or int(input_char.split(":")[0]) < 0 or int(input_char.split(":")[1]) > 59 or int(input_char.split(":")[1]) < 0:
+        wrong_format()  
+
+check_input("15:00")

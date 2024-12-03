@@ -2,9 +2,11 @@
 from pystray import Icon, Menu, MenuItem
 from PIL import Image, ImageDraw
 from openpyxl import load_workbook
-import threading
 import customtkinter
-
+import tkinter as tk
+import pyperclip
+import os
+import subprocess
 
 class tray_app_service:
     def __init__(self,app_icon,task_list,deletion_log):
@@ -12,7 +14,17 @@ class tray_app_service:
         self.config_filename = "config_TRIMAZKON.xlsx"
         # self.main()
         
-
+    def clear_frame(self,frame):
+        for widget in frame.winfo_children():
+            if widget.winfo_exists():
+                widget.unbind("<Enter>")
+                widget.unbind("<Leave>")
+                widget.unbind("<Return>")
+                widget.unbind("<Button-1>")
+                widget.unbind("<Button-3>")
+                widget.unbind("<Double-1>")
+                widget.unbind("<MouseWheel>")
+                widget.destroy()
     
     def read_config(self):
         wb = load_workbook(self.config_filename,read_only=True)
@@ -21,70 +33,160 @@ class tray_app_service:
         self.task_log_list = []
         for row in ws.iter_rows(values_only=True):
             row_array = []
-            for items in row[:6]:
+            for items in row:
                 if items is not None:
                     row_array.append(str(items))
 
+            if len(row_array) < 6:
+                row_array.append("")
+            elif len(row_array) == 6:
+                self.task_log_list.append(row_array[5])
             if len(row_array) > 1:
-                all_tasks.insert(0,row_array[0])
-                self.task_log_list.insert(0,[row_array[0],row_array[1]])
-            elif len(row_array) > 0:
-                all_tasks.insert(0,row_array[0])
+                all_tasks.insert(0,row_array)
         
         wb.close()
         return all_tasks
     
-    def show_all_tasks(self,toplevel=False):
-        if not toplevel:
-            child_root = customtkinter.CTk()
+    def save_task_to_config(self,current_tasks):
+        def clear_document(wb,ws):
+            for row in ws.iter_rows():
+                for cell in row:
+                    cell.value = None
+            try:
+                wb.save(self.config_filename)
+            except Exception:
+                pass
+
+        wb = load_workbook(self.config_filename)
+        ws = wb["task_settings"]
+        clear_document(wb,ws)
+        row_to_print = 1
+        print("current_tasks",current_tasks)
+        for tasks in current_tasks:
+            ws['A' + str(row_to_print)] = tasks[0] # nazev tasku
+            ws['B' + str(row_to_print)] = tasks[1] # cesta vykonavani
+            ws['C' + str(row_to_print)] = tasks[2] # max days
+            ws['D' + str(row_to_print)] = tasks[3] # min left
+            ws['E' + str(row_to_print)] = tasks[4] # frequency
+            ws['F' + str(row_to_print)] = tasks[5] # log mazání (pocet smazanych,datum,seznam smazanych)
+            row_to_print +=1
+        try:
+            wb.save(self.config_filename)
+            wb.close()
+        except Exception as e:
+            print(e)
+            wb.close()
+            return False
+
+    def delete_task(self,id,root):
+        all_tasks = self.read_config()
+        all_tasks.pop(id)
+        
+        status = self.save_task_to_config(all_tasks)
+        if status != False:
+            # root.destroy()
+            self.show_all_tasks(root_given=root)
+
+    def show_context_menu(self,root,event,widget,id):
+        all_tasks = self.read_config()
+        context_menu = tk.Menu(root,tearoff=0,fg="white",bg="black",font=("Arial",20,"bold"))
+        preset_font=("Arial",18,"bold")
+
+        def edit_task_in_scheduler():
+            taskname = "TRIMAZKON_1"
+            process = subprocess.Popen(f'schtasks /query /tn \"{taskname}\" /v /fo LIST',
+                                                    stdout=subprocess.PIPE,
+                                                    stderr=subprocess.PIPE,
+                                                    creationflags=subprocess.CREATE_NO_WINDOW)
+            stdout, stderr = process.communicate()
+
+        if widget == "path":
+            path = all_tasks[id][0]
+            context_menu.add_command(label="Otevřít cestu",font=preset_font, command=lambda: os.startfile(path))
+            context_menu.add_separator()
+            context_menu.add_command(label="Kopírovat cestu",font=preset_font, command=lambda: pyperclip.copy(path))
+            context_menu.add_separator()
+            context_menu.add_command(label="Odstranit úkol",font=preset_font,command=lambda: self.delete_task(id,root))
+            context_menu.add_separator()
+            context_menu.add_command(label="Upravit úkol",font=preset_font,command=lambda: os.startfile("taskschd.msc"))
+            context_menu.add_separator()
+            context_menu.add_command(label="Zobrazit historii mazání",font=preset_font)
+            # context_menu.add_separator()
+        elif widget == "time" or widget == "settings" or widget == "name":
+            context_menu.add_command(label="Odstranit úkol",font=preset_font,command=lambda: self.delete_task(id,root))
+            context_menu.add_separator()
+            context_menu.add_command(label="Upravit úkol",font=preset_font,command=lambda: os.startfile("taskschd.msc"))
+            context_menu.add_separator()
+            context_menu.add_command(label="Zobrazit historii mazání",font=preset_font)
+
+        context_menu.tk_popup(event.x_root, event.y_root)
+
+    def show_all_tasks(self,toplevel=False,root_given = False):
+        if root_given != False:
+            child_root = root_given
+            self.clear_frame(child_root)
         else:
-            child_root = customtkinter.CTkToplevel()
-        child_root.after(200, lambda: child_root.iconbitmap(self.app_icon))
-        child_root.title("Seznam nastavených úkolů (task scheduler)")
+            if not toplevel:
+                child_root = customtkinter.CTk()
+            else:
+                child_root = customtkinter.CTkToplevel()
+            child_root.after(200, lambda: child_root.iconbitmap(self.app_icon))
+            child_root.title("Seznam nastavených úkolů (task scheduler)")
 
         main_frame = customtkinter.CTkFrame(master=child_root,corner_radius=0)
         # main_frame = customtkinter.CTkScrollableFrame(master=child_root,corner_radius=0)
         all_tasks = self.read_config()
+        print("all_tasks: ",all_tasks)
         i=0
         for tasks in all_tasks:
             task_name = customtkinter.CTkFrame(master=main_frame,corner_radius=0,border_width=0,height= 50,fg_color="#636363")
-            task_name_text = customtkinter.CTkLabel(master=task_name,text = "Úkol "+str(i+1),font=("Arial",20,"bold"),anchor="w")
+            task_name_text = customtkinter.CTkLabel(master=task_name,text = "Úkol "+str(i+1) + f" (název: {tasks[0]})",font=("Arial",20,"bold"),anchor="w")
             task_name_text.pack(pady=(5,1),padx=10,anchor="w")
             task_name.pack(pady=(10,0),padx=5,side="top",anchor="w",fill="x")
-
+            task_name.bind("<Button-3>",lambda e,widget = "name",id=i: self.show_context_menu(child_root,e,widget,id))
+            task_name_text.bind("<Button-3>",lambda e,widget = "name",id=i: self.show_context_menu(child_root,e,widget,id))
 
             task_frame = customtkinter.CTkFrame(master=main_frame,corner_radius=0,border_width=3,height= 50,border_color="#636363")
             param1_frame = customtkinter.CTkFrame(master=task_frame,corner_radius=0,border_width=0,height= 50)
-            param1_subframe1 = customtkinter.CTkFrame(master=param1_frame,corner_radius=0,border_width=2,height= 50,width=250)
+            param1_subframe1 = customtkinter.CTkFrame(master=param1_frame,corner_radius=0,border_width=2,height= 50,width=230)
             param1_label = customtkinter.CTkLabel(master=param1_subframe1,text = "Čas spuštění (denně): ",font=("Arial",20,"bold"),anchor="w")
             param1_label.pack(pady=10,padx=(10,3),anchor="w",side="left")
             param1_subframe2 = customtkinter.CTkFrame(master=param1_frame,corner_radius=0,border_width=2,height= 50)
-            param1_label2 = customtkinter.CTkLabel(master=param1_subframe2,text = "12:00",font=("Arial",20),anchor="w")
+            param1_label2 = customtkinter.CTkLabel(master=param1_subframe2,text = str(tasks[4]),font=("Arial",20),anchor="w")
             param1_label2.pack(pady=10,padx=(10,3),anchor="w",side="left")
             param1_subframe1.pack(side="left")
             param1_subframe1.pack_propagate(0)
             param1_subframe2.pack(side="left",fill="x",expand=True)
             param1_frame.pack(pady=(3,0),padx=3,fill="x",side="top")
+            param1_label2.bind("<Button-3>",lambda e,widget = "time",id=i: self.show_context_menu(child_root,e,widget,id))
+            param1_label.bind("<Button-3>",lambda e,widget = "time",id=i: self.show_context_menu(child_root,e,widget,id))
+            param1_subframe1.bind("<Button-3>",lambda e,widget = "time",id=i: self.show_context_menu(child_root,e,widget,id))
+            param1_subframe2.bind("<Button-3>",lambda e,widget = "time",id=i: self.show_context_menu(child_root,e,widget,id))
 
             param2_frame = customtkinter.CTkFrame(master=task_frame,corner_radius=0,border_width=1,height= 50)
-            param2_subframe1 = customtkinter.CTkFrame(master=param2_frame,corner_radius=0,border_width=2,height= 50,width=250)
+            param2_subframe1 = customtkinter.CTkFrame(master=param2_frame,corner_radius=0,border_width=2,height= 50,width=230)
             param2_label = customtkinter.CTkLabel(master=param2_subframe1,text = "Pracuje v: ",font=("Arial",20,"bold"),anchor="w")
             param2_label.pack(pady=10,padx=(10,3),anchor="w",side="left")
             param2_subframe2 = customtkinter.CTkFrame(master=param2_frame,corner_radius=0,border_width=2,height= 50)
-            param2_label2 = customtkinter.CTkLabel(master=param2_subframe2,text = "images/logo_TRIMAZKON.icoimages/logo_TRIMAZKON.icoimages/logo_TRIMAZKON.ico",font=("Arial",20),anchor="w")
+            param2_label2 = customtkinter.CTkLabel(master=param2_subframe2,text = str(tasks[1]),font=("Arial",20),anchor="w")
             param2_label2.pack(pady=10,padx=(10,3),anchor="w",side="left")
             param2_subframe1.pack(side="left")
             param2_subframe1.pack_propagate(0)
             param2_subframe2.pack(side="left",fill="x",expand=True)
             param2_frame.pack(pady=(0,0),padx=3,fill="x",side="top")
+            param2_label2.bind("<Button-3>",lambda e,widget = "path",id=i: self.show_context_menu(child_root,e,widget,id))
+            param2_subframe2.bind("<Button-3>",lambda e,widget = "path",id=i: self.show_context_menu(child_root,e,widget,id))
+            param2_subframe1.bind("<Button-3>",lambda e,widget = "path",id=i: self.show_context_menu(child_root,e,widget,id))
 
             param3_frame = customtkinter.CTkFrame(master=task_frame,corner_radius=0,border_width=1,height= 50)
             param3_label = customtkinter.CTkLabel(master=param3_frame,text = "Nastavení: ",font=("Arial",20,"bold"),anchor="w")
-            param3_label2 = customtkinter.CTkLabel(master=param3_frame,text = "starší než:  30 dní, minimum = 1000 souborů",font=("Arial",20),anchor="w")
+            param3_label2 = customtkinter.CTkLabel(master=param3_frame,text = f"starší než: {tasks[2]} dní, minimum = {tasks[3]} souborů",font=("Arial",20),anchor="w")
             param3_label.pack(pady=10,padx=(10,0),anchor="w",side="left")
             param3_label2.pack(pady=10,padx=(10,0),anchor="w",side="left")
             param3_frame.pack(pady=(0,3),padx=3,fill="x",side="top")
-            
+            param3_label.bind("<Button-3>",lambda e,widget = "settings",id=i: self.show_context_menu(child_root,e,widget,id))
+            param3_label2.bind("<Button-3>",lambda e,widget = "settings",id=i: self.show_context_menu(child_root,e,widget,id))
+            param3_frame.bind("<Button-3>",lambda e,widget = "settings",id=i: self.show_context_menu(child_root,e,widget,id))
             task_frame.pack(pady=(0,0),padx=5,fill="x",side="top")
             i+=1
 
@@ -99,7 +201,6 @@ class tray_app_service:
         child_root.update_idletasks()
         child_root.geometry(f"{child_root.winfo_width()}x{child_root.winfo_height()+10}")
         child_root.mainloop()
-
 
     def show_task_log(self):
         child_root = customtkinter.CTk()
@@ -131,24 +232,9 @@ class tray_app_service:
         child_root.geometry(f"{600}x{child_root.winfo_height()+10}")
         child_root.mainloop()
 
-
-    def quit_application(self, item):
-        self.icon.stop()
-
-    def only_refresh(self):
-        #read
-        #create menu
-        # self.icon.menu = Menu(
-        # MenuItem('New Action', lambda: print("Action triggered"))
-        # )
-        all_tasks = self.read_config()
-        print("all tasks:",str(all_tasks))
-
-    # Create a menu
     def create_menu(self):
-        self.menu = Menu(MenuItem('Zobrazit nastavené úkoly', self.show_all_tasks),
-                         MenuItem('Záznamy o mazání', self.show_task_log),
-                         MenuItem('Ukončit', self.quit_application))
+        self.menu = Menu(MenuItem('Zobrazit nastavené úkoly', lambda: self.show_all_tasks()),
+                         MenuItem('Záznamy o mazání', self.show_task_log))
 
     def main(self):
         def create_image():
@@ -166,7 +252,8 @@ class tray_app_service:
         # Run the tray icon
         self.icon.run()
 
-tray_app_service('images/logo_TRIMAZKON.ico',[],[])
+inst = tray_app_service('images/logo_TRIMAZKON.ico',[],[])
+inst.main()
 # CREATING TASK:
 # name_of_task = "dailyscript_test"
 # path_to_app = r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON\pipe_server\untitled2.py"

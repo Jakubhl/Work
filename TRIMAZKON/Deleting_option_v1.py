@@ -18,12 +18,52 @@ def calc_days_in_month(current_month):
         days_in_month = 31
         
     return days_in_month
+
 def get_current_date():
+        """
+        - [0] = ymdhms
+        - [1] = dmy
+        """
         now = datetime.now()
         dt_string = now.strftime("%Y%m%d%H%M%S")
         readable_today = now.strftime("%d.%m.%Y")
         #print(f"\n- Dnes je: {readable_today}")
         return [dt_string,readable_today]
+
+def get_max_days(cutoff_date):
+    day = int(cutoff_date[0])
+    month = int(cutoff_date[1])
+    year = int(cutoff_date[2])
+    current_date = get_current_date()
+    current_day, current_month, current_year = current_date[1].split(".")
+    year_div = int(current_year) - year
+    month_div = int(current_month) - month
+    month_div += year_div*12
+    day_div = int(current_day) - day
+    for _ in range(0,month_div):
+        day_div += calc_days_in_month(month)
+        month +=1
+        if month > 12:
+            month=1
+
+    return day_div
+
+def get_cutoff_date(days):
+    current_date = get_current_date()
+    current_day, current_month, current_year = current_date[1].split(".")
+    day = int(current_day)
+    month = int(current_month)
+    year = int(current_year)
+    while days > 0:
+        day -= 1
+        if day == 0:
+            month -= 1
+            if month ==0:
+                month = 12
+                year -= 1
+            day = calc_days_in_month(month)
+        days -= 1
+    return [day,month,year]
 
 class whole_deleting_function:
     """
