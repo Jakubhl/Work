@@ -3107,7 +3107,7 @@ class IP_assignment: # Umožňuje měnit statickou IP
             child_root.geometry(f"620x150+{x+300}+{y+300}")  
             child_root.title("Upozornění")
             proceed_label = customtkinter.CTkLabel(master = child_root,text = "Přejete si znovu spustit aplikaci, jako administrátor?",font=("Arial",25))
-            button_yes =    customtkinter.CTkButton(master = child_root,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: run_as_admin(child_root))
+            button_yes =    customtkinter.CTkButton(master = child_root,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: run_as_admin())
             button_no =     customtkinter.CTkButton(master = child_root,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
             proceed_label   .pack(pady=(15,0),padx=10,anchor="w",expand=False,side = "top")
             button_no       .pack(pady = 5, padx = 10,anchor="w",expand=False,side="right")

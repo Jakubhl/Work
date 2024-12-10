@@ -961,7 +961,7 @@ exe_path = sys.executable
 exe_name = os.path.basename(exe_path)
 print("exe name: ",exe_name)
 if testing:
-    exe_name = "x x x"
+    exe_name = "trimazkon_test.exe"
 
 def deleting_via_cmd():
     task_name = str(sys.argv[2])
@@ -991,10 +991,21 @@ def deleting_via_cmd():
     trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,initial_path)
     trimazkon_tray_instance.save_new_log(task_name,output_message)
 
+def tray_startup_cmd():
+    def call_subprocess():
+        trimazkon_tray_instance.main()
+    task_name = str(sys.argv[2])
+    trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,initial_path)
+    running_tray = threading.Thread(target=call_subprocess,)
+    running_tray.start()
+
 load_gui=True
 if len(sys.argv) > 1:
     if sys.argv[1] == "deleting":
         deleting_via_cmd()
+        load_gui = False
+    elif sys.argv[2] == "tray_startup_call": #musí být spuštěno s admin právy proto dvojka (jednička je cesta aplikace)
+        tray_startup_cmd()
         load_gui = False
         
 class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
@@ -1136,14 +1147,71 @@ def set_zoom(zoom_factor):
     root.tk.call('tk', 'scaling', zoom_factor / 100)
 
 class main_menu:
-    @classmethod
-    def call_trimazkon_tray(cls,config_data):
-        def call_subprocess():
-            trimazkon_tray_instance.main()
+    # @classmethod
+    # def call_trimazkon_tray(cls,config_data):
+    #     def call_subprocess():
+    #         trimazkon_tray_instance.main()
 
+    #     trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,initial_path)
+    #     running_tray = threading.Thread(target=call_subprocess,)
+    #     running_tray.start()
+    @classmethod
+    def establish_startup_tray(cls):
+        """
+        Sets the startup task of switching on the tray application icon
+        - if it doesnt exist already
+        """
+        task_name = "TRIMAZKON_startup_tray_setup"
         trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,initial_path)
-        running_tray = threading.Thread(target=call_subprocess,)
-        running_tray.start()
+        task_presence = trimazkon_tray_instance.check_task_existence(task_given=task_name)
+        print("task presence: ",task_presence)
+        if not task_presence:
+            path_app_location = str(initial_path+"/"+exe_name) 
+            task_command = "\"" + path_app_location + " tray_startup_call" + "\" /sc onlogon"
+            process = subprocess.Popen(f"schtasks /Create /TN {task_name} /TR {task_command}",
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
+                                        creationflags=subprocess.CREATE_NO_WINDOW)
+            
+            stdout, stderr = process.communicate()
+            output_message = "out"+str(stdout) +"err"+str(stderr)
+            print(output_message)
+            if "Access is denied" in output_message:
+                return "need_access"
+    @classmethod
+    def call_again_as_admin(cls):
+        def run_as_admin():# Vyžádání admin práv: nefunkční ve vscode
+            def is_admin():
+                try:
+                    return ctypes.windll.shell32.IsUserAnAdmin()
+                except:
+                    return False
+            if not is_admin():
+                ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+                sys.exit()
+
+        def close_prompt(child_root):
+            child_root.destroy()
+        child_root = customtkinter.CTkToplevel()
+        child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(app_icon)))
+        # child_root.geometry(f"620x150+{300}+{300}")  
+        child_root.title("Upozornění")
+        label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        proceed_label = customtkinter.CTkLabel(master = label_frame,text = "První spuštění aplikace...\nJe potřeba nastavit aut. spouštění aplikace v nabídce na hlavním panelu\nPřejete si znovu spustit aplikaci, jako administrátor?",font=("Arial",25),anchor="w",justify="left")
+        proceed_label.pack(pady=5,padx=10,anchor="w",side = "left")
+        button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        button_yes =    customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: run_as_admin())
+        button_no =     customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+        button_no       .pack(pady = 5, padx = 10,anchor="e",side="right")
+        button_yes      .pack(pady = 5, padx = 10,anchor="e",side="right")
+        label_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+        button_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+
+        child_root.update()
+        child_root.update_idletasks()
+        child_root.geometry(f"{child_root.winfo_width()}x{child_root.winfo_height()}+{300}+{300}")  
+        child_root.focus()
+        child_root.focus_force()
 
     def __init__(self,root):
         self.root = root
@@ -1155,7 +1223,11 @@ class main_menu:
         self.data_read_in_txt = Tools.read_config_data()
         self.database_downloaded = False
         self.ib_running = False
-        main_menu.call_trimazkon_tray(self.data_read_in_txt)
+        self.run_as_admin = False
+        task_success = main_menu.establish_startup_tray()
+        if "need_access" in task_success:
+            self.run_as_admin = True 
+            
         
     def clear_frames(self):
         for widget in self.root.winfo_children():
@@ -1302,7 +1374,9 @@ class main_menu:
                 self.root.update()
                 selected_image = IB_as_def_browser_path_splitted[len(IB_as_def_browser_path_splitted)-2]
                 self.call_view_option(IB_as_def_browser_path,selected_image)
-
+        
+        if self.run_as_admin:
+            main_menu.call_again_as_admin()
         self.root.mainloop()
 
 class Image_browser: # Umožňuje procházet obrázky a přitom například vybrané přesouvat do jiné složky
@@ -4153,6 +4227,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         self.bottom_frame2.unbind("<Enter>")
         #self.console.configure(text = "")
         Tools.clear_console(self.console)
+        self.checkbox.select()
         self.checkbox2.deselect()
         self.checkbox3.deselect()
         self.info.configure(text = f"- Budou smazány soubory starší než nastavené datum, přičemž bude ponechán nastavený počet souborů, vyhodnocených, jako starších\n(Ponechány budou všechny novější než nastavené datum a k tomu bude ponecháno: {self.files_to_keep} starších souborů)\nPodporované formáty: {self.supported_formats_deleting}\n\n",
@@ -4318,7 +4393,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         def new_FTK_enter_btn(e):
             set_files_to_keep()
         files_to_keep_set.bind("<Return>",new_FTK_enter_btn)
-        self.bottom_frame2.bind("<Enter>",lambda e: save_before_execution())
+        self.bottom_frame2.bind("<Enter>",lambda e: save_before_execution()) # případ, že se nestiskne uložit - aby nedošlo ke ztrátě souborů
         
     def selected2(self,clear:bool): # Druhá možnost mazání, mazání všech starých, redukce nových
         """
@@ -4333,6 +4408,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         self.bottom_frame2.unbind("<Enter>")
         Tools.clear_console(self.console)
         self.checkbox.deselect()
+        self.checkbox2.select()
         self.checkbox3.deselect()
         self.info.configure(text = f"- Budou smazány VŠECHNY soubory starší než nastavené datum, přičemž budou redukovány i soubory novější\n(Ošetřeno: pokud se v dané cestě nacházejí pouze starší soubory, než nastavené datum, zruší se mazání)\n- Souborů, vyhodnocených, jako novější, než nastavené datum, bude ponecháno: {self.files_to_keep}\n(vhodné při situacích rychlého pořizování velkého množství fotografií, kde je potřebné ponechat nějaké soubory pro referenci)\nPodporované formáty: {self.supported_formats_deleting}",font = ("Arial",16,"bold"),justify="left")
         self.selected6() #update
@@ -4493,7 +4569,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         def new_FTK_enter_btn(e):
             set_files_to_keep()
         files_to_keep_set.bind("<Return>",new_FTK_enter_btn)
-        self.bottom_frame2.bind("<Enter>",lambda e: save_before_execution())
+        self.bottom_frame2.bind("<Enter>",lambda e: save_before_execution()) # případ, že se nestiskne uložit - aby nedošlo ke ztrátě souborů
    
     def selected3(self,clear:bool): # Třetí možnost mazání, mazání datumových adresářů
         """
@@ -4504,10 +4580,10 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
 
         """
         self.clear_frame(self.frame_right)
-        #self.console.configure(text = "")
         self.bottom_frame2.unbind("<Enter>")
         Tools.clear_console(self.console)
         self.checkbox2.deselect()
+        self.checkbox3.select()
         self.checkbox.deselect()
         self.info.configure(text = f"- Budou smazány VŠECHNY adresáře (včetně všech subadresářů), které obsahují v názvu podporovaný formát datumu a jsou vyhodnoceny,\njako starší než nastavené datum\nPodporované datumové formáty: {Deleting.supported_date_formats}\nPodporované separátory datumu: {Deleting.supported_separators}",font = ("Arial",16,"bold"),justify="left")
         self.selected6() #update
@@ -4573,6 +4649,31 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
 
             self.selected3(False) #refresh
 
+        def save_before_execution():
+            input_month = set_month.get()
+            if input_month != "":
+                if input_month.isdigit():
+                    if int(input_month) < 13 and int(input_month) > 0:
+                        self.cutoff_date[1] = int(input_month)
+                        max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
+                        if int(self.cutoff_date[0]) > max_days_in_month:
+                            self.cutoff_date[0] = str(max_days_in_month)
+
+            input_day = set_day.get()
+            max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
+            if input_day != "":
+                if input_day.isdigit():
+                    if int(input_day) <= int(max_days_in_month) and int(input_day) > 0:
+                        self.cutoff_date[0] = int(input_day)
+
+            input_year = set_year.get()
+            if input_year != "":
+                if input_year.isdigit():
+                    if len(str(input_year)) == 2:
+                        self.cutoff_date[2] = int(input_year) + 2000
+                    elif len(str(input_year)) == 4:
+                        self.cutoff_date[2] = int(input_year)
+
         console_frame_right_1_text, console_frame_right_1_color = self.console_frame_right_1_text
         today = Deleting.get_current_date()
         row_index = 0
@@ -4605,7 +4706,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         set_day.bind("<Return>",new_date_enter_btn)
         set_month.bind("<Return>",new_date_enter_btn)
         set_year.bind("<Return>",new_date_enter_btn)
-        self.frame_right.bind("<Leave>",lambda e: set_cutoff_date())
+        self.bottom_frame2.bind("<Enter>",lambda e: save_before_execution()) # případ, že se nestiskne uložit - aby nedošlo ke ztrátě souborů
 
     def selected6(self): # checkbox s dotazem procházet subsložky
         """
@@ -4624,7 +4725,10 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             """
             Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
             """
-            output = Tools.browseDirectories("only_dirs")
+            if os.path.exists(str(operating_path.get())):
+                output = Tools.browseDirectories("only_dirs",start_path=str(operating_path.get()))
+            else:
+                output = Tools.browseDirectories("only_dirs")
             if str(output[1]) != "/":
                 operating_path.delete(0,300)
                 operating_path.insert(0, str(output[1]))
@@ -4657,22 +4761,36 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                     else:
                         return freq_input
                         
-
                 name_of_task = new_task[0]
-                # path_to_exe_app = initial_path
                 repaired_freq_param = check_freq_format(str(new_task[4]))
-                task_command = str(initial_path+"/"+exe_name) + " deleting " + str(new_task[1]) +" "+ str(new_task[2]) +" "+ str(new_task[3]) + " /SC DAILY /ST " + repaired_freq_param
-                # path_to_app = r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON\pipe_server\untitled2.py"
-                cmd_command = f"schtasks /Create /TN {name_of_task} /TR {task_command}"
-                status = subprocess.call(cmd_command,shell=True,text=True)
-                print(status)
-                print(cmd_command)
+                path_app_location = str(initial_path+"/"+exe_name) 
+                task_command = "\""+ path_app_location+ " deleting " +str(new_task[1])+ str(new_task[2]) +" "+ str(new_task[3]) + "\" /SC DAILY /ST " + repaired_freq_param
+                process = subprocess.Popen(f"schtasks /Create /TN {name_of_task} /TR {task_command}",
+                                            stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE,
+                                            creationflags=subprocess.CREATE_NO_WINDOW)
+                stdout, stderr = process.communicate()
+                try:
+                    stdout_str = stdout.decode('utf-8')
+                    data = str(stdout_str)
+                except UnicodeDecodeError:
+                    try:
+                        stdout_str = stdout.decode('cp1250')
+                        data = str(stdout_str)
+                    except UnicodeDecodeError:
+                        data = str(stdout)
+                print(stdout_str)
+                if "SUCCESS" in stdout_str:
+                    os.startfile("taskschd.msc")
+                    return True
+                else:
+                    return False
 
             wb = load_workbook(self.config_filename)
             ws = wb["task_settings"]
             current_tasks = trimazkon_tray_instance.read_config()
             new_task_name = get_task_name(current_tasks)
-            new_task = [new_task_name,operating_path.get(),older_then_entry.get(),minimum_file_entry.get(),frequency_entry.get(),""]
+            new_task = [new_task_name,operating_path.get(),older_then_entry.get(),minimum_file_entry.get(),frequency_entry.get(),str(Deleting.get_current_date()[2]),""]
             current_tasks.insert(0,new_task)
 
             row_to_print = 1
@@ -4682,13 +4800,18 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 ws['C' + str(row_to_print)] = tasks[2] # max days
                 ws['D' + str(row_to_print)] = tasks[3] # min left
                 ws['E' + str(row_to_print)] = tasks[4] # frequency
-                ws['F' + str(row_to_print)] = tasks[5] # log mazání (pocet smazanych,datum,seznam smazanych)
+                ws['F' + str(row_to_print)] = tasks[5] # datum přidání tasku
+                ws['G' + str(row_to_print)] = tasks[6] # log mazání (pocet smazanych,datum,seznam smazanych)
                 row_to_print +=1
             try:
-                wb.save(self.config_filename)
-                wb.close()
-                set_up_task_in_ts()
-                Tools.add_colored_line(console,"Nový úkol byl uložen a zaveden do task scheduleru","green",None,True)
+                success_status = set_up_task_in_ts()
+                if success_status:
+                    Tools.add_colored_line(console,"Nový úkol byl uložen a zaveden do task scheduleru","green",None,True)
+                    wb.save(self.config_filename)
+                else:
+                    Tools.add_colored_line(console,"Neočekávaná chyba, nepovedlo se nastavit nový úkol","red",None,True)
+                wb.close()  
+
             except Exception as e:
                 Tools.add_colored_line(console,f"Prosím zavřete konfigurační soubor ({e})","red",None,True)
                 wb.close()
@@ -4714,32 +4837,25 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             elif hour_format:
                 input_char = str(input_char)
                 if not ":" in input_char:
-                    Tools.add_colored_line(console,"Neplatný formát, chybí separátor (vkládejte ve formátu: 00:00)","red",None,True)
+                    Tools.add_colored_line(console,"Neplatný formát času, chybí separátor (vkládejte ve formátu: 00:00)","red",None,True)
                     return False
                 elif len(input_char.split(":")) != 2:
-                    Tools.add_colored_line(console,"Neplatný formát (vkládejte ve formátu: 00:00)","red",None,True)
+                    Tools.add_colored_line(console,"Neplatný formát času (vkládejte ve formátu: 00:00)","red",None,True)
                     return False
                 elif len(str(input_char.split(":")[1])) != 2:
-                    Tools.add_colored_line(console,"Neplatný formát (vkládejte ve formátu: 00:00)","red",None,True)
+                    Tools.add_colored_line(console,"Neplatný formát času (vkládejte ve formátu: 00:00)","red",None,True)
                     return False
                 elif not input_char.split(":")[0].isdigit() or not input_char.split(":")[1].isdigit():
-                    Tools.add_colored_line(console,"Neplatné znaky (vkládejte ve formátu: 00:00)","red",None,True)
+                    Tools.add_colored_line(console,"Neplatné znaky u času (vkládejte ve formátu: 00:00)","red",None,True)
                     return False
                 elif int(input_char.split(":")[0]) > 23 or int(input_char.split(":")[0]) < 0 or int(input_char.split(":")[1]) > 59 or int(input_char.split(":")[1]) < 0:
-                    Tools.add_colored_line(console,"Neplatný formát, mimo rozsah (vkládejte ve formátu: 00:00)","red",None,True)
+                    Tools.add_colored_line(console,"Neplatný formát času, mimo rozsah (vkládejte ve formátu: 00:00)","red",None,True)
                     return False
         
         window = customtkinter.CTkToplevel()
-        # window.geometry(f"800x400")
         window.after(200, lambda: window.iconbitmap(app_icon))
         window.title("Nastavení nového úkolu")
         trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,initial_path)
-
-        # checkbox_frame = customtkinter.CTkFrame(master = window,corner_radius=0)
-        # option1 = customtkinter.CTkCheckBox(master = checkbox_frame,font=("Arial",20), text = "Redukce starších než...",command = lambda: self.selected(True))
-        # option2 = customtkinter.CTkCheckBox(master = checkbox_frame,font=("Arial",20), text = "Redukce novějších, mazání starších než...",command = lambda: self.selected(True))
-        # option1.pack(side="top",anchor="w")
-        # option2.pack(side="top",anchor="w")
 
         parameter_frame = customtkinter.CTkFrame(master = window,corner_radius=0)
         path_label = customtkinter.CTkLabel(master = parameter_frame,text = "Zadejte cestu, kde bude úkol spouštěn:",font=("Arial",22,"bold"))

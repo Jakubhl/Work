@@ -46,10 +46,10 @@ class tray_app_service:
                 if items is not None:
                     row_array.append(str(items))
 
-            if len(row_array) < 6:
+            if len(row_array) < 7:
                 row_array.append("")
-            elif len(row_array) == 6:
-                self.task_log_list.append(row_array[5])
+            elif len(row_array) == 7:
+                self.task_log_list.append(row_array[6])
             if len(row_array) > 1:
                 all_tasks.insert(0,row_array)
         
@@ -63,7 +63,7 @@ class tray_app_service:
         current_tasks = self.read_config()
         for tasks in current_tasks:
             if str(tasks[0]) == task_name:
-                ws['F' + str(row_to_print)] = tasks[5] + "\n" + new_log # log mazání (pocet smazanych,datum,seznam smazanych)
+                ws['G' + str(row_to_print)] = tasks[6] + "\n" + new_log # log mazání (pocet smazanych,datum,seznam smazanych)
                 break
             row_to_print +=1
         try:
@@ -95,7 +95,8 @@ class tray_app_service:
             ws['C' + str(row_to_print)] = tasks[2] # max days
             ws['D' + str(row_to_print)] = tasks[3] # min left
             ws['E' + str(row_to_print)] = tasks[4] # frequency
-            ws['F' + str(row_to_print)] = tasks[5] # log mazání (pocet smazanych,datum,seznam smazanych)
+            ws['F' + str(row_to_print)] = tasks[5] # datum pridani tasku
+            ws['G' + str(row_to_print)] = tasks[6] # log mazání (pocet smazanych,datum,seznam smazanych)
             row_to_print +=1
         try:
             wb.save(self.initial_path +self.config_filename)
@@ -119,16 +120,8 @@ class tray_app_service:
         context_menu = tk.Menu(root,tearoff=0,fg="white",bg="black",font=("Arial",20,"bold"))
         preset_font=("Arial",18,"bold")
 
-        def edit_task_in_scheduler():
-            taskname = "TRIMAZKON_1"
-            process = subprocess.Popen(f'schtasks /query /tn \"{taskname}\" /v /fo LIST',
-                                                    stdout=subprocess.PIPE,
-                                                    stderr=subprocess.PIPE,
-                                                    creationflags=subprocess.CREATE_NO_WINDOW)
-            stdout, stderr = process.communicate()
-
         if widget == "path":
-            path = all_tasks[id][0]
+            path = all_tasks[id][1]
             context_menu.add_command(label="Otevřít cestu",font=preset_font, command=lambda: os.startfile(path))
             context_menu.add_separator()
             context_menu.add_command(label="Kopírovat cestu",font=preset_font, command=lambda: pyperclip.copy(path))
@@ -148,6 +141,52 @@ class tray_app_service:
 
         context_menu.tk_popup(event.x_root, event.y_root)
 
+    def check_task_existence(self,task_given = None):
+        def check_task_status(taskname):
+            process = subprocess.Popen(f'schtasks /query /tn \"{taskname}\" /v /fo LIST',
+                                                    stdout=subprocess.PIPE,
+                                                    stderr=subprocess.PIPE,
+                                                    creationflags=subprocess.CREATE_NO_WINDOW)
+            stdout, stderr = process.communicate()
+            try:
+                stdout_str = stdout.decode('utf-8')
+                stderr_str = stderr.decode('utf-8')
+                data = str(stdout_str)
+                error_data = str(stderr_str)
+            except UnicodeDecodeError:
+                try:
+                    stdout_str = stdout.decode('cp1250')
+                    stderr_str = stderr.decode('cp1250')
+                    data = str(stdout_str)
+                    error_data = str(stderr_str)
+                except UnicodeDecodeError:
+                    data = str(stdout)
+                    error_data = str(stderr)
+            if "ERROR" in error_data:
+                return False
+            else:
+                return True
+                
+        if task_given != None:
+            check_result = check_task_status(task_given)
+            return check_result
+        
+        all_tasks = self.read_config()
+        non_existent_tasks = []
+        for i in range(0,len(all_tasks)):
+            taskname = str(all_tasks[i][0])
+            task_presence = check_task_status(taskname)
+            if not task_presence:
+                non_existent_tasks.append(all_tasks[i][0])
+        
+        if len(non_existent_tasks) > 0:
+            for deleted_tasks in non_existent_tasks:
+                for tasks in all_tasks:
+                    if deleted_tasks == tasks[0]:
+                        all_tasks.pop(all_tasks.index(tasks))
+                        break
+            self.save_task_to_config(all_tasks)
+
     def show_all_tasks(self,toplevel=False,root_given = False):
         if root_given != False:
             child_root = root_given
@@ -160,16 +199,19 @@ class tray_app_service:
             child_root.after(200, lambda: child_root.iconbitmap(self.app_icon))
             child_root.title("Seznam nastavených úkolů (task scheduler)")
 
-        main_frame = customtkinter.CTkFrame(master=child_root,corner_radius=0)
-        # main_frame = customtkinter.CTkScrollableFrame(master=child_root,corner_radius=0)
+        # main_frame = customtkinter.CTkFrame(master=child_root,corner_radius=0)
+        main_frame = customtkinter.CTkScrollableFrame(master=child_root,corner_radius=0)
+        self.check_task_existence()
         all_tasks = self.read_config()
         print("all_tasks: ",all_tasks)
         i=0
         for tasks in all_tasks:
             task_name = customtkinter.CTkFrame(master=main_frame,corner_radius=0,border_width=0,height= 50,fg_color="#636363")
             task_name_text = customtkinter.CTkLabel(master=task_name,text = "Úkol "+str(i+1) + f" (název: {tasks[0]})",font=("Arial",20,"bold"),anchor="w")
-            task_name_text.pack(pady=(5,1),padx=10,anchor="w")
-            task_name.pack(pady=(10,0),padx=5,side="top",anchor="w",fill="x")
+            task_date_accessed = customtkinter.CTkLabel(master=task_name,text = f"Přidáno: {tasks[5]}",font=("Arial",20),anchor="e")
+            task_name_text.pack(pady=(5,1),padx=10,anchor="w",side="left")
+            task_date_accessed.pack(pady=(5,1),padx=10,anchor="e",side="right")
+            task_name.pack(pady=(10,0),padx=5,side="top",fill="x")
             task_name.bind("<Button-3>",lambda e,widget = "name",id=i: self.show_context_menu(child_root,e,widget,id))
             task_name_text.bind("<Button-3>",lambda e,widget = "name",id=i: self.show_context_menu(child_root,e,widget,id))
 
@@ -221,12 +263,14 @@ class tray_app_service:
             task_label = customtkinter.CTkLabel(master=main_frame,text = "Nejsou nastaveny žádné úkoly...",font=("Arial",22,"bold"),anchor="w")
             task_label.pack(pady=10,padx=10,fill="x",side="top",anchor="w")
             child_root.after(2000, lambda: child_root.destroy())
-        # main_frame.update()
-        # main_frame.update_idletasks()
-        main_frame.pack(fill="both",side="top")
+        # main_frame.pack(fill="both",side="top")
+        main_frame.pack(fill="both",side="top",expand=True)
         child_root.update()
         child_root.update_idletasks()
-        child_root.geometry(f"{child_root.winfo_width()}x{child_root.winfo_height()+10}")
+        # child_root.geometry(f"{child_root.winfo_width()}x{child_root.winfo_height()+10}")
+        child_root.geometry(f"{1200}x{800}")
+        child_root.focus_force()
+        child_root.focus()
         child_root.mainloop()
 
     def show_task_log(self):
@@ -257,6 +301,7 @@ class tray_app_service:
         child_root.update()
         child_root.update_idletasks()
         child_root.geometry(f"{600}x{child_root.winfo_height()+10}")
+        # child_root.geometry(f"{600}x{600}")
         child_root.mainloop()
 
     def create_menu(self):
@@ -279,8 +324,11 @@ class tray_app_service:
         # Run the tray icon
         self.icon.run()
 
-# inst = tray_app_service('images/logo_TRIMAZKON.ico',[],[])
+# inst = tray_app_service('images/logo_TRIMAZKON.ico',r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON/")
 # inst.main()
+
+
+
 # CREATING TASK:
 # name_of_task = "dailyscript_test"
 # path_to_app = r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON\pipe_server\untitled2.py"

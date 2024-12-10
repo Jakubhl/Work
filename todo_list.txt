@@ -708,6 +708,8 @@ TRIMAZKON - mazání - ošetřeno smazání všech starších souborů, pokud js
 11:20 AM 11/29/2024
 ip setting - kontext menu + optimalizace vykreslování - hotovo
 
+3:18 PM 12/10/2024
+TRIMAZKON - mazání - pridat datum pridani noveho tasku - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -725,13 +727,11 @@ ip setting - opravit duplicity - manage bin
 TRIMAZKON - mazání - predelat confirm okno do toplevel
 TRIMAZKON - mazání - mít možnost nastavit si rutinu v task scheduleru - aby to běželo, jako služba - v pravý dolní nabídce se zobrazí, že probíhá mazání - šel by zobrazit log vymazaných obrázků
 
-TRIMAZKON - mazání - pridat datum pridani noveho tasku
+
 TRIMAZKON - mazání - vyzkouset exe volani tasku a ukladani novych logu
 
 
 TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
-
-
 
 pri spusteni - pres cmd nastavit icon tray - po vypnuti se smaze
 - do configu ulozit i seznam tasku
