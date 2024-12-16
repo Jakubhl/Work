@@ -710,6 +710,8 @@ ip setting - kontext menu + optimalizace vykreslování - hotovo
 
 3:18 PM 12/10/2024
 TRIMAZKON - mazání - pridat datum pridani noveho tasku - hotovo
+opraven admin - hotovo
+opraveno mazání - nešlo nic mazat
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -727,18 +729,22 @@ ip setting - opravit duplicity - manage bin
 TRIMAZKON - mazání - predelat confirm okno do toplevel
 TRIMAZKON - mazání - mít možnost nastavit si rutinu v task scheduleru - aby to běželo, jako služba - v pravý dolní nabídce se zobrazí, že probíhá mazání - šel by zobrazit log vymazaných obrázků
 
+TRIMAZKON - admin - vyresit argumenty aby se nespoustelo ip setting
 
 TRIMAZKON - mazání - vyzkouset exe volani tasku a ukladani novych logu
 
+TRIMAZKON - dodelat config - automatické vytvorení hidden sheetu s nastavenými tasky (pokud neexistuje vytvoří se až při ukládání nového tasku)
 
-TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
+TRIMAZKON - novy log smazanych obrazku - rozklikavaci sipka dolu
 
-pri spusteni - pres cmd nastavit icon tray - po vypnuti se smaze
-- do configu ulozit i seznam tasku
-- novy log smazanych obrazku - rozklikavaci sipka dolu
-
+read config zkopírovat... list to splitne na písmena (vše zkopírovat - z exe se to trvá dlouho) Můžu mít naimportovanou classu a všechny funkce použít :)
 
 
+zkusit includenout celou složku converting app
+
+dát hlášku o chybějícím konfig soubouru na hlavní obrazovku
+
+??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
 ??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon
 

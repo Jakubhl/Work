@@ -9,7 +9,7 @@ import Converting_option_v3 as Converting
 import catalogue_maker_v5 as Catalogue
 import sharepoint_download as download_database
 import IP_setting_v3 as IP_setting
-import trimazkon_tray
+# import trimazkon_tray
 import string_database
 from tkinter import filedialog
 import tkinter as tk
@@ -944,21 +944,26 @@ class Tools:
         except Exception as e:
             print(f"Nejdřív zavřete soubor {config_filename} Chyba: {e}")
 
+def get_init_path():
+    initial_path = Tools.path_check(os.getcwd())
+    if len(sys.argv) > 1: #spousteni pres cmd (kliknuti na obrazek) nebo task scheduler - mazání
+        raw_path = str(sys.argv[0])
+        initial_path = Tools.path_check(raw_path,True)
+        initial_path_splitted = initial_path.split("/")
+        initial_path = ""
+        for i in range(0,len(initial_path_splitted)-2):
+            initial_path += str(initial_path_splitted[i])+"/"
+        print("SYSTEM: ",sys.argv)
 
-initial_path = Tools.path_check(os.getcwd())
-if len(sys.argv) > 1: #spousteni pres cmd (kliknuti na obrazek) nebo task scheduler - mazání
-    raw_path = str(sys.argv[0])
-    initial_path = Tools.path_check(raw_path,True)
-    initial_path_splitted = initial_path.split("/")
-    initial_path = ""
-    for i in range(0,len(initial_path_splitted)-2):
-        initial_path += str(initial_path_splitted[i])+"/"
-    print("SYSTEM: ",sys.argv)
+    return initial_path
+
+initial_path = get_init_path()
 
 #pro pripad vypisovani do konzole z exe:
 print("init path: ",initial_path)
 exe_path = sys.executable
 exe_name = os.path.basename(exe_path)
+trimazkon_tray_exe_name = "trimazkon_tray_v2.exe"
 print("exe name: ",exe_name)
 if testing:
     exe_name = "trimazkon_test.exe"
@@ -988,26 +993,34 @@ def deleting_via_cmd():
     output_message = f"Datum: {output_data[3]}\nZkontrolováno: {output_data[0]} souborů\nStarších: {output_data[1]} souborů\nSmazáno: {output_data[2]} souborů\n"
     print(output_message)
 
-    trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,initial_path)
-    trimazkon_tray_instance.save_new_log(task_name,output_message)
+    # trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,initial_path)
+    # trimazkon_tray_instance.save_new_log(task_name,output_message)
+    subexe_path = Tools.resource_path(trimazkon_tray_exe_name)
+    subprocess.run(subexe_path + " " + initial_path + " save_new_log "+task_name+" "+output_message,
+                    creationflags=subprocess.CREATE_NO_WINDOW)
 
 def tray_startup_cmd():
-    def call_subprocess():
-        trimazkon_tray_instance.main()
-    task_name = str(sys.argv[2])
-    trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,initial_path)
-    running_tray = threading.Thread(target=call_subprocess,)
-    running_tray.start()
+    # def call_subprocess():
+    #     trimazkon_tray_instance.main()
+    # task_name = str(sys.argv[2])
+    
+    # trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,initial_path,call_main=True)
+    subexe_path = Tools.resource_path(trimazkon_tray_exe_name)
+    subprocess.run(subexe_path + " " + initial_path + " run_tray",
+                    creationflags=subprocess.CREATE_NO_WINDOW)
+
 
 load_gui=True
+print(sys.argv)
 if len(sys.argv) > 1:
     if sys.argv[1] == "deleting":
         deleting_via_cmd()
         load_gui = False
-    elif sys.argv[2] == "tray_startup_call": #musí být spuštěno s admin právy proto dvojka (jednička je cesta aplikace)
+        
+    elif sys.argv[1] == "tray_startup_call":
         tray_startup_cmd()
         load_gui = False
-        
+   
 class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
     def __init__(self,exe_name):
         self.root = None #define later (to prevend gui loading when 2 apps opened)
@@ -1147,26 +1160,51 @@ def set_zoom(zoom_factor):
     root.tk.call('tk', 'scaling', zoom_factor / 100)
 
 class main_menu:
-    # @classmethod
-    # def call_trimazkon_tray(cls,config_data):
-    #     def call_subprocess():
-    #         trimazkon_tray_instance.main()
-
-    #     trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,initial_path)
-    #     running_tray = threading.Thread(target=call_subprocess,)
-    #     running_tray.start()
     @classmethod
     def establish_startup_tray(cls):
         """
         Sets the startup task of switching on the tray application icon
         - if it doesnt exist already
         """
+        def check_task_status(taskname):
+            process = subprocess.Popen(f'schtasks /query /tn \"{taskname}\" /v /fo LIST',
+                                                    stdout=subprocess.PIPE,
+                                                    stderr=subprocess.PIPE,
+                                                    creationflags=subprocess.CREATE_NO_WINDOW)
+            stdout, stderr = process.communicate()
+            try:
+                stdout_str = stdout.decode('utf-8')
+                stderr_str = stderr.decode('utf-8')
+                data = str(stdout_str)
+                error_data = str(stderr_str)
+            except UnicodeDecodeError:
+                try:
+                    stdout_str = stdout.decode('cp1250')
+                    stderr_str = stderr.decode('cp1250')
+                    data = str(stdout_str)
+                    error_data = str(stderr_str)
+                except UnicodeDecodeError:
+                    data = str(stdout)
+                    error_data = str(stderr)
+            if "ERROR" in error_data:
+                return False
+            else:
+                return True
+            
+        # task_name = "TRIMAZKON_startup_tray_setup"
+        # trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,initial_path)
+        # task_presence = trimazkon_tray_instance.check_task_existence(task_given=task_name)
+        # subexe_path = Tools.resource_path(trimazkon_tray_exe_name)
+        # process_output = subprocess.run(subexe_path + " " + initial_path + " check_task_existence " + task_name,
+        #                                 creationflags=subprocess.CREATE_NO_WINDOW,
+        #                                 stdout=subprocess.PIPE,
+        #                                 text=True)
+
         task_name = "TRIMAZKON_startup_tray_setup"
-        trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,initial_path)
-        task_presence = trimazkon_tray_instance.check_task_existence(task_given=task_name)
+        task_presence = check_task_status(task_name)
         print("task presence: ",task_presence)
         if not task_presence:
-            path_app_location = str(initial_path+"/"+exe_name) 
+            path_app_location = str(initial_path+"/"+exe_name)
             task_command = "\"" + path_app_location + " tray_startup_call" + "\" /sc onlogon"
             process = subprocess.Popen(f"schtasks /Create /TN {task_name} /TR {task_command}",
                                         stdout=subprocess.PIPE,
@@ -1178,6 +1216,8 @@ class main_menu:
             print(output_message)
             if "Access is denied" in output_message:
                 return "need_access"
+            # tray_startup_cmd() #init zapnutí tray icony
+    
     @classmethod
     def call_again_as_admin(cls):
         def run_as_admin():# Vyžádání admin práv: nefunkční ve vscode
@@ -1187,7 +1227,7 @@ class main_menu:
                 except:
                     return False
             if not is_admin():
-                ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+                ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " admin_menu".join(sys.argv), None, 1)
                 sys.exit()
 
         def close_prompt(child_root):
@@ -1195,9 +1235,9 @@ class main_menu:
         child_root = customtkinter.CTkToplevel()
         child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(app_icon)))
         # child_root.geometry(f"620x150+{300}+{300}")  
-        child_root.title("Upozornění")
+        child_root.title("Upozornění (první spuštění aplikace)")
         label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-        proceed_label = customtkinter.CTkLabel(master = label_frame,text = "První spuštění aplikace...\nJe potřeba nastavit aut. spouštění aplikace v nabídce na hlavním panelu\nPřejete si znovu spustit aplikaci, jako administrátor?",font=("Arial",25),anchor="w",justify="left")
+        proceed_label = customtkinter.CTkLabel(master = label_frame,text = "Aplikace vyžaduje práva pro nastavení aut. spouštění na pozadí\n\n- přejete si znovu spustit aplikaci, jako administrátor?",font=("Arial",25),anchor="w",justify="left")
         proceed_label.pack(pady=5,padx=10,anchor="w",side = "left")
         button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
         button_yes =    customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: run_as_admin())
@@ -1225,9 +1265,9 @@ class main_menu:
         self.ib_running = False
         self.run_as_admin = False
         task_success = main_menu.establish_startup_tray()
-        if "need_access" in task_success:
-            self.run_as_admin = True 
-            
+        if str(task_success) == "need_access":
+            self.run_as_admin = True
+        
         
     def clear_frames(self):
         for widget in self.root.winfo_children():
@@ -1325,7 +1365,7 @@ class main_menu:
         frame_with_buttons.pack(pady=0,padx=0,fill="both",expand=True,side = "left")
         
         IB_as_def_browser_path = None
-        self.list_of_menu_frames = [frame_with_buttons,frame_with_logo,frame_with_buttons_right]
+        # self.list_of_menu_frames = [frame_with_buttons,frame_with_logo,frame_with_buttons_right]
         
         manage_images =         customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Obrázky (správa)", command = lambda: self.call_sorting_option(),font=("Arial",25,"bold"))
         viewer_button =         customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Prohlížeč obrázků", command = lambda: self.call_view_option(),font=("Arial",25,"bold"))
@@ -1361,7 +1401,7 @@ class main_menu:
         if len(sys.argv) > 1 and initial == True:
             raw_path = str(sys.argv[1])
             #klik na spusteni trimazkonu s admin právy
-            if sys.argv[0] == sys.argv[1]:
+            if sys.argv[0] == sys.argv[1] and sys.argv[1] != "tray_startup_call":
                 self.call_ip_manager()
             else: 
                 # pokud se nerovnají jedná se nejspíše o volání základního prohlížeče obrázků (spuštění kliknutím na obrázek...)
@@ -1376,7 +1416,8 @@ class main_menu:
                 self.call_view_option(IB_as_def_browser_path,selected_image)
         
         if self.run_as_admin:
-            main_menu.call_again_as_admin()
+            self.root.after(1000, lambda: main_menu.call_again_as_admin())
+
         self.root.mainloop()
 
 class Image_browser: # Umožňuje procházet obrázky a přitom například vybrané přesouvat do jiné složky
@@ -4788,7 +4829,16 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
 
             wb = load_workbook(self.config_filename)
             ws = wb["task_settings"]
-            current_tasks = trimazkon_tray_instance.read_config()
+            # current_tasks = trimazkon_tray_instance.read_config()
+            subexe_path = Tools.resource_path(trimazkon_tray_exe_name)
+            process_output = subprocess.run(subexe_path + " " + initial_path + " read_config",
+                            creationflags=subprocess.CREATE_NO_WINDOW,
+                            stdout=subprocess.PIPE,
+                            text = True)
+            current_tasks = list(process_output.stdout)
+            if len(current_tasks) == 0:
+                current_tasks = []
+            print("current tasks: ",current_tasks)
             new_task_name = get_task_name(current_tasks)
             new_task = [new_task_name,operating_path.get(),older_then_entry.get(),minimum_file_entry.get(),frequency_entry.get(),str(Deleting.get_current_date()[2]),""]
             current_tasks.insert(0,new_task)
@@ -4836,6 +4886,9 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 
             elif hour_format:
                 input_char = str(input_char)
+                if input_char == "BackSpace":
+                    return
+                
                 if not ":" in input_char:
                     Tools.add_colored_line(console,"Neplatný formát času, chybí separátor (vkládejte ve formátu: 00:00)","red",None,True)
                     return False
@@ -4851,11 +4904,16 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 elif int(input_char.split(":")[0]) > 23 or int(input_char.split(":")[0]) < 0 or int(input_char.split(":")[1]) > 59 or int(input_char.split(":")[1]) < 0:
                     Tools.add_colored_line(console,"Neplatný formát času, mimo rozsah (vkládejte ve formátu: 00:00)","red",None,True)
                     return False
-        
+                
+        def call_show_all_tasks():
+            subexe_path = Tools.resource_path(trimazkon_tray_exe_name)
+            subprocess.run(subexe_path + " " + initial_path + " show_all_tasks",
+                            creationflags=subprocess.CREATE_NO_WINDOW)
+
         window = customtkinter.CTkToplevel()
         window.after(200, lambda: window.iconbitmap(app_icon))
         window.title("Nastavení nového úkolu")
-        trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,initial_path)
+        # trimazkon_tray_instance = trimazkon_tray.tray_app_service(app_icon,initial_path)
 
         parameter_frame = customtkinter.CTkFrame(master = window,corner_radius=0)
         path_label = customtkinter.CTkLabel(master = parameter_frame,text = "Zadejte cestu, kde bude úkol spouštěn:",font=("Arial",22,"bold"))
@@ -4900,7 +4958,8 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         console.pack(pady = 10,padx =10,side="top",anchor="w",fill="x")
 
         button_frame =   customtkinter.CTkFrame(master = window,corner_radius=0)
-        show_tasks_btn = customtkinter.CTkButton(master = button_frame, width = 300,height=50,text = "Zobrazit nastavené úkoly", command =  lambda: trimazkon_tray_instance.show_all_tasks(toplevel=True),font=("Arial",20,"bold"),corner_radius=0)
+        # show_tasks_btn = customtkinter.CTkButton(master = button_frame, width = 300,height=50,text = "Zobrazit nastavené úkoly", command =  lambda: trimazkon_tray_instance.show_all_tasks(toplevel=True),font=("Arial",20,"bold"),corner_radius=0)
+        show_tasks_btn = customtkinter.CTkButton(master = button_frame, width = 300,height=50,text = "Zobrazit nastavené úkoly", command =  lambda: call_show_all_tasks(),font=("Arial",20,"bold"),corner_radius=0)
         save_task_btn =  customtkinter.CTkButton(master = button_frame, width = 300,height=50,text = "Uložit nový úkol", command =  lambda: save_task_to_config(),font=("Arial",20,"bold"),corner_radius=0)
         cancel_btn =  customtkinter.CTkButton(master = button_frame, width = 300,height=50,text = "Zavřít", command =  lambda: window.destroy(),font=("Arial",20,"bold"),corner_radius=0)
         cancel_btn.   pack(pady=10,padx=(10,10),side="right",anchor="e")
@@ -5002,6 +5061,9 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         self.checkbox.select()
         self.checkbox_testing.select()
         self.selected(False)
+
+        if global_recources_load_error:
+            create_task_btn.configure(state = "disabled")
 
         recources_path = self.text_file_data[2]
         if recources_path != False and recources_path != "/":

@@ -16,12 +16,13 @@ def resource_path(relative_path):
     return os.path.join(os.path.abspath("."), relative_path)
 
 class tray_app_service:
-    def __init__(self,app_icon,initial_path):
+    def __init__(self,app_icon,initial_path,call_main=False):
         self.app_icon = app_icon
         self.app_icon = resource_path('images\\logo_TRIMAZKON.ico')
         self.config_filename = "config_TRIMAZKON.xlsx"
         self.initial_path = initial_path
-        # self.main()
+        if call_main:
+            self.main()
         
     def clear_frame(self,frame):
         for widget in frame.winfo_children():

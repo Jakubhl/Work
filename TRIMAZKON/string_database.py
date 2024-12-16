@@ -244,7 +244,22 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     (u xlsm i xlsx)
     - oprava ukládání při přepínání stanic šipkami
     - ponechaný otevřený excel už neshodí okno
-    - automatické rozměry oken v závislosti na zoomu
+    - automatické rozměry oken v závislosti na zoomu"""
+        ,"\nVerze 4.2.0 (16.12.2024)"
+        ,
+    """ 
+  IP setting:
+    - oprava vypisování informací u disků
+    - vylepšení rychlosti vykreslování
+    - oprava unfocus (klik vedle)
+    - nově kontextová nabídka
+  TRIMAZKON - mazání
+    - uložení nastavených parametrů po kliku na spustit
+    - pokud jsou všechny soubory v dané cestě starší
+    (možnost mazání: 2) - zruší se
+    - "tray ikona" - aplikace běží na pozadí
+    - nově lze nastavovat pravidelné mazání (task scheduler)
+    - lze zobrazit log mazání, seznam nastavených rutin
     """
 ]
 
@@ -289,7 +304,7 @@ default_setting_database_param = ["bmp,png",
                                 "jpg,bmp,png,ifz",
                                 "C:/Users/",
                                 1000,
-                                "28.02.2024",
+                                [28,2,2024],
                                 "Func_",
                                 "Cam_",
                                 "ano",
