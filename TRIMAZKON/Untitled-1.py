@@ -1,4 +1,5 @@
 import sys
+from plyer import notification
 
 # CREATING TASK:
 # name_of_task = "dailyscript_test"
@@ -12,4 +13,43 @@ import sys
 # connection_status = subprocess.call(cmd_command,shell=True,text=True)
 
 print(len(str("")))
-      
+all_string = "|||Datum: 17.12.2024 10:12:26||Zkontrolováno: 161 souborů||Starších: 153 souborů||Smazáno: 0 souborů"
+print(all_string.split("|||"))
+splitted = all_string.split("|||")
+splitted.pop(0)
+print(splitted[0].split("||"))
+
+
+icon_path = 'images/logo_TRIMAZKON.ico'
+output_message_clear=f"balbala\ndd{icon_path}"
+notification.notify(
+        title="Bylo provedeno automatické mazání",
+        message=output_message_clear, 
+        app_name="TRIMAZKON", 
+        app_icon=icon_path,
+        timeout=5,
+        ticker = "prisla zprava"
+    )
+
+from win10toast_click import ToastNotifier
+
+# Callback function to handle the click event
+# def on_notification_click():
+#     print("Notification was clicked!")
+#     return True
+
+# # Create a ToastNotifier instance
+# toaster = ToastNotifier()
+
+# # Show the notification and set the click callback
+# try:
+#     toaster.show_toast(
+#         "My Application",                    # Notification title
+#         output_message_clear,  # Notification message
+#         icon='images/logo_TRIMAZKON.ico',
+#         duration=10,                         # Duration in seconds
+#         threaded=True,                       # Allows the program to keep running
+#         callback_on_click=lambda:on_notification_click()  # Function to call on click
+#     )
+# except Exception as e:
+#     pass

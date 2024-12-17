@@ -18,17 +18,23 @@ def path_check(path_raw,only_repair = None):
     else:
         return path
 
-whole_app_path = os.getcwd()
-if len(sys.argv) > 1: #spousteni pres cmd
-    raw_path = str(sys.argv[0])
-    initial_path = path_check(raw_path,True)
-    initial_path_splitted = initial_path.split("/")
-    whole_app_path = ""
-    for i in range(0,len(initial_path_splitted)-2):
-        whole_app_path += initial_path_splitted[i]+"/"
+# whole_app_path = os.getcwd()
+# if len(sys.argv) > 1: #spousteni pres cmd
+#     raw_path = str(sys.argv[0])
+#     initial_path = path_check(raw_path,True)
+#     initial_path_splitted = initial_path.split("/")
+#     whole_app_path = ""
+#     for i in range(0,len(initial_path_splitted)-2):
+#         whole_app_path += initial_path_splitted[i]+"/"
 
+def resource_path(relative_path):
+    """ Get the absolute path to a resource, works for dev and for PyInstaller """
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 
-application_path = str(whole_app_path) + "/convert_application/"
+# application_path = str(whole_app_path) + "/convert_application/"
+application_path = resource_path("convert_application/")
 application_path = path_check(application_path)
 
 if application_path != False:

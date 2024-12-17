@@ -713,6 +713,13 @@ TRIMAZKON - mazání - pridat datum pridani noveho tasku - hotovo
 opraven admin - hotovo
 opraveno mazání - nešlo nic mazat
 
+9:19 AM 12/17/2024
+TRIMAZKON - admin - vyresit argumenty aby se nespoustelo ip setting - hotovo
+zkusit includenout celou složku converting app - hotovo
+TRIMAZKON - mazání - mít možnost nastavit si rutinu v task scheduleru - aby to běželo, jako služba - v pravý dolní nabídce se zobrazí, že probíhá mazání - šel by zobrazit log vymazaných obrázků - hotovo
+mazání - trimazkon notifikace o provedení mazání
+TRIMAZKON - novy log smazanych obrazku - rozklikavaci sipka dolu - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 ip setting - dodelat, ze se pri editu projektu u disku nenacitaji disky
@@ -727,20 +734,9 @@ ip setting - unfocus více projektů ponechá ostatní s bílým rámečkem
 ip setting - opravit duplicity - manage bin
 
 TRIMAZKON - mazání - predelat confirm okno do toplevel
-TRIMAZKON - mazání - mít možnost nastavit si rutinu v task scheduleru - aby to běželo, jako služba - v pravý dolní nabídce se zobrazí, že probíhá mazání - šel by zobrazit log vymazaných obrázků
-
-TRIMAZKON - admin - vyresit argumenty aby se nespoustelo ip setting
-
 TRIMAZKON - mazání - vyzkouset exe volani tasku a ukladani novych logu
 
 TRIMAZKON - dodelat config - automatické vytvorení hidden sheetu s nastavenými tasky (pokud neexistuje vytvoří se až při ukládání nového tasku)
-
-TRIMAZKON - novy log smazanych obrazku - rozklikavaci sipka dolu
-
-read config zkopírovat... list to splitne na písmena (vše zkopírovat - z exe se to trvá dlouho) Můžu mít naimportovanou classu a všechny funkce použít :)
-
-
-zkusit includenout celou složku converting app
 
 dát hlášku o chybějícím konfig soubouru na hlavní obrazovku
 
