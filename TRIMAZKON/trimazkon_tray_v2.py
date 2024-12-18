@@ -9,7 +9,6 @@ import os
 import subprocess
 import sys
 
-
 class Tools:
     @classmethod
     def resource_path(cls,relative_path):
@@ -44,6 +43,8 @@ class tray_app_service:
 
         self.config_filename = "config_TRIMAZKON.xlsx"
         self.initial_path = initial_path
+        self.main_app_exe_name = "TRIMAZKON.exe"
+        self.config_sheet_name = "Task_settings" 
         
     def clear_frame(self,frame):
         for widget in frame.winfo_children():
@@ -59,7 +60,16 @@ class tray_app_service:
     
     def read_config(self):
         wb = load_workbook(self.initial_path +self.config_filename,read_only=True)
-        ws = wb["task_settings"]
+        if not self.config_sheet_name in wb.sheetnames:
+            wb.close()
+            wb = load_workbook(self.initial_path + self.config_filename)
+            ws = wb.create_sheet(self.config_sheet_name)
+            ws.sheet_state = 'hidden'
+            wb.save(self.initial_path + self.config_filename)
+            wb.close()
+            return []
+        
+        ws = wb[self.config_sheet_name]
         all_tasks = []
         self.task_log_list = []
         for row in ws.iter_rows(values_only=True):
@@ -81,7 +91,7 @@ class tray_app_service:
 
     def save_new_log(self,task_name:str,new_log:str): #musim mit na vstupu nazev tasku abych ho mohl najit a prepsat to u nej
         wb = load_workbook(self.initial_path +self.config_filename)
-        ws = wb["task_settings"]
+        ws = wb[self.config_sheet_name]
         self.check_task_existence()
         current_tasks = self.read_config()
         row_to_print = 1
@@ -99,7 +109,29 @@ class tray_app_service:
             print(e)
             wb.close()
             return False
-
+        
+    def delete_log(self,task_name:str,childroot): #musim mit na vstupu nazev tasku abych ho mohl najit a prepsat to u nej
+        wb = load_workbook(self.initial_path +self.config_filename)
+        ws = wb[self.config_sheet_name]
+        self.check_task_existence()
+        current_tasks = self.read_config()
+        row_to_print = 1
+        if len(current_tasks) > 0:
+            row_to_print = len(current_tasks)
+        for tasks in current_tasks:
+            if str(tasks[0]) == task_name:
+                ws['G' + str(row_to_print)] = ""
+                break
+            row_to_print -=1
+        try:
+            wb.save(self.initial_path +self.config_filename)
+            wb.close()
+            self.show_task_log(root_given=childroot)
+        except Exception as e:
+            print(e)
+            wb.close()
+            return False
+        
     def save_task_to_config(self,current_tasks):
         def clear_document(wb,ws):
             for row in ws.iter_rows():
@@ -111,7 +143,7 @@ class tray_app_service:
                 pass
 
         wb = load_workbook(self.initial_path +self.config_filename)
-        ws = wb["task_settings"]
+        ws = wb[self.config_sheet_name]
         clear_document(wb,ws)
         row_to_print = 1
         print("current_tasks",current_tasks)
@@ -153,25 +185,31 @@ class tray_app_service:
         all_tasks = self.read_config()
         context_menu = tk.Menu(root,tearoff=0,fg="white",bg="black",font=("Arial",20,"bold"))
         preset_font=("Arial",18,"bold")
+        path = all_tasks[id][1]
 
         if widget == "path":
-            path = all_tasks[id][1]
+            context_menu.add_command(label="Otevřít cestu",font=preset_font, command=lambda: os.startfile(path))
+            context_menu.add_separator()
+            context_menu.add_command(label="Kopírovat cestu",font=preset_font, command=lambda: pyperclip.copy(path))
+
+        elif widget == "time" or widget == "settings" or widget == "name":
+            name_of_task = all_tasks[id][0]
+            path_app_location = str(self.initial_path+"/"+self.main_app_exe_name) 
+            task_command = path_app_location + " deleting " + name_of_task + " " + str(all_tasks[id][1]) + " " + str(all_tasks[id][2]) + " " + str(all_tasks[id][3])
+            context_menu.add_command(label="Vykonat úkol",font=preset_font,command=lambda: subprocess.call(task_command,shell=True,text=True))
+            context_menu.add_separator()
+            context_menu.add_command(label="Upravit úkol",font=preset_font,command=lambda: os.startfile("taskschd.msc"))
+            context_menu.add_separator()
+            context_menu.add_command(label="Odstranit úkol",font=preset_font,command=lambda: self.delete_task(id,root))
+            context_menu.add_separator()
+            context_menu.add_command(label="Zobrazit historii mazání",font=preset_font,command=lambda: self.show_task_log(True,task_given=all_tasks[id][0]))
+
+        elif widget == "del_log":
             context_menu.add_command(label="Otevřít cestu",font=preset_font, command=lambda: os.startfile(path))
             context_menu.add_separator()
             context_menu.add_command(label="Kopírovat cestu",font=preset_font, command=lambda: pyperclip.copy(path))
             context_menu.add_separator()
-            context_menu.add_command(label="Odstranit úkol",font=preset_font,command=lambda: self.delete_task(id,root))
-            context_menu.add_separator()
-            context_menu.add_command(label="Upravit úkol",font=preset_font,command=lambda: os.startfile("taskschd.msc"))
-            context_menu.add_separator()
-            context_menu.add_command(label="Zobrazit historii mazání",font=preset_font,command=lambda: self.show_task_log(True,task_given=all_tasks[id][0]))
-            # context_menu.add_separator()
-        elif widget == "time" or widget == "settings" or widget == "name":
-            context_menu.add_command(label="Odstranit úkol",font=preset_font,command=lambda: self.delete_task(id,root))
-            context_menu.add_separator()
-            context_menu.add_command(label="Upravit úkol",font=preset_font,command=lambda: os.startfile("taskschd.msc"))
-            context_menu.add_separator()
-            context_menu.add_command(label="Zobrazit historii mazání",font=preset_font,command=lambda: self.show_task_log(True,task_given=all_tasks[id][0]))
+            context_menu.add_command(label="Vymazat historii mazání",font=preset_font, command=lambda: self.delete_log(task_name=all_tasks[id][0],childroot=root))
 
         context_menu.tk_popup(event.x_root, event.y_root)
 
@@ -241,7 +279,7 @@ class tray_app_service:
         i=0
         for tasks in all_tasks:
             task_name = customtkinter.CTkFrame(master=main_frame,corner_radius=0,border_width=0,height= 50,fg_color="#636363")
-            task_name_text = customtkinter.CTkLabel(master=task_name,text = "Úkol "+str(i+1) + f" (název: {tasks[0]})",font=("Arial",20,"bold"),anchor="w")
+            task_name_text = customtkinter.CTkLabel(master=task_name,text = "Úkol "+str(i+1) + f" (scheduler název: {tasks[0]})",font=("Arial",20,"bold"),anchor="w")
             task_date_accessed = customtkinter.CTkLabel(master=task_name,text = f"Přidáno: {tasks[5]}",font=("Arial",20),anchor="e")
             task_name_text.pack(pady=(5,1),padx=10,anchor="w",side="left")
             task_date_accessed.pack(pady=(5,1),padx=10,anchor="e",side="right")
@@ -307,10 +345,14 @@ class tray_app_service:
         child_root.focus()
         child_root.mainloop()
 
-    def show_task_log(self,specify_task=False,task_given = None):
-        child_root = customtkinter.CTk()
-        child_root.after(200, lambda: child_root.iconbitmap(self.app_icon))
-        child_root.title("Záznam o vymazaných souborech")
+    def show_task_log(self,specify_task=False,task_given = None,root_given = False):
+        if not root_given:
+            child_root = customtkinter.CTk()
+            child_root.after(200, lambda: child_root.iconbitmap(self.app_icon))
+            child_root.title("Záznam o vymazaných souborech")
+        else:
+            child_root = root_given
+            self.clear_frame(child_root)
         main_frame = customtkinter.CTkScrollableFrame(master=child_root,corner_radius=0)
         self.check_task_existence()
         current_tasks = self.read_config()
@@ -324,9 +366,11 @@ class tray_app_service:
             button.unbind("<Button-1>")
             button.bind("<Button-1>",lambda e,tasks = task, log_frame = given_task_frame, button_details = button: show_details(tasks,log_frame,button_details))
             
-        def show_details(task,given_task_frame,button):
+        def show_details(task,given_task_frame,button,get_log_count = False):
             all_task_logs = task[6].split("|||")
             all_task_logs.pop(0) #nultá pozice v poli vždy prázdná
+            if get_log_count:
+                return len(all_task_logs)
             for logs in all_task_logs:
                 log_data = logs.split("||")
                 print(log_data)
@@ -348,7 +392,7 @@ class tray_app_service:
                     continue #preskoč když se nejedná o hledaný specifický task
             task_frame = customtkinter.CTkFrame(master=main_frame,corner_radius=0,border_width=0)
             header_frame = customtkinter.CTkFrame(master=task_frame,corner_radius=0,border_width=0,fg_color="#636363")
-            task_name_text = customtkinter.CTkLabel(master=header_frame,text = "Úkol "+str(i+1) + f" (název: {tasks[0]}), přidáno: {tasks[5]}",font=("Arial",20,"bold"),anchor="w",justify="left")
+            task_name_text = customtkinter.CTkLabel(master=header_frame,text = "Úkol "+str(i+1) + f" (scheduler název: {tasks[0]}), přidáno: {tasks[5]}",font=("Arial",20,"bold"),anchor="w",justify="left")
             empty_log_frame = customtkinter.CTkFrame(master=task_frame,corner_radius=0,border_width=0,height=0)
             button_details = customtkinter.CTkButton(master = header_frame,text = "v",font=("Arial",40,"bold"),width = 50,height=50,corner_radius=0,fg_color="#505050")
             button_details.bind("<Button-1>",lambda e,task = tasks, log_frame = empty_log_frame, button = button_details: show_details(task,log_frame,button))
@@ -358,9 +402,14 @@ class tray_app_service:
             empty_log_frame.pack(pady=(0),padx=0,side="top",anchor="w",fill="x",expand = True)
             task_frame.pack(pady=(10,0),padx=10,side = "top",anchor = "w",fill="x",expand = True)
             button_details.pack_propagate(0)
+            header_frame.bind("<Button-3>",lambda e,widget = "del_log",id=i: self.show_context_menu(child_root,e,widget,id))
+            task_name_text.bind("<Button-3>",lambda e,widget = "del_log",id=i: self.show_context_menu(child_root,e,widget,id))
             i+=1
             if specify_task:
                 show_details(tasks,empty_log_frame,button_details) #rovnou otevřít (zobrazit detaily)
+
+            if show_details(tasks,None,None,get_log_count=True) == 0:
+                button_details.configure(state="disabled")
 
         if len(self.task_log_list) == 0:
             log_text = customtkinter.CTkLabel(master=main_frame,text = "Nebyl nalezen žádný záznam",font=("Arial",22,"bold"),anchor="w")
@@ -374,7 +423,13 @@ class tray_app_service:
         child_root.mainloop()
 
     def create_menu(self):
-        self.menu = Menu(MenuItem('Zobrazit nastavené úkoly', lambda: self.show_all_tasks()),
+        def call_main_app():
+            command = "\"" + self.initial_path + self.main_app_exe_name + "\""
+            command = command.replace("/","\\")
+            subprocess.call(command,shell=True,text=True)
+
+        self.menu = Menu(MenuItem('Spustit aplikaci TRIMAZKON', lambda: call_main_app()),
+                         MenuItem('Zobrazit nastavené úkoly', lambda: self.show_all_tasks()),
                          MenuItem('Záznamy o mazání', lambda: self.show_task_log()),
                          MenuItem('Vypnout', lambda: self.quit_application()))
 

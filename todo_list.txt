@@ -719,6 +719,9 @@ zkusit includenout celou složku converting app - hotovo
 TRIMAZKON - mazání - mít možnost nastavit si rutinu v task scheduleru - aby to běželo, jako služba - v pravý dolní nabídce se zobrazí, že probíhá mazání - šel by zobrazit log vymazaných obrázků - hotovo
 mazání - trimazkon notifikace o provedení mazání
 TRIMAZKON - novy log smazanych obrazku - rozklikavaci sipka dolu - hotovo
+TRIMAZKON - mazání - vyzkouset exe volani tasku a ukladani novych logu - hotovo
+přidat spustit aplikaci trimazkon na tray ikonu - hotovo
+mít možnost každý task rovnou spustit - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -734,7 +737,7 @@ ip setting - unfocus více projektů ponechá ostatní s bílým rámečkem
 ip setting - opravit duplicity - manage bin
 
 TRIMAZKON - mazání - predelat confirm okno do toplevel
-TRIMAZKON - mazání - vyzkouset exe volani tasku a ukladani novych logu
+
 
 TRIMAZKON - dodelat config - automatické vytvorení hidden sheetu s nastavenými tasky (pokud neexistuje vytvoří se až při ukládání nového tasku)
 

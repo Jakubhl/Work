@@ -18,20 +18,18 @@ print(all_string.split("|||"))
 splitted = all_string.split("|||")
 splitted.pop(0)
 print(splitted[0].split("||"))
+output_data = ["xx","xxf","xxx","sga"]
+output_message_clear = f"Provedeno: {output_data[3]}\nZkontrolováno: {output_data[0]} souborů\nStarších: {output_data[1]} souborů\nSmazáno: {output_data[2]} souborů"
 
-
-icon_path = 'images/logo_TRIMAZKON.ico'
-output_message_clear=f"balbala\ndd{icon_path}"
 notification.notify(
         title="Bylo provedeno automatické mazání",
-        message=output_message_clear, 
-        app_name="TRIMAZKON", 
-        app_icon=icon_path,
+        message=output_message_clear,
+        app_name="TRIMAZKON",
         timeout=5,
-        ticker = "prisla zprava"
+        app_icon = 'images/logo_TRIMAZKON.ico'
     )
 
-from win10toast_click import ToastNotifier
+# from win10toast_click import ToastNotifier
 
 # Callback function to handle the click event
 # def on_notification_click():

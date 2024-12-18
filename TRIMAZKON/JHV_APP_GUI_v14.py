@@ -19,6 +19,7 @@ import sys
 import ctypes
 import win32pipe, win32file, pywintypes, psutil
 import subprocess
+import win10toast
 from plyer import notification
 
 testing = False
@@ -998,6 +999,7 @@ def deleting_via_cmd():
 
     trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path)
     trimazkon_tray_instance.save_new_log(task_name,output_message)
+
     icon_path = Tools.resource_path('images/logo_TRIMAZKON.ico')
     notification.notify(
         title="Bylo provedeno automatické mazání",
@@ -1028,7 +1030,7 @@ if len(sys.argv) > 1:
     elif sys.argv[1] == "tray_startup_call":
         tray_startup_cmd()
         load_gui = False
-   
+
 class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
     def __init__(self,exe_name):
         self.root = None #define later (to prevend gui loading when 2 apps opened)

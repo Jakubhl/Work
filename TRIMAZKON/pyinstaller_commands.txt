@@ -30,6 +30,8 @@ pyinstaller --noconfirm --onefile -w --console --icon=images\logo_TRIMAZKON.ico 
 
 pyinstaller --noconfirm --onefile --add-data "C:\Users\jakub.hlavacek.local\AppData\Local\Programs\Python\Python312\Lib\site-packages\customtkinter;customtkinter/" trimazkon_tray_v2.py
 
+pyinstaller --noconfirm --onefile trimazkon_tray_v2.py
+
 git reset --hard origin/main
 git clean -fd
 
