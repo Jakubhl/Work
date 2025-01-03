@@ -19,10 +19,14 @@ import sys
 import ctypes
 import win32pipe, win32file, pywintypes, psutil
 import subprocess
-import win10toast
-from plyer import notification
+# from plyer import notification
+# from plyer.utils import platform
+from win32api import *
+from win32gui import *
+import win32con
+import struct
 
-testing = False
+testing = True
 
 global_recources_load_error = False
 class Tools:
@@ -970,6 +974,45 @@ print("exe name: ",exe_name)
 if testing:
     exe_name = "trimazkon_test.exe"
 
+class WindowsBalloonTip:
+    def __init__(self, title, msg,app_icon):
+        message_map = {
+                win32con.WM_DESTROY: self.OnDestroy,
+        }
+        # Register the Window class.
+        wc = WNDCLASS()
+        hinst = wc.hInstance = GetModuleHandle(None)
+        wc.lpszClassName = "PythonTaskbar"
+        wc.lpfnWndProc = message_map # could also specify a wndproc.
+        classAtom = RegisterClass(wc)
+        # Create the Window.
+        style = win32con.WS_OVERLAPPED | win32con.WS_SYSMENU
+        self.hwnd = CreateWindow( classAtom, "Taskbar", style, \
+                0, 0, win32con.CW_USEDEFAULT, win32con.CW_USEDEFAULT, \
+                0, 0, hinst, None)
+        UpdateWindow(self.hwnd)
+        # iconPathName = os.path.abspath(os.path.join( sys.path[0], "balloontip.ico" ))
+        iconPathName = app_icon
+        icon_flags = win32con.LR_LOADFROMFILE | win32con.LR_DEFAULTSIZE
+        try:
+            hicon = LoadImage(hinst, iconPathName, \
+                    win32con.IMAGE_ICON, 0, 0, icon_flags)
+        except:
+            hicon = LoadIcon(0, win32con.IDI_APPLICATION)
+        flags = NIF_ICON | NIF_MESSAGE | NIF_TIP
+        nid = (self.hwnd, 0, flags, win32con.WM_USER+20, hicon, "tooltip")
+        Shell_NotifyIcon(NIM_ADD, nid)
+        Shell_NotifyIcon(NIM_MODIFY, \
+                         (self.hwnd, 0, NIF_INFO, win32con.WM_USER+20,\
+                          hicon, "Balloon  tooltip",msg,200,title))
+        # self.show_balloon(title, msg)
+        time.sleep(10)
+        DestroyWindow(self.hwnd)
+    def OnDestroy(self, hwnd, msg, wparam, lparam):
+        nid = (self.hwnd, 0)
+        Shell_NotifyIcon(NIM_DELETE, nid)
+        PostQuitMessage(0) # Terminate the app.
+
 def deleting_via_cmd():
     print("deleting system entry: ",sys.argv)
     task_name = str(sys.argv[2])
@@ -1001,35 +1044,52 @@ def deleting_via_cmd():
     trimazkon_tray_instance.save_new_log(task_name,output_message)
 
     icon_path = Tools.resource_path('images/logo_TRIMAZKON.ico')
-    notification.notify(
-        title="Bylo provedeno automatické mazání",
-        message=output_message_clear, 
-        app_name="TRIMAZKON", 
-        app_icon=icon_path,
-        timeout=5
-    )
+    WindowsBalloonTip("Bylo provedeno automatické mazání",
+                        str(output_message_clear),
+                        icon_path)
+    # try:
+    #     notification.notify(title="Bylo provedeno automatické mazání",
+    #                         message=str(output_message_clear))
+    #                         # app_name="TRIMAZKON",
+    #                         # app_icon=icon_path)
+    # except Exception:
+    #     pass
+
+    # icon_path = Tools.resource_path('images/logo_TRIMAZKON.ico')
+    # notification.notify(title="Bylo provedeno automatické mazání",
+    #                     message=str(output_message_clear),
+    #                     # app_name="TRIMAZKON",
+    #                     app_icon=icon_path)
+    
     # subexe_path = Tools.resource_path(trimazkon_tray_exe_name)
     # subprocess.run(subexe_path + " " + initial_path + " save_new_log "+task_name+" "+output_message,
     #                 creationflags=subprocess.CREATE_NO_WINDOW)
+    return output_message_clear
 
 def tray_startup_cmd():
+    """
+    už není potřebné - aplikace tray není součástí celého exe - je zvlášť
+    - protože musela souběžně běžet hlavní aplikace trimazkon kvuli pristupu k appdata temp složce
+    """
     subexe_path = Tools.resource_path(trimazkon_tray_exe_name)
     print("calling process: ",subexe_path + " " + initial_path + " run_tray")
-    # subprocess.run(subexe_path + " " + initial_path + " run_tray",
-    #                creationflags=subprocess.CREATE_NO_WINDOW)
-    cmd_command = subexe_path + " " + initial_path + " run_tray"
-    subprocess.call(cmd_command,shell=True,text=True)
+    # cmd_command = subexe_path + " " + initial_path + " run_tray" # možnost - když je exe tray soucasti exe - lepsi ale prilozit zvlast protoze pak jedou dvě aplikace
+    cmd_command = initial_path+"/"+trimazkon_tray_exe_name + " " + initial_path + " run_tray"
+    # subprocess.call(cmd_command,shell=True,text=True)
+    subprocess.Popen(cmd_command, shell=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
 
 load_gui=True
 print(sys.argv)
 if len(sys.argv) > 1:
     if sys.argv[1] == "deleting":
-        deleting_via_cmd()
+        deleting_output_message = deleting_via_cmd()
         load_gui = False
+        sys.exit(f"0: {deleting_output_message}")
         
     elif sys.argv[1] == "tray_startup_call":
         tray_startup_cmd()
         load_gui = False
+        sys.exit(0)
 
 class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
     def __init__(self,exe_name):
@@ -1205,8 +1265,10 @@ class main_menu:
         task_presence = check_task_status(task_name)
         print("task presence: ",task_presence)
         if not task_presence:
-            path_app_location = str(initial_path+exe_name)
-            task_command = "\"" + path_app_location + " tray_startup_call" + "\" /sc onlogon"
+            # path_app_location = str(initial_path+exe_name) # predelno na tray exe aplikaci zvlášť
+            path_app_location = str(initial_path + trimazkon_tray_exe_name)
+            # task_command = "\"" + path_app_location + " tray_startup_call" + "\" /sc onlogon"
+            task_command = "/c start \"" + path_app_location + " " + initial_path + " run_tray" + "\" /sc onlogon"
             process = subprocess.Popen(f"schtasks /Create /TN {task_name} /TR {task_command}",
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE,
@@ -1236,7 +1298,9 @@ class main_menu:
                 sys.exit()
 
         def close_prompt(child_root):
+            child_root.grab_release()
             child_root.destroy()
+
         child_root = customtkinter.CTkToplevel()
         child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(app_icon)))
         # child_root.geometry(f"620x150+{300}+{300}")  
@@ -1254,9 +1318,10 @@ class main_menu:
 
         child_root.update()
         child_root.update_idletasks()
-        child_root.geometry(f"{child_root.winfo_width()}x{child_root.winfo_height()}+{300}+{300}")  
+        # child_root.geometry(f"{child_root.winfo_width()}x{child_root.winfo_height()}+{300}+{300}")
         child_root.focus()
         child_root.focus_force()
+        child_root.grab_set()
 
     def __init__(self,root):
         self.root = root
@@ -1378,6 +1443,7 @@ class main_menu:
         advanced_button =       customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Nastavení", command = lambda: self.call_advanced_option(),font=("Arial",25,"bold"))
         change_log_label =      customtkinter.CTkLabel(master=frame_with_buttons_right, width= 600,height=50,font=("Arial",24,"bold"),text="Seznam posledně provedených změn: ")
         change_log =            customtkinter.CTkTextbox(master=frame_with_buttons_right, width= 600,height=550,fg_color="#212121",font=("Arial",20),border_color="#636363",border_width=3,corner_radius=0)
+        resources_load_error =  customtkinter.CTkLabel(master=frame_with_buttons_right, width= 600,height=50,font=("Arial",24,"bold"),text="Nepodařilo se načíst konfigurační soubor (config_TRIMAZKON.xlsx)",text_color="red")
         manage_images.          pack(pady =(105,0), padx=20,side="top",anchor="e")
         viewer_button.          pack(pady = (10,0), padx=20,side="top",anchor="e")
         ip_setting_button.      pack(pady = (10,0), padx=20,side="top",anchor="e")
@@ -1385,6 +1451,8 @@ class main_menu:
         advanced_button.        pack(pady = (10,0), padx=20,side="top",anchor="e")
         change_log_label.       pack(pady = (50,5), padx=20,side="top",anchor="w")
         change_log.             pack(pady =0,       padx=20,side="top",anchor="w")
+        if global_recources_load_error:
+            resources_load_error.pack(pady = (5,5), padx=20,side="top",anchor="w")
 
         self.fill_changelog(change_log)
         
@@ -1473,6 +1541,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.count_of_ifz_images_defined = False
         self.name_hide_index = 0
         self.main_image = None
+        self.main_image2 = None
         self.drag_option_binded = False
         self.drawing_color = "#000000"
         self.drawing_thickness = 5
@@ -1484,7 +1553,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.zoom_given = 100
         self.settings_applied = False
         self.loaded_image_status = True
-
+        self.inserted_path_history = []
+        self.last_resize_time = 0
 
         if params_given != None:
             print("params given",params_given)
@@ -1503,7 +1573,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         if self.state == "running":
             self.stop()
 
-        list_of_frames = [self.main_frame,self.frame_with_path,self.background_frame,self.image_film_frame_center,self.image_film_frame_right,self.image_film_frame_left]
+        list_of_frames = [self.main_frame,self.frame_with_path,self.frame_with_console,self.frame_with_buttons,self.background_frame,self.image_film_frame_center,self.image_film_frame_right,self.image_film_frame_left]
         for frames in list_of_frames:
             frames.pack_forget()
             frames.grid_forget()
@@ -1705,6 +1775,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 self.all_images = self.get_images(path)
                 if len(self.all_images) != 0:
                     self.image_browser_path = path
+                    path_to_add_to_history = self.image_browser_path
                     # Tools.add_colored_line(self.console,f"Vložena cesta: {path}","green",None,True)
                     if self.image_film == True:
                         self.make_image_film_widgets()
@@ -1727,8 +1798,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                         else:
                             #zobrazit obrazek vybrany v exploreru
                             self.increment_of_image = self.all_images.index(path+self.selected_image)
-
                         self.default_path = r"{}".format(path)
+                        path_to_add_to_history = self.default_path
                         self.convert_files()
                         center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
                         self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image])
@@ -1738,7 +1809,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                         self.current_image_num_ifz.configure(text ="/" + str(self.ifz_count))
                         self.changable_image_num_ifz.delete("0","100")
                         self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
-
+                    if path_to_add_to_history not in self.inserted_path_history:
+                        self.inserted_path_history.append(path_to_add_to_history)
                 else:
                     Tools.add_colored_line(self.console,"- V zadané cestě nebyly nalezeny obrázky","red",None,True)
             else:
@@ -1787,7 +1859,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             height = height - self.image_film_frame_center._current_height
         return [width, height]
 
-    def calc_current_format(self,width,height): # Přepočítávání rozměrů obrázku do rozměru rámce podle jeho formátu + zooming
+    def calc_current_format(self,width,height,new_window_status = False,frame_dim_given = None): # Přepočítávání rozměrů obrázku do rozměru rámce podle jeho formátu + zooming
         """
         Přepočítávání rozměrů obrázku do rozměru rámce podle jeho formátu
 
@@ -1795,7 +1867,10 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         -přepočítávání pozicování obrázku a scrollbarů v závislosti na zoomu
         """
 
-        frame_dimensions = self.get_frame_dimensions()
+        if new_window_status:
+            frame_dimensions = frame_dim_given
+        else:
+            frame_dimensions = self.get_frame_dimensions()
         self.zoom_slider.update_idletasks()
         zoom = self.zoom_slider.get() / 100
         frame_width, frame_height = frame_dimensions
@@ -1853,7 +1928,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.previous_zoom = zoom
         return [new_width, new_height]
     
-    def view_image(self,increment_of_image,direct_path = None,only_refresh=None,reset = False,reload_buffer = False,only_next_ifz = False): # Samotné zobrazení obrázku
+    def view_image(self,increment_of_image,direct_path = None,only_refresh=None,reset = False,reload_buffer = False,only_next_ifz = False,in_new_window=False): # Samotné zobrazení obrázku
         """
         Samotné zobrazení obrázku
 
@@ -2023,12 +2098,45 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 corrupted_image_handling()
                 return error_message
 
+
+            if in_new_window:
+                def resize_image(event, label, original_image):
+                    if time.time() - self.last_resize_time < 0.5:
+                        return
+
+                    new_width, new_height = original_image.size
+                    frame_dim = [int(event.width),int(event.height)]
+                    dimensions = self.calc_current_format(new_width,new_height,True,frame_dim)
+                    resized_image = original_image.resize((int(dimensions[0]),int(dimensions[1])))
+                    photo = ImageTk.PhotoImage(resized_image)
+                    label.configure(image=photo)
+                    label.image = photo  # Keep a reference to avoid garbage collect
+                    self.last_resize_time = time.time()
+                
+                child_root = customtkinter.CTkToplevel()
+                child_root.after(200, lambda: child_root.iconbitmap(app_icon))
+                child_root.title(image_to_show)
+                with Image.open(image_to_show) as opened_image:
+                    rotated_image = opened_image.rotate(self.rotation_angle,expand=True)
+                photo = ImageTk.PhotoImage(rotated_image)
+                label = customtkinter.CTkLabel(child_root, image=photo, text="")
+                label.pack(fill="both", expand=True)
+                label.image = photo
+                child_root.bind("<Configure>", lambda event, window_label = label, window_image = rotated_image: child_root.after(200,resize_image(event, window_label, window_image)))
+            
+                child_root.update()
+                child_root.update_idletasks()
+                child_root.geometry(f"1200x800+{300}+{300}")
+                child_root.focus()
+                child_root.focus_force()
+                self.loaded_image_status = True
+                return
+            
             dimensions = self.calc_current_format(width,height)
             resized = rotated_image.resize(size=(int(dimensions[0]),int(dimensions[1])))
             self.image_dimensions = (int(dimensions[0]),int(dimensions[1]))
             self.tk_image = ImageTk.PhotoImage(resized)
             self.main_frame.itemconfig(self.main_image, image=self.tk_image)
-
             if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
                 try:
                     current_coords = self.main_frame.coords(self.main_image)
@@ -2671,14 +2779,103 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                     path_to_send = ""
             Advanced_option(self.root,windowed=True,spec_location="image_browser", path_to_remember = path_to_send,last_params = [self.last_coords,self.zoom_slider.get()])
         
+        def call_path_context_menu(event):
+            def insert_path(path):
+                self.path_set.delete("0","200")
+                self.path_set.insert("0", path)
+            if len(self.inserted_path_history) > 0:
+                path_context_menu = tk.Menu(self.root, tearoff=0,fg="white",bg="black")
+                for i in range(0,len(self.inserted_path_history)):
+                    path_context_menu.add_command(label=self.inserted_path_history[i], command=lambda row_path = self.inserted_path_history[i]: insert_path(row_path),font=("Arial",22,"bold"))
+                    if i < len(self.inserted_path_history)-1:
+                        path_context_menu.add_separator()
+                        
+                path_context_menu.tk_popup(context_menu_button.winfo_rootx(),context_menu_button.winfo_rooty()+30)
+
+        def call_start():
+            self.selected_image = ""
+            self.current_image_num_ifz = 0
+            self.current_image_num = 0
+            self.start(self.path_set.get())
+
         self.frame_with_path =          customtkinter.CTkFrame(master=self.root,height = 200,corner_radius=0)
+        menu_button  =                  customtkinter.CTkButton(master = self.frame_with_path, width = 100,height=30, text = "MENU", command = lambda: self.call_menu(),font=("Arial",16,"bold"))
+        context_menu_button  =          customtkinter.CTkButton(master = self.frame_with_path, width = 50,height=30, text = "V",font=("Arial",16,"bold"),corner_radius=0,fg_color="#505050")
+        self.path_set =                 customtkinter.CTkEntry(master = self.frame_with_path,width = 680,height=30,placeholder_text="Zadejte cestu k souborům (kde se soubory přímo nacházejí)",corner_radius=0)
+        manual_path  =                  customtkinter.CTkButton(master = self.frame_with_path, width = 90,height=30,text = "Otevřít", command = lambda: call_start(),font=("Arial",16,"bold"))
+        tree         =                  customtkinter.CTkButton(master = self.frame_with_path, width = 120,height=30,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",16,"bold"))
+        button_save_path =              customtkinter.CTkButton(master = self.frame_with_path,width=100,height=30, text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get()),font=("Arial",16,"bold"))        
+        button_open_setting =           customtkinter.CTkButton(master = self.frame_with_path,width=30,height=30, text = "⚙️", command = lambda: call_setting_window(),font=("",16))
+        button_drawing =                customtkinter.CTkButton(master = self.frame_with_path,width=30,height=30, text = "Malování", command = lambda: self.switch_drawing_mode(),font=("Arial",16,"bold"))
+        menu_button.                    pack(pady = (5,0),padx =(5,0),side="left",anchor = "w")
+        context_menu_button.            pack(pady = (5,0),padx =(5,0),side="left",anchor = "w")
+        self.path_set.                  pack(pady = (5,0),padx =(0,0),side="left",anchor = "w")
+        manual_path.                    pack(pady = (5,0),padx =(5,0),side="left",anchor = "w")
+        tree.                           pack(pady = (5,0),padx =(5,0),side="left",anchor = "w")
+        button_save_path.               pack(pady = (5,0),padx =(5,0),side="left",anchor = "w")
+        button_open_setting.            pack(pady = (5,0),padx =(5,0),side="left",anchor = "w")
+        button_drawing.                 pack(pady = (5,0),padx =(5,0),side="left",anchor = "w")
+        self.frame_with_path.           pack(pady=0,padx=0,fill="x",expand=False,side = "top")
+        self.frame_with_console =       customtkinter.CTkFrame(master=self.root,height = 200,corner_radius=0)
+        self.name_or_path =             customtkinter.CTkCheckBox(master = self.frame_with_console,font=("Arial",16), text = "Název/cesta",command= lambda: self.refresh_console_setting())
+        self.console =                  tk.Text(self.frame_with_console, wrap="none", height=0, width=180,background="black",font=("Arial",14),state=tk.DISABLED)
+        self.name_or_path.              pack(pady = (5,0),padx =10,anchor = "w",side="left")
+        self.console.                   pack(pady = (5,0),padx =10,anchor = "w",side="left")
+        self.frame_with_console.        pack(pady=0,padx=0,fill="x",expand=False,side = "top")
+        self.frame_with_buttons =       customtkinter.CTkFrame(master=self.root,height = 200,corner_radius=0)
+        button_back  =                  customtkinter.CTkButton(master = self.frame_with_buttons, width = 20,height=30,text = "<", command = self.previous_image,font=("Arial",16,"bold"))
+        self.changable_image_num =      customtkinter.CTkEntry(master = self.frame_with_buttons,width=45,justify = "left",font=("Arial",16,"bold"))
+        self.changable_image_num.delete("0","100")
+        self.changable_image_num.insert("0",0)
+        self.current_image_num =        customtkinter.CTkLabel(master = self.frame_with_buttons,text = "/0",justify = "left",font=("Arial",16,"bold"))
+        button_next  =                  customtkinter.CTkButton(master = self.frame_with_buttons, width = 20,height=30,text = ">", command = self.next_image,font=("Arial",16,"bold"))
+        self.button_play_stop  =        customtkinter.CTkButton(master = self.frame_with_buttons, width = 90,height=30,text = "SPUSTIT", command = self.play,font=("Arial",16,"bold"))
+        button_copy  =                  customtkinter.CTkButton(master = self.frame_with_buttons, width = 80,height=30,text = "Kopír.", command = lambda: self.copy_image(self.image_browser_path),font=("Arial",16,"bold"))
+        rotate_button =                 customtkinter.CTkButton(master = self.frame_with_buttons, width = 80,height=30,text = "OTOČIT", command =  lambda: self.rotate_image(),font=("Arial",16,"bold"))
+        speed_label  =                  customtkinter.CTkLabel(master = self.frame_with_buttons,text = "Rychlost:",justify = "left",font=("Arial",12))
+        self.speed_slider =             customtkinter.CTkSlider(master = self.frame_with_buttons,width=120,from_=1,to=100,command= self.update_speed_slider)
+        self.percent1 =                 customtkinter.CTkLabel(master = self.frame_with_buttons,text = "%",justify = "left",font=("Arial",12))
+        zoom_label   =                  customtkinter.CTkLabel(master = self.frame_with_buttons,text = "ZOOM:",justify = "left",font=("Arial",12))
+        self.zoom_slider =              customtkinter.CTkSlider(master = self.frame_with_buttons,width=120,from_=100,to=500,command= self.update_zoom_slider)
+        self.percent2 =                 customtkinter.CTkLabel(master = self.frame_with_buttons,text = "%",justify = "left",font=("Arial",12))
+        reset_button =                  customtkinter.CTkButton(master = self.frame_with_buttons, width = 80,height=30,text = "RESET", command = lambda: self.Reset_all(),font=("Arial",16,"bold"))
+        ifz_label =                     customtkinter.CTkLabel(master = self.frame_with_buttons,text = "IFZ:",justify = "left",font=("Arial",12))
+        button_back_ifz  =              customtkinter.CTkButton(master = self.frame_with_buttons, width = 20,height=30,text = "<", command = self.previous_ifz_image,font=("Arial",16,"bold"))
+        self.changable_image_num_ifz =  customtkinter.CTkEntry(master = self.frame_with_buttons,width=20,justify = "left",font=("Arial",16,"bold"))
+        self.changable_image_num_ifz.delete("0","100")
+        self.changable_image_num_ifz.insert("0",1)
+        self.current_image_num_ifz =    customtkinter.CTkLabel(master = self.frame_with_buttons,text = "/0",justify = "left",font=("Arial",16,"bold"))
+        button_next_ifz  =              customtkinter.CTkButton(master = self.frame_with_buttons, width = 20,height=30,text = ">", command = self.next_ifz_image,font=("Arial",16,"bold"))
+        button_move =                   customtkinter.CTkButton(master = self.frame_with_buttons, width = 80,height=30,text = "Přesun.", command =  lambda: self.move_image(),font=("Arial",16,"bold"))
+        button_delete =                 customtkinter.CTkButton(master = self.frame_with_buttons, width = 80,height=30,text = "SMAZAT", command =  lambda: self.delete_image(),font=("Arial",16,"bold"))
+        button_back.                    pack(pady = (5,0),padx =(10,0),anchor = "w",side="left")
+        self.changable_image_num.       pack(pady = (5,0),padx =(10,0),anchor = "w",side="left")
+        self.current_image_num.         pack(pady = (5,0),padx =(10,0),anchor = "w",side="left")
+        button_next.                    pack(pady = (5,0),padx =(10,0),anchor = "w",side="left")
+        self.button_play_stop.          pack(pady = (5,0),padx =(10,0),anchor = "w",side="left")
+        button_copy.                    pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
+        rotate_button.                  pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
+        speed_label.                    pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
+        self.speed_slider.              pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
+        self.percent1.                  pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
+        zoom_label.                     pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
+        self.zoom_slider.               pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
+        self.percent2.                  pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
+        reset_button.                   pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
+        ifz_label.                      pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
+        button_back_ifz.                pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
+        self.changable_image_num_ifz.   pack(pady = (5,0),padx =(10,0),anchor = "w",side="left")
+        self.current_image_num_ifz.     pack(pady = (5,0),padx =(10,0),anchor = "w",side="left")
+        button_next_ifz.                pack(pady = (5,0),padx =(10,0),anchor = "w",side="left")
+        button_move.                    pack(pady = (5,0),padx =(10,0),anchor = "w",side="left")
+        button_delete.                  pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
+        self.frame_with_buttons.        pack(pady=0,padx=(0,0),fill="x",expand=False,side = "top")
         self.background_frame =         customtkinter.CTkFrame(master=self.root,corner_radius=0)
         self.main_frame =               tk.Canvas(master=self.background_frame,bg="black",highlightthickness=0)
         self.image_film_frame_left =    customtkinter.CTkFrame(master=self.root,height = 100,corner_radius=0)
         self.image_film_frame_center =  customtkinter.CTkFrame(master=self.root,height = 100,width = 200,corner_radius=0)
         self.image_film_frame_right =   customtkinter.CTkFrame(master=self.root,height = 100,corner_radius=0)
-        self.frame_with_path.           pack(pady=5,padx=5,fill="x",expand=False,side = "top")
-        self.background_frame.          pack(pady=0,padx=5,ipadx=10,ipady=10,fill="both",expand=True,side = "top")
+        self.background_frame.          pack(pady=(10,0),padx=5,ipadx=10,ipady=10,fill="both",expand=True,side = "top")
         if self.image_film == True:
             self.image_film_frame_left. pack(pady=5,expand=True,side = "left",fill="x")
             self.image_film_frame_center.pack(pady=5,padx=10,expand=False,side = "left",anchor = "center")
@@ -2686,78 +2883,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             self.images_film_center =   customtkinter.CTkLabel(master = self.image_film_frame_center,text = "")
             self.images_film_center.    pack()
         self.main_frame.                pack(pady=0,padx=5,ipadx=10,ipady=10,fill="both",expand=True,side = "bottom",anchor= "center")
-    
-        menu_button  =                  customtkinter.CTkButton(master = self.frame_with_path, width = 150,height=30, text = "MENU", command = lambda: self.call_menu(),font=("Arial",16,"bold"))
-        self.path_set =                 customtkinter.CTkEntry(master = self.frame_with_path,width = 680,height=30,placeholder_text="Zadejte cestu k souborům (kde se soubory přímo nacházejí)")
-        manual_path  =                  customtkinter.CTkButton(master = self.frame_with_path, width = 90,height=30,text = "Otevřít", command = lambda: self.start(self.path_set.get()),font=("Arial",16,"bold"))
-        tree         =                  customtkinter.CTkButton(master = self.frame_with_path, width = 120,height=30,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",16,"bold"))
-        button_save_path =              customtkinter.CTkButton(master = self.frame_with_path,width=100,height=30, text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get()),font=("Arial",16,"bold"))        
-        button_open_setting =           customtkinter.CTkButton(master = self.frame_with_path,width=30,height=30, text = "⚙️", command = lambda: call_setting_window(),font=("",16))
-        button_drawing =                customtkinter.CTkButton(master = self.frame_with_path,width=30,height=30, text = "Malování", command = lambda: self.switch_drawing_mode(),font=("Arial",16,"bold"))
-
-        self.name_or_path =             customtkinter.CTkCheckBox(master = self.frame_with_path,font=("Arial",16), text = "Název/cesta",command= lambda: self.refresh_console_setting())
-        self.console =                  tk.Text(self.frame_with_path, wrap="none", height=0, width=180,background="black",font=("Arial",14),state=tk.DISABLED)
-        button_back  =                  customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = "<", command = self.previous_image,font=("Arial",16,"bold"))
-        self.changable_image_num =      customtkinter.CTkEntry(master = self.frame_with_path,width=45,justify = "left",font=("Arial",16,"bold"))
-        self.changable_image_num.delete("0","100")
-        self.changable_image_num.insert("0",0)
-        self.current_image_num =        customtkinter.CTkLabel(master = self.frame_with_path,text = "/0",justify = "left",font=("Arial",16,"bold"))
-        button_next  =                  customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = ">", command = self.next_image,font=("Arial",16,"bold"))
-        self.button_play_stop  =        customtkinter.CTkButton(master = self.frame_with_path, width = 90,height=30,text = "SPUSTIT", command = self.play,font=("Arial",16,"bold"))
-        button_copy  =                  customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "Kopír.", command = lambda: self.copy_image(self.image_browser_path),font=("Arial",16,"bold"))
-        rotate_button =                 customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "OTOČIT", command =  lambda: self.rotate_image(),font=("Arial",16,"bold"))
-        speed_label  =                  customtkinter.CTkLabel(master = self.frame_with_path,text = "Rychlost:",justify = "left",font=("Arial",12))
-        self.speed_slider =             customtkinter.CTkSlider(master = self.frame_with_path,width=120,from_=1,to=100,command= self.update_speed_slider)
-        self.percent1 =                 customtkinter.CTkLabel(master = self.frame_with_path,text = "%",justify = "left",font=("Arial",12))
-        zoom_label   =                  customtkinter.CTkLabel(master = self.frame_with_path,text = "ZOOM:",justify = "left",font=("Arial",12))
-        self.zoom_slider =              customtkinter.CTkSlider(master = self.frame_with_path,width=120,from_=100,to=500,command= self.update_zoom_slider)
-        self.percent2 =                 customtkinter.CTkLabel(master = self.frame_with_path,text = "%",justify = "left",font=("Arial",12))
-        reset_button =                  customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "RESET", command = lambda: self.Reset_all(),font=("Arial",16,"bold"))
-        # prepinani ifz image:
-        ifz_label =                     customtkinter.CTkLabel(master = self.frame_with_path,text = "IFZ:",justify = "left",font=("Arial",12))
-        button_back_ifz  =              customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = "<", command = self.previous_ifz_image,font=("Arial",16,"bold"))
-        self.changable_image_num_ifz =  customtkinter.CTkEntry(master = self.frame_with_path,width=20,justify = "left",font=("Arial",16,"bold"))
-        self.changable_image_num_ifz.delete("0","100")
-        self.changable_image_num_ifz.insert("0",1)
-        self.current_image_num_ifz =    customtkinter.CTkLabel(master = self.frame_with_path,text = "/0",justify = "left",font=("Arial",16,"bold"))
-        button_next_ifz  =              customtkinter.CTkButton(master = self.frame_with_path, width = 20,height=30,text = ">", command = self.next_ifz_image,font=("Arial",16,"bold"))
-        button_move =                   customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "Přesun.", command =  lambda: self.move_image(),font=("Arial",16,"bold"))
-        button_delete =                 customtkinter.CTkButton(master = self.frame_with_path, width = 80,height=30,text = "SMAZAT", command =  lambda: self.delete_image(),font=("Arial",16,"bold"))
-
-        menu_button.                grid(column = 0,row=0,pady = 5,padx =0,sticky = tk.W)
-        self.path_set.              grid(column = 0,row=0,pady = 5,padx =160,sticky = tk.W)
-        manual_path.                grid(column = 0,row=0,pady = 5,padx =850,sticky = tk.W)
-        tree.                       grid(column = 0,row=0,pady = 5,padx =945,sticky = tk.W)
-        button_save_path.           grid(column = 0,row=0,pady = 5,padx =1070,sticky = tk.W)
-        button_open_setting.        grid(column = 0,row=0,pady = 5,padx =1180,sticky = tk.W)
-        button_drawing.             grid(column = 0,row=0,pady = 5,padx =1220,sticky = tk.W)
-        self.name_or_path.          grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
-        self.console.               grid(column = 0,row=1,pady = 5,padx =160,sticky = tk.W)
-        button_back.                grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
-        self.changable_image_num.   grid(column = 0,row=2,pady = 5,padx =40,sticky = tk.W)
-        self.current_image_num.     grid(column = 0,row=2,pady = 5,padx =85,sticky = tk.W)
-        button_next.                grid(column = 0,row=2,pady = 5,padx =130,sticky = tk.W)#30
-        # prepinani ifz:
-        ifz_label.                  grid(column = 0,row=2,pady = 5,padx =160,sticky = tk.W)#25
-        button_back_ifz.            grid(column = 0,row=2,pady = 5,padx =185,sticky = tk.W)#30
-        self.changable_image_num_ifz.grid(column = 0,row=2,pady = 5,padx =215,sticky = tk.W)#25
-        self.current_image_num_ifz. grid(column = 0,row=2,pady = 5,padx =240,sticky = tk.W)#20
-        button_next_ifz.            grid(column = 0,row=2,pady = 5,padx =260,sticky = tk.W)#30
-        #sliders
-        speed_label.                grid(column = 0,row=2,pady = 5,padx =290,sticky = tk.W)#50
-        self.speed_slider.          grid(column = 0,row=2,pady = 5,padx =340,sticky = tk.W)#125
-        self.percent1.              grid(column = 0,row=2,pady = 5,padx =465,sticky = tk.W)#45
-        zoom_label.                 grid(column = 0,row=2,pady = 5,padx =510,sticky = tk.W)#40
-        self.zoom_slider.           grid(column = 0,row=2,pady = 5,padx =550,sticky = tk.W)#120
-        self.percent2.              grid(column = 0,row=2,pady = 5,padx =670,sticky = tk.W)
-        #buttons
-        reset_button.               grid(column = 0,row=2,pady = 5,padx =715,sticky = tk.W) #85
-        self.button_play_stop.      grid(column = 0,row=2,pady = 5,padx =800,sticky = tk.W)#95
-        rotate_button.              grid(column = 0,row=2,pady = 5,padx =895,sticky = tk.W)#85
-        button_copy.                grid(column = 0,row=2,pady = 5,padx =980,sticky = tk.W)#85
-        button_move.                grid(column = 0,row=2,pady = 5,padx =1065,sticky = tk.W)#85
-        button_delete.              grid(column = 0,row=2,pady = 5,padx =1150,sticky = tk.W)#85
         self.name_or_path.select()
+        context_menu_button.bind("<Button-1>", call_path_context_menu)
 
         def jump_to_image(e):
             if self.changable_image_num.get().isdigit():
@@ -3009,6 +3136,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.main_frame.bind("<Button-3>", show_context_menu)
         context_menu = tk.Menu(self.root, tearoff=0,fg="white",bg="black")
         context_menu.add_command(label="Otevřít cestu", command=lambda: open_path(),font=("Arial",22,"bold"))
+        context_menu.add_separator()
+        context_menu.add_command(label="Otevřít v novém okně", command=lambda: self.view_image(self.increment_of_image,in_new_window=True),font=("Arial",22,"bold"))
         context_menu.add_separator()
         context_menu.add_command(label="Malovat", command=lambda: self.switch_drawing_mode(),font=("Arial",22,"bold"))
         context_menu.add_separator()
@@ -4103,6 +4232,46 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
     -umožňuje procházet více subsložek
     
     """
+    
+    @classmethod
+    def confirm_window(cls,prompt_message):
+        selected_option = False
+        def selected_yes(child_root):# Vyžádání admin práv: nefunkční ve vscode
+            child_root.grab_release()
+            child_root.destroy()
+            nonlocal selected_option
+            selected_option = True
+
+        def close_prompt(child_root):
+            child_root.grab_release()
+            child_root.destroy()
+            nonlocal selected_option
+            selected_option = False
+            
+        child_root = customtkinter.CTkToplevel()
+        child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(app_icon)))
+        # child_root.geometry(f"620x150+{300}+{300}")  
+        child_root.title("Upozornění (první spuštění aplikace)")
+        label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        proceed_label = customtkinter.CTkLabel(master = label_frame,text = prompt_message,font=("Arial",25),anchor="w",justify="left")
+        proceed_label.pack(pady=5,padx=10,anchor="w",side = "left")
+        button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        button_yes =    customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: selected_yes(child_root))
+        button_no =     customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+        button_no       .pack(pady = 5, padx = 10,anchor="e",side="right")
+        button_yes      .pack(pady = 5, padx = 10,anchor="e",side="right")
+        label_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+        button_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+
+        child_root.update()
+        child_root.update_idletasks()
+        # child_root.geometry(f"{child_root.winfo_width()}x{child_root.winfo_height()}+{300}+{300}")
+        child_root.focus()
+        child_root.focus_force()
+        child_root.grab_set()
+        child_root.wait_window()
+        return selected_option
+
     def __init__(self,root):
         self.root = root
         self.unbind_list = []
@@ -4166,8 +4335,9 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                             confirm_prompt_msg = f"Opravdu si přejete spustit navolené mazání ADRESÁŘŮ v cestě:\n{path}"
                         else:
                             confirm_prompt_msg = f"Opravdu si přejete spustit navolené mazání souborů v cestě:\n{path}"
-                        confirm = tk.messagebox.askokcancel("Potvrzení", confirm_prompt_msg)
-                    else: # pokud neni zapnut rezim testovani
+                        # confirm = tk.messagebox.askokcancel("Potvrzení", confirm_prompt_msg)
+                        confirm = Deleting_option.confirm_window(confirm_prompt_msg)
+                    else: # pokud je zapnut rezim testovani
                         confirm = True
 
                     if confirm == True:
@@ -4809,7 +4979,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 name_of_task = new_task[0]
                 repaired_freq_param = check_freq_format(str(new_task[4]))
                 path_app_location = str(initial_path+"/"+exe_name) 
-                task_command = "\""+ path_app_location+ " deleting " + name_of_task + " " + str(new_task[1]) + " " + str(new_task[2]) + " " + str(new_task[3]) + "\" /SC DAILY /ST " + repaired_freq_param
+                task_command = "/c start \""+ path_app_location+ " deleting " + name_of_task + " " + str(new_task[1]) + " " + str(new_task[2]) + " " + str(new_task[3]) + "\" /SC DAILY /ST " + repaired_freq_param
                 process = subprocess.Popen(f"schtasks /Create /TN {name_of_task} /TR {task_command}",
                                             stdout=subprocess.PIPE,
                                             stderr=subprocess.PIPE,

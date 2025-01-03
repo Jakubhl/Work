@@ -722,6 +722,14 @@ TRIMAZKON - novy log smazanych obrazku - rozklikavaci sipka dolu - hotovo
 TRIMAZKON - mazání - vyzkouset exe volani tasku a ukladani novych logu - hotovo
 přidat spustit aplikaci trimazkon na tray ikonu - hotovo
 mít možnost každý task rovnou spustit - hotovo
+TRIMAZKON - dodelat config - automatické vytvorení hidden sheetu s nastavenými tasky (pokud neexistuje vytvoří se až při ukládání nového tasku) - hotovo
+
+12:50 PM 1/3/2025
+TRIMAZKON - mazání - predelat confirm okno do toplevel - hotovo
+predelan integrovany tray na exe zvlast, protoze se zapinali dve aplikace zaroven (TRIMAZKON - opravit pipeline) - hotovo
+dát hlášku o chybějícím konfig soubouru na hlavní obrazovku - hotovo
+prohlížeč obrázků - předělat na pack - hotovo
+prohlížeč obrázků - kontextová nabídka historie vložených cest - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -736,12 +744,8 @@ ip setting - mít možnost seřadit podle abecedy
 ip setting - unfocus více projektů ponechá ostatní s bílým rámečkem
 ip setting - opravit duplicity - manage bin
 
-TRIMAZKON - mazání - predelat confirm okno do toplevel
 
-
-TRIMAZKON - dodelat config - automatické vytvorení hidden sheetu s nastavenými tasky (pokud neexistuje vytvoří se až při ukládání nového tasku)
-
-dát hlášku o chybějícím konfig soubouru na hlavní obrazovku
+prohlížeč obrázků - možnost otevření v novém okně - childroot toplevel - optimalizovat
 
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
 ??? Koumu: admin práva, online auto aktualizace nové verze

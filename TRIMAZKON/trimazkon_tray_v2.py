@@ -426,7 +426,8 @@ class tray_app_service:
         def call_main_app():
             command = "\"" + self.initial_path + self.main_app_exe_name + "\""
             command = command.replace("/","\\")
-            subprocess.call(command,shell=True,text=True)
+            # subprocess.call(command,shell=True,text=True)
+            subprocess.Popen(command, shell=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
 
         self.menu = Menu(MenuItem('Spustit aplikaci TRIMAZKON', lambda: call_main_app()),
                          MenuItem('Zobrazit nastavené úkoly', lambda: self.show_all_tasks()),
@@ -471,7 +472,7 @@ def handle_system_arguments():
     initial_path = Tools.path_check(sys.argv[1])
     resource_app_path = get_init_path(sys.argv[0])
     tray_app_instance = tray_app_service(initial_path,resource_app_path)
-    print(sys.argv)
+    print(sys.argv, len(sys.argv))
     if str(sys.argv[2]) == "run_tray":
         tray_app_instance.main()
         sys.exit()
