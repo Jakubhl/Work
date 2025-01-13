@@ -30,9 +30,10 @@ pyinstaller --noconfirm --onefile -w --console --icon=images\logo_TRIMAZKON.ico 
 
 pyinstaller --noconfirm --onefile -w --console --icon=images\logo_TRIMAZKON.ico --add-data images\*;images --add-data convert_application\*;convert_application --add-data "C:\Users\jakub.hlavacek.local\AppData\Local\Programs\Python\Python312\Lib\site-packages\customtkinter;customtkinter/" --name TRIMAZKON JHV_APP_GUI_v14.py
 
-pyinstaller --noconfirm --onefile --add-data "C:\Users\jakub.hlavacek.local\AppData\Local\Programs\Python\Python312\Lib\site-packages\customtkinter;customtkinter/" trimazkon_tray_v2.py
 
 pyinstaller --noconfirm --onefile trimazkon_tray_v2.py
+
+
 
 
 C:\Users\jakub.hlavacek.local\Desktop\test\trimazkon_tray_v2.exe C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/ run_tray

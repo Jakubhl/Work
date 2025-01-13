@@ -1399,10 +1399,6 @@ class Disk_management_gui:
         column2_header =    customtkinter.CTkLabel(master = column2,text = "💾",font=("",22)) #💿
         column3_header =    customtkinter.CTkLabel(master = column3,text = "ftp adresa: ",font=("Arial",20,"bold"),justify = "left",anchor = "w")
         column4_header =    customtkinter.CTkLabel(master = column4,text = "Poznámky: ",font=("Arial",20,"bold"),justify = "left",anchor = "w")
-        column1.            pack(fill="both",expand=False,side = "left")
-        column2.            pack(fill="both",expand=False,side = "left")
-        column3.            pack(fill="both",expand=False,side = "left")
-        column4.            pack(fill="both",expand=True, side = "left")
         column1_header.     pack(padx = (5,0),side = "top",anchor = "w")
         column2_header.     pack(padx = (12,0),side = "top",anchor = "w")
         column3_header.     pack(padx = (5,0),side = "top",anchor = "w",expand = False)
@@ -1461,8 +1457,12 @@ class Disk_management_gui:
                     notes.bind("<Return>",lambda e, widget = [notes_frame,notes]: add_row_return(widget))
 
                     if self.default_note_behav == 0:
-                        notes.configure(state = "disabled") 
-        
+                        notes.configure(state = "disabled")
+
+        column1.pack(fill="both",expand=False,side = "left")
+        column2.pack(fill="both",expand=False,side = "left")
+        column3.pack(fill="both",expand=False,side = "left")
+        column4.pack(fill="both",expand=True, side = "left")
         self.project_tree.update()
         self.project_tree.update_idletasks()
         self.notes_frame_height = int(notes_frame._current_height)
@@ -3705,10 +3705,9 @@ class IP_assignment: # Umožňuje měnit statickou IP
                     if self.default_note_behav == 0:
                         notes.configure(state = "disabled")
 
-
-        column1.            pack(fill="both",expand=False,side = "left")
-        column2.            pack(fill="both",expand=False,side = "left")
-        column3.            pack(fill="both",expand=True, side = "left")
+        column1.pack(fill="both",expand=False,side = "left")
+        column2.pack(fill="both",expand=False,side = "left")
+        column3.pack(fill="both",expand=True, side = "left")
         self.project_tree.update()
         self.project_tree.update_idletasks()
         self.notes_frame_height = int(notes_frame._current_height)

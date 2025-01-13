@@ -44,7 +44,7 @@ class tray_app_service:
         self.config_filename = "config_TRIMAZKON.xlsx"
         self.initial_path = initial_path
         self.main_app_exe_name = "TRIMAZKON.exe"
-        self.config_sheet_name = "Task_settings" 
+        self.config_sheet_name = "Task_settings"
         
     def clear_frame(self,frame):
         for widget in frame.winfo_children():
@@ -469,8 +469,10 @@ def handle_system_arguments():
 
         return initial_path
     
-    initial_path = Tools.path_check(sys.argv[1])
-    resource_app_path = get_init_path(sys.argv[0])
+    # initial_path = Tools.path_check(sys.argv[1])
+    initial_path = get_init_path(sys.argv[0])
+    # resource_app_path = get_init_path(sys.argv[2])
+    resource_app_path = sys.argv[1]
     tray_app_instance = tray_app_service(initial_path,resource_app_path)
     print(sys.argv, len(sys.argv))
     if str(sys.argv[2]) == "run_tray":
@@ -498,7 +500,7 @@ def handle_system_arguments():
     elif str(sys.argv[2]) == "show_all_tasks":
         tray_app_instance.show_all_tasks(toplevel=True)
 
-# handle_system_arguments() # uncoment when making exe file
+handle_system_arguments() # uncoment when making exe file
 
 # inst = tray_app_service(r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON/")
 # inst.main()

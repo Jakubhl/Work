@@ -298,6 +298,7 @@ default_setting_database = ["Podporované typy souborů u možností třídění
                             "nastavení celkového zoomu [%]:",
                             "použít nastavení windows (app zoom)",
                             "Nastavení módu vykreslování (Katalog)",
+                            "Nastavení spouštění TRIMAZKON v nabídce system tray",
                             ]
 
 default_setting_database_param = ["bmp,png",
@@ -332,4 +333,5 @@ default_setting_database_param = ["bmp,png",
                                 80,
                                 "ano",
                                 "fast",
+                                "ne",
                                 ]

@@ -731,6 +731,11 @@ dát hlášku o chybějícím konfig soubouru na hlavní obrazovku - hotovo
 prohlížeč obrázků - předělat na pack - hotovo
 prohlížeč obrázků - kontextová nabídka historie vložených cest - hotovo
 
+2:09 PM 1/13/2025
+prohlížeč obrázků - možnost otevření v novém okně - childroot toplevel - optimalizovat - hotovo
+ip setting- optimalizace nacitani widgetu u disků - hotovo
+
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 ip setting - dodelat, ze se pri editu projektu u disku nenacitaji disky
@@ -745,7 +750,11 @@ ip setting - unfocus více projektů ponechá ostatní s bílým rámečkem
 ip setting - opravit duplicity - manage bin
 
 
-prohlížeč obrázků - možnost otevření v novém okně - childroot toplevel - optimalizovat
+předělat nastavení system tray do nastavení - checkbox - spustit při zapnutí - ukládat
+
+
+
+
 
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
 ??? Koumu: admin práva, online auto aktualizace nové verze
