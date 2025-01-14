@@ -245,21 +245,33 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - oprava ukládání při přepínání stanic šipkami
     - ponechaný otevřený excel už neshodí okno
     - automatické rozměry oken v závislosti na zoomu"""
-        ,"\nVerze 4.2.0 (16.12.2024)"
+        ,"\nVerze 4.2.0 (14.01.2025)"
         ,
     """ 
   IP setting:
     - oprava vypisování informací u disků
-    - vylepšení rychlosti vykreslování
+    - vylepšení rychlosti vykreslování (i u disků)
     - oprava unfocus (klik vedle)
     - nově kontextová nabídka
   TRIMAZKON - mazání
     - uložení nastavených parametrů po kliku na spustit
+    - opravena chyba s config souborem
     - pokud jsou všechny soubory v dané cestě starší
-    (možnost mazání: 2) - zruší se
-    - "tray ikona" - aplikace běží na pozadí
+    (možnost mazání: 2) - zruší se (raději)
     - nově lze nastavovat pravidelné mazání (task scheduler)
-    - lze zobrazit log mazání, seznam nastavených rutin
+    - vylepšené gui subokna
+  TRIMAZKON_tray = nový exe soubor
+    - "tray ikona" - aplikace běží na pozadí, 
+    v nabídce: "skryté ikony"
+    - volba aut. spouštění je v nastavení aplikace
+    - lze zobrazit log mazání, seznam nastavených rutin v TS
+    - systémová notifikace o provedeném mazání
+  TRIMAZKON
+    - nově je složka convert_application součástí exe
+    - informace o nenačtení config nově v úvodním menu
+  Prohlížeč obrázků
+    - nově kontextová nabídka s historií vložených cest
+    - nově možnost otevřít obrázek v novém okně
     """
 ]
 

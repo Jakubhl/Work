@@ -735,6 +735,11 @@ prohlížeč obrázků - kontextová nabídka historie vložených cest - hotovo
 prohlížeč obrázků - možnost otevření v novém okně - childroot toplevel - optimalizovat - hotovo
 ip setting- optimalizace nacitani widgetu u disků - hotovo
 
+9:03 AM 1/14/2025
+předělat nastavení system tray do nastavení - checkbox - spustit při zapnutí - ukládat - hotovo
+release verze 4.2.0
+
+ip setting - zneviditelnit heslo - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -742,17 +747,11 @@ ip setting - dodelat, ze se pri editu projektu u disku nenacitaji disky
 ip setting - refresh disků do thread
 ip setting - udělat parent class, kde se volají ostatní classy
 ip setting - make project first u disku pri editu
-ip setting - zneviditelnit heslo
 ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...
 ip setting - mít možnost posouvat projekty o jednu pozici
 ip setting - mít možnost seřadit podle abecedy
 ip setting - unfocus více projektů ponechá ostatní s bílým rámečkem
 ip setting - opravit duplicity - manage bin
-
-
-předělat nastavení system tray do nastavení - checkbox - spustit při zapnutí - ukládat
-
-
 
 
 

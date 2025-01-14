@@ -19,8 +19,6 @@ import sys
 import ctypes
 import win32pipe, win32file, pywintypes, psutil
 import subprocess
-# from plyer import notification
-# from plyer.utils import platform
 from win32api import *
 from win32gui import *
 import win32con
@@ -30,6 +28,12 @@ testing = False
 
 trimazkon_tray_exe_name = "trimazkon_tray_v2.exe"
 global_recources_load_error = False
+exe_path = sys.executable
+exe_name = os.path.basename(exe_path)
+print("exe name: ",exe_name)
+if testing:
+    exe_name = "trimazkon_test.exe"
+
 class Tools:
     @classmethod
     def path_check(cls,path_raw,only_repair = None):
@@ -1014,9 +1018,10 @@ class Tools:
         
         if is_process_running(trimazkon_tray_exe_name):
             return
-        resource_path = Tools.resource_path(trimazkon_tray_exe_name)
+        # resource_path = Tools.resource_path(trimazkon_tray_exe_name)
+        # resource_path = Tools.resource_path(exe_name)
         # print("calling process: ",subexe_path + " " + initial_path + " run_tray")
-        cmd_command = initial_path+"/"+trimazkon_tray_exe_name + " " +  resource_path + " run_tray"
+        cmd_command = initial_path+"/"+trimazkon_tray_exe_name + " run_tray"
         print("calling process: ",cmd_command)
         subprocess.Popen(cmd_command, shell=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
 
@@ -1034,8 +1039,9 @@ class Tools:
             path_app_location = str(initial_path + trimazkon_tray_exe_name)
             # task_command = "\"" + path_app_location + " tray_startup_call" + "\" /sc onlogon"
             # task_command = "/c start \"" + path_app_location + " " + initial_path + " run_tray" + "\" /sc onlogon"
-            resource_path = Tools.resource_path(trimazkon_tray_exe_name)
-            task_command = "\"" + path_app_location + " " + resource_path + " run_tray" + "\" /sc onlogon"
+            # resource_path = Tools.resource_path(trimazkon_tray_exe_name)
+            # resource_path = Tools.resource_path(exe_name)
+            task_command = "\"" + path_app_location + " run_tray" + "\" /sc onlogon"
             process = subprocess.Popen(f"schtasks /Create /TN {task_name} /TR {task_command}",
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE,
@@ -1094,7 +1100,18 @@ class Tools:
     @classmethod
     def remove_task_from_TS(cls,name_of_task):
         cmd_command = f"schtasks /Delete /TN {name_of_task} /F"
-        subprocess.call(cmd_command,shell=True,text=True)
+        # subprocess.call(cmd_command,shell=True,text=True)
+
+        process = subprocess.Popen(cmd_command,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE,
+                                   creationflags=subprocess.CREATE_NO_WINDOW)
+            
+        stdout, stderr = process.communicate()
+        output_message = "out"+str(stdout) +"err"+str(stderr)
+        print(output_message)
+        if "Access is denied" in output_message:
+            return "need_access"
 
 def get_init_path():
     initial_path = Tools.path_check(os.getcwd())
@@ -1110,14 +1127,7 @@ def get_init_path():
     return initial_path
 
 initial_path = get_init_path()
-
-#pro pripad vypisovani do konzole z exe:
 print("init path: ",initial_path)
-exe_path = sys.executable
-exe_name = os.path.basename(exe_path)
-print("exe name: ",exe_name)
-if testing:
-    exe_name = "trimazkon_test.exe"
 
 class WindowsBalloonTip:
     def __init__(self, title, msg,app_icon):
@@ -1379,6 +1389,9 @@ class main_menu:
             task_success = Tools.establish_startup_tray()
             if str(task_success) == "need_access":
                 self.run_as_admin = True
+        else: # když nezaškrtnuto aut. spouštění ujisti se, že není nastavené - potřeba taky admin
+            if Tools.check_task_existence_in_TS("TRIMAZKON_startup_tray_setup"):
+                Tools.remove_task_from_TS("TRIMAZKON_startup_tray_setup")
         
     def clear_frames(self):
         for widget in self.root.winfo_children():
@@ -1519,7 +1532,9 @@ class main_menu:
                 self.call_ip_manager()
             elif sys.argv[1] == "settings_tray":
                 self.call_advanced_option(success_message="Automatické spouštění úspěšně nastaveno")
-            elif sys.argv[1] != "admin_menu":
+            elif sys.argv[1] == "settings_tray_del":
+                self.call_advanced_option(success_message="Automatické spouštění úspěšně odstraněno")
+            elif sys.argv[1] != "admin_menu" and sys.argv[1] != "trigger_by_tray":
                 # pokud se nerovnají jedná se nejspíše o volání základního prohlížeče obrázků (spuštění kliknutím na obrázek...)
                 IB_as_def_browser_path=Tools.path_check(raw_path,True)
                 IB_as_def_browser_path_splitted = IB_as_def_browser_path.split("/")
@@ -3317,8 +3332,12 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
 
         else:
             Tools.save_to_config("ne","tray_icon_startup")
-            Tools.remove_task_from_TS("TRIMAZKON_startup_tray_setup")
-            main_console.configure(text = "Automatické spouštění úspěšně odstraněno",text_color="green")
+            remove_task_success = Tools.remove_task_from_TS("TRIMAZKON_startup_tray_setup")
+            if str(remove_task_success) == "need_access":
+                Tools.call_again_as_admin("settings_tray_del","Upozornění","Aplikace vyžaduje práva pro odstranění aut. spouštění na pozadí\n\n- přejete si znovu spustit aplikaci, jako administrátor?")
+                main_console.configure(text = "Jsou vyžadována admin práva",text_color="red")
+            else:
+                main_console.configure(text = "Automatické spouštění úspěšně odstraněno",text_color="green")
 
     def set_safe_mode(self): # Nastavení základního spouštění (v okně/ maximalizované)
         option = self.checkbox_safe_mode.get()
@@ -5073,16 +5092,18 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                         data = str(stdout_str)
                     except UnicodeDecodeError:
                         data = str(stdout)
-                print(stdout_str)
+                output_message = "out"+str(stdout) +"err"+str(stderr)
+                print(output_message)
                 if "SUCCESS" in stdout_str:
                     os.startfile("taskschd.msc")
                     return True
                 else:
                     return False
 
-            wb = load_workbook(self.config_filename)
-            ws = wb["task_settings"]
+
             current_tasks = trimazkon_tray_instance.read_config()
+            wb = load_workbook(initial_path + self.config_filename)
+            ws = wb["Task_settings"]
             # subexe_path = Tools.resource_path(trimazkon_tray_exe_name)
             # process_output = subprocess.run(subexe_path + " " + initial_path + " read_config",
             #                 creationflags=subprocess.CREATE_NO_WINDOW,
@@ -5235,10 +5256,11 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         if window_width < 1200:
             window_width = 1200
         window.geometry(f"{window_width}x{window.winfo_height()}")
-        window.focus_force()
+        # window.focus_force()
+        window.after(100,window.focus_force())
         window.focus()
         # window.grab_set()
-        window.wait_window()
+        # window.wait_window()
 
     def create_deleting_option_widgets(self):  # Vytváří veškeré widgets (delete option MAIN)
         #definice ramcu

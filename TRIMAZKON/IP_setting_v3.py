@@ -16,7 +16,7 @@ import win32net
 import copy
 import pyperclip
 
-testing_mode = False
+testing_mode = True
 if testing_mode:
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")
@@ -398,6 +398,7 @@ class Disk_management_gui:
         self.last_project_ftp = ""
         self.last_project_username = ""
         self.last_project_password = ""
+        self.last_inserted_password = ""
         self.last_selected_widget_id = 0
         self.changed_notes_disk = []
         self.selected_list_disk = []
@@ -987,7 +988,8 @@ class Disk_management_gui:
         disk_letter =  str(self.disk_letter_input.get())
         ftp_address =  str(self.FTP_adress_input.get())
         username =     str(self.username_input.get())
-        password =     str(self.password_input.get())
+        # password =     str(self.password_input.get())
+        password =     str(self.last_inserted_password)
         notes = Tools.get_legit_notes(self.notes_input.get("1.0", tk.END))
         errors = 0
         if project_name.replace(" ","") == "":
@@ -1053,6 +1055,8 @@ class Disk_management_gui:
             if self.last_project_name == "":
                 Tools.add_colored_line(self.console,"Není vybrán žádný projekt","red",None,True)
                 return
+            
+            self.last_inserted_password = str(self.last_project_password)
             self.name_input.delete("0","300")
             self.name_input.insert("0",str(self.last_project_name))
             self.disk_letter_input.delete("0","300")
@@ -1062,7 +1066,7 @@ class Disk_management_gui:
             self.username_input.delete("0","300")
             self.username_input.insert("0",str(self.last_project_username))
             self.password_input.delete("0","300")
-            self.password_input.insert("0",str(self.last_project_password))
+            self.password_input.insert("0",str(len(self.last_project_password)*"*"))
             self.notes_input.delete("1.0",tk.END)
             self.notes_input.insert(tk.END,str(self.last_project_notes))
         
@@ -1104,6 +1108,17 @@ class Disk_management_gui:
             else:
                 child_root.title("Editovat projekt: "+self.last_project_name)
 
+        def show_password():
+            if str(self.password_input.get()) == str(len(self.last_inserted_password)*"*"):
+                self.password_input.configure(state = "normal")
+                self.password_input.delete("0","300")
+                self.password_input.insert("0",self.last_inserted_password)
+            else:
+                self.last_inserted_password = str(self.password_input.get())
+                self.password_input.delete("0","300")
+                self.password_input.insert("0",str(len(self.last_inserted_password)*"*"))
+                self.password_input.configure(state = "disabled")
+
         child_root = customtkinter.CTkToplevel()
         child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(self.app_icon)))
         self.opened_window = child_root
@@ -1133,7 +1148,8 @@ class Disk_management_gui:
         user =                      customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Uživatelské jméno: ",font=("Arial",20,"bold"))
         self.username_input =       customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0)
         password =                  customtkinter.CTkLabel(master = child_root, width = 60,height=30,text = "Heslo: ",font=("Arial",20,"bold"))
-        self.password_input =       customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0)
+        self.password_input =       customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=170,height=30,corner_radius=0)
+        show_pass_btn =             customtkinter.CTkButton(master = child_root,font=("Arial",15),width=30,height=30,corner_radius=0,text="👁",command= lambda: show_password(),fg_color="#505050",hover_color="#404040")
         notes =                     customtkinter.CTkLabel(master = child_root, width = 60,height=30,text = "Poznámky: ",font=("Arial",20,"bold"))
         self.notes_input =          customtkinter.CTkTextbox(master = child_root,font=("Arial",20),width=500,height=260)
         self.console =              tk.Text(child_root, wrap="none", height=0, width=45,background="black",font=("Arial",14),state=tk.DISABLED)
@@ -1158,6 +1174,7 @@ class Disk_management_gui:
         self.username_input.    grid(column = 0,row=7,pady = 5,padx =10,sticky = tk.W)
         password.               grid(column = 0,row=8,pady = 5,padx =10,sticky = tk.W)
         self.password_input.    grid(column = 0,row=9,pady = 5,padx =10,sticky = tk.W)
+        show_pass_btn.          grid(column = 0,row=9,pady = 5,padx =180,sticky = tk.W)
         notes.                  grid(column = 0,row=10,pady = 5,padx =10,sticky = tk.W)
         self.notes_input.       grid(column = 0,row=11,pady = 5,padx =10,sticky = tk.W)
         self.console.           grid(column = 0,row=12,pady = 5,padx =10,sticky = tk.W)
@@ -1165,6 +1182,7 @@ class Disk_management_gui:
         exit_button.            grid(column = 0,row=13,pady = 5,padx =310,sticky = tk.W)
 
         if edit == None:
+            self.last_inserted_password = ""
             self.disk_letter_input.delete("0","300")
             self.disk_letter_input.insert("0","P")
             self.FTP_adress_input.delete("0","300")
@@ -1176,6 +1194,12 @@ class Disk_management_gui:
                 self.name_input.insert("0",str(self.search_input.get()))
         else:
             copy_previous_project()
+            self.password_input.configure(state = "disabled")
+
+        def update_last_password():
+            if self.password_input.cget("state") == "normal":
+                self.last_inserted_password = str(self.password_input.get())
+        self.password_input.bind("<Key>",lambda e: update_last_password())
 
         child_root.update()
         child_root.update_idletasks()

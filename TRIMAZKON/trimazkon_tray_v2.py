@@ -37,7 +37,7 @@ class Tools:
 class tray_app_service:
     def __init__(self,initial_path,resource_app_path =None):
         if resource_app_path == None:
-            self.app_icon = initial_path + 'images/logo_TRIMAZKON.ico'
+            self.app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
         else:
             self.app_icon = resource_app_path + 'images/logo_TRIMAZKON.ico'
 
@@ -424,8 +424,10 @@ class tray_app_service:
 
     def create_menu(self):
         def call_main_app():
-            command = "\"" + self.initial_path + self.main_app_exe_name + "\""
-            command = command.replace("/","\\")
+            # command = "\"" + self.initial_path + self.main_app_exe_name + "\""
+            command = self.initial_path +"/"+ self.main_app_exe_name + " trigger_by_tray"
+            print("calling main app with: ",command)
+            # command = command.replace("/","\\")
             # subprocess.call(command,shell=True,text=True)
             subprocess.Popen(command, shell=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
 
@@ -472,46 +474,37 @@ def handle_system_arguments():
     # initial_path = Tools.path_check(sys.argv[1])
     initial_path = get_init_path(sys.argv[0])
     # resource_app_path = get_init_path(sys.argv[2])
-    resource_app_path = sys.argv[1]
-    tray_app_instance = tray_app_service(initial_path,resource_app_path)
+    # resource_app_path = sys.argv[1]
+    # tray_app_instance = tray_app_service(initial_path,resource_app_path)
+    tray_app_instance = tray_app_service(initial_path)
     print(sys.argv, len(sys.argv))
-    if str(sys.argv[2]) == "run_tray":
+    if str(sys.argv[1]) == "run_tray":
         tray_app_instance.main()
         sys.exit()
 
-    elif str(sys.argv[2]) == "check_task_existence":
+    elif str(sys.argv[1]) == "check_task_existence":
         task_given = str(sys.argv[3])
         output_status = tray_app_instance.check_task_existence(task_given=task_given)
         print("output check task existance status: ",output_status)
         sys.exit(output_status)
         # return output_status
 
-    elif str(sys.argv[2]) == "save_new_log":
+    elif str(sys.argv[1]) == "save_new_log":
         task_name = str(sys.argv[3])
         new_log = str(sys.argv[4])
         tray_app_instance.save_new_log(task_name,new_log)
 
-    elif str(sys.argv[2]) == "read_config":
+    elif str(sys.argv[1]) == "read_config":
         output_data = tray_app_instance.read_config()
         print("output read_config: ",output_data)
         sys.exit(output_data)
         # return output_data
     
-    elif str(sys.argv[2]) == "show_all_tasks":
+    elif str(sys.argv[1]) == "show_all_tasks":
         tray_app_instance.show_all_tasks(toplevel=True)
 
-handle_system_arguments() # uncoment when making exe file
+# handle_system_arguments() # uncoment when making exe file
 
 # inst = tray_app_service(r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON/")
 # inst.main()
 
-# CREATING TASK:
-# name_of_task = "dailyscript_test"
-# path_to_app = r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON\pipe_server\untitled2.py"
-# cmd_command = f"schtasks /Create /TN {name_of_task} /TR {path_to_app} /SC DAILY /ST 09:35"
-# connection_status = subprocess.call(cmd_command,shell=True,text=True)
-
-#DELETING TASK:
-# name_of_task = "dailyscript_test"
-# cmd_command = f"schtasks /Delete /TN {name_of_task} /F"
-# connection_status = subprocess.call(cmd_command,shell=True,text=True)
