@@ -271,11 +271,20 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - informace o nenačtení config nově v úvodním menu
   Prohlížeč obrázků
     - nově kontextová nabídka s historií vložených cest
-    - nově možnost otevřít obrázek v novém okně
+    - nově možnost otevřít obrázek v novém okně"""
+        ,"\nVerze 4.2.1 (20.01.2025)"
+        ,
+    """ 
+  IP setting:
+    - refresh disků se vykonává na pozadí
+    - možnost posouvat projekty o řádek (disk i ip)
+    - oprava unfocus (u více vybraných políček)
+    - kontextová nabídka u disků
+  TRIMAZKON - mazání
+    - oprava vstupů u aut. mazání
+    - oprava aktualizace datumů (u \"starší než\" vstupu)
     """
 ]
-
-
 
 
 default_setting_database = ["Podporované typy souborů u možností třídění:",

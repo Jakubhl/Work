@@ -741,18 +741,25 @@ release verze 4.2.0
 
 ip setting - zneviditelnit heslo - hotovo
 
+8:29 AM 1/20/2025
+ip setting - udělat parent class, kde se volají ostatní classy - hotovo
+ip setting - refresh disků do thread - hotovo
+ip setting - dodelat, ze se pri editu projektu u disku nenacitaji disky - hotovo
+ip setting - make project first u disku pri editu - hotovo
+ip setting - unfocus více projektů ponechá ostatní s bílým rámečkem + vylepseno - hotovo
+ip setting - widgets predelat na pack (disk i ip) - hotovo
+ip setting - mít možnost posouvat projekty o jednu pozici (disk i ip) - hotovo
+ip setting - kontext nabídka u disků - hotovo
+deleting - oprava vstupů a refresh dní - hotovo
+TRIMAZKON - když otevírám TRIMAZKONEM obrázek nemusím zakládat pipeline server - rychlejší - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-ip setting - dodelat, ze se pri editu projektu u disku nenacitaji disky
-ip setting - refresh disků do thread
-ip setting - udělat parent class, kde se volají ostatní classy
-ip setting - make project first u disku pri editu
-ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...
-ip setting - mít možnost posouvat projekty o jednu pozici
 ip setting - mít možnost seřadit podle abecedy
-ip setting - unfocus více projektů ponechá ostatní s bílým rámečkem
-ip setting - opravit duplicity - manage bin
 
+
+ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...
+ip setting - opravit duplicity - manage bin
 
 
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)

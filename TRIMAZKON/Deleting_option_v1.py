@@ -60,7 +60,7 @@ def get_cutoff_date(days):
         day -= 1
         if day == 0:
             month -= 1
-            if month ==0:
+            if month == 0:
                 month = 12
                 year -= 1
             day = calc_days_in_month(month)

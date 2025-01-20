@@ -93,9 +93,13 @@ class WindowsBalloonTip:
         Shell_NotifyIcon(NIM_DELETE, nid)
         PostQuitMessage(0) # Terminate the app.
 
-WindowsBalloonTip("Title for popup", "This is the popup's message",'images/logo_TRIMAZKON.ico')
+# WindowsBalloonTip("Title for popup", "This is the popup's message",'images/logo_TRIMAZKON.ico')
 
-
+for process in psutil.process_iter(['pid', 'name', 'status']):
+    try:
+        print(f"PID: {process.info['pid']}, Name: {process.info['name']}, Status: {process.info['status']}")
+    except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+        pass  # Handle cases where processes are inaccessible
 
 # icon_path = Tools.resource_path('images/logo_TRIMAZKON.ico')
 # notification.notify(title="Bylo provedeno automatické mazání",
