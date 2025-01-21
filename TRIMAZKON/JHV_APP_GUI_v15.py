@@ -1259,7 +1259,9 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
             self.exe_name = "TRIMAZKON.exe"
         self.current_pid = os.getpid()
         if not no_server:
-            self.start_server()
+            # self.start_server()
+            run_server_background = threading.Thread(target=self.start_server,)
+            run_server_background.start()
 
     def server(self,pipe_input):
         """
@@ -2865,9 +2867,13 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 path_context_menu.tk_popup(context_menu_button.winfo_rootx(),context_menu_button.winfo_rooty()+30)
 
         def call_start():
+            self.changable_image_num.delete("0","100")
+            self.changable_image_num.insert("0",str(0))
+            self.changable_image_num_ifz.delete("0","100")
+            self.changable_image_num_ifz.insert("0",str(0))
             self.selected_image = ""
-            self.current_image_num_ifz = 0
-            self.current_image_num = 0
+            self.current_image_num_ifz.configure(text = "/0")
+            self.current_image_num.configure(text = "/0")
             self.start(self.path_set.get())
 
         self.frame_with_path =          customtkinter.CTkFrame(master=self.root,height = 200,corner_radius=0)

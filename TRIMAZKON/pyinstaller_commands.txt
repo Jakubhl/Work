@@ -28,8 +28,8 @@ pyinstaller --noconfirm --onefile -w --console --icon=images\logo_TRIMAZKON.ico 
 test s convert app
 pyinstaller --noconfirm --onefile -w --console --icon=images\logo_TRIMAZKON.ico --add-data images\*;images --add-data trimazkon_tray_v2.exe;. --add-data convert_application\*;convert_application --add-data "C:\Users\jakub.hlavacek.local\AppData\Local\Programs\Python\Python312\Lib\site-packages\customtkinter;customtkinter/" --name TRIMAZKON JHV_APP_GUI_v14.py
 
-pyinstaller --noconfirm --onefile -w --console --icon=images\logo_TRIMAZKON.ico --add-data images\*;images --add-data convert_application\*;convert_application --add-data "C:\Users\jakub.hlavacek.local\AppData\Local\Programs\Python\Python312\Lib\site-packages\customtkinter;customtkinter/" --name TRIMAZKON JHV_APP_GUI_v14.py
-pyinstaller --noconfirm --onefile -w --noconsole --icon=images\logo_TRIMAZKON.ico --add-data images\*;images --add-data convert_application\*;convert_application --add-data "C:\Users\jakub.hlavacek.local\AppData\Local\Programs\Python\Python312\Lib\site-packages\customtkinter;customtkinter/" --name TRIMAZKON JHV_APP_GUI_v14.py
+pyinstaller --noconfirm --onefile -w --console --icon=images\logo_TRIMAZKON.ico --add-data images\*;images --add-data convert_application\*;convert_application --add-data "C:\Users\jakub.hlavacek.local\AppData\Local\Programs\Python\Python312\Lib\site-packages\customtkinter;customtkinter/" --name TRIMAZKON JHV_APP_GUI_v15.py
+pyinstaller --noconfirm --onefile -w --noconsole --icon=images\logo_TRIMAZKON.ico --add-data images\*;images --add-data convert_application\*;convert_application --add-data "C:\Users\jakub.hlavacek.local\AppData\Local\Programs\Python\Python312\Lib\site-packages\customtkinter;customtkinter/" --name TRIMAZKON JHV_APP_GUI_v15.py
 
 pyinstaller --noconfirm --onefile --icon=images\logo_TRIMAZKON.ico --add-data images\logo_TRIMAZKON.ico;images trimazkon_tray_v2.py
 pyinstaller --noconfirm --onefile --noconsole --icon=images\logo_TRIMAZKON.ico --add-data images\logo_TRIMAZKON.ico;images trimazkon_tray_v2.py
@@ -37,6 +37,12 @@ pyinstaller --noconfirm --onefile --noconsole --icon=images\logo_TRIMAZKON.ico -
 
 C:\Users\jakub.hlavacek.local\Desktop\test\trimazkon_tray_v2.exe C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/ run_tray
 
+
+Registry pro odmazání historie default aplikací:
+HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.png
+Computer\HKEY_CLASSES_ROOT\Applications\
+
+Když je desynchronizace mezi lokalem a originem.
 git reset --hard origin/main
 git clean -fd
 

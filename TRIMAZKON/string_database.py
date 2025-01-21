@@ -272,7 +272,7 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
   Prohlížeč obrázků
     - nově kontextová nabídka s historií vložených cest
     - nově možnost otevřít obrázek v novém okně"""
-        ,"\nVerze 4.2.1 (20.01.2025)"
+        ,"\nVerze 4.2.1 (21.01.2025)"
         ,
     """ 
   IP setting:
@@ -280,9 +280,16 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - možnost posouvat projekty o řádek (disk i ip)
     - oprava unfocus (u více vybraných políček)
     - kontextová nabídka u disků
+    - nově možnost třídit podle abecedy
+    - u disků je nově zneviditelněné heslo
   TRIMAZKON - mazání
     - oprava vstupů u aut. mazání
     - oprava aktualizace datumů (u \"starší než\" vstupu)
+  TRIMAZKON
+    - při několikanásobném spuštění (nebo spouštění přes
+    obrázky) se nezakládá další pipeline server = rychlejší
+  Prohlížeč obrázků
+    - opravena počítadla (tlačítko \"Otevřít\")
     """
 ]
 

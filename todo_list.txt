@@ -753,9 +753,26 @@ ip setting - kontext nabídka u disků - hotovo
 deleting - oprava vstupů a refresh dní - hotovo
 TRIMAZKON - když otevírám TRIMAZKONEM obrázek nemusím zakládat pipeline server - rychlejší - hotovo
 
+7:56 AM 1/21/2025
+prohlížeč obrázků po "otevřít" nefunguje lišta s počtem obrázků - hotovo
+ip setting - mít možnost seřadit podle abecedy - hotovo
+release verze 4.2.1
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-ip setting - mít možnost seřadit podle abecedy
+kouknout na directories z configu u advanced option v initu
+TRIMAZKON - hláška na úvodní obrazovce - o spuštění s adminem - upřesnit
+TRIMAZKON - přidat automatické vytvoření configu
+
+jhv_MAZ stop tray thread je zbytečná - nemuzu komunikovat s thread
+jhv_MAZ stojí to na outb''errb'ERROR: Access is denied.\r\r\n' a neshodí to aplikaci
+IF admin vlajecka - terminate other processes... nejdriv... ???
+
+jhv_MAZ - dodělat historii vložených cest
+jhv_MAZ - zamyslet se nad dlouhodobým logováním
+jhv_MAZ - předávát zoom options do tray oken
+
+tools class- classmethody - sdílené proměnné
+
 
 
 ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...

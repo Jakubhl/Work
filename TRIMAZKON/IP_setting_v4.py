@@ -2011,6 +2011,35 @@ class main:
             child_root.focus_force()
             self.root.bind("<Button-1>",lambda e: child_root.destroy(),"+")
 
+        def sort_by_alphabet(self):
+            project_names_array=[]
+            for projects in self.disk_all_rows:
+                project_names_array.append(projects[0])
+            project_names_sorted = sorted(project_names_array)
+            whole_projects_sorted = []
+            for names in project_names_sorted:
+                for projects in self.disk_all_rows:
+                    if projects[0] == names:
+                        whole_projects_sorted.append(projects)
+                        break
+            
+            self.disk_all_rows = copy.deepcopy(whole_projects_sorted)            
+            for i in range(0,len(self.disk_all_rows)):
+                    row = (len(self.disk_all_rows)-1)-i
+                    main.DM_tools.save_excel_data_disk(self.excel_file_path,
+                                                len(self.disk_all_rows),
+                                                self.last_project_id,
+                                                self.disk_all_rows[i][0],
+                                                self.disk_all_rows[i][1],
+                                                self.disk_all_rows[i][2],
+                                                self.disk_all_rows[i][3],
+                                                self.disk_all_rows[i][4],
+                                                self.disk_all_rows[i][5],
+                                                force_row_to_print=row+1)
+            
+            self.make_project_cells_disk()
+            Tools.add_colored_line(self.main_console,f"Projekty seřazeny podle abecedy","green",None,True)
+
         def create_widgets_disk(self,init=None):
             Tools.clear_frame(self.root)
             def edit_project():
@@ -2053,6 +2082,7 @@ class main:
             button_make_first =             customtkinter.CTkButton(master = first_row_frame, width = 50,height=40,text = "🔝",command =  lambda: self.make_project_first_disk(),font=(None,30),corner_radius=0)
             move_upwards =                  customtkinter.CTkButton(master = first_row_frame, width = 50,height=40,text = "↑",command =  lambda: self.make_project_first_disk(purpouse="silent",upwards=True),font=(None,25),corner_radius=0)
             move_downwards =                customtkinter.CTkButton(master = first_row_frame, width = 50,height=40,text = "↓",command =  lambda: self.make_project_first_disk(purpouse="silent",downwards=True),font=(None,25),corner_radius=0)
+            sort_alphabet =                 customtkinter.CTkButton(master = first_row_frame, width = 50,height=40,text = "A↑",command =  lambda: self.sort_by_alphabet(),font=(None,25),corner_radius=0)
             button_settings =               customtkinter.CTkButton(master = first_row_frame, width = 40,height=40,text="⚙️",command =  lambda: self.setting_window(),font=("",22),corner_radius=0)
             second_row_frame =              customtkinter.CTkFrame(master=self.main_widgets,corner_radius=0,fg_color="#212121")
             delete_disk =                   customtkinter.CTkButton(master = second_row_frame, width = 250,height=40,text = "Odpojit síťový disk",command =  lambda: self.delete_disk_option_menu(),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
@@ -2072,6 +2102,7 @@ class main:
             button_make_first.              pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             move_upwards.                   pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             move_downwards.                 pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
+            sort_alphabet.                  pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             button_settings.                pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             delete_disk.                    pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             reset.                          pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
@@ -4281,6 +4312,35 @@ class main:
             window.focus_force()
             window.focus()
 
+        def sort_by_alphabet(self):
+            project_names_array=[]
+            for projects in self.all_rows:
+                project_names_array.append(projects[0])
+            project_names_sorted = sorted(project_names_array)
+            whole_projects_sorted = []
+            for names in project_names_sorted:
+                for projects in self.all_rows:
+                    if projects[0] == names:
+                        whole_projects_sorted.append(projects)
+                        break
+            
+            self.all_rows = copy.deepcopy(whole_projects_sorted)            
+            for i in range(0,len(self.all_rows)):
+                row = (len(self.all_rows)-1)-i
+                main.IP_tools.save_excel_data(self.excel_file_path,
+                                                    len(self.all_rows),
+                                                    self.last_project_id,
+                                                    self.show_favourite,
+                                                    self.all_rows[i][0],
+                                                    self.all_rows[i][1],
+                                                    self.all_rows[i][2],
+                                                    self.all_rows[i][3],
+                                                    force_row_to_print=row+1,
+                                                    fav_status=self.favourite_list[i])
+            
+            self.make_project_cells()
+            Tools.add_colored_line(self.main_console,f"Projekty seřazeny podle abecedy","green",None,True)
+
         def create_widgets(self,fav_status = None,init=None,excel_load_error = False):
             if not excel_load_error:
                 if init:
@@ -4326,6 +4386,7 @@ class main:
             button_make_first =         customtkinter.CTkButton(master = first_row_frame, width = 50,height=40,text = "🔝",command =  lambda: self.make_project_first(),font=(None,30),corner_radius=0)
             move_upwards =              customtkinter.CTkButton(master = first_row_frame, width = 50,height=40,text = "↑",command =  lambda: self.make_project_first(purpouse="silent",upwards=True),font=(None,25),corner_radius=0)
             move_downwards =            customtkinter.CTkButton(master = first_row_frame, width = 50,height=40,text = "↓",command =  lambda: self.make_project_first(purpouse="silent",downwards=True),font=(None,25),corner_radius=0)
+            sort_alphabet =             customtkinter.CTkButton(master = first_row_frame, width = 50,height=40,text = "A↑",command =  lambda: self.sort_by_alphabet(),font=(None,25),corner_radius=0)
             button_settings_behav =     customtkinter.CTkButton(master = first_row_frame, width = 40,height=40,text="⚙️",command =  lambda: self.setting_window(),font=(None,22),corner_radius=0)
             manual_ip_set =             customtkinter.CTkButton(master = first_row_frame, width = 40,height=40,text="Manuálně",command =  lambda: self.manual_ip_setting(),font=("Arial",20,"bold"),corner_radius=0)
             
@@ -4379,6 +4440,7 @@ class main:
             button_make_first.              pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             move_upwards.                   pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             move_downwards.                 pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
+            sort_alphabet.                  pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             button_settings_behav.          pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             manual_ip_set.                  pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             connect_label.                  pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
