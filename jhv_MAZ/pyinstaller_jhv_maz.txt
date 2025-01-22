@@ -1,2 +1,23 @@
 
-pyinstaller --noconfirm --onefile -w --console --icon=images\logo_TRIMAZKON.ico --add-data images\*;images --add-data "C:\Users\jakub.hlavacek.local\AppData\Local\Programs\Python\Python312\Lib\site-packages\customtkinter;customtkinter/" --name jhv_MAZ JHV_MAZ_GUI_v1.py
+pyinstaller --noconfirm --onefile -w --console --icon=images\logo_TRIMAZKON.ico --add-data images\*;images --add-data "C:\Users\jakub.hlavacek.local\AppData\Local\Programs\Python\Python312\Lib\site-packages\customtkinter;customtkinter/" --name jhv_MAZ2 JHV_MAZ_GUI_v1.py
+
+pyinstaller --noconfirm --onefile -w --console --icon=images\logo_TRIMAZKON.ico --add-data images\*;images --name jhv_MAZ JHV_MAZ_GUI_v1.py
+
+
+
+
+běží jeden pipeline server
+- tray běží pořád na pozadí (na pipeline serveru)
+- když shodím gui okno a znovu zapnu a běží tray:
+	- pošlu zprávu na server "establish gui..."
+	NE STRANĚ SERVERU:
+	- zjistí se jestli existuje root.mainloop - pokud ne, vytvoří se nový
+
+- ověření, že neběží v danou chvíli tray je zajištěno jménem threadu, který běží na serveru (thread, kde běží tray)
+
+- pokud spuštěno bez práv nelze upravovat task scheduler.
+	- proto dotaz na spuštění s admin právy
+	- když se znovu spustí s admin právy - potřeba shodit tray (mohl by být zapnutý thread...)
+	- u admina znovu načíst (nebo také ne, záleží jestli je task zrušen nebo nastaven)
+	- když vypínám admin celou apku, potřeba opět shodit tray a pokud má být spuštěný tray:
+		- potřeba spustit tray přes TS (příkaz "run_tray" zapíná pipeline server) porotže jinak by měla admin práva a kdybych chtěl spustit apku přes tray ikonu - nešlo by to (šlo by jen spustit jako admin)

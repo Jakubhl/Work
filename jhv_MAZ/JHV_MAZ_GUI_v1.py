@@ -2,7 +2,7 @@ import customtkinter
 import os
 import time
 from openpyxl import load_workbook
-from PIL import Image, ImageTk
+from PIL import Image
 import Deleting_option_v1 as Deleting
 import trimazkon_tray_MAZ as trimazkon_tray
 import string_database_MAZ
@@ -11,7 +11,7 @@ from openpyxl import Workbook
 from tkinter import filedialog
 import tkinter as tk
 import threading
-import shutil
+# import shutil
 import sys
 import ctypes
 import win32pipe, win32file, pywintypes, psutil
@@ -69,8 +69,8 @@ class Tools:
         - v top případě zajistí aby se nenačítalo gui a pouze zajistí odeslání paramterů pro image browser
         """
         found_processes = Tools.get_all_app_processes()
-        # if found_processes[0] > 2:
-        if found_processes[0] > 4:
+        print("found processes (duplicity): ",found_processes)
+        if found_processes[0] > 3:
             return True
         else:
             return False
@@ -615,24 +615,31 @@ class Tools:
             
         Tools.tray_startup_cmd() # init sepnutí po prvním zavedení tasku
     
+    # @classmethod
+    # def stop_tray_thread(cls):
+    #     Tray_thread_name = "Main_app_tray_thread"
+    #     if Tools.is_thread_running(Tray_thread_name):
+    #         trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,Tools.resource_path('images/logo_TRIMAZKON.ico'),exe_name,"config_MAZ.xlsx")
+    #         trimazkon_tray_instance.quit_application()
+    #         print("tray app terminated")
+
     @classmethod
-    def stop_tray_thread(cls):
-        Tray_thread_name = "Main_app_tray_thread"
-        if Tools.is_thread_running(Tray_thread_name):
-            trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,Tools.resource_path('images/logo_TRIMAZKON.ico'),exe_name,"config_MAZ.xlsx")
-            trimazkon_tray_instance.quit_application()
-            print("tray app terminated")
+    def is_admin(cls):
+        try:
+            return ctypes.windll.shell32.IsUserAnAdmin()
+        except:
+            return False
 
     @classmethod
     def call_again_as_admin(cls,input_flag:str,window_title,main_title):
         def run_as_admin():# Vyžádání admin práv: nefunkční ve vscode
-            def is_admin():
+            if not Tools.is_admin():
+                pid = "None"
                 try:
-                    return ctypes.windll.shell32.IsUserAnAdmin()
-                except:
-                    return False
-            if not is_admin():
-                ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join([input_flag]), None, 1)
+                    pid = os.getpid()
+                except Exception:
+                    pass
+                ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join([input_flag,str(pid)]), None, 1)
                 sys.exit()
 
         def close_prompt(child_root):
@@ -677,6 +684,22 @@ class Tools:
         if "Access is denied" in output_message:
             return "need_access"
 
+    @classmethod
+    def terminate_pid(cls,pid:int):
+        print("pid to terminate: ",pid)
+
+        try:
+            process = psutil.Process(pid)
+            process.terminate()
+            process.wait(timeout=5)
+            print(f"Process with PID {pid} terminated.")
+        except psutil.NoSuchProcess:
+            print(f"No process with PID {pid} found.")
+        except psutil.AccessDenied:
+            print(f"Permission denied to terminate PID {pid}.")
+        except psutil.TimeoutExpired:
+            print(f"Process with PID {pid} did not terminate in time.")
+        
 def get_init_path():
     initial_path = Tools.path_check(os.getcwd())
     if len(sys.argv) > 1: #spousteni pres cmd (kliknuti na obrazek) nebo task scheduler - mazání
@@ -744,8 +767,7 @@ def deleting_via_cmd():
     cutoff_date = Deleting.get_cutoff_date(days=max_days)
     text_file_data = Tools.read_config_data()
     supported_formats_deleting = text_file_data[1]
-    list_of_folder_names = text_file_data[9]
-    to_delete_folder_name = list_of_folder_names[2]
+    to_delete_folder_name = text_file_data[4]
 
     del_instance = Deleting.whole_deleting_function(
         deleting_path,
@@ -772,24 +794,6 @@ def deleting_via_cmd():
    
     return output_message_clear
 
-load_gui=True
-print(sys.argv)
-if len(sys.argv) > 1:
-    if sys.argv[1] == "deleting":
-        deleting_output_message = deleting_via_cmd()
-        load_gui = False
-        sys.exit(f"0: {deleting_output_message}")
-    
-    elif sys.argv[1] == "run_tray":
-        Tools.tray_startup_cmd()
-        load_gui = False
-        sys.exit(0)
-    
-    # elif sys.argv[1] == "tray_startup_call":
-    #     tray_startup_cmd()
-    #     load_gui = False
-    #     sys.exit(0)
-
 class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
     """
     aby bylo možné posílat běžící aplikaci parametry:
@@ -801,9 +805,9 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
         self.exe_name = exe_name
         self.current_pid = os.getpid()
         if not no_server:
-            # self.start_server()
-            run_server_background = threading.Thread(target=self.start_server,)
-            run_server_background.start()
+            self.start_server()
+            # run_server_background = threading.Thread(target=self.start_server,)
+            # run_server_background.start()
 
     def check_root_existence(self):
         try:
@@ -877,12 +881,12 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
         )
         if "Open image browser" in command:
             message = str(parameters[0]) + ",," + str(parameters[1])
-            win32file.WriteFile(handle, message.encode())
             print("Message sent.")
+            win32file.WriteFile(handle, message.encode())
         elif "Establish main menu gui" in command:
             message = "Establish main menu gui"
-            win32file.WriteFile(handle, message.encode())
             print("Message sent.")
+            win32file.WriteFile(handle, message.encode())
 
     def start_server(self):
         self.pipe_name = f"jhv_MAZ_pipe_{self.current_pid}"
@@ -911,17 +915,55 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
         else:
             return False
 
+load_gui=True
+print("SYSTEM: ",sys.argv)
+if len(sys.argv) > 1:
+    if sys.argv[1] == "deleting":
+        deleting_output_message = deleting_via_cmd()
+        load_gui = False
+        sys.exit(f"0: {deleting_output_message}")
+    
+    elif sys.argv[1] == "run_tray":
+        pipeline_duplex = system_pipeline_communication(exe_name)# potřeba spustit server, protože neběží nic
+        Tools.tray_startup_cmd()
+        load_gui = False
+
+    # elif sys.argv[1] == "run_tray_admin":
+    #     pipeline_duplex = system_pipeline_communication(exe_name)# potřeba spustit server, protože neběží nic
+    #     Tools.tray_startup_cmd()
+    #     load_gui = False
+        # sys.exit(0)
+
+    # elif len(sys.argv) > 2:
+    #     if sys.argv[2] == "admin_menu":
+    #         # Tools.tray_startup_cmd()
+    #         print("spoustim pres admina, pid: ",os.getpid())
+    #         print(Tools.get_all_app_processes())
+    #         # load_gui = False
+    #         sys.exit(0)
+
+    elif sys.argv[1] == "settings_tray" or sys.argv[1] == "settings_tray_del" or sys.argv[1] == "admin_menu":
+        pid = int(sys.argv[2])
+        Tools.terminate_pid(pid) #vypnout thread s tray aplikací
+
+    # elif sys.argv[1] == "tray_startup_call":
+    #     tray_startup_cmd()
+    #     load_gui = False
+    #     sys.exit(0)
+
+
 if load_gui:
+    app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
+
     # pipeline_duplex = system_pipeline_communication(exe_name)# Establishment of pipeline server for duplex communication between running applications
     app_running_status = Tools.check_runing_app_duplicity()
     print("already opened app status: ",app_running_status)
-    if len(sys.argv) > 1: # VÝJIMKA: pukud nové spuštění s admin právy načti i gui...
-        if sys.argv[0] == sys.argv[1]:
-            app_running_status = False
+    # if len(sys.argv) > 1: # VÝJIMKA: pukud nové spuštění s admin právy načti i gui...
+    #     if sys.argv[0] == sys.argv[1]:
+    #         app_running_status = False
 
     if not app_running_status: # aplikace ještě neběží -> spustit server
         pipeline_duplex = system_pipeline_communication(exe_name)# Establishment of pipeline server for duplex communication between running applications
-        app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
         customtkinter.set_appearance_mode("dark")
         customtkinter.set_default_color_theme("dark-blue")
         root=customtkinter.CTk()
@@ -942,7 +984,7 @@ if load_gui:
         #             IB_as_def_browser_path += IB_as_def_browser_path_splitted[i]+"/"
         #         selected_image = IB_as_def_browser_path_splitted[len(IB_as_def_browser_path_splitted)-2]
         #         pipeline_duplex_instance.call_checking(f"Open image browser starting with image: {IB_as_def_browser_path}, {selected_image}",[IB_as_def_browser_path,selected_image])
-
+        
         pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
         pipeline_duplex_instance.call_checking(f"Establish main menu gui",[])
 
@@ -1019,7 +1061,26 @@ class main_menu:
             self.root.unbind("<Button-1>")
             self.call_view_option(params[0],params[1])
 
-    def menu(self,initial=False,catalogue_downloaded = False,zoom_disable = False,clear_root=False,root_given=None): # Funkce spouští základní menu při spuštění aplikace (MAIN)
+    def on_closing(self):
+        # def run_command_outside_admin_context(task_command):
+        #     command = f'cmd /min /C "set __COMPAT_LAYER=RUNASINVOKER && start \"\" \"{app_path}\""'
+        #     subprocess.Popen(task_command, shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
+
+        if Tools.is_admin(): # pokud se vypíná admin app - vypnout i admin tray a zapnout bez práv
+            data_read_in_config = Tools.read_config_data()
+            if data_read_in_config[9] == "ano":
+                task_name = "jhv_MAZ_startup_tray_setup"
+                try:
+                    run_task_command = f'schtasks /Run /TN "{task_name}"'
+                    print("Running task with command:", run_task_command)
+                    subprocess.run(run_task_command, shell=True)
+                except:
+                    pass
+            Tools.terminate_pid(os.getpid()) #vypnout thread s tray aplikací
+        else:
+            self.root.destroy()
+
+    def menu(self,initial=False,catalogue_downloaded = False,zoom_disable = False,clear_root=False): # Funkce spouští základní menu při spuštění aplikace (MAIN)
         """
         Funkce spouští základní menu při spuštění aplikace (MAIN)
 
@@ -1027,24 +1088,23 @@ class main_menu:
 
         list_of_menu_frames = [frame_with_buttons,frame_with_logo,frame_with_buttons_right]
         """
-        if root_given != None:
-        #     self.root = root_given
-            try:
-                print("existuje root given?",root_given.winfo_exists())
-            except Exception as e:
-                print("chyba  ",e)
-        try:
-            print("existuje root?",self.root.winfo_exists())
-        except Exception as e:
-            print("chyba  ",e)
+        # if root_given != None:
+        # #     self.root = root_given
+        #     try:
+        #         print("existuje root given?",root_given.winfo_exists())
+        #     except Exception as e:
+        #         print("chyba  ",e)
+        # try:
+        #     print("existuje root?",self.root.winfo_exists())
+        # except Exception as e:
+        #     print("chyba  ",e)
 
         if clear_root:
             self.root.after(0, lambda:self.clear_frames())
             # for widget in root_given.winfo_children():
             #     widget.destroy()
 
-        self.ib_running = False
-        if self.data_read_in_txt[5] == "ano":
+        if self.data_read_in_txt[5] == "ano" and initial:
             self.root.after(0, lambda:self.root.state('zoomed')) # max zoom, porad v okne
             
         if self.data_read_in_txt[8] == "ne" and initial: # pokud není využito nastavení windows
@@ -1112,6 +1172,7 @@ class main_menu:
         if initial and len(sys.argv) == 1:
             self.root.after(100, lambda: self.call_deleting_option())
         try:
+            self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
             self.root.mainloop()
         except Exception as e:
             print("already looped? ",e)
@@ -1186,19 +1247,23 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             Tools.save_to_config("ano","tray_icon_startup")
             new_task_success = Tools.establish_startup_tray()
             if str(new_task_success) == "need_access":
+                menu.run_as_admin = True
                 Tools.call_again_as_admin("settings_tray","Upozornění","Aplikace vyžaduje práva pro nastavení aut. spouštění na pozadí\n\n- přejete si znovu spustit aplikaci, jako administrátor?")
                 main_console.configure(text = "Jsou vyžadována admin práva",text_color="red")
             else:
                 # Tools.establish_startup_tray()
+                menu.run_as_admin = False
                 main_console.configure(text = "Automatické spouštění úspěšně nastaveno",text_color="green")
 
         else:
             Tools.save_to_config("ne","tray_icon_startup")
             remove_task_success = Tools.remove_task_from_TS("jhv_MAZ_startup_tray_setup")
             if str(remove_task_success) == "need_access":
+                menu.run_as_admin = True
                 Tools.call_again_as_admin("settings_tray_del","Upozornění","Aplikace vyžaduje práva pro odstranění aut. spouštění na pozadí\n\n- přejete si znovu spustit aplikaci, jako administrátor?")
                 main_console.configure(text = "Jsou vyžadována admin práva",text_color="red")
             else:
+                menu.run_as_admin = False
                 main_console.configure(text = "Automatické spouštění úspěšně odstraněno",text_color="green")
 
     def refresh_main_window(self):
@@ -2483,7 +2548,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                     wb.save(self.config_filename)
                 else:
                     Tools.add_colored_line(console,"Neočekávaná chyba, nepovedlo se nastavit nový úkol","red",None,True)
-                wb.close()  
+                wb.close()
 
             except Exception as e:
                 Tools.add_colored_line(console,f"Prosím zavřete konfigurační soubor ({e})","red",None,True)
@@ -2711,6 +2776,10 @@ if load_gui:
 def start_new_root():
     global menu
     global root
+    global app_icon
+    global initial_path
+    initial_path = get_init_path()
+
     app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")

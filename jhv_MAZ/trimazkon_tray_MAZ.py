@@ -431,7 +431,7 @@ class tray_app_service:
             # subprocess.call(command,shell=True,text=True)
             subprocess.Popen(command, shell=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
 
-        self.menu = Menu(MenuItem('Spustit aplikaci TRIMAZKON', lambda: call_main_app()),
+        self.menu = Menu(MenuItem('Spustit aplikaci jhv_MAZ', lambda: call_main_app()),
                          MenuItem('Zobrazit nastavené úkoly', lambda: self.show_all_tasks()),
                          MenuItem('Záznamy o mazání', lambda: self.show_task_log()),
                          MenuItem('Vypnout', lambda: self.quit_application()))
@@ -450,9 +450,9 @@ class tray_app_service:
         
         self.create_menu()
         self.icon = Icon(
-            "TRIMAZKON_tooltip",
+            "jhv_MAZ_tooltip",
             create_image(),
-            "TRIMAZKON",
+            "jhv_MAZ",
             self.menu
         )
         self.icon.run() # Run the tray icon

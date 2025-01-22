@@ -757,23 +757,39 @@ TRIMAZKON - když otevírám TRIMAZKONEM obrázek nemusím zakládat pipeline se
 prohlížeč obrázků po "otevřít" nefunguje lišta s počtem obrázků - hotovo
 ip setting - mít možnost seřadit podle abecedy - hotovo
 release verze 4.2.1
+
+3:52 PM 1/22/2025
+jhv_MAZ stop tray thread je zbytečná - nemuzu komunikovat s thread - hotovo
+jhv_MAZ IF admin vlajecka - terminate other processes... nejdriv... ??? - hotovo
+jhv_MAZ stojí to na outb''errb'ERROR: Access is denied.\r\r\n' a neshodí to aplikaci - hotovo
+
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-kouknout na directories z configu u advanced option v initu
+
+Prosím zavřete konfigurační soubor ([Errno 13] Permission denied: 'config_MAZ.xlsx') - proč nemám permission když spustím přes TS
+
+
+TRIMAZKON - prohlížeč nejde otevírat ifz v novém okně...
+TRIMAZKON - prohlížeč - malování - zrušit přepsat na zavřít
+TRIMAZKON - prohlížeč - pamatovat si historii cest - otevíráním přes obrázky... mít třeba 10 uložených cest
+TRIMAZKON - prohlížeč - když vyberu neco z histoie cest z nabídky, rovnou otevřít...
+TRIMAZKON - když aplikaci otevřu přes tray, tak mi to skočí do prohlížeče obrázků
+TRIMAZKON - na cestě z nastavení, pokud vypnute startup zapinani - vzdycky to chce admina v menu
+
+TRIMAZKON - kouknout na directories z configu u advanced option v initu
 TRIMAZKON - hláška na úvodní obrazovce - o spuštění s adminem - upřesnit
 TRIMAZKON - přidat automatické vytvoření configu
 
-jhv_MAZ stop tray thread je zbytečná - nemuzu komunikovat s thread
-jhv_MAZ stojí to na outb''errb'ERROR: Access is denied.\r\r\n' a neshodí to aplikaci
-IF admin vlajecka - terminate other processes... nejdriv... ???
+
+
 
 jhv_MAZ - dodělat historii vložených cest
-jhv_MAZ - zamyslet se nad dlouhodobým logováním
-jhv_MAZ - předávát zoom options do tray oken
-
-tools class- classmethody - sdílené proměnné
+jhv_MAZ - zamyslet se nad dlouhodobým logováním - předělat config na xml
+jhv_MAZ - předávát zoom options do tray oken (zoomed)
 
 
+tools class- classmethody - sdílené proměnné 
 
 ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...
 ip setting - opravit duplicity - manage bin
