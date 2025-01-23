@@ -763,12 +763,15 @@ jhv_MAZ stop tray thread je zbytečná - nemuzu komunikovat s thread - hotovo
 jhv_MAZ IF admin vlajecka - terminate other processes... nejdriv... ??? - hotovo
 jhv_MAZ stojí to na outb''errb'ERROR: Access is denied.\r\r\n' a neshodí to aplikaci - hotovo
 
+9:46 AM 1/23/2025
+tools class- classmethody - sdílené proměnné - hotovo
+Prosím zavřete konfigurační soubor ([Errno 13] Permission denied: 'config_MAZ.xlsx') - proč nemám permission když spustím přes TS - hotovo
+jhv_MAZ - předávát zoom options do tray oken (zoomed) - hotovo
+jhv_MAZ - zamyslet se nad dlouhodobým logováním - předělat config xlsx na json - hotovo
+
+
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
-
-
-Prosím zavřete konfigurační soubor ([Errno 13] Permission denied: 'config_MAZ.xlsx') - proč nemám permission když spustím přes TS
-
 
 TRIMAZKON - prohlížeč nejde otevírat ifz v novém okně...
 TRIMAZKON - prohlížeč - malování - zrušit přepsat na zavřít
@@ -782,14 +785,10 @@ TRIMAZKON - hláška na úvodní obrazovce - o spuštění s adminem - upřesnit
 TRIMAZKON - přidat automatické vytvoření configu
 
 
+jhv_MAZ - dodělat historii vložených cest (přes objekt)
 
+jhv_MAZ - předělat config_name na globalku
 
-jhv_MAZ - dodělat historii vložených cest
-jhv_MAZ - zamyslet se nad dlouhodobým logováním - předělat config na xml
-jhv_MAZ - předávát zoom options do tray oken (zoomed)
-
-
-tools class- classmethody - sdílené proměnné 
 
 ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...
 ip setting - opravit duplicity - manage bin

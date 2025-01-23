@@ -3,7 +3,7 @@ change_log_list = [" Verze 1.0.0 (21.01.2025)",
     - možnosti přímého mazání
     - možnost nastavit pravidelné mazání v TS
     - běží na pozadí v nabídce system tray
-    - ukládání provedených mazání\n"""
+    - logování provedených mazání\n"""
 ]
 
 
@@ -20,7 +20,7 @@ default_setting_database = ["Základní cesta k souborům:",
                             ]
 
 default_setting_database_param = ["C:/Users/",
-                                  "jpg,bmp,png,ifz",
+                                  ["jpg","bmp","png","ifz"],
                                   1000,
                                   [28,2,2024],
                                   "Ke_smazani",
