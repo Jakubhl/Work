@@ -1,0 +1,61 @@
+{
+    "settings": [
+        {
+            "key": "default_path",
+            "value": "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/"
+        },
+        {
+            "key": "supported_formats_deleting",
+            "value": [
+                "jpg",
+                "bmp",
+                "png",
+                "ifz"
+            ]
+        },
+        {
+            "key": "default_files_to_keep",
+            "value": 1000
+        },
+        {
+            "key": "default_cutoff_date",
+            "value": [
+                28,
+                2,
+                2024
+            ]
+        },
+        {
+            "key": "default_deleting_dir_name",
+            "value": "Ke_smazani"
+        },
+        {
+            "key": "maximalized",
+            "value": "ano"
+        },
+        {
+            "key": "sorting_safe_mode",
+            "value": "ano"
+        },
+        {
+            "key": "app_zoom",
+            "value": 80
+        },
+        {
+            "key": "app_zoom_checkbox",
+            "value": "ano"
+        },
+        {
+            "key": "tray_icon_startup",
+            "value": "ne"
+        },
+        {
+            "key": "path_history_list",
+            "value": [
+                "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/",
+                "C:/Users/jakub.hlavacek.local/Pictures/Feedback/{651C20AF-A032-4762-B96F-7B117D979DD6}/",
+                "C:/Users/"
+            ]
+        }
+    ]
+}

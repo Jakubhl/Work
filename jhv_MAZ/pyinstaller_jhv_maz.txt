@@ -1,7 +1,7 @@
 
 pyinstaller --noconfirm --onefile -w --console --icon=images\logo_TRIMAZKON.ico --add-data images\*;images --add-data "C:\Users\jakub.hlavacek.local\AppData\Local\Programs\Python\Python312\Lib\site-packages\customtkinter;customtkinter/" --name jhv_MAZ2 JHV_MAZ_GUI_v1.py
 
-pyinstaller --noconfirm --onefile -w --console --icon=images\logo_TRIMAZKON.ico --add-data images\*;images --name jhv_MAZ JHV_MAZ_GUI_v1.py
+pyinstaller --noconfirm --onefile -w --console --icon=images\logo_TRIMAZKON.ico --add-data images\*;images --name jhv_MAZ JHV_MAZ_GUI_v2.py
 
 
 

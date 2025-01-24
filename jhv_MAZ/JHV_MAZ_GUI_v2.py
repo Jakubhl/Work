@@ -21,19 +21,19 @@ from win32gui import *
 import win32con
 import struct
 
-testing = False
+testing = True
 
 global_recources_load_error = False
 exe_path = sys.executable
 exe_name = os.path.basename(exe_path)
+config_filename = "config_MAZ.json"
 print("exe name: ",exe_name)
 if testing:
     exe_name = "trimazkon_test.exe"
 
 class Tools:
     task_name = "jhv_MAZ_startup_tray_setup"
-    config_filename = "config_MAZ.xlsx"
-    config_json_filename = "config_MAZ.json"
+    config_json_filename = config_filename
     setting_list_name = "Settings_recources"
     Tray_thread_name = "Main_app_tray_thread"
 
@@ -99,17 +99,9 @@ class Tools:
             {"key": "app_zoom", "value": default_value_list[7]},
             {"key": "app_zoom_checkbox", "value": default_value_list[8]},
             {"key": "tray_icon_startup", "value": default_value_list[9]},
+            {"key": "path_history_list", "value": [default_value_list[0]]},
         ]
-        "default_path\n"
-        "supported_formats_deleting\n"
-        "default_files_to_keep\n"
-        "default_cutoff_date\n"
-        "default_deleting_dir_name\n"
-        "maximalized\n"
-        "sorting_safe_mode\n"
-        "app_zoom\n"
-        "app_zoom_checkbox\n"
-        "tray_icon_startup\n"
+        
 
         with open(cls.config_json_filename, "w") as file:
             json.dump({"settings": updated_settings}, file, indent=4)
@@ -131,6 +123,7 @@ class Tools:
         7 app_zoom\n
         8 app_zoom_checkbox\n
         9 tray_icon_startup\n
+        10 path_history_list\n
         """
         def filter_unwanted_chars(to_filter_data, directory = False,even_space=False):
             unwanted_chars = ["\n","\"","\'","[","]"]
@@ -211,6 +204,7 @@ class Tools:
         9 app_zoom\n
         10 app_zoom_checkbox\n
         11 tray_icon_startup\n
+        12 path_history_list\n
         """
 
         def filter_unwanted_chars(to_filter_data, directory = False,formats = False):
@@ -237,7 +231,10 @@ class Tools:
             with open(cls.config_json_filename, "r") as file:
                 data = json.load(file)
             settings = data["settings"]
-            new_tasks = data["task_list"]
+            try:
+                new_tasks = data["task_list"]
+            except:
+                new_tasks = None
             report = ""
 
             supported_formats_deleting = next((item["value"] for item in settings if item["key"] == "supported_formats_deleting"), None)
@@ -273,7 +270,7 @@ class Tools:
             elif which_parameter == "default_path":
                 report = (f"Základní cesta přenastavena na: {str(input_data)}")
                 rewrite_value(which_parameter,str(input_data))
-            elif which_parameter == "default_cutoff_date":
+            elif which_parameter == "default_cutoff_date" or which_parameter == "path_history_list":
                 rewrite_value(which_parameter,input_data)
             elif which_parameter == "default_files_to_keep" or which_parameter == "app_zoom":
                 rewrite_value(which_parameter,int(input_data))
@@ -281,8 +278,10 @@ class Tools:
                 rewrite_value(which_parameter,str(input_data))
                               
             with open(cls.config_json_filename, "w") as file:
-                # json.dump({"settings": settings, "log_history": log_history}, file, indent=4)
-                json.dump({"settings": settings, "task_list": new_tasks}, file, indent=4)
+                if new_tasks == None:
+                    json.dump({"settings": settings}, file, indent=4)
+                else:
+                    json.dump({"settings": settings, "task_list": new_tasks}, file, indent=4)
 
             return report
         
@@ -413,6 +412,7 @@ class Tools:
         path_checked = Tools.path_check(path_given)
         if path_checked != False and path_checked != "/":
             console_input = Tools.save_to_json_config(path_checked,"default_path")
+            Tools.add_new_path_to_history(path_checked)
             Tools.add_colored_line(console,console_input,"green",None,True)
         elif path_checked != "/":
             Tools.add_colored_line(console,f"Zadaná cesta: {path_given} nebyla nalezena, nebude tedy uložena","red",None,True)
@@ -474,7 +474,7 @@ class Tools:
             return
 
         def call_tray_class():
-            tray_app_instance = trimazkon_tray.tray_app_service(initial_path,Tools.resource_path('images/logo_TRIMAZKON.ico'),exe_name,"config_MAZ.json")
+            tray_app_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
             tray_app_instance.main()
 
         blocking_task = threading.Thread(target=call_tray_class,name=cls.Tray_thread_name)
@@ -529,8 +529,7 @@ class Tools:
             child_root.destroy()
 
         child_root = customtkinter.CTkToplevel()
-        child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(app_icon)))
-        # child_root.geometry(f"620x150+{300}+{300}")  
+        child_root.after(200, lambda: child_root.iconbitmap(app_icon))
         child_root.title(window_title)
         label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
         proceed_label = customtkinter.CTkLabel(master = label_frame,text = main_title,font=("Arial",25),anchor="w",justify="left")
@@ -635,8 +634,8 @@ class Tools:
         output_message_clear = f"Provedeno: {output_data[3]}\nZkontrolováno: {output_data[0]} souborů\nStarších: {output_data[1]} souborů\nSmazáno: {output_data[2]} souborů"
         print(output_message_clear)
 
-        icon_path = Tools.resource_path('images/logo_TRIMAZKON.ico')
-        trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,icon_path,exe_name,"config_MAZ.json")
+        icon_path = app_icon
+        trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,icon_path,exe_name,config_filename)
         trimazkon_tray_instance.save_new_log(task_name,new_log)
 
         WindowsBalloonTip("Bylo provedeno automatické mazání",
@@ -655,8 +654,59 @@ class Tools:
         
         root.tk.call('tk', 'scaling', zoom_factor / 100)
 
+    @classmethod
+    def add_new_path_to_history(cls,new_path):
+        if new_path == "delete_history":
+            Tools.save_to_json_config([],"path_history_list")
+            return
+
+        current_paths = Tools.read_json_config()[10]
+        if new_path not in current_paths:
+            if len(current_paths) > 9:
+                current_paths.pop()
+            current_paths.append(str(new_path))
+            Tools.save_to_json_config(current_paths,"path_history_list")
+
+    @classmethod
+    def confirm_window(cls,prompt_message,title_message):
+        selected_option = False
+        def selected_yes(child_root):# Vyžádání admin práv: nefunkční ve vscode
+            child_root.grab_release()
+            child_root.destroy()
+            nonlocal selected_option
+            selected_option = True
+
+        def close_prompt(child_root):
+            child_root.grab_release()
+            child_root.destroy()
+            nonlocal selected_option
+            selected_option = False
+            
+        child_root = customtkinter.CTkToplevel()
+        child_root.after(200, lambda: child_root.iconbitmap(app_icon))
+        child_root.title(title_message)
+        label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        proceed_label = customtkinter.CTkLabel(master = label_frame,text = prompt_message,font=("Arial",25),anchor="w",justify="left")
+        proceed_label.pack(pady=5,padx=10,anchor="w",side = "left")
+        button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        button_yes =   customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: selected_yes(child_root))
+        button_no =    customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+        button_no      .pack(pady = 5, padx = 10,anchor="e",side="right")
+        button_yes     .pack(pady = 5, padx = 10,anchor="e",side="right")
+        label_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+        button_frame   .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+        child_root.update()
+        child_root.update_idletasks()
+        child_root.focus()
+        child_root.focus_force()
+        child_root.grab_set()
+        child_root.wait_window()
+        return selected_option
+
+
 initial_path = Tools.get_init_path()
 print("init path: ",initial_path)
+app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
 
 class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
     """
@@ -855,13 +905,8 @@ if len(sys.argv) > 1:
         Tools.terminate_pid(pid) #vypnout thread s tray aplikací
 
 if load_gui:
-    app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
-    # pipeline_duplex = system_pipeline_communication(exe_name)# Establishment of pipeline server for duplex communication between running applications
     app_running_status = Tools.check_runing_app_duplicity()
     print("already opened app status: ",app_running_status)
-    # if len(sys.argv) > 1: # VÝJIMKA: pukud nové spuštění s admin právy načti i gui...
-    #     if sys.argv[0] == sys.argv[1]:
-    #         app_running_status = False
 
     if not app_running_status: # aplikace ještě neběží -> spustit server
         pipeline_duplex = system_pipeline_communication(exe_name)# Establishment of pipeline server for duplex communication between running applications
@@ -870,7 +915,7 @@ if load_gui:
         root=customtkinter.CTk()
         root.geometry("1200x900")
         root.title("jhv_MAZ v_1.0.0")
-        root.wm_iconbitmap(Tools.resource_path(app_icon))
+        root.wm_iconbitmap(app_icon)
 
     else:# předání parametrů pipeline komunikací
         pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
@@ -881,8 +926,6 @@ class main_menu:
         self.root = root
         if not new_loop:
             pipeline_duplex.root = self.root # předání rootu do pipeline_duplex až ve chvílí, kdy je jasné, že aplikace není vícekrát spuštěná:
-        self.config_filename = "config_MAZ.xlsx"
-        setting_list_name = "Settings_recources"
         self.data_read_in_txt = Tools.read_json_config()
         self.database_downloaded = False
         self.ib_running = False
@@ -969,14 +1012,14 @@ class main_menu:
         image_logo.pack()
         frame_with_buttons_right.pack(pady=0,padx=0,fill="both",expand=True,side = "right")
         frame_with_buttons.pack(pady=0,padx=0,fill="both",expand=True,side = "left")
-        trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,Tools.resource_path('images/logo_TRIMAZKON.ico'),exe_name,"config_MAZ.json")
+        trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
         new_deleting =         customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Nastavit nové mazání", command = lambda: self.call_deleting_option(),font=("Arial",25,"bold"))
         task_manager =         customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Zobrazit nastavené mazání", command = lambda: trimazkon_tray_instance.show_all_tasks(toplevel=True,maximalized=self.is_root_zoomed()),font=("Arial",25,"bold"))
         deleting_history =      customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Zobrazit záznamy o mazání", command = lambda: trimazkon_tray_instance.show_task_log(maximalized=self.is_root_zoomed()),font=("Arial",25,"bold"))
         advanced_button =       customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Nastavení", command = lambda: self.call_advanced_option(),font=("Arial",25,"bold"))
         change_log_label =      customtkinter.CTkLabel(master=frame_with_buttons_right, width= 600,height=50,font=("Arial",24,"bold"),text="Seznam posledně provedených změn: ")
         change_log =            customtkinter.CTkTextbox(master=frame_with_buttons_right, width= 600,height=450,fg_color="#212121",font=("Arial",20),border_color="#636363",border_width=3,corner_radius=0)
-        resources_load_error =  customtkinter.CTkLabel(master=frame_with_buttons_right, width= 600,height=50,font=("Arial",24,"bold"),text=f"Nepodařilo se načíst konfigurační soubor ({self.config_filename})",text_color="red")
+        resources_load_error =  customtkinter.CTkLabel(master=frame_with_buttons_right, width= 600,height=50,font=("Arial",24,"bold"),text=f"Nepodařilo se načíst konfigurační soubor ({config_filename})",text_color="red")
         new_deleting.           pack(pady =(105,0), padx=20,side="top",anchor="e")
         task_manager.           pack(pady =(10,0), padx=20,side="top",anchor="e")
         deleting_history.       pack(pady =(10,0), padx=20,side="top",anchor="e")
@@ -1044,14 +1087,6 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         
         self.creating_advanced_option_widgets()
     
-    # def set_zoom(self,zoom_factor):
-    #     try:
-    #         root.after(0,customtkinter.set_widget_scaling(zoom_factor / 100))
-    #     except Exception as e:
-    #         print(f"error with zoom scaling: {e}")
-        
-    #     root.tk.call('tk', 'scaling', zoom_factor / 100)
-
     def call_menu(self): # Tlačítko menu (konec, návrat do menu)
         """
         Funkce čistí všechny zaplněné rámečky a funguje, jako tlačítko zpět do menu
@@ -1166,6 +1201,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 console_input = Tools.save_to_json_config(output[1],"default_path") # hlaska o nove vlozene ceste
                 default_path_insert_console.configure(text="")
                 default_path_insert_console.configure(text = "Aktuálně nastavená základní cesta k souborům: " + str(output[1]),text_color="white")
+                Tools.add_new_path_to_history(str(output[1]))
                 main_console.configure(text="")
                 main_console.configure(text=console_input,text_color="green")
             else:
@@ -1176,6 +1212,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             path_checked = Tools.path_check(path_given)
             if path_checked != False and path_checked != "/":
                 console_input = Tools.save_to_json_config(path_checked,"default_path")
+                Tools.add_new_path_to_history(str(path_checked))
                 default_path_insert_console.configure(text="")
                 default_path_insert_console.configure(text = "Aktuálně nastavená základní cesta k souborům: " + str(path_checked),text_color="white")
                 main_console.configure(text="")
@@ -1280,7 +1317,6 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             main_console.configure(text="Bylo vloženo dnešní datum (Momentálně všechny soubory vyhodnoceny, jako starší!)",text_color="orange")
             self.setting_widgets(cutoff_date,main_console._text,main_console._text_color,submenu_option="set_default_parametres")
 
-
         def add_format(which_operation):
             if which_operation == 1:
                 new_format = str(formats_deleting_input.get())
@@ -1326,6 +1362,13 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 Tools.save_to_json_config("ne","app_zoom_checkbox")
                 Tools.set_zoom(int(app_zoom_slider.get()),root)
 
+        def call_delete_path_history():
+            confirm = Tools.confirm_window("Opravdu si přejete odstranit historii vložených cest?","Upozornění")
+            if confirm == True:
+                Tools.add_new_path_to_history("delete_history")
+                main_console.configure(text="Historie vložených cest byla vymazána",text_color="orange")
+
+
         if submenu_option == "default_path":
             self.option_buttons[0].configure(fg_color="#212121")
             row_index = 1
@@ -1358,6 +1401,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             self.path_set =             customtkinter.CTkEntry(     master = second_option_frame,width=800,height=40,font=("Arial",20),placeholder_text="")
             button_save5 =              customtkinter.CTkButton(    master = second_option_frame,width=100,height=40, text = "Uložit", command = lambda: save_path(),font=("Arial",22,"bold"))
             button_explorer =           customtkinter.CTkButton(    master = second_option_frame,width=100,height=40, text = "EXPLORER", command = lambda: call_browseDirectories(),font=("Arial",22,"bold"))
+            del_path_history =           customtkinter.CTkButton(    master = second_option_frame,height=40, text = "Smazat historii vložených cest", command = lambda: call_delete_path_history(),font=("Arial",22,"bold"))
             default_path_insert_console=customtkinter.CTkLabel(     master = second_option_frame,height=40,text ="",justify = "left",font=("Arial",22),text_color="white")
             console_frame =             customtkinter.CTkFrame(     master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1,fg_color="black")
             console_frame.              pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
@@ -1375,6 +1419,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             self.path_set.              grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
             button_save5.               grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=815)
             button_explorer.            grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=920)
+            del_path_history.           grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=1060)
             default_path_insert_console.grid(column =0,row=row_index+3,sticky = tk.W,pady =10,padx=10)
             main_console.               grid(column =0,row=row_index+4,sticky = tk.W,pady =10,padx=10)
             if self.windowed:
@@ -1517,7 +1562,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             y = self.root.winfo_rooty()
             self.current_root.geometry(f"1250x900+{x+200}+{y+200}")
             self.current_root.title("Pokročilá nastavení")
-            self.current_root.after(200, lambda: self.current_root.iconbitmap(Tools.resource_path(app_icon)))
+            self.current_root.after(200, lambda: self.current_root.iconbitmap(app_icon))
         else:
             self.current_root = self.root
         self.bottom_frame_default_path   = customtkinter.CTkFrame(master=self.current_root,corner_radius=0,border_width = 0)
@@ -1530,7 +1575,6 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         label0          = customtkinter.CTkLabel(master = self.top_frame,height=20,text = "Nastavte požadované parametry (nastavení bude uloženo i po vypnutí aplikace): ",justify = "left",font=("Arial",22,"bold"))
         main_menu_button =  customtkinter.CTkButton(master = self.menu_buttons_frame, width = 200,height=50,text = "MENU",                  command =  lambda: self.call_menu(),font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
         options0 =          customtkinter.CTkButton(master = self.menu_buttons_frame, width = 200,height=50,text = "Základní nastavení",    command =  lambda: self.setting_widgets(submenu_option="default_path"),font=("Arial",20,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
-        # options1 =          customtkinter.CTkButton(master = self.menu_buttons_frame, width = 200,height=50,text = "Názvy složek",          command =  lambda: self.setting_widgets(submenu_option="set_folder_names"),font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
         options2 =          customtkinter.CTkButton(master = self.menu_buttons_frame, width = 200,height=50,text = "Počáteční parametry",   command =  lambda: self.setting_widgets(submenu_option="set_default_parametres"),font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
         options3 =          customtkinter.CTkButton(master = self.menu_buttons_frame, width = 200,height=50,text = "Podporované formáty",   command =  lambda: self.setting_widgets(submenu_option="set_supported_formats"),font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
         label0.             grid(column = 0,row=0,sticky = tk.W,pady =10,padx=10)
@@ -1539,7 +1583,6 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             main_menu_button.grid(column = 0,row=0,pady = (10,0),padx =10,sticky = tk.W)
             shift_const = 0
         options0.           grid(column = 0,row=0,pady = (10,0),padx =220-shift_const,sticky = tk.W)
-        # options1.           grid(column = 0,row=0,pady = (10,0),padx =430-shift_const,sticky = tk.W)
         options2.           grid(column = 0,row=0,pady = (10,0),padx =430-shift_const,sticky = tk.W)
         options3.           grid(column = 0,row=0,pady = (10,0),padx =640-shift_const,sticky = tk.W)
         self.option_buttons = [options0,options2,options3]
@@ -1592,43 +1635,6 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
     -umožňuje procházet více subsložek
     
     """
-    @classmethod
-    def confirm_window(cls,prompt_message):
-        selected_option = False
-        def selected_yes(child_root):# Vyžádání admin práv: nefunkční ve vscode
-            child_root.grab_release()
-            child_root.destroy()
-            nonlocal selected_option
-            selected_option = True
-
-        def close_prompt(child_root):
-            child_root.grab_release()
-            child_root.destroy()
-            nonlocal selected_option
-            selected_option = False
-            
-        child_root = customtkinter.CTkToplevel()
-        child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(app_icon)))
-        # child_root.geometry(f"620x150+{300}+{300}")  
-        child_root.title("Upozornění (první spuštění aplikace)")
-        label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-        proceed_label = customtkinter.CTkLabel(master = label_frame,text = prompt_message,font=("Arial",25),anchor="w",justify="left")
-        proceed_label.pack(pady=5,padx=10,anchor="w",side = "left")
-        button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-        button_yes =   customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: selected_yes(child_root))
-        button_no =    customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
-        button_no      .pack(pady = 5, padx = 10,anchor="e",side="right")
-        button_yes     .pack(pady = 5, padx = 10,anchor="e",side="right")
-        label_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
-        button_frame   .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
-        child_root.update()
-        child_root.update_idletasks()
-        # child_root.geometry(f"{child_root.winfo_width()}x{child_root.winfo_height()}+{300}+{300}")
-        child_root.focus()
-        child_root.focus_force()
-        child_root.grab_set()
-        child_root.wait_window()
-        return selected_option
 
     def __init__(self,root):
         self.root = root
@@ -1640,7 +1646,6 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         self.to_delete_folder_name = self.text_file_data[4]
         self.console_frame_right_1_text = "","white"
         self.console_frame_right_2_text = "","white"
-        self.config_filename = "config_MAZ.xlsx"
         self.temp_path_for_explorer = None
         self.create_deleting_option_widgets()
  
@@ -1689,7 +1694,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                         else:
                             confirm_prompt_msg = f"Opravdu si přejete spustit navolené mazání souborů v cestě:\n{path}"
                         # confirm = tk.messagebox.askokcancel("Potvrzení", confirm_prompt_msg)
-                        confirm = Deleting_option.confirm_window(confirm_prompt_msg)
+                        confirm = Tools.confirm_window(confirm_prompt_msg,"Upozornění")
                     else: # pokud je zapnut rezim testovani
                         confirm = True
 
@@ -1773,6 +1778,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])
+            Tools.add_new_path_to_history(str(output[1]))
             Tools.add_colored_line(self.console,f"Byla vložena cesta: {output[1]}","green")
             self.temp_path_for_explorer = output[1]
         else:
@@ -2300,6 +2306,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             if str(output[1]) != "/":
                 operating_path.delete(0,300)
                 operating_path.insert(0, str(output[1]))
+                Tools.add_new_path_to_history(str(output[1]))
                 Tools.add_colored_line(console,"Byla vložena cesta pro vykonávání úkolu","green",None,True)
             print(output[0])
             window.focus()
@@ -2419,21 +2426,38 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 elif int(input_char.split(":")[0]) > 23 or int(input_char.split(":")[0]) < 0 or int(input_char.split(":")[1]) > 59 or int(input_char.split(":")[1]) < 0:
                     Tools.add_colored_line(console,"Neplatný formát času, mimo rozsah (vkládejte ve formátu: 00:00)","red",None,True)
                     return False
-                
+            
+        def call_path_context_menu(event):
+            path_history = Tools.read_json_config()[10]
+            def insert_path(path):
+                operating_path.delete("0","200")
+                operating_path.insert("0", path)
+            if len(path_history) > 0:
+                path_context_menu = tk.Menu(self.root, tearoff=0,fg="white",bg="black")
+                for i in range(0,len(path_history)):
+                    path_context_menu.add_command(label=path_history[i], command=lambda row_path = path_history[i]: insert_path(row_path),font=("Arial",22,"bold"))
+                    if i < len(path_history)-1:
+                        path_context_menu.add_separator()
+                        
+                path_context_menu.tk_popup(context_menu_button.winfo_rootx(),context_menu_button.winfo_rooty()+50)
+
         window = customtkinter.CTkToplevel()
         window.after(200, lambda: window.iconbitmap(app_icon))
         window.title("Nastavení nového úkolu")
-        trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,Tools.resource_path('images/logo_TRIMAZKON.ico'),exe_name,"config_MAZ.json")
+        trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
 
         parameter_frame = customtkinter.CTkFrame(master = window,corner_radius=0)
         path_label = customtkinter.CTkLabel(master = parameter_frame,text = "Zadejte cestu, kde bude úkol spouštěn:",font=("Arial",22,"bold"))
         path_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
+        context_menu_button  =  customtkinter.CTkButton(master = path_frame, width = 50,height=50, text = "V",font=("Arial",20,"bold"),corner_radius=0,fg_color="#505050")
         operating_path = customtkinter.CTkEntry(master = path_frame,font=("Arial",20),height=50,corner_radius=0)
-        explorer_btn = customtkinter.CTkButton(master = path_frame,text = "...",font=("Arial",22,"bold"),width = 40,height=50,corner_radius=0,command=lambda: call_browse_directories())
+        explorer_btn = customtkinter.CTkButton(master = path_frame,text = "...",font=("Arial",22,"bold"),width = 50,height=50,corner_radius=0,command=lambda: call_browse_directories())
         path_label.pack(pady = (10,0),padx = (10,0),side="top",anchor="w")
-        operating_path.pack(pady = (10,0),padx = (10,0),side="left",anchor="w",expand = True,fill="x")
+        context_menu_button.pack(pady = (10,0),padx = (10,0),side="left",anchor="w")
+        operating_path.pack(pady = (10,0),padx = (0,0),side="left",anchor="w",expand = True,fill="x")
         explorer_btn.pack(pady = (10,0),padx = (0,10),side="left",anchor="w")
         path_frame.pack(side="top",anchor="w",fill="x",expand = True)
+        context_menu_button.bind("<Button-1>", call_path_context_menu)
 
         older_then_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
         older_then_label = customtkinter.CTkLabel(master = older_then_frame,text = "Odstanit soubory starší než:",font=("Arial",22,"bold"))
@@ -2492,6 +2516,20 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         window.focus()
 
     def create_deleting_option_widgets(self):  # Vytváří veškeré widgets (delete option MAIN)
+        def call_path_context_menu(event):
+            path_history = Tools.read_json_config()[10]
+            def insert_path(path):
+                self.path_set.delete("0","200")
+                self.path_set.insert("0", path)
+            if len(path_history) > 0:
+                path_context_menu = tk.Menu(self.root, tearoff=0,fg="white",bg="black")
+                for i in range(0,len(path_history)):
+                    path_context_menu.add_command(label=path_history[i], command=lambda row_path = path_history[i]: insert_path(row_path),font=("Arial",22,"bold"))
+                    if i < len(path_history)-1:
+                        path_context_menu.add_separator()
+                        
+                path_context_menu.tk_popup(context_menu_button.winfo_rootx(),context_menu_button.winfo_rooty()+50)
+
         top_frame =             customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#212121")
         frame_with_logo =       customtkinter.CTkFrame(master=top_frame,corner_radius=0)
         logo =                  customtkinter.CTkImage(Image.open(Tools.resource_path("images/jhv_logo.png")),size=(300, 100))
@@ -2504,37 +2542,27 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         self.bottom_frame1 =    customtkinter.CTkFrame(master=self.root,height = 80,corner_radius=0)
         checkbox_frame =        customtkinter.CTkFrame(master=self.root,width=400,height = 150,corner_radius=0)
         self.frame_right =      customtkinter.CTkFrame(master=self.root,corner_radius=0,height = 150)
-        frame_with_cards.       pack(pady=0,padx=0,fill="both",expand=True,side = "right",anchor="w")
-        top_frame.              pack(pady=0,padx=0,fill="both",side = "top")
-        self.frame_path_input.  pack(pady=0,padx=0,fill="both",expand=False,side = "top")
-        self.bottom_frame2.     pack(pady=0,padx=5,fill="both",expand=True,side = "bottom")
-        self.bottom_frame1.     pack(pady=5,padx=5,fill="x",expand=False,side = "bottom")
-        checkbox_frame.         pack(pady=0,padx=5,fill="y",expand=False,side="left")
-        self.frame_right.       pack(pady=0,padx=0,fill="both",expand=True,side="right")
         self.frame_with_checkboxes = checkbox_frame
         list_of_frames = [self.frame_path_input,self.bottom_frame1,self.bottom_frame2,self.frame_right,self.frame_with_checkboxes,top_frame]
 
-        shift_const = 250
         menu_button =       customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "MENU", command =  lambda: self.call_extern_function(list_of_frames,function="menu"),
                                                     font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
         deleting_button =   customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Mazání souborů",
                                                     font=("Arial",20,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
-        # menu_button.        grid(column = 0,row=0,pady = (70,0),padx =260-shift_const,sticky = tk.W)
         menu_button.        pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
-        # deleting_button.    grid(column = 0,row=0,pady = (70,0),padx =520-shift_const,sticky = tk.W)
         deleting_button.    pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
 
-        
-        # menu_button =           customtkinter.CTkButton(master = self.frame_path_input, width = 180, text = "MENU", command = lambda: self.call_menu(),font=("Arial",20,"bold"))
-        self.path_set    =      customtkinter.CTkEntry(master = self.frame_path_input,font=("Arial",18),placeholder_text="Zadejte cestu k souborům z kamery (kde se přímo nacházejí soubory nebo datumové složky)")
-        tree        =           customtkinter.CTkButton(master = self.frame_path_input, width = 180,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"))
-        button_save_path =      customtkinter.CTkButton(master = self.frame_path_input,width=50,text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get()),font=("Arial",20,"bold"))
-        button_open_setting =   customtkinter.CTkButton(master = self.frame_path_input,width=30,height=30, text = "⚙️", command = lambda: Advanced_option(self.root,windowed=True,spec_location="deleting_option"),font=("Arial",16))
-        # menu_button.            pack(pady =12,padx=10,anchor ="w",side = "left")
-        self.path_set.          pack(pady = 12,padx =(10,0),anchor ="w",side = "left",fill="both",expand=True)
-        tree.                   pack(pady = 12,padx =10,anchor ="w",side = "left")
-        button_save_path.       pack(pady = 12,padx =0,anchor ="w",side = "left")
-        button_open_setting.    pack(pady = 12,padx =10,anchor = "w",side = "left")
+        context_menu_button  =  customtkinter.CTkButton(master = self.frame_path_input, width = 50,height=50, text = "V",font=("Arial",20,"bold"),corner_radius=0,fg_color="#505050")
+        self.path_set    =      customtkinter.CTkEntry(master = self.frame_path_input,height=50,font=("Arial",20),corner_radius=0,placeholder_text="Zadejte cestu k souborům z kamery (kde se přímo nacházejí soubory nebo datumové složky)")
+        tree        =           customtkinter.CTkButton(master = self.frame_path_input,height=50,width = 180,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"))
+        button_save_path =      customtkinter.CTkButton(master = self.frame_path_input,height=50,text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get()),font=("Arial",20,"bold"))
+        button_open_setting =   customtkinter.CTkButton(master = self.frame_path_input,height=50,width=50, text = "⚙️", command = lambda: Advanced_option(self.root,windowed=True,spec_location="deleting_option"),font=(None,20))
+        context_menu_button.    pack(pady = 10,padx =(10,0),anchor ="w",side = "left")
+        self.path_set.          pack(pady = 10,padx =(0,0),anchor ="w",side = "left",fill="both",expand=True)
+        tree.                   pack(pady = 10,padx =(10,0),anchor ="w",side = "left")
+        button_save_path.       pack(pady = 10,padx =(10,0),anchor ="w",side = "left")
+        button_open_setting.    pack(pady = 10,padx =(10,10),anchor = "w",side = "left")
+        context_menu_button.bind("<Button-1>", call_path_context_menu)
 
         self.checkbox  =        customtkinter.CTkCheckBox(master = self.frame_with_checkboxes,font=("Arial",16), text = "Mazání souborů starších než: určité datum",command = lambda: self.selected(True))
         self.checkbox2 =        customtkinter.CTkCheckBox(master = self.frame_with_checkboxes,font=("Arial",16), text = "Redukce novějších, mazání souborů starších než: určité datum",command = lambda: self.selected2(True))
@@ -2555,10 +2583,17 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         create_task_btn =       customtkinter.CTkButton(master = execution_btn_frame,width = 300,height = 60,text = "Nastavit aut. spouštění",command = lambda: self.save_new_task(),font=("Arial",20,"bold"))
         button.                 pack(pady=10,padx=(10,0),side="left",anchor="w")
         create_task_btn.        pack(pady=10,padx=(10,0),side="left",anchor="w")
-        self.console =          tk.Text(self.bottom_frame2, wrap="word", height=20, width=1200,background="black",font=("Arial",16),state=tk.DISABLED)
+        self.console =          tk.Text(self.bottom_frame2, wrap="word",background="black",font=("Arial",16),state=tk.DISABLED)
         self.info.              pack(pady = 12,padx =10,anchor="w",side = "top")
         execution_btn_frame.    pack(pady =20,padx=10,side = "top",anchor="n")
-        self.console.           pack(pady =10,padx=10,side = "top")
+        self.console.           pack(pady =10,padx=10,side = "top",fill="both",expand=False)
+        frame_with_cards.       pack(pady=0,padx=0,fill="both",expand=True,side = "right",anchor="w")
+        top_frame.              pack(pady=0,padx=0,fill="both",side = "top")
+        self.frame_path_input.  pack(pady=0,padx=0,fill="both",expand=False,side = "top")
+        self.bottom_frame2.     pack(pady=0,padx=5,fill="both",expand=True,side = "bottom")
+        self.bottom_frame1.     pack(pady=5,padx=5,fill="x",expand=False,side = "bottom")
+        checkbox_frame.         pack(pady=0,padx=5,fill="y",expand=False,side="left")
+        self.frame_right.       pack(pady=0,padx=0,fill="both",expand=True,side="right")
         #default:
         self.checkbox.select()
         self.checkbox_testing.select()
@@ -2611,7 +2646,7 @@ def start_new_root():
     root=customtkinter.CTk()
     root.geometry("1200x900")
     root.title("jhv_MAZ v_1.0.0")
-    root.wm_iconbitmap(Tools.resource_path(app_icon))
+    root.wm_iconbitmap(app_icon)
 
     menu = main_menu(root)
     menu.menu(initial=True)

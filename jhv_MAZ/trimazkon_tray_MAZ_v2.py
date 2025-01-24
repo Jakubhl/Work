@@ -121,7 +121,6 @@ class tray_app_service:
         with open(self.config_filename, "w") as file:
             json.dump({"settings": settings, "task_list": new_tasks}, file, indent=4)
 
-
     def delete_task(self,task,root):
         def delete_from_scheduler(name_of_task):
             cmd_command = f"schtasks /Delete /TN {name_of_task} /F"

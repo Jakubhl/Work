@@ -769,7 +769,10 @@ Prosím zavřete konfigurační soubor ([Errno 13] Permission denied: 'config_MA
 jhv_MAZ - předávát zoom options do tray oken (zoomed) - hotovo
 jhv_MAZ - zamyslet se nad dlouhodobým logováním - předělat config xlsx na json - hotovo
 
-
+7:32 AM 1/24/2025
+jhv_MAZ - předělat config_name na globalku - hotovo
+jhv_MAZ - dodělat historii vložených cest (přes objekt) - hotovo
+jhv_MAZ - možnost smazání historie vložených cest - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -784,10 +787,10 @@ TRIMAZKON - kouknout na directories z configu u advanced option v initu
 TRIMAZKON - hláška na úvodní obrazovce - o spuštění s adminem - upřesnit
 TRIMAZKON - přidat automatické vytvoření configu
 
+TRIMAKZON - nastavení folderu nebo filu v exploreru - neulozi se
+TRIMAZKON - delete confirm window má špatné hlášky
 
-jhv_MAZ - dodělat historii vložených cest (přes objekt)
-
-jhv_MAZ - předělat config_name na globalku
+jhv_MAZ - nastavení vyberu folderu nebo filu v exploreru - neulozi se
 
 
 ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...
