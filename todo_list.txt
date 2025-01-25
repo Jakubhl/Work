@@ -790,8 +790,11 @@ TRIMAZKON - přidat automatické vytvoření configu
 TRIMAKZON - nastavení folderu nebo filu v exploreru - neulozi se
 TRIMAZKON - delete confirm window má špatné hlášky
 
-jhv_MAZ - nastavení vyberu folderu nebo filu v exploreru - neulozi se
+jhv_MAZ - testing mode u folderů - aby je to přesunulo do složky
+jhv_MAZ - doublecheck, jestli task existuje když zakladam novy a vytvarim jmeno
 
+jhv_MAZ - nastavení vyberu folderu nebo filu v exploreru - neulozi se
+jhv_MAZ - možnost anglického jazyka
 
 ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...
 ip setting - opravit duplicity - manage bin

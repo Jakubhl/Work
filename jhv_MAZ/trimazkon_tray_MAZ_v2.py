@@ -241,8 +241,10 @@ class tray_app_service:
         i=0
         for tasks in all_tasks:
             task_name = customtkinter.CTkFrame(master=main_frame,corner_radius=0,border_width=0,height= 50,fg_color="#636363")
-            task_name_text = customtkinter.CTkLabel(master=task_name,text = "Úkol "+str(i+1) + f" (scheduler název: {tasks["name"]})",font=("Arial",20,"bold"),anchor="w")
-            task_date_accessed = customtkinter.CTkLabel(master=task_name,text = f"Přidáno: {tasks["date_added"]}",font=("Arial",20),anchor="e")
+            task_name_str = str(tasks["name"])
+            task_name_text = customtkinter.CTkLabel(master=task_name,text = "Úkol "+str(i+1) + f" (scheduler název: {task_name_str})",font=("Arial",20,"bold"),anchor="w")
+            date_added_str = str(tasks["date_added"])
+            task_date_accessed = customtkinter.CTkLabel(master=task_name,text = f"Přidáno: {date_added_str}",font=("Arial",20),anchor="e")
             task_name_text.pack(pady=(5,1),padx=10,anchor="w",side="left")
             task_date_accessed.pack(pady=(5,1),padx=10,anchor="e",side="right")
             task_name.pack(pady=(10,0),padx=5,side="top",fill="x")
@@ -283,7 +285,9 @@ class tray_app_service:
 
             param3_frame = customtkinter.CTkFrame(master=task_frame,corner_radius=0,border_width=1,height= 50)
             param3_label = customtkinter.CTkLabel(master=param3_frame,text = "Nastavení: ",font=("Arial",20,"bold"),anchor="w")
-            param3_label2 = customtkinter.CTkLabel(master=param3_frame,text = f"starší než: {tasks["max_days"]} dní, minimum = {tasks["files_to_keep"]} souborů",font=("Arial",20),anchor="w")
+            older_then_str = str(tasks["max_days"])
+            files_to_keep_str = str(tasks["files_to_keep"])
+            param3_label2 = customtkinter.CTkLabel(master=param3_frame,text = f"starší než: {older_then_str} dní, minimum = {files_to_keep_str} souborů",font=("Arial",20),anchor="w")
             param3_label.pack(pady=10,padx=(10,0),anchor="w",side="left")
             param3_label2.pack(pady=10,padx=(10,0),anchor="w",side="left")
             param3_frame.pack(pady=(0,3),padx=3,fill="x",side="top")
@@ -356,7 +360,9 @@ class tray_app_service:
                     continue #preskoč když se nejedná o hledaný specifický task
             task_frame = customtkinter.CTkFrame(master=main_frame,corner_radius=0,border_width=0)
             header_frame = customtkinter.CTkFrame(master=task_frame,corner_radius=0,border_width=0,fg_color="#636363")
-            task_name_text = customtkinter.CTkLabel(master=header_frame,text = "Úkol "+str(i+1) + f" (scheduler název: {tasks["name"]}), přidáno: {tasks["date_added"]}",font=("Arial",20,"bold"),anchor="w",justify="left")
+            task_name_str = str(tasks["name"])
+            date_added_str = str(tasks["date_added"])
+            task_name_text = customtkinter.CTkLabel(master=header_frame,text = "Úkol "+str(i+1) + f" (scheduler název: {task_name_str}), přidáno: {date_added_str}",font=("Arial",20,"bold"),anchor="w",justify="left")
             empty_log_frame = customtkinter.CTkFrame(master=task_frame,corner_radius=0,border_width=0,height=0)
             button_details = customtkinter.CTkButton(master = header_frame,text = "v",font=("Arial",40,"bold"),width = 50,height=50,corner_radius=0,fg_color="#505050")
             button_details.bind("<Button-1>",lambda e,task = tasks, log_frame = empty_log_frame, button = button_details: show_details(task,log_frame,button))
