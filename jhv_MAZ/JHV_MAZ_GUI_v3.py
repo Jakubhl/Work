@@ -1681,9 +1681,9 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             else:
                 path = check
                 if self.checkbox_testing.get() != 1:
-                    if self.checkbox6.get() == 1 and self.checkbox3.get() != 1: # sublozky u adresaru
+                    if self.more_dirs == 1 and self.selected_option != 3: # sublozky, ne u adresaru...
                         confirm_prompt_msg = f"Opravdu si přejete spustit navolené mazání souborů v cestě:\n{path}\na procházet přitom i SUBSLOŽKY?"
-                    elif self.checkbox3.get() == 1:
+                    elif self.selected_option == 3:
                         confirm_prompt_msg = f"Opravdu si přejete spustit navolené mazání ADRESÁŘŮ v cestě:\n{path}"
                     else:
                         confirm_prompt_msg = f"Opravdu si přejete spustit navolené mazání souborů v cestě:\n{path}"
@@ -1754,7 +1754,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         """
         Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
-        if self.checkbox6.get() == 1: # pokud je zvoleno more_dirs v exploreru pouze slozky...
+        if self.more_dirs: # pokud je zvoleno more_dirs v exploreru pouze slozky...
             output = Tools.browseDirectories("only_dirs",self.temp_path_for_explorer)
         else:
             output = Tools.browseDirectories("all",self.temp_path_for_explorer)
@@ -1926,10 +1926,13 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 self.more_dirs = False
                 subfolder_warning.configure(text = "")
 
-        option_title = customtkinter.CTkLabel(master = self.changable_frame,height=20,text = "Redukce souborů starších než: nastavené datum",justify = "left",font=("Arial",22,"bold"))
+        top_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121",height=260)
+
+        option_title = customtkinter.CTkLabel(master = top_frame,height=20,text = "Redukce souborů starších než: nastavené datum",justify = "left",font=("Arial",25,"bold"))
         option_title.pack(padx=10,pady=(20,10),side="top",anchor="w")
-        date_input_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121")
-        date_label = customtkinter.CTkLabel(master = date_input_frame,text = "  - budou smazány soubory starší než nastavené datum:",justify = "left",font=("Arial",20))
+        user_input_frame = customtkinter.CTkFrame(master=top_frame,corner_radius=0,fg_color="#212121",border_width=4,border_color="#636363")
+        date_input_frame = customtkinter.CTkFrame(master=user_input_frame,corner_radius=0,fg_color="#212121")
+        date_label = customtkinter.CTkLabel(master = date_input_frame,text = "‣ budou smazány soubory starší než nastavené datum:",justify = "left",font=("Arial",20))
         set_day     = customtkinter.CTkEntry(master = date_input_frame,width=40,font=("Arial",20), placeholder_text= self.cutoff_date[0])
         sep1        = customtkinter.CTkLabel(master = date_input_frame,width=10,text = ".",font=("Arial",20))
         set_month   = customtkinter.CTkEntry(master = date_input_frame,width=40,font=("Arial",20), placeholder_text= self.cutoff_date[1])
@@ -1943,36 +1946,41 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         sep2.       pack(padx=(5,0),pady=(0,0),side="left",anchor="w")
         set_year.   pack(padx=(5,0),pady=(0,0),side="left",anchor="w")
         insert_button.   pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
-        date_input_frame.pack(padx=0,pady=0,side="top",anchor="w")
+        date_input_frame.pack(padx=5,pady=(10,0),side="top",anchor="w")
         set_day.bind("<Key>",lambda e: update_entry(e,flag="max_days"))
         set_month.bind("<Key>",lambda e: update_entry(e,flag="max_days"))
         set_year.bind("<Key>",lambda e: update_entry(e,flag="max_days"))
 
-        day_format_input_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121")
-        days_label = customtkinter.CTkLabel(master = day_format_input_frame,text = "        - to znamená starší než:",justify = "left",font=("Arial",20))
+        day_format_input_frame = customtkinter.CTkFrame(master=user_input_frame,corner_radius=0,fg_color="#212121")
+        days_label = customtkinter.CTkLabel(master = day_format_input_frame,text = "‣ to znamená starší než:",justify = "left",font=("Arial",20))
         max_days_entry = customtkinter.CTkEntry(master = day_format_input_frame,width=60,font=("Arial",20))
         max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
         days_label2 = customtkinter.CTkLabel(master = day_format_input_frame,text = "dní",justify = "left",font=("Arial",20))
         days_label. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
         max_days_entry. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
         days_label2. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
-        day_format_input_frame.pack(padx=0,pady=0,side="top",anchor="w")
+        day_format_input_frame.pack(padx=5,pady=0,side="top",anchor="w")
         max_days_entry.bind("<Key>",lambda e: update_entry(e,flag="cutoff"))
 
-        ftk_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121")
-        ftk_label = customtkinter.CTkLabel(master = ftk_frame,text = "  - přičemž bude ponecháno:",justify = "left",font=("Arial",20))
+        ftk_frame = customtkinter.CTkFrame(master=user_input_frame,corner_radius=0,fg_color="#212121")
+        ftk_label = customtkinter.CTkLabel(master = ftk_frame,text = "‣ přičemž bude ponecháno:",justify = "left",font=("Arial",20))
         files_to_keep_set = customtkinter.CTkEntry(master = ftk_frame,width=70,font=("Arial",20), placeholder_text= self.files_to_keep)
         ftk_label2 = customtkinter.CTkLabel(master = ftk_frame,text = "souborů, vyhodnocených, jako starších",justify = "left",font=("Arial",20))
-        ftk_label. pack(padx=(10,0),pady=(5,0),side="left",anchor="w")
-        files_to_keep_set. pack(padx=(10,0),pady=(5,0),side="left",anchor="w")
-        ftk_label2. pack(padx=(10,0),pady=(5,0),side="left",anchor="w")
-        ftk_frame.pack(padx=0,pady=0,side="top",anchor="w")
+        ftk_label. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        files_to_keep_set. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        ftk_label2. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        ftk_frame.pack(padx=5,pady=(0,10),side="top",anchor="w")
+        user_input_frame.pack(padx=5,pady=(0,0),side="top",anchor="w",fill="x")
         files_to_keep_set.bind("<Key>",lambda e: update_entry(e,flag="ftk"))
 
-        summary_label = customtkinter.CTkLabel(master = self.changable_frame,text = f"Ponechány tedy budou všechny soubory NOVĚJŠÍ než nastavené datum a současně bude ponecháno: {self.files_to_keep} STARŠÍCH souborů.",justify = "left",font=("Arial",20,"bold"))
+        summary_label = customtkinter.CTkLabel(master = top_frame,text = f"Ponechány tedy budou všechny soubory NOVĚJŠÍ než nastavené datum a současně bude ponecháno: {self.files_to_keep} STARŠÍCH souborů.",justify = "left",font=("Arial",20,"bold"))
         summary_label.pack(padx=10,pady=(10,0),side="top",anchor="w")
-        deletable_formats = customtkinter.CTkLabel(master = self.changable_frame,text = f"Smazatelné formáty: {self.supported_formats_deleting}",justify = "left",font=("Arial",20,"bold"))
+        deletable_formats = customtkinter.CTkLabel(master = top_frame,text = f"Smazatelné formáty: {self.supported_formats_deleting}",justify = "left",font=("Arial",20))
         deletable_formats.pack(padx=10,pady=(0,0),side="top",anchor="w")
+
+        top_frame.pack(padx=0,pady=(0),side="top",anchor="w",fill="x")
+        top_frame.propagate(False)
+
         console = tk.Text(self.changable_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED)
         console.pack(pady = 10,padx =10,side="top",anchor="w",fill="x")
 
@@ -1996,7 +2004,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             self.options2.configure(fg_color="#212121")
             self.options3.configure(fg_color="black")
             option_title.configure(text="Redukce novějších, mazání souborů starších než: nastavené datum")
-            date_label.configure(text= "  - budou smazány VŠECHNY soubory starší než nastavené datum:")
+            date_label.configure(text= "‣ budou smazány VŠECHNY soubory starší než nastavené datum:")
             ftk_label2.configure(text= "souborů, vyhodnocených, jako novějších")
             summary_label.configure(text=f"Budou SMAZÁNY VŠECHNY soubory STARŠÍ než nastavené datum, přičemž budou redukovány i soubroy NOVĚJŠÍ na počet: {self.files_to_keep} souborů\n(pokud jsou v dané cestě všechny soubory starší, mazání se neprovede)")
         else:
@@ -2017,182 +2025,6 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         files_to_keep_set.bind("<Return>",new_FTK_enter_btn)
         self.changable_frame.bind("<Enter>",lambda e: save_before_execution()) # případ, že se nestiskne uložit - aby nedošlo ke ztrátě souborů
         
-    # def selected2(self,clear:bool): # Druhá možnost mazání, mazání všech starých, redukce nových
-    #     """
-    #     Nastavení widgets pro druhou možnost mazání
-
-    #     -Budou smazány VŠECHNY soubory starší než nastavené datum, přičemž budou redukovány i soubory novější\n
-    #     -Souborů, vyhodnocených, jako novější, bude ponechán nastavený počet\n
-    #     -(vhodné při situacích rychlého pořizování velkého množství fotografií, kde je potřebné ponechat nějaké soubory pro referenci)\n
-    #     -Podporované formáty jsou uživatelem nastavené a uložené v textovém souboru
-    #     """
-    #     self.clear_frame(self.frame_right)
-    #     self.bottom_frame2.unbind("<Enter>")
-    #     Tools.clear_console(self.console)
-    #     self.checkbox.deselect()
-    #     self.checkbox2.select()
-    #     self.checkbox3.deselect()
-    #     self.info.configure(text = f"- Budou smazány VŠECHNY soubory starší než nastavené datum, přičemž budou redukovány i soubory novější\n(Ošetřeno: pokud se v dané cestě nacházejí pouze starší soubory, než nastavené datum, zruší se mazání)\n- Souborů, vyhodnocených, jako novější, než nastavené datum, bude ponecháno: {self.files_to_keep}\n(vhodné při situacích rychlého pořizování velkého množství fotografií, kde je potřebné ponechat nějaké soubory pro referenci)\nPodporované formáty: {self.supported_formats_deleting}",font = ("Arial",16,"bold"),justify="left")
-    #     self.selected6() #update
-
-    #     if clear == True:
-    #         self.console_frame_right_1_text = "","white"
-    #         self.console_frame_right_2_text = "","white"
-
-    #     def set_cutoff_date():
-    #         input_month = set_month.get()
-    #         if input_month != "":
-    #             if input_month.isdigit():
-    #                 if int(input_month) < 13 and int(input_month) > 0:
-    #                     self.cutoff_date[1] = int(input_month)
-    #                     max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
-    #                     if int(self.cutoff_date[0]) > max_days_in_month:
-    #                         self.cutoff_date[0] = str(max_days_in_month)
-    #                     self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
-    #                 else:
-    #                     self.console_frame_right_1_text = "Měsíc: " + str(input_month) + " je mimo rozsah","red"
-    #             else:
-    #                 self.console_frame_right_1_text = "Nezadali jste číslo","red"
-
-    #         input_day = set_day.get()
-    #         max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
-
-    #         if input_day != "":
-    #             if input_day.isdigit():
-    #                 if int(input_day) <= int(max_days_in_month) and int(input_day) > 0:
-    #                     self.cutoff_date[0] = int(input_day)
-    #                     self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
-    #                 else:
-    #                     self.console_frame_right_1_text = "Den: " + str(input_day) + " je mimo rozsah","red"
-    #             else:
-    #                 self.console_frame_right_1_text = "Nezadali jste číslo","red"
-
-    #         input_year = set_year.get()
-    #         if input_year != "":
-    #             if input_year.isdigit():
-    #                 if len(str(input_year)) == 2:
-    #                     self.cutoff_date[2] = int(input_year) + 2000
-    #                     self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
-    #                 elif len(str(input_year)) == 4:
-    #                     self.cutoff_date[2] = int(input_year)
-    #                     self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
-    #                 else:
-    #                     self.console_frame_right_1_text = "Rok: " + str(input_year) + " je mimo rozsah","red"
-    #             else:
-    #                 self.console_frame_right_1_text = "Nezadali jste číslo","red"            
-    #         self.selected2(False)
-
-    #     def set_files_to_keep():
-    #         input_files_to_keep = files_to_keep_set.get()
-    #         if input_files_to_keep.isdigit():
-    #             if int(input_files_to_keep) >= 0:
-    #                 self.files_to_keep = int(input_files_to_keep)
-    #                 self.console_frame_right_2_text = "Počet ponechaných starších souborů nastaven na: " + str(self.files_to_keep),"green"
-    #             else:
-    #                 self.console_frame_right_2_text = "Mimo rozsah","red"
-    #         else:
-    #             self.console_frame_right_2_text = "Nazadali jste číslo","red"
-
-    #         self.selected2(False)
-
-    #     def insert_current_date():
-    #         today = Deleting.get_current_date()
-    #         today_split = today[1].split(".")
-    #         i=0
-    #         for items in today_split:
-    #             i+=1
-    #             self.cutoff_date[i-1]=items
-
-    #         self.console_frame_right_1_text = "Bylo vloženo dnešní datum (Momentálně všechny soubory vyhodnoceny, jako starší!)","orange"
-    #         self.selected2(False)
-
-    #     def save_before_execution():
-    #         input_month = set_month.get()
-    #         if input_month != "":
-    #             if input_month.isdigit():
-    #                 if int(input_month) < 13 and int(input_month) > 0:
-    #                     self.cutoff_date[1] = int(input_month)
-    #                     max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
-    #                     if int(self.cutoff_date[0]) > max_days_in_month:
-    #                         self.cutoff_date[0] = str(max_days_in_month)
-
-    #         input_day = set_day.get()
-    #         max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
-    #         if input_day != "":
-    #             if input_day.isdigit():
-    #                 if int(input_day) <= int(max_days_in_month) and int(input_day) > 0:
-    #                     self.cutoff_date[0] = int(input_day)
-
-    #         input_year = set_year.get()
-    #         if input_year != "":
-    #             if input_year.isdigit():
-    #                 if len(str(input_year)) == 2:
-    #                     self.cutoff_date[2] = int(input_year) + 2000
-    #                 elif len(str(input_year)) == 4:
-    #                     self.cutoff_date[2] = int(input_year)
-
-    #         input_files_to_keep = files_to_keep_set.get()
-    #         if input_files_to_keep.isdigit():
-    #             if int(input_files_to_keep) >= 0:
-    #                 self.files_to_keep = int(input_files_to_keep)
-
-    #     def set_max_days():
-    #         new_cutoff = Deleting.get_cutoff_date(int(max_days_entry.get()))
-    #         set_day.insert(0,new_cutoff[0])
-    #         set_month.insert(0,new_cutoff[1])
-    #         set_year.insert(0,new_cutoff[2])
-    #         set_cutoff_date()
-
-    #     console_frame_right_1_text, console_frame_right_1_color = self.console_frame_right_1_text
-    #     today = Deleting.get_current_date()
-    #     row_index = 0
-    #     label0      = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Dnešní datum: "+today[1],justify = "left",font=("Arial",16,"bold"))
-    #     label1      = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte datum pro vyhodnocení souborů, jako starších:",justify = "left",font=("Arial",16))
-    #     set_day     = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[0])
-    #     sep1        = customtkinter.CTkLabel(master = self.frame_right,height=20,width=10,text = ".",font=("Arial",20))
-    #     set_month   = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[1])
-    #     sep2        = customtkinter.CTkLabel(master = self.frame_right,height=20,width=10,text = ".",font=("Arial",20))
-    #     set_year    = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[2])
-    #     button_save1 = customtkinter.CTkButton(master = self.frame_right,width=100,height=30, text = "Nastavit", command = lambda: set_cutoff_date(),font=("Arial",18,"bold"))
-    #     max_days_entry = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[0])
-    #     max_days_label = customtkinter.CTkLabel(master = self.frame_right,text = "dní",font=("Arial",16))
-    #     max_days_save = customtkinter.CTkButton(master = self.frame_right,width=100,height=30, text = "Nastavit", command = lambda: set_max_days(),font=("Arial",18,"bold"))
-    #     insert_button = customtkinter.CTkButton(master = self.frame_right,width=190,height=30, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",18,"bold"))
-    #     console_frame_right_1=customtkinter.CTkLabel(master = self.frame_right,height=30,text = console_frame_right_1_text,justify = "left",font=("Arial",18),text_color=console_frame_right_1_color)
-    #     label0.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
-    #     label1.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
-    #     set_day.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
-    #     sep1.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=40)
-    #     set_month.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=50)
-    #     sep2.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=80)
-    #     set_year.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=90)
-    #     button_save1.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=150)
-    #     max_days_entry.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=260)
-    #     max_days_label.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=320)
-    #     max_days_save.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=350)
-    #     insert_button.grid(column =0,row=row_index+3,sticky = tk.W,pady =5,padx=10)
-    #     console_frame_right_1.grid(column =0,row=row_index+4,sticky = tk.W,pady =0,padx=10)
-    #     def new_date_enter_btn(e):
-    #         set_cutoff_date()
-    #     set_day.bind("<Return>",new_date_enter_btn)
-    #     set_month.bind("<Return>",new_date_enter_btn)
-    #     set_year.bind("<Return>",new_date_enter_btn)
-    #     max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
-        
-    #     console_frame_right_2_text, console_frame_right_2_color = self.console_frame_right_2_text
-    #     label2          = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte počet ponechaných novějších souborů:",justify = "left",font=("Arial",16))
-    #     files_to_keep_set = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30,font=("Arial",16), placeholder_text= self.files_to_keep)
-    #     button_save2    = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Nastavit", command = lambda: set_files_to_keep(),font=("Arial",18,"bold"))
-    #     console_frame_right_2=customtkinter.CTkLabel(master = self.frame_right,height=30,text =console_frame_right_2_text,justify = "left",font=("Arial",18),text_color=console_frame_right_2_color)
-    #     label2.grid(column =0,row=5,sticky = tk.W,pady =0,padx=10)
-    #     files_to_keep_set.grid(column =0,row=6,sticky = tk.W,pady =0,padx=10)
-    #     button_save2.grid(column =0,row=6,sticky = tk.W,pady =0,padx=60)
-    #     console_frame_right_2.grid(column =0,row=7,sticky = tk.W,pady =0,padx=10)
-    #     def new_FTK_enter_btn(e):
-    #         set_files_to_keep()
-    #     files_to_keep_set.bind("<Return>",new_FTK_enter_btn)
-    #     self.bottom_frame2.bind("<Enter>",lambda e: save_before_execution()) # případ, že se nestiskne uložit - aby nedošlo ke ztrátě souborů
-   
     def selected3(self): # První možnost mazání, od nejstarších
         """
         Budou smazány VŠECHNY adresáře (včetně všech subadresářů), které obsahují v názvu podporovaný formát datumu a jsou vyhodnoceny,jako starší než nastavené datum\n
@@ -2251,7 +2083,6 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                         Tools.add_colored_line(console, "Rok: " + str(input_year) + " je mimo rozsah","red",None,True)
                 else:
                     Tools.add_colored_line(console, "U nastavení roku jste nezadali číslo","red",None,True)
-
 
         def insert_current_date():
             today = Deleting.get_current_date()
@@ -2314,10 +2145,16 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             elif flag == "max_days":
                 self.root.after(100, lambda: set_max_days(flag))
 
-        option_title = customtkinter.CTkLabel(master = self.changable_frame,height=20,text = "Budou smazány VŠECHNY adresáře (včetně všech subadresářů), které obsahují v názvu podporovaný formát datumu\na jsou vyhodnoceny jako starší než nastavené datum",justify = "left",font=("Arial",22,"bold"))
-        option_title.pack(padx=10,pady=(20,10),side="top",anchor="w")
-        date_input_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121")
-        date_label = customtkinter.CTkLabel(master = date_input_frame,text = "  - budou smazány soubory starší než nastavené datum:",justify = "left",font=("Arial",20))
+        top_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121",height=260)
+        left_side = customtkinter.CTkFrame(master=top_frame,corner_radius=0,fg_color="#212121")
+        right_side = customtkinter.CTkFrame(master=top_frame,corner_radius=0,fg_color="#212121")
+        header_frame = customtkinter.CTkFrame(master=left_side,corner_radius=0,fg_color="#212121")
+        option_title = customtkinter.CTkLabel(master = header_frame,text = "Budou smazány VŠECHNY adresáře (včetně všech subadresářů),\nkteré obsahují v názvu podporovaný formát datumu a jsou vyhodnoceny jako starší, než nastavené datum",justify = "left",font=("Arial",25,"bold"))
+        option_title.pack(padx=10,pady=(10,10),side="top",anchor="w")
+        header_frame.pack(padx=5,pady=(10,0),side="top",anchor="w",fill="x")
+        user_input_frame = customtkinter.CTkFrame(master=left_side,corner_radius=0,fg_color="#212121",border_width=4,border_color="#636363")
+        date_input_frame = customtkinter.CTkFrame(master=user_input_frame,corner_radius=0,fg_color="#212121")
+        date_label = customtkinter.CTkLabel(master = date_input_frame,text = "‣ budou smazány soubory starší než nastavené datum:",justify = "left",font=("Arial",20))
         set_day     = customtkinter.CTkEntry(master = date_input_frame,width=40,font=("Arial",20), placeholder_text= self.cutoff_date[0])
         sep1        = customtkinter.CTkLabel(master = date_input_frame,width=10,text = ".",font=("Arial",20))
         set_month   = customtkinter.CTkEntry(master = date_input_frame,width=40,font=("Arial",20), placeholder_text= self.cutoff_date[1])
@@ -2331,27 +2168,38 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         sep2.       pack(padx=(5,0),pady=(0,0),side="left",anchor="w")
         set_year.   pack(padx=(5,0),pady=(0,0),side="left",anchor="w")
         insert_button.   pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
-        date_input_frame.pack(padx=0,pady=0,side="top",anchor="w")
+        date_input_frame.pack(padx=5,pady=(10,0),side="top",anchor="w")
         set_day.bind("<Key>",lambda e: update_entry(e,flag="max_days"))
         set_month.bind("<Key>",lambda e: update_entry(e,flag="max_days"))
         set_year.bind("<Key>",lambda e: update_entry(e,flag="max_days"))
 
-        day_format_input_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121")
-        days_label = customtkinter.CTkLabel(master = day_format_input_frame,text = "        - to znamená starší než:",justify = "left",font=("Arial",20))
+        day_format_input_frame = customtkinter.CTkFrame(master=user_input_frame,corner_radius=0,fg_color="#212121")
+        days_label = customtkinter.CTkLabel(master = day_format_input_frame,text = "‣ to znamená starší než:",justify = "left",font=("Arial",20))
         max_days_entry = customtkinter.CTkEntry(master = day_format_input_frame,width=60,font=("Arial",20))
         max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
         days_label2 = customtkinter.CTkLabel(master = day_format_input_frame,text = "dní",justify = "left",font=("Arial",20))
         days_label. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
         max_days_entry. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
         days_label2. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
-        day_format_input_frame.pack(padx=0,pady=0,side="top",anchor="w")
+        day_format_input_frame.pack(padx=5,pady=(0,10),side="top",anchor="w")
         max_days_entry.bind("<Key>",lambda e: update_entry(e,flag="cutoff"))
 
+        directories_image     = customtkinter.CTkImage(Image.open(Tools.resource_path("images/directories.png")),size=(240, 190))
+        images_label         = customtkinter.CTkLabel(master = right_side,text = "",image=directories_image)
+        images_label.pack(padx=10,pady=(10),side="right",anchor="e")
+        user_input_frame.pack(padx=5,pady=(0,0),side="top",anchor="w",fill="x")
+        # summary_label = customtkinter.CTkLabel(master = self.changable_frame,text = f"Budou smazány VŠECHNY adresáře (včetně všech subadresářů), které obsahují v názvu podporovaný formát datumu a jsou vyhodnoceny jako starší než nastavené datum",justify = "left",font=("Arial",20,"bold"))
+        # summary_label.pack(padx=10,pady=(10,0),side="top",anchor="w")
+        # user_input_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121",border_width=2,border_color="#636363")
 
-        summary_label = customtkinter.CTkLabel(master = self.changable_frame,text = f"Budou smazány VŠECHNY adresáře (včetně všech subadresářů), které obsahují v názvu podporovaný formát datumu a jsou vyhodnoceny jako starší než nastavené datum",justify = "left",font=("Arial",20,"bold"))
-        summary_label.pack(padx=10,pady=(10,0),side="top",anchor="w")
-        deletable_formats = customtkinter.CTkLabel(master = self.changable_frame,text = f"Podporované datumové formáty: {Deleting.supported_date_formats}\nPodporované separátory datumu: {Deleting.supported_separators}",justify = "left",font=("Arial",20,"bold"))
-        deletable_formats.pack(padx=10,pady=(0,0),side="top",anchor="w")
+        deletable_formats = customtkinter.CTkLabel(master = left_side,text = f"Podporované datumové formáty: {Deleting.supported_date_formats}\nPodporované separátory datumu: {Deleting.supported_separators}",justify = "left",font=("Arial",20))
+        deletable_formats.pack(padx=10,pady=(10,0),side="top",anchor="w")
+
+        left_side.pack(padx=0,pady=(0),side="left",anchor="n",fill="x",expand = True)
+        right_side.pack(padx=0,pady=(0),side="right",anchor="e")
+
+        top_frame.pack(padx=0,pady=(0),side="top",anchor="w",fill="x")
+        top_frame.propagate(False)
         console = tk.Text(self.changable_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED)
         console.pack(pady = 10,padx =10,side="top",anchor="w",fill="x")
 
@@ -2372,145 +2220,6 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         set_year.bind("<Return>",new_date_enter_btn)
 
         self.changable_frame.bind("<Enter>",lambda e: save_before_execution()) # případ, že se nestiskne uložit - aby nedošlo ke ztrátě souborů
-
-    def selected33(self,clear:bool): # Třetí možnost mazání, mazání datumových adresářů
-        """
-        Nastavení widgets pro třetí možnost mazání
-
-        Budou smazány VŠECHNY adresáře (včetně všech subadresářů), které obsahují v názvu podporovaný formát datumu a jsou vyhodnoceny,jako starší než nastavené datum\n
-        -Podporované datumové formáty jsou ["YYYYMMDD","DDMMYYYY","YYMMDD"] a podporované datumové separátory: [".","/","_"]
-
-        """
-        self.clear_frame(self.frame_right)
-        self.bottom_frame2.unbind("<Enter>")
-        Tools.clear_console(self.console)
-        self.checkbox2.deselect()
-        self.checkbox3.select()
-        self.checkbox.deselect()
-        self.info.configure(text = f"- Budou smazány VŠECHNY adresáře (včetně všech subadresářů), které obsahují v názvu podporovaný formát datumu a jsou vyhodnoceny,\njako starší než nastavené datum\nPodporované datumové formáty: {Deleting.supported_date_formats}\nPodporované separátory datumu: {Deleting.supported_separators}",font = ("Arial",16,"bold"),justify="left")
-        self.selected6() #update
-
-        if clear == True:
-            self.console_frame_right_1_text = "","white"
-            self.console_frame_right_2_text = "","white"
-
-        def set_cutoff_date():
-            input_month = set_month.get()
-            if input_month != "":
-                if input_month.isdigit():
-                    if int(input_month) < 13 and int(input_month) > 0:
-                        self.cutoff_date[1] = int(input_month)
-                        max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
-                        if int(self.cutoff_date[0]) > max_days_in_month:
-                            self.cutoff_date[0] = str(max_days_in_month)
-                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
-                    else:
-                        self.console_frame_right_1_text = "Měsíc: " + str(input_month) + " je mimo rozsah","red"
-                else:
-                    self.console_frame_right_1_text = "Nezadali jste číslo","red"
-
-            input_day = set_day.get()
-            max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
-
-            if input_day != "":
-                if input_day.isdigit():
-                    if int(input_day) <= int(max_days_in_month) and int(input_day) > 0:
-                        self.cutoff_date[0] = int(input_day)
-                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
-                    else:
-                        self.console_frame_right_1_text = "Den: " + str(input_day) + " je mimo rozsah","red"
-                else:
-                    self.console_frame_right_1_text = "Nezadali jste číslo","red"
-
-            input_year = set_year.get()
-            if input_year != "":
-                if input_year.isdigit():
-                    if len(str(input_year)) == 2:
-                        self.cutoff_date[2] = int(input_year) + 2000
-                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
-                    elif len(str(input_year)) == 4:
-                        self.cutoff_date[2] = int(input_year)
-                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
-                    else:
-                        self.console_frame_right_1_text = "Rok: " + str(input_year) + " je mimo rozsah","red"
-                else:
-                    self.console_frame_right_1_text = "Nezadali jste číslo","red"
-
-                        
-            self.selected3(False)
-
-        def insert_current_date():
-            today = Deleting.get_current_date()
-            today_split = today[1].split(".")
-            i=0
-            for items in today_split:
-                i+=1
-                self.cutoff_date[i-1]=items
-
-            self.console_frame_right_1_text = "Bylo vloženo dnešní datum (Momentálně všechny adresáře vyhodnoceny, jako starší!)","orange"
-
-            self.selected3(False) #refresh
-
-        def save_before_execution():
-            input_month = set_month.get()
-            if input_month != "":
-                if input_month.isdigit():
-                    if int(input_month) < 13 and int(input_month) > 0:
-                        self.cutoff_date[1] = int(input_month)
-                        max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
-                        if int(self.cutoff_date[0]) > max_days_in_month:
-                            self.cutoff_date[0] = str(max_days_in_month)
-
-            input_day = set_day.get()
-            max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
-            if input_day != "":
-                if input_day.isdigit():
-                    if int(input_day) <= int(max_days_in_month) and int(input_day) > 0:
-                        self.cutoff_date[0] = int(input_day)
-
-            input_year = set_year.get()
-            if input_year != "":
-                if input_year.isdigit():
-                    if len(str(input_year)) == 2:
-                        self.cutoff_date[2] = int(input_year) + 2000
-                    elif len(str(input_year)) == 4:
-                        self.cutoff_date[2] = int(input_year)
-
-        console_frame_right_1_text, console_frame_right_1_color = self.console_frame_right_1_text
-        today = Deleting.get_current_date()
-        row_index = 0
-        label0          = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Dnešní datum: "+today[1],justify = "left",font=("Arial",16,"bold"))
-        images2         = customtkinter.CTkLabel(master = self.frame_right,text = "")
-        label1          = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte datum pro vyhodnocení datumu v názvu adresářů, jako staršího:",justify = "left",font=("Arial",16))
-        set_day         = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[0])
-        sep1            = customtkinter.CTkLabel(master = self.frame_right,height=20,width=10,text = ".",font=("Arial",20))
-        set_month       = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[1])
-        sep2            = customtkinter.CTkLabel(master = self.frame_right,height=20,width=10,text = ".",font=("Arial",20))
-        set_year        = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[2])
-        button_save1    = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Nastavit", command = lambda: set_cutoff_date(),font=("Arial",18,"bold"))
-        insert_button = customtkinter.CTkButton(master = self.frame_right,width=190,height=30, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",18,"bold"))
-        console_frame_right_1 = customtkinter.CTkLabel(master = self.frame_right,height=30,text = console_frame_right_1_text,justify = "left",font=("Arial",18),text_color=console_frame_right_1_color)
-        directories     = customtkinter.CTkImage(Image.open(Tools.resource_path("images/directories.png")),size=(240, 190))
-        label0.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
-        images2.grid(column =0,row=row_index,sticky = tk.W,pady =15,padx=600,rowspan=5)
-        label1.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
-        set_day.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
-        sep1.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=40)
-        set_month.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=50)
-        sep2.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=80)
-        set_year.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=90)
-        button_save1.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=140)
-        insert_button.grid(column =0,row=row_index+3,sticky = tk.W,pady =0,padx=10)
-        console_frame_right_1.grid(column =0,row=row_index+4,sticky = tk.W,pady =0,padx=10)
-        images2.configure(image = directories)
-        def new_date_enter_btn(e):
-            set_cutoff_date()
-        set_day.bind("<Return>",new_date_enter_btn)
-        set_month.bind("<Return>",new_date_enter_btn)
-        set_year.bind("<Return>",new_date_enter_btn)
-        self.bottom_frame2.bind("<Enter>",lambda e: save_before_execution()) # případ, že se nestiskne uložit - aby nedošlo ke ztrátě souborů
-
-
 
     def save_new_task(self):
         def call_browse_directories():
@@ -2817,32 +2526,6 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         bottom_frame .           pack(pady =0,padx=0,side = "top",fill="both",expand=False)
         header_frame.              pack(pady=0,padx=0,fill="x",side = "top")
         self.selected(option=1)
-
-
-        # self.checkbox  =        customtkinter.CTkCheckBox(master = self.frame_with_checkboxes,font=("Arial",16), text = "Mazání souborů starších než: určité datum",command = lambda: self.selected(True))
-        # self.checkbox2 =        customtkinter.CTkCheckBox(master = self.frame_with_checkboxes,font=("Arial",16), text = "Redukce novějších, mazání souborů starších než: určité datum",command = lambda: self.selected2(True))
-        # self.checkbox3 =        customtkinter.CTkCheckBox(master = self.frame_with_checkboxes,font=("Arial",16), text = "Mazání adresářů s názvem ve formátu určitého datumu",command = lambda: self.selected3(True))
-        # self.checkbox.          pack(pady =10,padx=10,anchor ="w")
-        # self.checkbox2.         pack(pady =10,padx=10,anchor ="w")
-        # self.checkbox3.         pack(pady =10,padx=10,anchor ="w")
-
-        # self.checkbox6 =        customtkinter.CTkCheckBox(master = self.bottom_frame1, text = "Procházet subsložky? (max:6)",command = self.selected6,font=("Arial",16,"bold"))
-        # self.info2 =            customtkinter.CTkLabel(master = self.bottom_frame1,text = "",font=("Arial",16,"bold"))
-        # self.checkbox_testing = customtkinter.CTkCheckBox(master = self.bottom_frame1, text = f"Režim TESTOVÁNÍ (Soubory vyhodnocené ke smazání se pouze přesunou do složky s názvem: \"{self.to_delete_folder_name}\")",font=("Arial",16,"bold"))
-        # self.checkbox6.         grid(column =0,row=0,sticky = tk.W,pady =5,padx=10)
-        # self.info2.             grid(column =0,row=0,sticky = tk.W,pady =5,padx=280)
-        # self.checkbox_testing.  grid(column =0,row=1,sticky = tk.W,pady =5,padx=10)
-        # # self.info =             customtkinter.CTkLabel(master = self.bottom_frame2,text = "",font=("Arial",16,"bold"))
-
-        
-        # self.bottom_frame2.     pack(pady=0,padx=5,fill="both",expand=True,side = "bottom")
-        # self.bottom_frame1.     pack(pady=5,padx=5,fill="x",expand=False,side = "bottom")
-        # checkbox_frame.         pack(pady=0,padx=5,fill="y",expand=False,side="left")
-        # self.frame_right.       pack(pady=0,padx=0,fill="both",expand=True,side="right")
-        #default:
-        # self.checkbox.select()
-        # self.checkbox_testing.select()
-        # self.selected(False)
 
         if global_recources_load_error:
             create_task_btn.configure(state = "disabled")

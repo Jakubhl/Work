@@ -796,9 +796,9 @@ jhv_MAZ - doublecheck, jestli task existuje když zakladam novy a vytvarim jmeno
 jhv_MAZ - nastavení vyberu folderu nebo filu v exploreru - neulozi se
 jhv_MAZ - možnost anglického jazyka
 
+
 ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...
 ip setting - opravit duplicity - manage bin
-
 
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
 ??? Koumu: admin práva, online auto aktualizace nové verze
