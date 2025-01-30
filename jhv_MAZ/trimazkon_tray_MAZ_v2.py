@@ -11,6 +11,7 @@ import sys
 import json
 
 class Tools:
+    config_json_filename = "config_MAZ.json"
     @classmethod
     def resource_path(cls,relative_path):
         """ Get the absolute path to a resource, works for dev and for PyInstaller """
@@ -35,13 +36,56 @@ class Tools:
         else:
             return path
 
+    @classmethod
+    def read_json_config(cls,initial_path): # Funkce vraci data z configu
+        """
+        Funkce vrací data z konfiguračního souboru
+
+        data jsou v pořadí:
+
+        0 default_path\n
+        1 supported_formats_deleting\n
+        2 default_files_to_keep\n
+        3 default_cutoff_date\n
+        4 default_deleting_dir_name\n
+        5 maximalized\n
+        6 sorting_safe_mode\n
+        7 app_zoom\n
+        8 app_zoom_checkbox\n
+        9 tray_icon_startup\n
+        10 path_history_list\n
+        11 default_language\n
+        """
+
+        if os.path.exists(initial_path+cls.config_json_filename):
+            try:
+                output_data = []
+                with open(cls.config_json_filename, "r") as file:
+                    data = json.load(file)
+
+                settings = data["settings"]
+
+                # print("config raw data: ", settings)
+                for item in settings:
+                    output_data.append(item['value'])
+                # print("config data: ", output_data, len(output_data))
+                return output_data
+
+            except Exception as e:
+                print(f"Nejdřív zavřete soubor {cls.config_json_filename} Chyba: {e}")
+                return []
+        else:
+            print(f"Chybí konfigurační soubor {cls.config_json_filename}")
+            return []
+
 class tray_app_service:
     def __init__(self,initial_path,icon_path,exe_name,config_name):
         self.app_icon = Tools.resource_path(icon_path)
         self.config_filename = config_name
         self.initial_path = initial_path
         self.main_app_exe_name = exe_name
-        self.config_sheet_name = "Task_settings"
+        config_data = Tools.read_json_config(self.initial_path)
+        self.selected_language = config_data[11]
         
     def clear_frame(self,frame):
         for widget in frame.winfo_children():
@@ -151,7 +195,7 @@ class tray_app_service:
         elif widget == "time" or widget == "settings" or widget == "name":
             name_of_task = task["name"]
             path_app_location = str(self.initial_path+"/"+self.main_app_exe_name) 
-            task_command = path_app_location + " deleting " + name_of_task + " " + str(task["operating_path"]) + " " + str(task["max_days"]) + " " + str(task["files_to_keep"])
+            task_command = path_app_location + " deleting " + name_of_task + " " + str(task["operating_path"]) + " " + str(task["max_days"]) + " " + str(task["files_to_keep"])+ " " + str(task["more_dirs"])+ " " + str(task["selected_option"])
             context_menu.add_command(label="Vykonat úkol",font=preset_font,command=lambda: subprocess.call(task_command,shell=True,text=True))
             context_menu.add_separator()
             context_menu.add_command(label="Upravit úkol",font=preset_font,command=lambda: os.startfile("taskschd.msc"))
@@ -252,6 +296,25 @@ class tray_app_service:
             task_name_text.bind("<Button-3>",lambda e,widget = "name",task=tasks: self.show_context_menu(child_root,e,widget,task))
 
             task_frame = customtkinter.CTkFrame(master=main_frame,corner_radius=0,border_width=3,height= 50,border_color="#636363")
+
+            param0_frame = customtkinter.CTkFrame(master=task_frame,corner_radius=0,border_width=0,height= 50)
+            param0_subframe1 = customtkinter.CTkFrame(master=param0_frame,corner_radius=0,border_width=2,height= 50,width=230)
+            param0_label = customtkinter.CTkLabel(master=param0_subframe1,text = "Typ mazání: ",font=("Arial",20,"bold"),anchor="w")
+            param0_label.pack(pady=10,padx=(10,3),anchor="w",side="left")
+            param0_subframe2 = customtkinter.CTkFrame(master=param0_frame,corner_radius=0,border_width=2,height= 50)
+            param0_label2 = customtkinter.CTkLabel(master=param0_subframe2,text = "",font=("Arial",20),anchor="w")
+            param0_label2.pack(pady=10,padx=(10,3),anchor="w",side="left")
+            param0_subframe1.pack(side="left")
+            param0_subframe1.pack_propagate(0)
+            param0_subframe2.pack(side="left",fill="both",expand=True)
+            param0_frame.pack(pady=(3,0),padx=3,fill="x",side="top")
+            if int(tasks["selected_option"]) == 1:
+                param0_label2.configure(text = "Redukce starších souborů")
+            elif int(tasks["selected_option"]) == 2:
+                param0_label2.configure(text = "Redukce novějších, mazání starších souborů")
+            elif int(tasks["selected_option"]) == 3:
+                param0_label2.configure(text = "Mazání starších adresářů")
+
             param1_frame = customtkinter.CTkFrame(master=task_frame,corner_radius=0,border_width=0,height= 50)
             param1_subframe1 = customtkinter.CTkFrame(master=param1_frame,corner_radius=0,border_width=2,height= 50,width=230)
             param1_label = customtkinter.CTkLabel(master=param1_subframe1,text = "Čas spuštění (denně): ",font=("Arial",20,"bold"),anchor="w")
@@ -261,8 +324,8 @@ class tray_app_service:
             param1_label2.pack(pady=10,padx=(10,3),anchor="w",side="left")
             param1_subframe1.pack(side="left")
             param1_subframe1.pack_propagate(0)
-            param1_subframe2.pack(side="left",fill="x",expand=True)
-            param1_frame.pack(pady=(3,0),padx=3,fill="x",side="top")
+            param1_subframe2.pack(side="left",fill="both",expand=True)
+            param1_frame.pack(pady=(0,0),padx=3,fill="x",side="top")
             param1_label2.bind("<Button-3>",lambda e,widget = "time",task=tasks: self.show_context_menu(child_root,e,widget,task))
             param1_label.bind("<Button-3>",lambda e,widget = "time",task=tasks: self.show_context_menu(child_root,e,widget,task))
             param1_subframe1.bind("<Button-3>",lambda e,widget = "time",task=tasks: self.show_context_menu(child_root,e,widget,task))
@@ -277,23 +340,46 @@ class tray_app_service:
             param2_label2.pack(pady=10,padx=(10,3),anchor="w",side="left")
             param2_subframe1.pack(side="left")
             param2_subframe1.pack_propagate(0)
-            param2_subframe2.pack(side="left",fill="x",expand=True)
+            param2_subframe2.pack(side="left",fill="both",expand=True)
             param2_frame.pack(pady=(0,0),padx=3,fill="x",side="top")
             param2_label2.bind("<Button-3>",lambda e,widget = "path",task=tasks: self.show_context_menu(child_root,e,widget,task))
             param2_subframe2.bind("<Button-3>",lambda e,widget = "path",task=tasks: self.show_context_menu(child_root,e,widget,task))
             param2_subframe1.bind("<Button-3>",lambda e,widget = "path",task=tasks: self.show_context_menu(child_root,e,widget,task))
 
-            param3_frame = customtkinter.CTkFrame(master=task_frame,corner_radius=0,border_width=1,height= 50)
+            param4_frame = customtkinter.CTkFrame(master=task_frame,corner_radius=0,border_width=0,height= 50)
+            param4_subframe1 = customtkinter.CTkFrame(master=param4_frame,corner_radius=0,border_width=2,height= 50,width=230)
+            param4_label = customtkinter.CTkLabel(master=param4_subframe1,text = "Procházet subsložky: ",font=("Arial",20,"bold"),anchor="w")
+            param4_label.pack(pady=10,padx=(10,3),anchor="w",side="left")
+            param4_subframe2 = customtkinter.CTkFrame(master=param4_frame,corner_radius=0,border_width=2,height= 50)
+            param4_label2 = customtkinter.CTkLabel(master=param4_subframe2,text = "",font=("Arial",20),anchor="w")
+            param4_label2.pack(pady=10,padx=(10,3),anchor="w",side="left")
+            param4_subframe1.pack(side="left")
+            param4_subframe1.pack_propagate(0)
+            param4_subframe2.pack(side="left",fill="both",expand=True)
+            if int(tasks["selected_option"]) != 3: # u adresářů se neprochází subsložky
+                param4_frame.pack(pady=(0,0),padx=3,fill="x",side="top")
+            if int(tasks["more_dirs"]) == 1:
+                param4_label2.configure(text = "ANO")
+            else:
+                param4_label2.configure(text = "NE")
+
+            param3_frame = customtkinter.CTkFrame(master=task_frame,corner_radius=0,border_width=1,height= 50,fg_color="#212121")
             param3_label = customtkinter.CTkLabel(master=param3_frame,text = "Nastavení: ",font=("Arial",20,"bold"),anchor="w")
             older_then_str = str(tasks["max_days"])
             files_to_keep_str = str(tasks["files_to_keep"])
-            param3_label2 = customtkinter.CTkLabel(master=param3_frame,text = f"starší než: {older_then_str} dní, minimum = {files_to_keep_str} souborů",font=("Arial",20),anchor="w")
+            param3_label2 = customtkinter.CTkLabel(master=param3_frame,text = "",font=("Arial",20),anchor="w")
             param3_label.pack(pady=10,padx=(10,0),anchor="w",side="left")
             param3_label2.pack(pady=10,padx=(10,0),anchor="w",side="left")
             param3_frame.pack(pady=(0,3),padx=3,fill="x",side="top")
+            if int(tasks["selected_option"]) != 3: # u adresářů se neprochází subsložky
+                param3_label2.configure(text = f"starší než: {older_then_str} dní, minimum = {files_to_keep_str} souborů")
+            else:
+                param3_label2.configure(text = f"starší než: {older_then_str} dní")
+                
             param3_label.bind("<Button-3>",lambda e,widget = "settings",task=tasks: self.show_context_menu(child_root,e,widget,task))
             param3_label2.bind("<Button-3>",lambda e,widget = "settings",task=tasks: self.show_context_menu(child_root,e,widget,task))
             param3_frame.bind("<Button-3>",lambda e,widget = "settings",task=tasks: self.show_context_menu(child_root,e,widget,task))
+
             task_frame.pack(pady=(0,0),padx=5,fill="x",side="top")
             i+=1
 
@@ -342,7 +428,16 @@ class tray_app_service:
                 return len(all_task_logs)
             for logs in all_task_logs:
                 # label_data = str(log_data[0])+"\n"+str(log_data[1])+"\n"+str(log_data[2])+"\n"+str(log_data[3])
-                label_data = str(logs["del_date"])+"\n"+str(logs["files_checked"])+"\n"+str(logs["files_older"])+"\n"+str(logs["files_deleted"])
+                if int(tasks["selected_option"]) == 1:
+                    label_data = str(logs["del_date"])+"\n"+str(logs["files_checked"])+"\n"+str(logs["files_older"])+"\n"+str(logs["files_deleted"])
+                    if int(tasks["more_dirs"]) == 1:
+                        label_data = label_data +"\n"+str(logs["path_count"])
+                elif int(tasks["selected_option"]) == 2:
+                    label_data = str(logs["del_date"])+"\n"+str(logs["files_checked"])+"\n"+str(logs["files_older"])+"\n"+str(logs["files_newer"])+"\n"+str(logs["files_deleted"])
+                    if int(tasks["more_dirs"]) == 1:
+                        label_data = label_data +"\n"+str(logs["path_count"])
+                elif int(tasks["selected_option"]) == 3:
+                    label_data = str(logs["del_date"])+"\n"+str(logs["files_checked"])+"\n"+str(logs["files_deleted"])
                 log_frame = customtkinter.CTkFrame(master=given_task_frame,corner_radius=0,border_width=2)
                 log_text = customtkinter.CTkLabel(master=log_frame,text = label_data,font=("Arial",20),anchor="w",justify="left")
                 log_text.pack(pady=(10,5),padx=10,anchor="w",side="top")

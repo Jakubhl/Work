@@ -774,6 +774,12 @@ jhv_MAZ - předělat config_name na globalku - hotovo
 jhv_MAZ - dodělat historii vložených cest (přes objekt) - hotovo
 jhv_MAZ - možnost smazání historie vložených cest - hotovo
 
+7:43 AM 1/30/2025
+jhv_MAZ - testing mode u folderů - aby je to přesunulo do složky - hotovo
+jhv_MAZ - doublecheck, jestli task existuje když zakladam novy a vytvarim jmeno - hotovo
+jhv_MAZ - přidat všechny možnosti mazání do aut. spouštění - hotovo
+jhv_MAZ - nastavení vyberu folderu nebo filu v exploreru - neulozi se - zatím jsem to nepotřeboval - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 TRIMAZKON - prohlížeč nejde otevírat ifz v novém okně...
@@ -790,11 +796,9 @@ TRIMAZKON - přidat automatické vytvoření configu
 TRIMAKZON - nastavení folderu nebo filu v exploreru - neulozi se
 TRIMAZKON - delete confirm window má špatné hlášky
 
-jhv_MAZ - testing mode u folderů - aby je to přesunulo do složky
-jhv_MAZ - doublecheck, jestli task existuje když zakladam novy a vytvarim jmeno
 
-jhv_MAZ - nastavení vyberu folderu nebo filu v exploreru - neulozi se
-jhv_MAZ - možnost anglického jazyka
+
+jhv_MAZ - možnost anglického jazyka (zatím jen v gui, ne konzole) - hotovo
 
 
 ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...

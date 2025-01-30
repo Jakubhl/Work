@@ -2,6 +2,7 @@ change_log_list = [" Verze 1.0.0 (21.01.2025)",
     """ 
     - možnosti přímého mazání
     - možnost nastavit pravidelné mazání v TS
+    - celkem tři módy mazání
     - běží na pozadí v nabídce system tray
     - logování provedených mazání\n"""
 ]
@@ -17,6 +18,8 @@ default_setting_database = ["Základní cesta k souborům:",
                             "nastavení celkového zoomu [%]:",
                             "použít nastavení windows (app zoom)",
                             "Nastavení spouštění TRIMAZKON v nabídce system tray",
+                            "Historie vložených cest",
+                            "Základní jazyk aplikace",
                             ]
 
 default_setting_database_param = ["C:/Users/",
@@ -29,4 +32,6 @@ default_setting_database_param = ["C:/Users/",
                                   80,
                                   "ano",
                                   "ne",
+                                  [],
+                                  "cz",
                                   ]
