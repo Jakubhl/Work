@@ -84,7 +84,7 @@ class whole_deleting_function:
     7 testing_mode (režim testování)\n
     8 jmeno slozky pro prevedeni souboru urcenych ke smazani\n
     """
-    def __init__(self,path_given,more_dirs,del_option,files_to_keep,cutoff_date_given,supported_formats,testing_mode,to_delete_folder_name):
+    def __init__(self,path_given,more_dirs,del_option,files_to_keep,cutoff_date_given,supported_formats,testing_mode,to_delete_folder_name,force_language="cz"):
         self.path = path_given
         self.max_days_old = 365
         self.to_delete_folder = to_delete_folder_name
@@ -98,6 +98,7 @@ class whole_deleting_function:
         self.cutoff_date_given = cutoff_date_given
         self.supported_formats = supported_formats
         self.testing_mode = testing_mode
+        self.selected_language = force_language
 
         self.newer_files_checked = 0
         self.files_checked = 0
@@ -268,8 +269,11 @@ class whole_deleting_function:
                     probability = "%.2f" % (probability) #prevod na dve desetinna mista
                 
             #print(f"- Separátor automaticky nastaven na: {found_separator}\nPravděpodobnost správné detekce: {probability} %")
-            self.output.append(f"- Separátor automaticky nastaven na: {found_separator}. Pravděpodobnost správné detekce: {probability} %")
-
+            if self.selected_language=="en":
+                self.output.append(f"- Separator automatically set to: {found_separator}. Probability of correct detection: {probability} %")
+            else:
+                self.output.append(f"- Separátor automaticky nastaven na: {found_separator}. Pravděpodobnost správné detekce: {probability} %")
+            
             #2) zjistovani a oprava delky data v nazvu
             folders_format1 = []
             folders_format2 = []
@@ -311,7 +315,11 @@ class whole_deleting_function:
                         probability = (max(count_of_found_formats)/sum(count_of_found_formats))*100
                         probability = "%.2f" % (probability) #prevod na dve desetinna mista
                 #print(f"- Formát automaticky nastaven na: {found_format}\nPravděpodobnost správné detekce: {probability} %")
-                self.output.append(f"- Formát automaticky nastaven na: {found_format}. Pravděpodobnost správné detekce: {probability} %")
+                if self.selected_language=="en":
+                    self.output.append(f"- Format automatically set to: {found_format}. Probability of correct detection: {probability} %")
+                else:
+                    self.output.append(f"- Formát automaticky nastaven na: {found_format}. Pravděpodobnost správné detekce: {probability} %")
+
 
                 if found_format == self.supported_date_formats[0]:
                     folders_right_format = folders_format1
@@ -323,11 +331,19 @@ class whole_deleting_function:
             
             else:
                 #print(f"- Chyba: V zadané cestě nebyly nalezeny žádné podporované formáty názvu složek {self.supported_date_formats} pro vybraný způsob mazání")
-                self.output.append(f"- Chyba: V zadané cestě nebyly nalezeny žádné podporované formáty názvu složek {self.supported_date_formats} pro vybraný způsob mazání")
+                if self.selected_language=="en":
+                    self.output.append(f"- Error: no supported folder name formats {self.supported_date_formats} were found in the specified path for the selected deletion option")
+                else:
+                    self.output.append(f"- Chyba: V zadané cestě nebyly nalezeny žádné podporované formáty názvu složek {self.supported_date_formats} pro vybraný způsob mazání")
+                
                 return [False,False,False]
         else:
             #print(f"- Chyba: V zadané cestě nebyly nalezeny žádné podporované separátory v názvu složek {self.supported_separators} pro vybraný způsob mazání")
-            self.output.append(f"- Chyba: V zadané cestě nebyly nalezeny žádné podporované separátory v názvu složek {self.supported_separators} pro vybraný způsob mazání")
+            if self.selected_language=="en":
+                self.output.append(f"- Error: no supported folder name separators {self.supported_separators} were found in the specified path for the selected deletion option")
+            else:
+                self.output.append(f"- Chyba: V zadané cestě nebyly nalezeny žádné podporované separátory v názvu složek {self.supported_separators} pro vybraný způsob mazání")
+
             return [False,False,False]
         
     def del_directories(self,found_separator,found_format,folders_right_format):
@@ -380,14 +396,28 @@ class whole_deleting_function:
         self.directories_checked += directories_checked
 
         if deleted_directores == 0:
-            self.output.append(f"- Zkontrolováno adresářů: {directories_checked}")
-            self.output.append("Nebyly nalezeny žádné adresáře určené ke smazání")
-        else:
-            self.output.append(f"- Zkontrolováno adresářů: {directories_checked}")
-            if self.testing_mode == True:
-                self.output.append(f"Smazalo by se adresářů: {deleted_directores}")
+            if self.selected_language=="en":
+                self.output.append(f"- Directories checked: {directories_checked}")
+                self.output.append("No directories found to be deleted")
             else:
-                self.output.append(f"Smazáno adresářů: {deleted_directores}")
+                self.output.append(f"- Zkontrolováno adresářů: {directories_checked}")
+                self.output.append("Nebyly nalezeny žádné adresáře určené ke smazání")
+        else:
+            if self.selected_language=="en":
+                self.output.append(f"- Directories checked: {directories_checked}")
+            else:
+                self.output.append(f"- Zkontrolováno adresářů: {directories_checked}")
+
+            if self.testing_mode == True:
+                if self.selected_language=="en":
+                    self.output.append(f"It would delete directories: {deleted_directores}")
+                else:
+                    self.output.append(f"Smazalo by se adresářů: {deleted_directores}")
+            else:
+                if self.selected_language=="en":
+                    self.output.append(f"Directories deleted: {deleted_directores}")
+                else:
+                    self.output.append(f"Smazáno adresářů: {deleted_directores}")
 
     def del_files(self,path,cutoff_days,option):
         older_files_checked = 0
@@ -467,15 +497,29 @@ class whole_deleting_function:
         self.older_files_checked += older_files_checked
 
         if deleted_count == 0:
-            self.output.append(f"- Zkontrolováno souborů: {files_checked}")
-            self.output.append("- Nebyly nalezeny žádné soubory určené ke smazání\n")
+            if self.selected_language=="en":
+                self.output.append(f"- Files checked: {files_checked}")
+                self.output.append("- No files found for deletion\n")
+            else:
+                self.output.append(f"- Zkontrolováno souborů: {files_checked}")
+                self.output.append("- Nebyly nalezeny žádné soubory určené ke smazání\n")
         else:
             print(f"Smazáno souborů: {deleted_count}")
-            self.output.append(f"- Zkontrolováno souborů: {files_checked}")
-            if self.testing_mode == True:
-                self.output.append(f"Smazalo by se: {deleted_count} souborů\n")
+            if self.selected_language=="en":
+                self.output.append(f"- Files checked: {files_checked}")
             else:
-                self.output.append(f"Smazáno souborů: {deleted_count}\n")
+                self.output.append(f"- Zkontrolováno souborů: {files_checked}")
+
+            if self.testing_mode == True:
+                if self.selected_language=="en":
+                    self.output.append(f"It would erase: {deleted_count} files\n")
+                else:
+                    self.output.append(f"Smazalo by se: {deleted_count} souborů\n")
+            else:
+                if self.selected_language=="en":
+                    self.output.append(f"Files deleted: {deleted_count}\n")
+                else:
+                    self.output.append(f"Smazáno souborů: {deleted_count}\n")
 
         return deleted_count
 
@@ -484,71 +528,133 @@ class whole_deleting_function:
         cutoff_days = int(result_cutoffdays[0])
         
         if self.more_dirs == True: #////////////////////////////////////////////////////////// MORE_DIRS //////////////////////////////////////////////////////////////////////////
-            self.output.append(f"- Probíhá mazání obrázků v cestě: {self.path} a ve všech podružných složkách (maximum je 6 subsložek)")
+            if self.selected_language=="en":
+                self.output.append(f"- Deleting images in the path: {self.path}  and in all subfolders (maximum 6 subfolders) is in progress")
+            else:
+                self.output.append(f"- Probíhá mazání obrázků v cestě: {self.path} a ve všech podružných složkách (maximum je 6 subsložek)")
+
             if self.del_option == 1: #//////////////////////////////////////////////////////// OPTION 1 ///////////////////////////////////////////////////////////////////////////
                 total_deleted_count = 0
                 #print(f"- Probíhá mazání obrázků v cestě: {self.path}\na ve všech podružných složkách (maximum je 6 subsložek)")
                 #print(f"- V každé složce bude zachováno: {self.files_to_keep} souborů\n")
-                self.output.append(f"- V každé složce bude zachováno: {self.files_to_keep} souborů")
+                if self.selected_language=="en":
+                    self.output.append(f"- It will be left in each folder: {self.files_to_keep} files")
+                else:
+                    self.output.append(f"- V každé složce bude zachováno: {self.files_to_keep} souborů")
+
                 all_paths = self.subfolders_check()
                 for paths in all_paths:
                     self.output_console2.append(f"{paths}\n")
                     #print(f"- Prochazím cestu: {paths}")
-                    self.output.append(f"- Probíhá mazání obrázků v cestě: {paths}")
+                    if self.selected_language=="en":
+                        self.output.append(f"- Deleting images in the path: {paths} is in progress")
+                    else:
+                        self.output.append(f"- Probíhá mazání obrázků v cestě: {paths}")
+
                     deleted = self.del_files(paths,cutoff_days,0)
                     if deleted == "warning data loss":
-                        self.output.append(f"- V této složce jsou všechny soubory starší, než nastvené datum (nebylo by nic ponecháno) - zrušeno")
+                        if self.selected_language=="en":
+                            self.output.append(f"- All files in this folder are older than the set date (nothing would be left) - cancelled")
+                        else:
+                            self.output.append(f"- V této složce jsou všechny soubory starší, než nastvené datum (nebylo by nic ponecháno) - zrušeno")
+
                         deleted = 0
                     total_deleted_count = total_deleted_count+deleted
                 
-                self.output.append(f"- Mazání dokončeno, celkem smazáno souborů: {total_deleted_count}\n")
+                if self.selected_language=="en":
+                    self.output.append(f"- Deletion complete, total files deleted: {total_deleted_count}\n")
+                else:
+                    self.output.append(f"- Mazání dokončeno, celkem smazáno souborů: {total_deleted_count}\n")
+
             if self.del_option == 2: #///////////////////////////////////////////////////////// OPTION 2 /////////////////////////////////////////////////////////////////////////////
                 total_deleted_count = 0
                 all_paths = self.subfolders_check()
                 #print(f"- V každé složce bude zachováno: {self.files_to_keep} souborů, novějších než {result_cutoffdays[1]}")
-                self.output.append(f"- V každé složce bude zachováno: {self.files_to_keep} souborů, novějších než {result_cutoffdays[1]}")
+                if self.selected_language=="en":
+                    self.output.append(f"- Each folder will maintain: {self.files_to_keep} files, newer then {result_cutoffdays[1]}")
+                else:
+                    self.output.append(f"- V každé složce bude zachováno: {self.files_to_keep} souborů, novějších než {result_cutoffdays[1]}")
+
                 for paths in all_paths:
                     #print(f"- Probíhá mazání obrázků v cestě: {paths}")
-                    self.output.append(f"- Probíhá mazání obrázků v cestě: {paths}")
+                    if self.selected_language=="en":
+                        self.output.append(f"- Deleting images in the path: {paths} is in progress")
+                    else:
+                        self.output.append(f"- Probíhá mazání obrázků v cestě: {paths}")
+
                     deleted = self.del_files(paths,cutoff_days,1)
                     if deleted == "warning data loss":
-                        self.output.append(f"- V této složce jsou všechny soubory starší, než nastvené datum (nebylo by nic ponecháno) - zrušeno")
+                        if self.selected_language=="en":
+                            self.output.append(f"- All files in this folder are older than the set date (nothing would be left) - cancelled")
+                        else:
+                            self.output.append(f"- V této složce jsou všechny soubory starší, než nastvené datum (nebylo by nic ponecháno) - zrušeno")
+
                         deleted = 0
                     total_deleted_count = total_deleted_count+deleted
 
-                self.output.append(f"- Mazání dokončeno, celkem smazáno souborů: {total_deleted_count}\n")
+                if self.selected_language=="en":
+                    self.output.append(f"- Deletion complete, total files deleted: {total_deleted_count}\n")
+                else:
+                    self.output.append(f"- Mazání dokončeno, celkem smazáno souborů: {total_deleted_count}\n")
+
             if self.del_option == 3: #///////////////////////////////////////////////////////// OPTION 3 /////////////////////////////////////////////////////////////////////////////
                 #print("Pro tuto možnost mazání není možné procházet subadresáře")
-                self.output.append("Pro tuto možnost mazání není možné procházet subadresáře\n")
+                if self.selected_language=="en":
+                    self.output.append("It is not possible to browse subdirectories for this deletion option\n")
+                else:
+                    self.output.append("Pro tuto možnost mazání není možné procházet subadresáře\n")
 
         if self.more_dirs == False: #////////////////////////////////////////////////////////// ONE_PATH //////////////////////////////////////////////////////////////////////////
             if self.del_option == 1: #////////////////////////////////////////////////////////// OPTION 1 ////////////////////////////////////////////////////////////////////////////
                  # tato moznost provadi mazani pouze starsich a uchovavani nejakeho poctu pouze starsich souboru
                 #print(f"- Probíhá mazání obrázků v cestě: {self.path}")
-                self.output.append(f"- Probíhá mazání obrázků v cestě: {self.path}")
-                #print(f"- Ve složce bude zachováno: {self.files_to_keep} souborů\n")
-                self.output.append(f"- Ve složce bude zachováno: {self.files_to_keep} souborů")
+                if self.selected_language=="en":
+                    self.output.append(f"- Deleting images in the path: {self.path} is in progress")
+                    self.output.append(f"- The folder will maintain: {self.files_to_keep} files")
+                else:
+                    self.output.append(f"- Probíhá mazání obrázků v cestě: {self.path}")
+                    self.output.append(f"- Ve složce bude zachováno: {self.files_to_keep} souborů")
+
                 del_status = self.del_files(self.path,cutoff_days,0)
                 if del_status == "warning data loss":
-                    self.output.append(f"- V této složce jsou všechny soubory starší, než nastvené datum (nebylo by nic ponecháno) - zrušeno")
-                self.output.append("- Mazání dokončeno\n")
+                    if self.selected_language=="en":
+                        self.output.append(f"- All files in this folder are older than the set date (nothing would be left) - cancelled")
+                    else:
+                        self.output.append(f"- V této složce jsou všechny soubory starší, než nastvené datum (nebylo by nic ponecháno) - zrušeno")
+                if self.selected_language=="en":
+                    self.output.append("- Deleting complete\n")
+                else:
+                    self.output.append("- Mazání dokončeno\n")
 
             if self.del_option == 2: #///////////////////////////////////////////////////////// OPTION 2 /////////////////////////////////////////////////////////////////////////////
                 # tato moznost provadi mazani vsech starsich a redukuje novejsi (vhodne u generovani velkeho poctu obrazku za kratky cas)
                 #print(f"- Probíhá mazání obrázků v cestě: {self.path}")
-                self.output.append(f"- Probíhá mazání obrázků v cestě: {self.path}")
-                #print(f"- Ve složce bude zachováno: {self.files_to_keep} souborů, novějších než {result_cutoffdays[1]}\n")
-                self.output.append(f"- Ve složce bude zachováno: {self.files_to_keep} souborů, novějších než {result_cutoffdays[1]}")
+                if self.selected_language == "en":
+                    self.output.append(f"- Deleting images in the path: {self.path} is in progress")
+                    self.output.append(f"- The folder will maintain: {self.files_to_keep} files, newer then {result_cutoffdays[1]}")
+                else:
+                    self.output.append(f"- Probíhá mazání obrázků v cestě: {self.path}")
+                    self.output.append(f"- Ve složce bude zachováno: {self.files_to_keep} souborů, novějších než {result_cutoffdays[1]}")
                 del_status = self.del_files(self.path,cutoff_days,1)
                 if del_status == "warning data loss":
-                    self.output.append(f"- V této složce jsou všechny soubory starší, než nastvené datum (nebylo by nic ponecháno) - zrušeno")
-                self.output.append("- Mazání dokončeno\n")
+                    if self.selected_language=="en":
+                        self.output.append(f"- All files in this folder are older than the set date (nothing would be left) - cancelled")
+                    else:
+                        self.output.append(f"- V této složce jsou všechny soubory starší, než nastvené datum (nebylo by nic ponecháno) - zrušeno")
+                if self.selected_language=="en":
+                    self.output.append("- Deleting complete\n")
+                else:
+                    self.output.append("- Mazání dokončeno\n")
                 
             if self.del_option == 3: #///////////////////////////////////////////////////////// OPTION 2 /////////////////////////////////////////////////////////////////////////////
                 # tato moznost provadi mazani slozek s datumem v jejich nazvu
                 format_error = False
                 #print(f"- Probíhá mazání složek, jejichž název = datum, v cestě: {self.path}")
-                self.output.append(f"- Probíhá mazání složek, jejichž název = datum, v cestě: {self.path}")
+                if self.selected_language == "en":
+                    self.output.append(f"- Deleting folders with name = date in the path: {self.path} is in progress")
+                else:
+                    self.output.append(f"- Probíhá mazání složek, jejichž název = datum, v cestě: {self.path}")
+
                 result = self.get_format_dir_name()
                 for items in result:
                     if items == False:
@@ -558,7 +664,10 @@ class whole_deleting_function:
                     found_format = result[1]
                     folders_right_format = result[2]
                     self.del_directories(found_separator,found_format,folders_right_format)
-                self.output.append("- Mazání dokončeno\n")
+                if self.selected_language=="en":
+                    self.output.append("- Deleting complete\n")
+                else:
+                    self.output.append("- Mazání dokončeno\n")
 
         self.finish = True
         

@@ -23,7 +23,7 @@ default_setting_database = ["Základní cesta k souborům:",
                             ]
 
 default_setting_database_param = ["C:/Users/",
-                                  ["jpg","bmp","png","ifz"],
+                                  ["jpg","bmp","png","ifz","jpeg"],
                                   1000,
                                   [28,2,2024],
                                   "Ke_smazani",

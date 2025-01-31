@@ -85,7 +85,11 @@ class tray_app_service:
         self.initial_path = initial_path
         self.main_app_exe_name = exe_name
         config_data = Tools.read_json_config(self.initial_path)
-        self.selected_language = config_data[11]
+        try:
+            self.selected_language = config_data[11]
+        except Exception as e:
+            print(config_data,e)
+            self.selected_language = "cz"
         
     def clear_frame(self,frame):
         for widget in frame.winfo_children():
@@ -187,29 +191,45 @@ class tray_app_service:
         preset_font=("Arial",18,"bold")
         path = task["operating_path"]
 
+        open_path = "Otevřít cestu"
+        copy_path = "Kopírovat cestu"
+        execute_task = "Vykonat úkol"
+        edit_task = "Upravit úkol"
+        delete_task = "Odstranit úkol"
+        show_history = "Zobrazit historii mazání"
+        delete_history = "Vymazat historii mazání"
+        if self.selected_language == "en":
+            open_path = "Open path"
+            copy_path = "Copy path"
+            execute_task = "Execute task"
+            edit_task = "Edit task"
+            delete_task = "Delete task"
+            show_history = "Show deletion history"
+            delete_history = "Delete deletion history"
+
         if widget == "path":
-            context_menu.add_command(label="Otevřít cestu",font=preset_font, command=lambda: os.startfile(path))
+            context_menu.add_command(label=open_path,font=preset_font, command=lambda: os.startfile(path))
             context_menu.add_separator()
-            context_menu.add_command(label="Kopírovat cestu",font=preset_font, command=lambda: pyperclip.copy(path))
+            context_menu.add_command(label=copy_path,font=preset_font, command=lambda: pyperclip.copy(path))
 
         elif widget == "time" or widget == "settings" or widget == "name":
             name_of_task = task["name"]
             path_app_location = str(self.initial_path+"/"+self.main_app_exe_name) 
             task_command = path_app_location + " deleting " + name_of_task + " " + str(task["operating_path"]) + " " + str(task["max_days"]) + " " + str(task["files_to_keep"])+ " " + str(task["more_dirs"])+ " " + str(task["selected_option"])
-            context_menu.add_command(label="Vykonat úkol",font=preset_font,command=lambda: subprocess.call(task_command,shell=True,text=True))
+            context_menu.add_command(label=execute_task,font=preset_font,command=lambda: subprocess.call(task_command,shell=True,text=True))
             context_menu.add_separator()
-            context_menu.add_command(label="Upravit úkol",font=preset_font,command=lambda: os.startfile("taskschd.msc"))
+            context_menu.add_command(label=edit_task,font=preset_font,command=lambda: os.startfile("taskschd.msc"))
             context_menu.add_separator()
-            context_menu.add_command(label="Odstranit úkol",font=preset_font,command=lambda: self.delete_task(task,root))
+            context_menu.add_command(label=delete_task,font=preset_font,command=lambda: self.delete_task(task,root))
             context_menu.add_separator()
-            context_menu.add_command(label="Zobrazit historii mazání",font=preset_font,command=lambda: self.show_task_log(True,task_given=task))
+            context_menu.add_command(label=show_history,font=preset_font,command=lambda: self.show_task_log(True,task_given=task))
 
         elif widget == "del_log":
-            context_menu.add_command(label="Otevřít cestu",font=preset_font, command=lambda: os.startfile(path))
+            context_menu.add_command(label=open_path,font=preset_font, command=lambda: os.startfile(path))
             context_menu.add_separator()
-            context_menu.add_command(label="Kopírovat cestu",font=preset_font, command=lambda: pyperclip.copy(path))
+            context_menu.add_command(label=copy_path,font=preset_font, command=lambda: pyperclip.copy(path))
             context_menu.add_separator()
-            context_menu.add_command(label="Vymazat historii mazání",font=preset_font, command=lambda: self.delete_log(task_name=task["name"],childroot=root))
+            context_menu.add_command(label=delete_history,font=preset_font, command=lambda: self.delete_log(task_name=task["name"],childroot=root))
 
         context_menu.tk_popup(event.x_root, event.y_root)
 
@@ -263,6 +283,10 @@ class tray_app_service:
             self.save_task_to_config(all_tasks)
 
     def show_all_tasks(self,toplevel=False,root_given = False,maximalized=False):
+        try:
+            self.selected_language = Tools.read_json_config(self.initial_path)[11]
+        except Exception as e:
+            print(e)
         if root_given != False:
             child_root = root_given
             self.clear_frame(child_root)
@@ -273,10 +297,11 @@ class tray_app_service:
                 child_root = customtkinter.CTkToplevel()
             child_root.after(200, lambda: child_root.iconbitmap(self.app_icon))
             child_root.title("Seznam nastavených úkolů (task scheduler)")
+            if self.selected_language == "en":
+                child_root.title("List of scheduled tasks (task scheduler)")
 
         if maximalized:
             child_root.after(0, lambda:child_root.state('zoomed'))
-
         # main_frame = customtkinter.CTkFrame(master=child_root,corner_radius=0)
         main_frame = customtkinter.CTkScrollableFrame(master=child_root,corner_radius=0)
         self.check_task_existence()
@@ -296,7 +321,6 @@ class tray_app_service:
             task_name_text.bind("<Button-3>",lambda e,widget = "name",task=tasks: self.show_context_menu(child_root,e,widget,task))
 
             task_frame = customtkinter.CTkFrame(master=main_frame,corner_radius=0,border_width=3,height= 50,border_color="#636363")
-
             param0_frame = customtkinter.CTkFrame(master=task_frame,corner_radius=0,border_width=0,height= 50)
             param0_subframe1 = customtkinter.CTkFrame(master=param0_frame,corner_radius=0,border_width=2,height= 50,width=230)
             param0_label = customtkinter.CTkLabel(master=param0_subframe1,text = "Typ mazání: ",font=("Arial",20,"bold"),anchor="w")
@@ -310,10 +334,16 @@ class tray_app_service:
             param0_frame.pack(pady=(3,0),padx=3,fill="x",side="top")
             if int(tasks["selected_option"]) == 1:
                 param0_label2.configure(text = "Redukce starších souborů")
+                if self.selected_language == "en":
+                    param0_label2.configure(text = "Reducing older files")
             elif int(tasks["selected_option"]) == 2:
                 param0_label2.configure(text = "Redukce novějších, mazání starších souborů")
+                if self.selected_language == "en":
+                    param0_label2.configure(text = "Reducing newer, deleting older files")
             elif int(tasks["selected_option"]) == 3:
                 param0_label2.configure(text = "Mazání starších adresářů")
+                if self.selected_language == "en":
+                    param0_label2.configure(text = "Deleting older directories")
 
             param1_frame = customtkinter.CTkFrame(master=task_frame,corner_radius=0,border_width=0,height= 50)
             param1_subframe1 = customtkinter.CTkFrame(master=param1_frame,corner_radius=0,border_width=2,height= 50,width=230)
@@ -360,8 +390,12 @@ class tray_app_service:
                 param4_frame.pack(pady=(0,0),padx=3,fill="x",side="top")
             if int(tasks["more_dirs"]) == 1:
                 param4_label2.configure(text = "ANO")
+                if self.selected_language == "en":
+                    param4_label2.configure(text = "YES")
             else:
                 param4_label2.configure(text = "NE")
+                if self.selected_language == "en":
+                    param4_label2.configure(text = "NO")
 
             param3_frame = customtkinter.CTkFrame(master=task_frame,corner_radius=0,border_width=1,height= 50,fg_color="#212121")
             param3_label = customtkinter.CTkLabel(master=param3_frame,text = "Nastavení: ",font=("Arial",20,"bold"),anchor="w")
@@ -373,20 +407,36 @@ class tray_app_service:
             param3_frame.pack(pady=(0,3),padx=3,fill="x",side="top")
             if int(tasks["selected_option"]) != 3: # u adresářů se neprochází subsložky
                 param3_label2.configure(text = f"starší než: {older_then_str} dní, minimum = {files_to_keep_str} souborů")
+                if self.selected_language == "en":
+                    param3_label2.configure(text = f"older then: {older_then_str} days, minimum = {files_to_keep_str} files")
             else:
                 param3_label2.configure(text = f"starší než: {older_then_str} dní")
+                if self.selected_language == "en":
+                    param3_label2.configure(text = f"older then: {older_then_str} days")
                 
             param3_label.bind("<Button-3>",lambda e,widget = "settings",task=tasks: self.show_context_menu(child_root,e,widget,task))
             param3_label2.bind("<Button-3>",lambda e,widget = "settings",task=tasks: self.show_context_menu(child_root,e,widget,task))
             param3_frame.bind("<Button-3>",lambda e,widget = "settings",task=tasks: self.show_context_menu(child_root,e,widget,task))
-
             task_frame.pack(pady=(0,0),padx=5,fill="x",side="top")
+
+            if self.selected_language == "en":
+                task_name_text.configure(text = "Task "+str(i+1) + f" (scheduler name: {task_name_str})")
+                task_date_accessed.configure(text = f"Added: {date_added_str}")
+                param0_label.configure(text = "Deletion mode: ")
+                param1_label.configure(text = "Start time (daily): ")
+                param2_label.configure(text = "Working in: ")
+                param4_label.configure(text = "Browse subfolders: ")
+                param3_label.configure(text = "Parameters set: ")
+
             i+=1
 
         if len(all_tasks) == 0:
             task_label = customtkinter.CTkLabel(master=main_frame,text = "Nejsou nastaveny žádné úkoly...",font=("Arial",22,"bold"),anchor="w")
             task_label.pack(pady=10,padx=10,fill="x",side="top",anchor="w")
+            if self.selected_language == "en":
+                task_label.configure(text = "No tasks are set...")
             child_root.after(2000, lambda: child_root.destroy())
+            
         # main_frame.pack(fill="both",side="top")
         main_frame.pack(fill="both",side="top",expand=True)
         child_root.update()
@@ -398,17 +448,24 @@ class tray_app_service:
         child_root.mainloop()
 
     def show_task_log(self,specify_task=False,task_given = None,root_given = False,maximalized=False):
+        try:
+            self.selected_language = Tools.read_json_config(self.initial_path)[11]
+        except Exception as e:
+            print(e)
+        
         if not root_given:
             child_root = customtkinter.CTk()
             child_root.after(200, lambda: child_root.iconbitmap(self.app_icon))
             child_root.title("Záznam o vymazaných souborech")
+            if self.selected_language == "en":
+                child_root.title("Record of deleted files")
         else:
             child_root = root_given
             self.clear_frame(child_root)
         
         if maximalized:
             child_root.after(0, lambda:child_root.state('zoomed'))
-            
+ 
         main_frame = customtkinter.CTkScrollableFrame(master=child_root,corner_radius=0)
         self.check_task_existence()
         current_tasks = self.read_config()
@@ -476,9 +533,15 @@ class tray_app_service:
             if show_details(tasks,None,None,get_log_count=True) == 0:
                 button_details.configure(state="disabled")
 
+            if self.selected_language == "en":
+                task_name_text.configure(text = "Task "+str(i+1) + f" (scheduler name: {task_name_str}), added: {date_added_str}")
+
         if len(self.task_log_list) == 0:
             log_text = customtkinter.CTkLabel(master=main_frame,text = "Nebyl nalezen žádný záznam",font=("Arial",22,"bold"),anchor="w")
             log_text.pack(pady=10,padx=10,fill="x",side="top",anchor="w")
+            if self.selected_language == "en":
+                log_text.configure(text = "No deletion record found")
+
             child_root.after(2000, lambda: child_root.destroy())
 
         main_frame.pack(fill="both",side="top",expand=True)
@@ -494,11 +557,21 @@ class tray_app_service:
             # command = command.replace("/","\\")
             # subprocess.call(command,shell=True,text=True)
             subprocess.Popen(command, shell=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                
+        run_app_label = 'Spustit aplikaci jhv_MAZ'
+        show_scheduled_tasks_label = 'Nastavené úkoly'
+        deletion_log_label = 'Záznamy o mazání'
+        shut_down_label = 'Vypnout'
+        if self.selected_language == "en":
+            run_app_label = "Run jhv_MAZ application"
+            show_scheduled_tasks_label = "Scheduled tasks"
+            deletion_log_label = "Record of deleted files"
+            shut_down_label = "Quit"
 
-        self.menu = Menu(MenuItem('Spustit aplikaci jhv_MAZ', lambda: call_main_app()),
-                         MenuItem('Zobrazit nastavené úkoly', lambda: self.show_all_tasks()),
-                         MenuItem('Záznamy o mazání', lambda: self.show_task_log()),
-                         MenuItem('Vypnout', lambda: self.quit_application()))
+        self.menu = Menu(MenuItem(run_app_label, lambda: call_main_app()),
+                         MenuItem(show_scheduled_tasks_label, lambda: self.show_all_tasks()),
+                         MenuItem(deletion_log_label, lambda: self.show_task_log()),
+                         MenuItem(shut_down_label, lambda: self.quit_application()))
 
     def quit_application(self):
         self.icon.stop()
