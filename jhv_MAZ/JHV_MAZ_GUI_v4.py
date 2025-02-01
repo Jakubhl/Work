@@ -646,47 +646,60 @@ class Tools:
         output_data = del_instance.main()
         # output_message = f"|||Datum provedení: {output_data[3]}||Zkontrolováno: {output_data[0]} souborů||Starších: {output_data[1]} souborů||Smazáno: {output_data[2]} souborů"
         if selected_option == 1:
-            new_log = {"del_date": f"Datum provedení: {output_data[3]}",
-                    "files_checked": f"Zkontrolováno: {output_data[0]} souborů",
-                    "files_older": f"Starších: {output_data[1]} souborů",
+            new_log = {"del_date": output_data[3],
+                    "files_checked": output_data[0],
+                    "files_older": output_data[1],
                     "files_newer": "",
-                    "files_deleted": f"Smazáno: {output_data[2]} souborů",
-                    "path_count": f"Prohledáno: {output_data[5]} subsložek",
+                    "files_deleted": output_data[2],
+                    "path_count": output_data[5],
                     }
-            output_message_clear = f"Provedeno: {output_data[3]}\nZkontrolováno: {output_data[0]} souborů\nStarších: {output_data[1]} souborů\nSmazáno: {output_data[2]} souborů"
+            output_message = f"Provedeno: {output_data[3]}\nZkontrolováno: {output_data[0]} souborů\nStarších: {output_data[1]} souborů\nSmazáno: {output_data[2]} souborů"
+            output_message_eng = f"Date of execution: {output_data[3]}\nTotal checked: {output_data[0]} files\nTotal older: {output_data[1]} files\nTotal deleted: {output_data[2]} files"
 
         elif selected_option == 2:
-            new_log = {"del_date": f"Datum provedení: {output_data[3]}",
-                    "files_checked": f"Zkontrolováno: {output_data[0]} souborů",
-                    "files_older": f"Starších: {output_data[1]} souborů",
-                    "files_newer": f"Novějších: {output_data[4]} souborů",
-                    "files_deleted": f"Smazáno: {output_data[2]} souborů",
-                    "path_count": f"Prohledáno: {output_data[5]} subsložek",
+            new_log = {"del_date": output_data[3],
+                    "files_checked": output_data[0],
+                    "files_older": output_data[1],
+                    "files_newer": output_data[4],
+                    "files_deleted": output_data[2],
+                    "path_count": output_data[5],
                     }
-            output_message_clear = f"Provedeno: {output_data[3]}\nZkontrolováno: {output_data[0]} souborů\nStarších: {output_data[1]} souborů, novějších: {output_data[4]} souborů\nSmazáno: {output_data[2]} souborů"
+            output_message = f"Provedeno: {output_data[3]}\nZkontrolováno: {output_data[0]} souborů\nStarších: {output_data[1]} souborů, novějších: {output_data[4]} souborů\nSmazáno: {output_data[2]} souborů"
+            output_message_eng = f"Date of execution: {output_data[3]}\nTotal checked: {output_data[0]} files\nTotal older: {output_data[1]} files, newer: {output_data[4]} files\nTotal deleted: {output_data[2]} files"
 
-        elif selected_option == 3:
-            new_log = {"del_date": f"Datum provedení: {output_data[3]}",
-                    "files_checked": f"Zkontrolováno: {output_data[0]} adresářů",
+        elif selected_option == 3 or selected_option == 4:
+            new_log = {"del_date": output_data[3],
+                    "files_checked": output_data[0],
                     "files_older": "",
                     "files_newer": "",
-                    "files_deleted": f"Smazáno: {output_data[2]} adresářů",
+                    "files_deleted": output_data[2],
                     "path_count": "",
                     }
-            output_message_clear = f"Provedeno: {output_data[3]}\nZkontrolováno: {output_data[0]} adresářů\nSmazáno: {output_data[2]} adresářů"
+            output_message = f"Provedeno: {output_data[3]}\nZkontrolováno: {output_data[0]} adresářů\nSmazáno: {output_data[2]} adresářů"
+            output_message_eng = f"Date of execution: {output_data[3]}\nTotal checked: {output_data[0]} directories\nTotal deleted: {output_data[2]} directories"
 
         if more_dirs:
-            output_message_clear = output_message_clear + f", prohledáno: {output_data[5]} subsložek"
+            output_message += f", prohledáno: {output_data[5]} subsložek"
+            output_message_eng += f", browsed: {output_data[5]} subdirectories"
 
-        print(output_message_clear)
+        print(output_message,output_message_eng)
+        title_message = "Bylo provedeno automatické mazání"
+        selected_language = "cz"
+        try:
+            selected_language = Tools.read_json_config()[11]
+        except Exception as e:
+            print(e)
+        if selected_language == "en":
+            title_message = "Automatic deletion has been performed"
+            output_message = output_message_eng
         icon_path = app_icon
         trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,icon_path,exe_name,config_filename)
         trimazkon_tray_instance.save_new_log(task_name,new_log)
-        WindowsBalloonTip("Bylo provedeno automatické mazání",
-                            str(output_message_clear),
+        WindowsBalloonTip(title_message,
+                            str(output_message),
                             icon_path)
     
-        return output_message_clear
+        return output_message
 
     @classmethod
     def set_zoom(cls,zoom_factor,root):
@@ -1858,6 +1871,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         self.selected_option = 1
         self.more_dirs = False
         self.testing_mode = True
+        self.by_creation_date = False
         self.create_deleting_option_widgets()
  
     def call_extern_function(self,list_of_frames=[],function=""): # Tlačítko menu (konec, návrat do menu)
@@ -1959,24 +1973,26 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             self.supported_formats_deleting,
             testing_mode,
             self.to_delete_folder_name,
-            force_language = self.selected_language
+            creation_date = self.by_creation_date
             )
 
         run_del_background = threading.Thread(target=call_deleting_main, args=(running_deleting,))
         run_del_background.start()
-
         completed = False
         previous_len = 0
+        output_messages = running_deleting.output
+        if self.selected_language == "en":
+            output_messages = running_deleting.output_eng
 
         while not running_deleting.finish or completed == False:
             time.sleep(0.05)
-            if int(len(running_deleting.output)) > previous_len:
-                new_row = str(running_deleting.output[previous_len])
-                if "Mazání dokončeno" in new_row or "Zkontrolováno" in new_row:
+            if int(len(output_messages)) > previous_len:
+                new_row = str(output_messages[previous_len])
+                if "Mazání dokončeno" in new_row or "Zkontrolováno" in new_row or "Deleting complete" in new_row or "checked" in new_row:
                     Tools.add_colored_line(self.console,str(new_row),"green",("Arial",15,"bold"))
-                elif "Chyba" in new_row or "Nebyly nalezeny" in new_row or "- zrušeno" in new_row:
+                elif "Chyba" in new_row or "Nebyly nalezeny" in new_row or "- zrušeno" in new_row or "Error" in new_row or "No directories found" in new_row or "No files found" in new_row or "cancelled" in new_row:
                     Tools.add_colored_line(self.console,str(new_row),"red",("Arial",15,"bold"))
-                elif "Smazalo by se" in new_row or "Smazáno souborů" in new_row:
+                elif "Smazalo by se" in new_row or "Smazáno" in new_row or "It would delete" in new_row or "deleted" in new_row:
                     Tools.add_colored_line(self.console,str(new_row),"orange",("Arial",15,"bold"))
                 else:
                     Tools.add_colored_line(self.console,str(new_row),"white")
@@ -1984,7 +2000,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 self.root.update_idletasks()
                 previous_len +=1
 
-            if running_deleting.finish and (int(len(running_deleting.output)) == previous_len):
+            if running_deleting.finish and (int(len(output_messages)) == previous_len):
                 completed = True
         
         run_del_background.join()
@@ -1993,7 +2009,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         """
         Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
-        if self.more_dirs or self.selected_option == 3: # pokud je zvoleno more_dirs v exploreru pouze slozky...
+        if self.more_dirs or self.selected_option == 3 or self.selected_option == 4: # pokud je zvoleno more_dirs v exploreru pouze slozky...
             output = Tools.browseDirectories("only_dirs",self.temp_path_for_explorer)
         else:
             output = Tools.browseDirectories("all",self.temp_path_for_explorer)
@@ -2230,14 +2246,29 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             else:
                 self.testing_mode = False
 
-        top_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121",height=260)
+        def set_decision_date(input_arg):
+            """
+            input_arg:
+            - creation
+            - modification
+            """
+
+            if input_arg == "creation":
+                self.by_creation_date = True
+                checkbox_modification_date.deselect()
+
+            elif input_arg == "modification":
+                self.by_creation_date = False
+                checkbox_creation_date.deselect()
+
+        top_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121",height=240)
         title_and_date_frame= customtkinter.CTkFrame(master=top_frame,corner_radius=0,fg_color="#212121")
         option_title = customtkinter.CTkLabel(master = title_and_date_frame,height=20,text = "Redukce souborů starších než: nastavené datum",justify = "left",font=("Arial",25,"bold"))
         today = Deleting.get_current_date()
         current_date = customtkinter.CTkLabel(master = title_and_date_frame,text = "Dnešní datum: "+today[1],justify = "left",font=("Arial",20,"bold"),bg_color="black")
-        option_title.pack(padx=10,pady=(10,10),side="left",anchor="w")
-        current_date.pack(padx=10,pady=(0,0),side="left",anchor="e",expand = True,fill="y")
-        title_and_date_frame.pack(padx=0,pady=(0,0),side="top",anchor="w",fill="both")
+        option_title.pack(padx=10,pady=10,side="left",anchor="w")
+        current_date.pack(padx=5,pady=(0,0),side="left",anchor="e",expand = True,fill="y",ipadx = 10)
+        title_and_date_frame.pack(padx=(0,0),pady=(0,0),side="top",anchor="w",fill="both")
         user_input_frame = customtkinter.CTkFrame(master=top_frame,corner_radius=0,fg_color="#212121",border_width=4,border_color="#636363")
         date_input_frame = customtkinter.CTkFrame(master=user_input_frame,corner_radius=0,fg_color="#212121")
         date_label = customtkinter.CTkLabel(master = date_input_frame,text = "‣ budou smazány soubory starší než nastavené datum:",justify = "left",font=("Arial",20))
@@ -2285,20 +2316,31 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         summary_label.pack(padx=10,pady=(10,0),side="top",anchor="w")
         deletable_formats = customtkinter.CTkLabel(master = top_frame,text = f"Smazatelné formáty: {self.supported_formats_deleting}",justify = "left",font=("Arial",20))
         deletable_formats.pack(padx=10,pady=(0,0),side="top",anchor="w")
-        top_frame.pack(padx=0,pady=(0),side="top",anchor="w",fill="x")
+        top_frame.pack(padx=(0,0),pady=(0),side="top",anchor="w",fill="x")
         top_frame.propagate(False)
         console = tk.Text(self.changable_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED)
-        console.pack(pady = 10,padx =10,side="top",anchor="w",fill="x")
+        console.pack(pady = (10,0),padx =10,side="top",anchor="w",fill="x")
 
         subfolder_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121")
         subfolder_checkbox = customtkinter.CTkCheckBox(master = subfolder_frame, text = "Procházet subsložky? (max: 6)",command = lambda: search_subfolders(),font=("Arial",18,"bold"))
         subfolder_warning = customtkinter.CTkLabel(master = subfolder_frame,text = "",font=("Arial",18,"bold"))
         subfolder_checkbox.pack(padx=(10,0),pady=(5,0),side="left",anchor="w")
         subfolder_warning.pack(padx=(10,0),pady=(5,0),side="left",anchor="w")
-        subfolder_frame.pack(padx=0,pady=0,side="top",anchor="w")
+        subfolder_frame.pack(padx=(0,0),pady=0,side="top",anchor="w")
 
         self.checkbox_testing = customtkinter.CTkCheckBox(master =self.changable_frame, text = f"Režim TESTOVÁNÍ (Soubory vyhodnocené ke smazání se pouze přesunou do složky s názvem: \"{self.to_delete_folder_name}\")",font=("Arial",18,"bold"),command=lambda: set_testing_mode())
         self.checkbox_testing.pack(pady = (10,0),padx =10,side="top",anchor="w")
+
+        decision_date_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121")
+        decision_date_label = customtkinter.CTkLabel(master = decision_date_frame,text = "Řídit se podle: ",justify = "left",font=("Arial",20,"bold"))
+        checkbox_creation_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data vytvoření",font=("Arial",18),command=lambda:set_decision_date("creation"))
+        checkbox_modification_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data poslední změny",font=("Arial",18),command=lambda:set_decision_date("modification"))
+        decision_date_label.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
+        checkbox_creation_date.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
+        checkbox_modification_date.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
+        decision_date_frame.pack(pady = (0,0),padx =0,side="top",anchor="w",fill="x")
+        checkbox_modification_date.select()
+        self.by_creation_date = False
         if self.testing_mode:
             self.checkbox_testing.select()
         if self.more_dirs:
@@ -2317,12 +2359,17 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             deletable_formats.configure(text= f"Deletable formats: {self.supported_formats_deleting}")
             subfolder_checkbox.configure(text= "Browse subfolders? (max: 6)")
             self.checkbox_testing.configure(text= f"TEST mode (Files evaluated for deletion are only moved to a folder named: \"{self.to_delete_folder_name}\")")
+            current_date.configure(text = "Current date: "+today[1])
+            decision_date_label.configure(text = "To decide by:")
+            checkbox_creation_date.configure(text = "date of creation")
+            checkbox_modification_date.configure(text = "date of modification")
 
         if option == 2:
             self.selected_option = 2
-            self.options1.configure(fg_color="black")
-            self.options2.configure(fg_color="#212121")
-            self.options3.configure(fg_color="black")
+            self.options1.deselect()
+            self.options2.select()
+            self.options3.deselect()
+            self.options4.deselect()
             if self.selected_language == "en":
                 option_title.configure(text="Reducing newer, deleting files older than: set date")
                 date_label.configure(text= "‣ ALL files older than the set date will be deleted:")
@@ -2335,9 +2382,10 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 summary_label.configure(text=f"Budou SMAZÁNY VŠECHNY soubory STARŠÍ než nastavené datum, přičemž budou redukovány i soubroy NOVĚJŠÍ na počet: {self.files_to_keep} souborů\n(pokud jsou v dané cestě všechny soubory starší, mazání se neprovede)")
         else:
             self.selected_option = 1
-            self.options1.configure(fg_color="#212121")
-            self.options2.configure(fg_color="black")
-            self.options3.configure(fg_color="black")
+            self.options1.select()
+            self.options2.deselect()
+            self.options3.deselect()
+            self.options4.deselect()
         
         def new_date_enter_btn(e):
             set_cutoff_date()
@@ -2350,7 +2398,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         files_to_keep_set.bind("<Return>",new_FTK_enter_btn)
         # self.changable_frame.bind("<Enter>",lambda e: save_before_execution()) # případ, že se nestiskne uložit - aby nedošlo ke ztrátě souborů
         
-    def selected3(self): # První možnost mazání, od nejstarších
+    def selected3(self,option): # První možnost mazání, od nejstarších
         """
         Budou smazány VŠECHNY adresáře (včetně všech subadresářů), které obsahují v názvu podporovaný formát datumu a jsou vyhodnoceny,jako starší než nastavené datum\n
         - podporované datumové formáty jsou ["YYYYMMDD","DDMMYYYY","YYMMDD"]
@@ -2439,7 +2487,6 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                     else:
                         Tools.add_colored_line(console, "U nastavení roku jste nezadali číslo","red",None,True)
 
-
         def insert_current_date():
             today = Deleting.get_current_date()
             today_split = today[1].split(".")
@@ -2456,10 +2503,9 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             max_days_entry.delete(0,"100")
             max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
             if self.selected_language == "en":
-                Tools.add_colored_line(console, "Today's date has been inserted (currently all files are evaluated as older!)","orange",None,True)
+                Tools.add_colored_line(console, "Today's date has been inserted (currently all directories are evaluated as older!)","orange",None,True)
             else:
-                Tools.add_colored_line(console, "Bylo vloženo dnešní datum (Momentálně všechny soubory vyhodnoceny, jako starší!)","orange",None,True)
-
+                Tools.add_colored_line(console, "Bylo vloženo dnešní datum (Momentálně jsou všechny adresáře vyhodnoceny, jako starší!)","orange",None,True)
 
         def save_before_execution():
             input_month = set_month.get()
@@ -2511,13 +2557,31 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             else:
                 self.testing_mode = False
 
-        top_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121",height=260)
+        def set_decision_date(input_arg):
+            """
+            input_arg:
+            - creation
+            - modification
+            """
+
+            if input_arg == "creation":
+                self.by_creation_date = True
+                checkbox_modification_date.deselect()
+
+            elif input_arg == "modification":
+                self.by_creation_date = False
+                checkbox_creation_date.deselect()
+
+        top_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121",height=240)
         left_side = customtkinter.CTkFrame(master=top_frame,corner_radius=0,fg_color="#212121")
         right_side = customtkinter.CTkFrame(master=top_frame,corner_radius=0,fg_color="#212121")
         header_frame = customtkinter.CTkFrame(master=left_side,corner_radius=0,fg_color="#212121")
-        option_title = customtkinter.CTkLabel(master = header_frame,text = "Mazání VŠECH adresářů (včetně všech subadresářů), starších než: nastavené datum",justify = "left",font=("Arial",25,"bold"))
-        option_title.pack(padx=10,pady=(10,10),side="top",anchor="w")
-        header_frame.pack(padx=5,pady=(10,0),side="top",anchor="w",fill="x")
+        option_title = customtkinter.CTkLabel(master = header_frame,text = "Mazání adresářů podle data v jejich názvu",justify = "left",font=("Arial",25,"bold"))
+        today = Deleting.get_current_date()
+        current_date = customtkinter.CTkLabel(master = header_frame,text = "Dnešní datum: "+today[1],justify = "left",font=("Arial",20,"bold"),bg_color="black")
+        option_title.pack(padx=10,pady=(10),side="left",anchor="w")
+        current_date.pack(padx=3,pady=(0,0),side="left",anchor="e",expand = True,fill="y",ipadx = 10)
+        header_frame.pack(padx=0,pady=(0,0),side="top",anchor="w",fill="x",expand=False)
         user_input_frame = customtkinter.CTkFrame(master=left_side,corner_radius=0,fg_color="#212121",border_width=4,border_color="#636363")
         date_input_frame = customtkinter.CTkFrame(master=user_input_frame,corner_radius=0,fg_color="#212121")
         date_label = customtkinter.CTkLabel(master = date_input_frame,text = "‣ budou smazány adresáře starší než nastavené datum:",justify = "left",font=("Arial",20))
@@ -2550,46 +2614,77 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         day_format_input_frame.pack(padx=5,pady=(0,10),side="top",anchor="w")
         max_days_entry.bind("<Key>",lambda e: update_entry(e,flag="cutoff"))
 
-        directories_image     = customtkinter.CTkImage(Image.open(Tools.resource_path("images/directories.png")),size=(240, 190))
-        image_description         = customtkinter.CTkLabel(master = right_side,text = "Ukázka:",font=("Arial",20,"bold"))
-        images_label         = customtkinter.CTkLabel(master = right_side,text = "",image=directories_image)
+        directories_image = customtkinter.CTkImage(Image.open(Tools.resource_path("images/directories.png")),size=(240, 190))
+        image_description = customtkinter.CTkLabel(master = right_side,text = "Ukázka:",font=("Arial",20,"bold"))
+        images_label = customtkinter.CTkLabel(master = right_side,text = "",image=directories_image)
         image_description.pack(padx=10,pady=(10),side="top",anchor="w")
         images_label.pack(padx=10,pady=(10),side="top",anchor="w")
         user_input_frame.pack(padx=5,pady=(0,0),side="top",anchor="w",fill="x")
-        summary_label = customtkinter.CTkLabel(master = left_side,text = f"Budou smazány jen adresáře, které obsahují v názvu podporovaný formát datumu a jsou vyhodnoceny jako starší než nastavené datum",justify = "left",font=("Arial",20,"bold"))
+        summary_label = customtkinter.CTkLabel(master = left_side,text = f"Budou smazány jen adresáře (včetně všech subadresářů), které obsahují v názvu podporovaný formát datumu\na jsou vyhodnoceny jako starší než nastavené datum",justify = "left",font=("Arial",20,"bold"))
         summary_label.pack(padx=10,pady=(10,0),side="top",anchor="w")
 
         deletable_formats = customtkinter.CTkLabel(master = left_side,text = f"Podporované datumové formáty: {Deleting.supported_date_formats}\nPodporované separátory datumu: {Deleting.supported_separators}",justify = "left",font=("Arial",20))
-        deletable_formats.pack(padx=10,pady=(10,0),side="top",anchor="w")
-
-        left_side.pack(padx=0,pady=(0),side="left",anchor="n")
-        right_side.pack(padx=0,pady=(0),side="left",anchor="w")
+        if option == 3:
+            deletable_formats.pack(padx=10,pady=(10,0),side="top",anchor="w")
+            left_side.pack(padx=0,pady=(0),side="left",anchor="n",expand=True,fill="x")
+            right_side.pack(padx=0,pady=(0),side="left",anchor="w",expand=False)        
+        else:
+            left_side.pack(padx=0,pady=(0),side="left",anchor="n",expand=True,fill="x")
 
         top_frame.pack(padx=0,pady=(0),side="top",anchor="w",fill="x")
         top_frame.propagate(False)
         console = tk.Text(self.changable_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED)
-        console.pack(pady = 10,padx =10,side="top",anchor="w",fill="x")
+        console.pack(pady = (10,0),padx =10,side="top",anchor="w",fill="x")
 
         self.checkbox_testing = customtkinter.CTkCheckBox(master =self.changable_frame, text = f"Režim TESTOVÁNÍ (Soubory vyhodnocené ke smazání se pouze přesunou do složky s názvem: \"{self.to_delete_folder_name}\")",font=("Arial",18,"bold"),command=lambda:set_testing_mode())
         self.checkbox_testing.pack(pady = (10,0),padx =10,side="top",anchor="w")
+
+        decision_date_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121")
+        decision_date_label = customtkinter.CTkLabel(master = decision_date_frame,text = "Řídit se podle: ",justify = "left",font=("Arial",20,"bold"))
+        checkbox_creation_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data vytvoření",font=("Arial",18),command=lambda:set_decision_date("creation"))
+        checkbox_modification_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data poslední změny",font=("Arial",18),command=lambda:set_decision_date("modification"))
+        decision_date_label.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
+        checkbox_creation_date.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
+        checkbox_modification_date.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
+        if option == 4:
+            decision_date_frame.pack(pady = (0,0),padx =0,side="top",anchor="w",fill="x")
+            checkbox_modification_date.select()
+            self.by_creation_date = False
         if self.testing_mode:
             self.checkbox_testing.select()
        
         if self.selected_language == "en":
-            option_title.configure(text= "Delete ALL directories (including all subdirectories) older than: the set date")
+            option_title.configure(text= "Delete directories by date in their name")
             date_label.configure(text= "‣ directories older than the set date will be deleted:")
             insert_button.configure(text= "Insert today's date")
             days_label.configure(text= "‣ it means older than:")
             days_label2.configure(text= "days")
             image_description.configure(text= "Example:")
-            summary_label.configure(text= "Only directories that contain a supported date format in their name and are evaluated as older than the set date will be deleted")
+            summary_label.configure(text= "Only directories (including all subdirectories) that contain a supported date format in their name and are evaluated as older than the set date will be deleted")
             deletable_formats.configure(text= f"Supported date formats: {Deleting.supported_date_formats}\nSupported date separators: {Deleting.supported_separators}")
             self.checkbox_testing.configure(text= f"TEST mode (Files evaluated for deletion are only moved to a folder named: \"{self.to_delete_folder_name}\")")
+            current_date.configure(text = "Current date: "+today[1])
 
-        self.selected_option =3
-        self.options1.configure(fg_color="black")
-        self.options2.configure(fg_color="black")
-        self.options3.configure(fg_color="#212121")
+        if option == 4:
+            self.selected_option =4
+            option_title.configure(text = "Mazání adresářů starších než: nastavené datum")
+            summary_label.configure(text= "Budou smazány VŠECHNY adresáře (včetně všech subadresářů), které jsou vyhodnoceny jako starší než nastavené datum")
+            if self.selected_language == "en":
+                option_title.configure(text = "Deleting directories older than: set date")
+                summary_label.configure(text= "ALL directories (including all subdirectories) that are evaluated as older than the set date will be deleted")    
+                decision_date_label.configure(text = "To decide by:")
+                checkbox_creation_date.configure(text = "date of creation")
+                checkbox_modification_date.configure(text = "date of modification")
+            self.options1.deselect()
+            self.options2.deselect()
+            self.options3.deselect()
+            self.options4.select()
+        else:
+            self.selected_option =3
+            self.options1.deselect()
+            self.options2.deselect()
+            self.options3.select()
+            self.options4.deselect()
         
         def new_date_enter_btn(e):
             set_cutoff_date()
@@ -2791,12 +2886,11 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
         parameter_frame = customtkinter.CTkFrame(master = window,corner_radius=0)
         selected_option = customtkinter.CTkLabel(master = parameter_frame,text = "Zvolená možnost mazání: ",font=("Arial",25,"bold"))
-
         path_label_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0,fg_color="#212121")
         path_label = customtkinter.CTkLabel(master = path_label_frame,text = "Zadejte cestu, kde bude úkol spouštěn:",font=("Arial",22))
         path_label.pack(pady = (10,0),padx = (10,0),side="left",anchor="w")
         subfolder_checkbox = customtkinter.CTkCheckBox(master = path_label_frame, text = "Procházet subsložky? (max: 6)",font=("Arial",20,"bold"))
-        if self.selected_option != 3:
+        if self.selected_option != 3 and self.selected_option != 4:
             subfolder_checkbox.pack(pady = (10,0),padx = (0,10),side="right",anchor="e")
             if self.more_dirs:
                 subfolder_checkbox.select()
@@ -2830,7 +2924,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         minimum_file_entry = customtkinter.CTkEntry(master = minimum_file_frame,font=("Arial",20),width=100,height=40,corner_radius=0)
         minimum_file_label.pack(pady = (10,0),padx = (10,10),side="left")
         minimum_file_entry.pack(pady = (10,0),padx = (0,10),side="left")
-        if self.selected_option != 3:
+        if self.selected_option != 3 and self.selected_option != 4:
             minimum_file_frame.pack(side="top",fill="x",anchor="w")
         minimum_file_entry.bind("<Key>",lambda e: check_entry(e,number=True))
 
@@ -2883,12 +2977,17 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             if self.selected_language == "en":
                 selected_option.configure(text = f"Selected delete option: {self.selected_option}. (Reducing newer, deleting older files)")
         elif self.selected_option == 3:
+            selected_option.configure(text = f"Zvolená možnost mazání: {self.selected_option}. (Mazání adresářů podle názvu)")
+            older_then_label.configure(text = "Odstanit adresáře starší než:")
+            if self.selected_language == "en":
+                selected_option.configure(text = f"Selected delete option: {self.selected_option}. (Deleting directories by name)")
+                older_then_label.configure(text = "Remove directories older than:")
+        elif self.selected_option == 4:
             selected_option.configure(text = f"Zvolená možnost mazání: {self.selected_option}. (Mazání starších adresářů)")
             older_then_label.configure(text = "Odstanit adresáře starší než:")
             if self.selected_language == "en":
                 selected_option.configure(text = f"Selected delete option: {self.selected_option}. (Deleting older directories)")
                 older_then_label.configure(text = "Remove directories older than:")
-
         window.update()
         window.update_idletasks()
         # window_width = window.winfo_width()
@@ -2942,32 +3041,21 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         frame_path_input.       pack(pady=0,padx=0,fill="both",side = "top")
         context_menu_button.bind("<Button-1>", call_path_context_menu)
 
-        # option_menu_cards =     customtkinter.CTkFrame(master=header_frame,corner_radius=0,fg_color="#636363")
-        # self.options1 =         customtkinter.CTkButton(master = option_menu_cards, width = 200,height=30,text = "Možnost 1.",font=("Arial",20,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121",command = lambda: self.selected(option=1))
-        # self.options2 =         customtkinter.CTkButton(master = option_menu_cards, width = 200,height=30,text = "Možnost 2.",font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121",command = lambda: self.selected(option=2))
-        # self.options3 =         customtkinter.CTkButton(master = option_menu_cards, width = 200,height=30,text = "Možnost 3.",font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121",command = lambda: self.selected3())
-        # today = Deleting.get_current_date()
-        # current_date =          customtkinter.CTkLabel(master = option_menu_cards,text = "Dnešní datum: "+today[1],justify = "left",font=("Arial",20,"bold"),bg_color="black")
-
-        # self.options1.          pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
-        # self.options2.          pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
-        # self.options3.          pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
-        # current_date.           pack(ipady = 10,ipadx =10,anchor = "e",side = "left",expand=True,fill="y")
-        # option_menu_cards.      pack(pady=0,padx=0,fill="x",side = "top",anchor="w")
-
         double_frame =          customtkinter.CTkFrame(master=header_frame,corner_radius=0,height=400,fg_color="#212121",border_width=2,border_color="#636363")
         option_menu_cards =     customtkinter.CTkFrame(master=double_frame,corner_radius=0,fg_color="#212121",border_width=2,border_color="#636363")
-        self.options1 =         customtkinter.CTkButton(master = option_menu_cards, width = 200,height=30,text = "Redukce souborů starších než: nastavené datum",font=("Arial",20,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121",command = lambda: self.selected(option=1))
-        self.options2 =         customtkinter.CTkButton(master = option_menu_cards, width = 200,height=30,text = "Redukce novějších, mazání souborů starších než: nastavené datum",font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121",command = lambda: self.selected(option=2))
-        self.options3 =         customtkinter.CTkButton(master = option_menu_cards, width = 200,height=30,text = "Mazání VŠECH adresářů (včetně všech subadresářů), starších než: nastavené datum",font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121",command = lambda: self.selected3())
-        self.options1.          pack(pady = (10,0),padx =(10,0),anchor = "w",side = "top")
-        self.options2.          pack(pady = (10,0),padx =(10,0),anchor = "w",side = "top")
-        self.options3.          pack(pady = (10,0),padx =(10,0),anchor = "w",side = "top")
+        self.options1 =         customtkinter.CTkCheckBox(master = option_menu_cards,text = "Možnost 1",font=("Arial",20,"bold"),corner_radius=0,command = lambda: self.selected(option=1))
+        self.options2 =         customtkinter.CTkCheckBox(master = option_menu_cards,text = "Možnost 2",font=("Arial",20,"bold"),corner_radius=0,command = lambda: self.selected(option=2))
+        self.options3 =         customtkinter.CTkCheckBox(master = option_menu_cards,text = "Možnost 3",font=("Arial",20,"bold"),corner_radius=0,command = lambda: self.selected3(option = 3))
+        self.options4 =         customtkinter.CTkCheckBox(master = option_menu_cards,text = "Možnost 4",font=("Arial",20,"bold"),corner_radius=0,command = lambda: self.selected3(option = 4))
+        self.options1.          pack(pady = (10,0),padx =(10,15),anchor = "w",side = "top")
+        self.options2.          pack(pady = (10,0),padx =(10,15),anchor = "w",side = "top")
+        self.options3.          pack(pady = (10,0),padx =(10,15),anchor = "w",side = "top")
+        self.options4.          pack(pady = (10,0),padx =(10,15),anchor = "w",side = "top")
 
         self.changable_frame =  customtkinter.CTkFrame(master=double_frame,corner_radius=0,fg_color="#212121")
         option_menu_cards.      pack(pady=0,padx=0,fill="y",side = "left")
-        self.changable_frame.   pack(pady=0,padx=0,fill="x",side = "left",expand=True)
-        double_frame.           pack(pady=0,padx=(0),fill="x",side = "top",anchor="w")
+        self.changable_frame.   pack(pady=(2,0),padx=(0,2),fill="x",side = "left",expand=True,anchor="n")
+        double_frame.           pack(pady=0,padx=0,fill="x",side = "top",anchor="w")
         double_frame.           propagate(False)
         
         bottom_frame =          customtkinter.CTkFrame(master=header_frame,corner_radius=0,fg_color="#212121",border_width=0,border_color="#636363")
@@ -2982,13 +3070,15 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         bottom_frame .          pack(pady =0,padx=0,side = "top",fill="both",expand=False)
         header_frame.           pack(pady=0,padx=0,fill="x",side = "top")
         self.selected(option=1)
+        self.options1.select()
 
         if self.selected_language == "en":
             deleting_button.configure(text = "File deletion")
             button_save_path.configure(text = "Save path")
-            self.options1.configure(text = "Option 1.")
-            self.options2.configure(text = "Option 2.")
-            self.options3.configure(text = "Option 3.")
+            self.options1.configure(text = "Option 1")
+            self.options2.configure(text = "Option 2")
+            self.options3.configure(text = "Option 3")
+            self.options4.configure(text = "Option 4")
             # current_date.configure(text = "Current date: "+today[1])
             button.configure(text = "EXECUTE")
             create_task_btn.configure(text = "Set auto. boot")

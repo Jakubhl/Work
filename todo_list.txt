@@ -784,7 +784,9 @@ jhv_MAZ - možnost anglického jazyka (zatím jen v gui, ne konzole) - hotovo
 12:23 PM 1/31/2025
 prelozit tray script - hotovo
 prelozit deleting script - hotovo
-
+jhv_MAZ - vrátit původní vybírání - hotovo
+jhv_MAZ - přeložit logovani mazani - hotovo
+jhv_MAZ - mazat celé složky podle datumu vytvoření - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 TRIMAZKON - prohlížeč nejde otevírat ifz v novém okně...
@@ -801,9 +803,9 @@ TRIMAZKON - přidat automatické vytvoření configu
 TRIMAKZON - nastavení folderu nebo filu v exploreru - neulozi se
 TRIMAZKON - delete confirm window má špatné hlášky
 
-jhv_MAZ - mazat celé složky podle datumu vytvoření
-jhv_MAZ - vrátit původní vybírání
+jhv_MAZ - přidat do argumentů (pri volani) creation a modif date rozlisovani
 jhv_MAZ - licencovat aplikaci
+
 
 ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...
 ip setting - opravit duplicity - manage bin

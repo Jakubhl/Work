@@ -263,7 +263,6 @@ class tray_app_service:
             else:
                 return True
                 
-        
         all_tasks = self.read_config()
         non_existent_tasks = []
         for i in range(0,len(all_tasks)):
@@ -480,21 +479,47 @@ class tray_app_service:
             button.bind("<Button-1>",lambda e,tasks = task, log_frame = given_task_frame, button_details = button: show_details(tasks,log_frame,button_details))
             
         def show_details(task,given_task_frame,button,get_log_count = False):
+            """
+            del_date": f"Datum provedení: {output_data[3]}",
+            files_checked": f"Zkontrolováno: {output_data[0]} souborů",
+            files_older": f"Starších: {output_data[1]} souborů",
+            files_newer": f"Novějších: {output_data[4]} souborů",
+            files_deleted": f"Smazáno: {output_data[2]} souborů",
+            path_count": f"Prohledáno: {output_data[5]} subsložek",
+            """
             all_task_logs = task["del_log"]
             if get_log_count:
                 return len(all_task_logs)
+            
             for logs in all_task_logs:
                 # label_data = str(log_data[0])+"\n"+str(log_data[1])+"\n"+str(log_data[2])+"\n"+str(log_data[3])
+                date_added_label = "Datum provedení: " + str(logs["del_date"]) + "\n"
+                files_checked_label = "Zkontrolováno: "+str(logs["files_checked"]) + " souborů\n"
+                files_older_label ="Starších: "+str(logs["files_older"])+" souborů\n"
+                files_newer_label = "Novějších: "+str(logs["files_newer"])+" souborů\n"
+                files_deleted_label = "Smazáno: "+str(logs["files_deleted"])+" souborů\n"
+                path_count_label = "Prohledáno: "+str(logs["path_count"])+" subsložek\n"
+                if self.selected_language == "en":
+                    date_added_label = "Date of execution: "+str(logs["del_date"])+"\n"
+                    files_checked_label = "Total checked: "+str(logs["files_checked"])+" files\n"
+                    files_older_label = "Total older: "+str(logs["files_older"])+" files\n"
+                    files_newer_label = "Total newer: "+str(logs["files_newer"])+" files\n"
+                    files_deleted_label = "Total deleted: "+str(logs["files_deleted"])+" files\n"
+                    path_count_label = "Browsed: "+str(logs["path_count"])+" subdirectories\n"
+
                 if int(tasks["selected_option"]) == 1:
-                    label_data = str(logs["del_date"])+"\n"+str(logs["files_checked"])+"\n"+str(logs["files_older"])+"\n"+str(logs["files_deleted"])
+                    label_data = date_added_label + files_checked_label + files_older_label + files_deleted_label
                     if int(tasks["more_dirs"]) == 1:
-                        label_data = label_data +"\n"+str(logs["path_count"])
+                        label_data += path_count_label
+
                 elif int(tasks["selected_option"]) == 2:
-                    label_data = str(logs["del_date"])+"\n"+str(logs["files_checked"])+"\n"+str(logs["files_older"])+"\n"+str(logs["files_newer"])+"\n"+str(logs["files_deleted"])
+                    label_data = date_added_label + files_checked_label + files_older_label + files_newer_label + files_deleted_label
                     if int(tasks["more_dirs"]) == 1:
-                        label_data = label_data +"\n"+str(logs["path_count"])
+                        label_data += path_count_label
+
                 elif int(tasks["selected_option"]) == 3:
-                    label_data = str(logs["del_date"])+"\n"+str(logs["files_checked"])+"\n"+str(logs["files_deleted"])
+                    label_data = date_added_label + files_checked_label + files_deleted_label
+
                 log_frame = customtkinter.CTkFrame(master=given_task_frame,corner_radius=0,border_width=2)
                 log_text = customtkinter.CTkLabel(master=log_frame,text = label_data,font=("Arial",20),anchor="w",justify="left")
                 log_text.pack(pady=(10,5),padx=10,anchor="w",side="top")
