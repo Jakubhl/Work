@@ -787,7 +787,14 @@ prelozit deleting script - hotovo
 jhv_MAZ - vrátit původní vybírání - hotovo
 jhv_MAZ - přeložit logovani mazani - hotovo
 jhv_MAZ - mazat celé složky podle datumu vytvoření - hotovo
+jhv_MAz - posouvat na konec konzole pri vkladani dalsich radku - hotovo
+jhv_MAZ - přidat do argumentů (pri volani) creation a modif date rozlisovani - hotovo
+jhv_MAZ - preložit tlačítka u confirm oken - hotovo
+jhv_MAZ - licencovat aplikaci - hotovo
+
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
+
 
 TRIMAZKON - prohlížeč nejde otevírat ifz v novém okně...
 TRIMAZKON - prohlížeč - malování - zrušit přepsat na zavřít
@@ -800,11 +807,13 @@ TRIMAZKON - kouknout na directories z configu u advanced option v initu
 TRIMAZKON - hláška na úvodní obrazovce - o spuštění s adminem - upřesnit
 TRIMAZKON - přidat automatické vytvoření configu
 
-TRIMAKZON - nastavení folderu nebo filu v exploreru - neulozi se
+TRIMAZKON - nastavení folderu nebo filu v exploreru - neulozi se
 TRIMAZKON - delete confirm window má špatné hlášky
+TRIMAZKON - u konzoli, kde se dynamicky pise text - pouzit console.see(tk.END)
+TRIMAZKON - licencovat aplikaci
 
-jhv_MAZ - přidat do argumentů (pri volani) creation a modif date rozlisovani
-jhv_MAZ - licencovat aplikaci
+jhv_MAZ - přidat do vizualizace ukolu jestli je zvoleno podle creation nebo modification
+jhv_MAZ - predbezna analyza souboru - x souboru starsich nez... (pres tlacitko?)
 
 
 ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...

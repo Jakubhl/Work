@@ -2,9 +2,10 @@ change_log_list = [" Verze 1.0.0 (21.01.2025)",
     """ 
     - možnosti přímého mazání
     - možnost nastavit pravidelné mazání v TS
-    - celkem tři módy mazání
+    - celkem 4 módy mazání
     - běží na pozadí v nabídce system tray
-    - logování provedených mazání\n"""
+    - logování provedených mazání
+    - aplikace je licencována\n"""
 ]
 
 

@@ -508,13 +508,16 @@ class whole_deleting_function:
                 if date_of_file != False:
                     if not int(date_of_file) in date_array:
                         date_array.append(int(date_of_file))
-
-            return max(date_array)
-
+            if len(date_array)>0:
+                return max(date_array)
+            else:
+                return []
         if option == 1:
             # pokud jsou všechny starší vydej varování - a zruš:
-            if check_min_file_age(path) <= cutoff_days:
-                return "warning data loss"
+            min_file_age = check_min_file_age(path)
+            if min_file_age != []:
+                if check_min_file_age(path) <= cutoff_days:
+                    return "warning data loss"
             for files in os.listdir(path):
                 if self.creation_date:
                     date_of_file = self.get_creation_date_of_file(files)

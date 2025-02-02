@@ -1,17 +1,14 @@
 import customtkinter
 import os
 import time
-# from openpyxl import load_workbook
 from PIL import Image
 import Deleting_option_v2 as Deleting
 import trimazkon_tray_MAZ_v2 as trimazkon_tray
 import string_database_MAZ
-from openpyxl import Workbook
 import json
 from tkinter import filedialog
 import tkinter as tk
 import threading
-# import shutil
 import sys
 import ctypes
 import win32pipe, win32file, pywintypes, psutil
@@ -19,17 +16,153 @@ import subprocess
 from win32api import *
 from win32gui import *
 import win32con
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import serialization, hashes
+import datetime
 import struct
 
-testing = True
+testing = False
 
 global_recources_load_error = False
+global_licence_load_error = False
 exe_path = sys.executable
 exe_name = os.path.basename(exe_path)
 config_filename = "config_MAZ.json"
 print("exe name: ",exe_name)
 if testing:
     exe_name = "trimazkon_test.exe"
+
+class Subwindows:
+    @classmethod
+    def call_again_as_admin(cls,input_flag:str,window_title,main_title,language_given="cz"):
+        def run_as_admin():# Vyžádání admin práv: nefunkční ve vscode
+            if not Tools.is_admin():
+                pid = "None"
+                try:
+                    pid = os.getpid()
+                except Exception:
+                    pass
+                ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join([input_flag,str(pid)]), None, 1)
+                sys.exit()
+
+        def close_prompt(child_root):
+            child_root.grab_release()
+            child_root.destroy()
+
+        child_root = customtkinter.CTkToplevel()
+        child_root.after(200, lambda: child_root.iconbitmap(app_icon))
+        child_root.title(window_title)
+        label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        proceed_label = customtkinter.CTkLabel(master = label_frame,text = main_title,font=("Arial",25),anchor="w",justify="left")
+        proceed_label.pack(pady=5,padx=10,anchor="w",side = "left")
+        button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        button_yes =    customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: run_as_admin())
+        button_no =     customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+        button_no       .pack(pady = 5, padx = 10,anchor="e",side="right")
+        button_yes      .pack(pady = 5, padx = 10,anchor="e",side="right")
+        label_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+        button_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+        if language_given == "en":
+            button_yes.configure(text = "YES")
+            button_no.configure(text = "Cancel")
+        child_root.update()
+        child_root.update_idletasks()
+        child_root.focus()
+        child_root.focus_force()
+        child_root.grab_set()
+
+    @classmethod
+    def confirm_window(cls,prompt_message,title_message,language_given="cz"):
+        selected_option = False
+        def selected_yes(child_root):# Vyžádání admin práv: nefunkční ve vscode
+            child_root.grab_release()
+            child_root.destroy()
+            nonlocal selected_option
+            selected_option = True
+
+        def close_prompt(child_root):
+            child_root.grab_release()
+            child_root.destroy()
+            nonlocal selected_option
+            selected_option = False
+            
+        child_root = customtkinter.CTkToplevel()
+        child_root.after(200, lambda: child_root.iconbitmap(app_icon))
+        child_root.title(title_message)
+        label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        proceed_label = customtkinter.CTkLabel(master = label_frame,text = prompt_message,font=("Arial",25),anchor="w",justify="left")
+        proceed_label.pack(pady=5,padx=10,anchor="w",side = "left")
+        button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        button_yes =   customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: selected_yes(child_root))
+        button_no =    customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+        button_no      .pack(pady = 5, padx = 10,anchor="e",side="right")
+        button_yes     .pack(pady = 5, padx = 10,anchor="e",side="right")
+        label_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+        button_frame   .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+        if language_given == "en":
+            button_yes.configure(text = "YES")
+            button_no.configure(text = "Cancel")
+        child_root.update()
+        child_root.update_idletasks()
+        child_root.focus()
+        child_root.focus_force()
+        child_root.grab_set()
+        child_root.wait_window()
+        return selected_option
+
+    @classmethod
+    def licence_window(cls,language_given="cz"):
+        def close_prompt(child_root):
+            child_root.grab_release()
+            child_root.destroy()
+
+        user_HWID = Tools.get_volume_serial()
+        prompt_message1 = "Nemáte platnou licenci pro spuštění aplikace jhv_MAZ."
+        prompt_message2 = f"Váš HWID:"
+        prompt_message3 = f"\n{user_HWID}\n"
+        prompt_message4 = "odešlete na email: "
+        prompt_message5 = "jakub.hlavacek@jhv.cz "
+        prompt_message6 = "s žádostí o licenci."
+        title_message = "Upozornění"
+
+        if language_given == "en":
+            prompt_message1 = "You do not have a valid license to run the application jhv_MAZ."
+            prompt_message2 = f"Your HWID:"
+            prompt_message3 = f"\n{user_HWID}\n"
+            prompt_message4 = "send to email: "
+            prompt_message5 = "jakub.hlavacek@jhv.cz "
+            prompt_message6 = "with an application for a license."
+            title_message = "Notice"
+            
+        child_root = customtkinter.CTkToplevel(fg_color="#212121")
+        child_root.after(200, lambda: child_root.iconbitmap(app_icon))
+        child_root.title(title_message)
+        label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        proceed_label = customtkinter.CTkLabel(master = label_frame,text = prompt_message1,font=("Arial",25,"bold"),anchor="w",justify="left")
+        proceed_label.pack(pady=(5,0),padx=10,anchor="w",side = "left")
+        label_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+
+        text_widget = tk.Text(master = child_root,background="#212121",borderwidth=0,height=9)
+        Tools.add_colored_line(text_widget,text=prompt_message2,color="gray84",font=("Arial",16),no_indent=True)
+        Tools.add_colored_line(text_widget,text=prompt_message3,color="white",font=("Arial",16,"bold"),no_indent=True)
+        Tools.add_colored_line(text_widget,text=prompt_message4,color="gray84",font=("Arial",16),no_indent=True, sameline=True)
+        Tools.add_colored_line(text_widget,text=prompt_message5,color="skyblue",font=("Arial",16),no_indent=True, sameline=True)
+        Tools.add_colored_line(text_widget,text=prompt_message6,color="gray84",font=("Arial",16),no_indent=True, sameline=True)
+        text_widget    .pack(pady=10,padx=(30,10),anchor="w",side = "top",fill="both",expand=True)
+
+        button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        button_close =    customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+        button_close     .pack(pady = 5, padx = 10,anchor="e",side="right")
+        button_frame   .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+
+        if language_given == "en":
+            button_close.configure(text = "Close")
+        child_root.update()
+        child_root.update_idletasks()
+        child_root.geometry("800x260")
+        child_root.focus()
+        child_root.focus_force()
+        child_root.grab_set()
 
 class Tools:
     task_name = "jhv_MAZ_startup_tray_setup"
@@ -395,7 +528,7 @@ class Tools:
         return [output,corrected_path,name_of_selected_file]
 
     @classmethod
-    def add_colored_line(cls,text_widget, text, color,font=None,delete_line = None,no_indent=None):
+    def add_colored_line(cls,text_widget, text, color,font=None,delete_line = None,no_indent=None,sameline=False):
         """
         Vloží řádek do console
         """
@@ -410,9 +543,15 @@ class Tools:
             else:
                 text_widget.tag_configure(color, foreground=color,font=font)
                 if no_indent:
-                    text_widget.insert(tk.END,text+"\n", color)
+                    if sameline:
+                        text_widget.insert(tk.END,text, color)
+                    else:
+                        text_widget.insert(tk.END,text+"\n", color)
                 else:
-                    text_widget.insert(tk.END,"    > "+ text+"\n", color)
+                    if sameline:
+                        text_widget.insert(tk.END,"    > "+ text, color)
+                    else:
+                        text_widget.insert(tk.END,"    > "+ text+"\n", color)
 
             text_widget.configure(state=tk.DISABLED)
         except Exception as e:
@@ -525,42 +664,6 @@ class Tools:
             return False
 
     @classmethod
-    def call_again_as_admin(cls,input_flag:str,window_title,main_title):
-        def run_as_admin():# Vyžádání admin práv: nefunkční ve vscode
-            if not Tools.is_admin():
-                pid = "None"
-                try:
-                    pid = os.getpid()
-                except Exception:
-                    pass
-                ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join([input_flag,str(pid)]), None, 1)
-                sys.exit()
-
-        def close_prompt(child_root):
-            child_root.grab_release()
-            child_root.destroy()
-
-        child_root = customtkinter.CTkToplevel()
-        child_root.after(200, lambda: child_root.iconbitmap(app_icon))
-        child_root.title(window_title)
-        label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-        proceed_label = customtkinter.CTkLabel(master = label_frame,text = main_title,font=("Arial",25),anchor="w",justify="left")
-        proceed_label.pack(pady=5,padx=10,anchor="w",side = "left")
-        button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-        button_yes =    customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: run_as_admin())
-        button_no =     customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
-        button_no       .pack(pady = 5, padx = 10,anchor="e",side="right")
-        button_yes      .pack(pady = 5, padx = 10,anchor="e",side="right")
-        label_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
-        button_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
-
-        child_root.update()
-        child_root.update_idletasks()
-        child_root.focus()
-        child_root.focus_force()
-        child_root.grab_set()
-
-    @classmethod
     def remove_task_from_TS(cls,name_of_task):
         cmd_command = f"schtasks /Delete /TN {name_of_task} /F"
         # subprocess.call(cmd_command,shell=True,text=True)
@@ -614,6 +717,7 @@ class Tools:
             files_to_keep = int(sys.argv[5])
             more_dirs = int(sys.argv[6])
             selected_option = int(sys.argv[7])
+            by_creation_date = int(sys.argv[8])
         else:
             print("deleting system entry: ",param_given)
             task_name = str(param_given[0])
@@ -622,6 +726,7 @@ class Tools:
             files_to_keep = int(param_given[3])
             more_dirs = int(param_given[4])
             selected_option = int(param_given[5])
+            by_creation_date = int(param_given[6])
 
         cutoff_date = Deleting.get_cutoff_date(days=max_days)
         text_file_data = Tools.read_json_config()
@@ -633,6 +738,11 @@ class Tools:
         else:
             more_dirs = True
 
+        if by_creation_date == 0:
+            by_creation_date = False
+        else:
+            by_creation_date = True
+
         del_instance = Deleting.whole_deleting_function(
             deleting_path,
             more_dirs=more_dirs,
@@ -641,7 +751,8 @@ class Tools:
             cutoff_date_given=cutoff_date,
             supported_formats=supported_formats_deleting,
             testing_mode=False,
-            to_delete_folder_name=to_delete_folder_name
+            to_delete_folder_name=to_delete_folder_name,
+            creation_date=by_creation_date
             )
         output_data = del_instance.main()
         # output_message = f"|||Datum provedení: {output_data[3]}||Zkontrolováno: {output_data[0]} souborů||Starších: {output_data[1]} souborů||Smazáno: {output_data[2]} souborů"
@@ -725,44 +836,62 @@ class Tools:
             Tools.save_to_json_config(current_paths,"path_history_list")
 
     @classmethod
-    def confirm_window(cls,prompt_message,title_message):
-        selected_option = False
-        def selected_yes(child_root):# Vyžádání admin práv: nefunkční ve vscode
-            child_root.grab_release()
-            child_root.destroy()
-            nonlocal selected_option
-            selected_option = True
+    def check_licence(cls):
+        global global_licence_load_error 
+        # Načtení veřejného klíče
+        with open(Tools.resource_path("public.pem"), "rb") as f:
+            public_key = serialization.load_pem_public_key(f.read())
 
-        def close_prompt(child_root):
-            child_root.grab_release()
-            child_root.destroy()
-            nonlocal selected_option
-            selected_option = False
+        # Načtení licence a podpisu
+        if os.path.exists(initial_path + "/license.lic"):
+            with open(initial_path + "/license.lic", "r") as f:
+                lines = f.readlines()
+        else:
+            global_licence_load_error = True
+            return "verification error"
+
+        # Ověření podpisu
+        licence_data = lines[0].strip()  # První řádek je expirace
+        signature = bytes.fromhex(lines[1].strip())  # Druhý řádek je podpis
+
+        # Ověření podpisu
+        try:
+            public_key.verify(
+                signature,
+                licence_data.encode(),
+                padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+                hashes.SHA256()
+            )
             
-        child_root = customtkinter.CTkToplevel()
-        child_root.after(200, lambda: child_root.iconbitmap(app_icon))
-        child_root.title(title_message)
-        label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-        proceed_label = customtkinter.CTkLabel(master = label_frame,text = prompt_message,font=("Arial",25),anchor="w",justify="left")
-        proceed_label.pack(pady=5,padx=10,anchor="w",side = "left")
-        button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-        button_yes =   customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: selected_yes(child_root))
-        button_no =    customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
-        button_no      .pack(pady = 5, padx = 10,anchor="e",side="right")
-        button_yes     .pack(pady = 5, padx = 10,anchor="e",side="right")
-        label_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
-        button_frame   .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
-        child_root.update()
-        child_root.update_idletasks()
-        child_root.focus()
-        child_root.focus_force()
-        child_root.grab_set()
-        child_root.wait_window()
-        return selected_option
+            # Ověření expirace
+            exp_date = datetime.datetime.strptime(licence_data.split(":")[1], "%d.%m.%Y")
+            hwid_lic = licence_data.split("|")[0]
+            if hwid_lic != Tools.get_volume_serial():
+                print("now valid hwid")
+                global_licence_load_error = True
+                return "verification error"
+
+            if exp_date >= datetime.datetime.today():
+                print(f"License valid until: {exp_date.date()}")
+                return exp_date.date()
+            else:
+                global_licence_load_error = True
+                return f"EXPIRED: {exp_date.date()}"
+
+        except Exception as e:
+            print("License verification error!", e)
+            global_licence_load_error = True
+            return "verification error"
+
+    @classmethod
+    def get_volume_serial(cls):
+        output = subprocess.check_output('wmic diskdrive get serialnumber', shell=True).decode().split("\n")[1].strip()
+        return output.rstrip(".")
 
 initial_path = Tools.get_init_path()
 print("init path: ",initial_path)
 app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
+app_licence_validity = Tools.check_licence()
 
 class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
     """
@@ -827,7 +956,7 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
                     elif "Execute file deleting" in received_data:
                         received_params = received_data.split("|||")
                         print("received_params: ",received_params)
-                        params_to_send = [received_params[1],received_params[2],received_params[3],received_params[4],received_params[5],received_params[6]]
+                        params_to_send = [received_params[1],received_params[2],received_params[3],received_params[4],received_params[5],received_params[6],received_params[7]]
                         print("params to send: ",params_to_send)
                         del_thread = threading.Thread(target=Tools.deleting_via_cmd,args=[params_to_send],name="Deleting_thread")
                         del_thread.start()
@@ -957,11 +1086,11 @@ class WindowsBalloonTip:
 
 load_gui=True
 print("SYSTEM: ",sys.argv)
-if len(sys.argv) > 1:
+if len(sys.argv) > 1 and not global_licence_load_error:
     if sys.argv[1] == "deleting":
         if Tools.check_runing_app_duplicity():
             pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
-            pipeline_duplex_instance.call_checking(f"Execute file deleting",[str(sys.argv[2]),str(sys.argv[3]),int(sys.argv[4]),int(sys.argv[5]),int(sys.argv[6]),int(sys.argv[7])])
+            pipeline_duplex_instance.call_checking(f"Execute file deleting",[str(sys.argv[2]),str(sys.argv[3]),int(sys.argv[4]),int(sys.argv[5]),int(sys.argv[6]),int(sys.argv[7]),int(sys.argv[8])])
             load_gui = False
             sys.exit(0)
         else: # aplikace není spuštěna - jen spustím a vezme si systémové patametry
@@ -987,7 +1116,7 @@ if load_gui:
         pipeline_duplex = system_pipeline_communication(exe_name)# Establishment of pipeline server for duplex communication between running applications
         customtkinter.set_appearance_mode("dark")
         customtkinter.set_default_color_theme("dark-blue")
-        root=customtkinter.CTk()
+        root=customtkinter.CTk(fg_color="#212121")
         root.geometry("1200x900")
         root.title("jhv_MAZ v_1.0.0")
         root.wm_iconbitmap(app_icon)
@@ -1061,7 +1190,6 @@ class main_menu:
         """
         Funkce spouští základní menu při spuštění aplikace (MAIN)
         """
-
         def change_app_language(new_lan,refresh=False):
             if not refresh:
                 if Tools.read_json_config()[11] != new_lan:
@@ -1075,6 +1203,9 @@ class main_menu:
                 change_log_label.configure(text="List of recently made changes: ")
                 resources_load_error.configure(text=f"Failed to load configuration file ({config_filename})")
                 pick_language_label.configure(text="Select language:")
+                licence_info_label.configure(text="License:")
+                if not global_licence_load_error:
+                    licence_info_status.configure(text=f"valid until {app_licence_validity}")
             else:
                 new_deleting.configure(text="Nastavit nové mazání")
                 task_manager.configure(text="Zobrazit nastavené mazání")
@@ -1083,6 +1214,9 @@ class main_menu:
                 change_log_label.configure(text="Seznam posledně provedených změn: ")
                 resources_load_error.configure(text=f"Nepodařilo se načíst konfigurační soubor ({config_filename})")
                 pick_language_label.configure(text="Vybrat jazyk:")
+                licence_info_label.configure(text="Licence:")
+                if not global_licence_load_error:
+                    licence_info_status.configure(text=f"platná do {app_licence_validity}")
 
         if clear_root:
             self.root.after(0, lambda:self.clear_frames())
@@ -1129,10 +1263,17 @@ class main_menu:
         eng_button.pack(pady =5,padx=5,side="left",anchor="w")
         language_frame.pack(pady =20,padx=20,side="right",anchor="s")
         frame_with_buttons_right.pack(pady=0,padx=0,fill="both",expand=True,side = "right")
+
+        licence_info_frame = customtkinter.CTkFrame(master=frame_with_buttons,corner_radius=0,fg_color="#212121")
+        licence_info_label = customtkinter.CTkLabel(master=licence_info_frame,font=("Arial",24,"bold"),text="Licence:")
+        licence_info_status = customtkinter.CTkLabel(master=licence_info_frame,font=("Arial",24),text="")
+        licence_info_label.pack(pady =5,padx=(5,0),side="left",anchor="w")
+        licence_info_status.pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
+        licence_info_frame.pack(pady =30,padx=20,side="left",anchor="s")
         frame_with_buttons.pack(pady=0,padx=0,fill="both",expand=True,side = "left")
         self.fill_changelog(change_log)
         change_app_language(Tools.read_json_config()[11],refresh = True)
-        
+
         def maximalize_window(e):
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
             currently_focused = str(self.root.focus_get())
@@ -1144,8 +1285,22 @@ class main_menu:
             else:
                 self.root.after(0, lambda:self.root.state('zoomed'))
             self.root.update()
-        
         self.root.bind("<f>",maximalize_window)
+        
+        if global_licence_load_error:
+            new_deleting.configure(state="disabled")
+            task_manager.configure(state="disabled")
+            deleting_history.configure(state="disabled")
+            advanced_button.configure(state="disabled")
+            if app_licence_validity == "verification error":
+                licence_info_status.configure(text="chyba ověření")
+            elif "EXPIRED:" in app_licence_validity:
+                licence_info_status.configure(text=app_licence_validity.replace("EXPIRED:","platnost vypršela:"))
+
+            if self.selected_language == "en":
+                licence_info_status.configure(text=app_licence_validity)
+            self.root.after(500, lambda: Subwindows.licence_window(self.selected_language))
+
         # initial promenna aby se to nespoustelo porad do kola pri navratu do menu (system argumenty jsou stále uložené v aplikaci)
         if len(sys.argv) > 1 and initial == True:
             raw_path = str(sys.argv[1])
@@ -1169,9 +1324,9 @@ class main_menu:
             if self.selected_language == "en":
                 require_admin_msg1 = "Notice"
                 require_admin_msg2 = "The application requires rights to set up automatic startup\n     - can be changed in the settings\n\nWould you like to restart the application as an administrator?"
-            self.root.after(1000, lambda: Tools.call_again_as_admin("admin_menu",require_admin_msg1,require_admin_msg2))
-        if initial and len(sys.argv) == 1:
-            self.root.after(100, lambda: self.call_deleting_option())
+            self.root.after(1000, lambda: Subwindows.call_again_as_admin("admin_menu",require_admin_msg1,require_admin_msg2,self.selected_language))
+        # if initial and len(sys.argv) == 1:
+        #     self.root.after(100, lambda: self.call_deleting_option())
         try:
             self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
             self.root.mainloop()
@@ -1243,7 +1398,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 if self.selected_language == "en":
                     require_admin_msg1 = "Notice"
                     require_admin_msg2 = "The application requires rights to set up automatic startup\n\n- would you like to restart the application as an administrator?"
-                Tools.call_again_as_admin("settings_tray",require_admin_msg1,require_admin_msg2)
+                Subwindows.call_again_as_admin("settings_tray",require_admin_msg1,require_admin_msg2,self.selected_language)
                 main_console.configure(text = "Jsou vyžadována admin práva",text_color="red")
                 if self.selected_language == "en":
                     main_console.configure(text = "Admin rights required",text_color="red")
@@ -1263,7 +1418,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 if self.selected_language == "en":
                     require_admin_msg1 = "Notice"
                     require_admin_msg2 = "The application requires rights to remove automatic startup\n\n- would you like to restart the application as an administrator?"
-                Tools.call_again_as_admin("settings_tray_del",require_admin_msg1,require_admin_msg2)
+                Subwindows.call_again_as_admin("settings_tray_del",require_admin_msg1,require_admin_msg2,self.selected_language)
                 main_console.configure(text = "Jsou vyžadována admin práva",text_color="red")
                 if self.selected_language == "en":
                     main_console.configure(text = "Admin rights required",text_color="red")
@@ -1518,7 +1673,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             if self.selected_language == "en":
                 confirm_window_label1 = "Are you sure you want to delete the history of embedded paths?"
                 confirm_window_label2 = "Notice"
-            confirm = Tools.confirm_window(confirm_window_label1,confirm_window_label2)
+            confirm = Subwindows.confirm_window(confirm_window_label1,confirm_window_label2,self.selected_language)
             if confirm == True:
                 Tools.add_new_path_to_history("delete_history")
                 main_console.configure(text="Historie vložených cest byla vymazána",text_color="orange")
@@ -1910,7 +2065,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             else:
                 path = check
                 if self.checkbox_testing.get() != 1:
-                    if self.more_dirs == 1 and self.selected_option != 3: # sublozky, ne u adresaru...
+                    if self.more_dirs == True and self.selected_option != 3: # sublozky, ne u adresaru...
                         confirm_prompt_msg = f"Opravdu si přejete spustit navolené mazání souborů v cestě:\n{path}\na procházet přitom i SUBSLOŽKY?"
                         if self.selected_language == "en":
                             confirm_prompt_msg = f"Do you really want to start the custom deletion of files in the path:\n{path}\nand browse SUBFOLDERS?"
@@ -1924,9 +2079,9 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                             confirm_prompt_msg = f"Do you really want to start the custom deletion of files in the path:\n{path}"
                     # confirm = tk.messagebox.askokcancel("Potvrzení", confirm_prompt_msg)
                     if self.selected_language == "en":
-                        confirm = Tools.confirm_window(confirm_prompt_msg,"Notice")
+                        confirm = Subwindows.confirm_window(confirm_prompt_msg,"Notice",self.selected_language)
                     else:
-                        confirm = Tools.confirm_window(confirm_prompt_msg,"Upozornění")
+                        confirm = Subwindows.confirm_window(confirm_prompt_msg,"Upozornění",self.selected_language)
                 else: # pokud je zapnut rezim testovani
                     confirm = True
 
@@ -1997,6 +2152,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 else:
                     Tools.add_colored_line(self.console,str(new_row),"white")
                 self.console.update_idletasks()
+                self.console.see(tk.END)
                 self.root.update_idletasks()
                 previous_len +=1
 
@@ -2339,8 +2495,10 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         checkbox_creation_date.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
         checkbox_modification_date.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
         decision_date_frame.pack(pady = (0,0),padx =0,side="top",anchor="w",fill="x")
-        checkbox_modification_date.select()
-        self.by_creation_date = False
+        if self.by_creation_date:
+            checkbox_creation_date.select()
+        else:
+            checkbox_modification_date.select()
         if self.testing_mode:
             self.checkbox_testing.select()
         if self.more_dirs:
@@ -2405,7 +2563,8 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         - podporované datumové separátory: [".","/","_"]
         """
         self.clear_frame(self.changable_frame)
-        
+        self.more_dirs = False
+
         def set_cutoff_date():
             # if set_month.get() == self.cutoff_date[1] and set_day.get() == self.cutoff_date[0] and set_day.get() == self.cutoff_date[2]
             input_month = set_month.get()
@@ -2648,8 +2807,10 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         checkbox_modification_date.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
         if option == 4:
             decision_date_frame.pack(pady = (0,0),padx =0,side="top",anchor="w",fill="x")
-            checkbox_modification_date.select()
-            self.by_creation_date = False
+            if self.by_creation_date:
+                checkbox_creation_date.select()
+            else:
+                checkbox_modification_date.select()
         if self.testing_mode:
             self.checkbox_testing.select()
        
@@ -2748,7 +2909,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 repaired_freq_param = check_freq_format(str(new_task["frequency"]))
                 path_app_location = str(initial_path+"/"+exe_name) 
                 # task_command = "\""+ path_app_location+ " deleting " + task_name + " " + str(new_task["operating_path"]) + " " + str(new_task["max_days"]) + " " + str(new_task["files_to_keep"]) + "\" /SC DAILY /ST " + repaired_freq_param
-                task_command = "\""+ path_app_location+ " deleting " + task_name + " " + str(new_task["operating_path"]) + " " + str(new_task["max_days"]) + " " + str(new_task["files_to_keep"]) + " " + str(new_task["more_dirs"]) + " " + str(new_task["selected_option"]) + "\" /SC DAILY /ST " + repaired_freq_param
+                task_command = "\""+ path_app_location+ " deleting " + task_name + " " + str(new_task["operating_path"]) + " " + str(new_task["max_days"]) + " " + str(new_task["files_to_keep"]) + " " + str(new_task["more_dirs"]) + " " + str(new_task["selected_option"]) + " " + str(new_task["creation_date"]) + "\" /SC DAILY /ST " + repaired_freq_param
                 process = subprocess.Popen(f"schtasks /Create /TN {task_name} /TR {task_command}",
                                             stdout=subprocess.PIPE,
                                             stderr=subprocess.PIPE,
@@ -2766,7 +2927,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 output_message = "out"+str(stdout) +"err"+str(stderr)
                 print(output_message)
                 if "SUCCESS" in stdout_str:
-                    os.startfile("taskschd.msc")
+                    # os.startfile("taskschd.msc")
                     return True
                 else:
                     return False
@@ -2783,6 +2944,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                         'selected_option': self.selected_option,
                         'date_added': str(Deleting.get_current_date()[2]),
                         'del_log': [],
+                        'creation_date': checkbox_creation_date.get(),
                         }
 
             try:
@@ -2877,6 +3039,21 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                         
                 path_context_menu.tk_popup(context_menu_button.winfo_rootx(),context_menu_button.winfo_rooty()+50)
 
+        def set_decision_date(input_arg):
+            """
+            input_arg:
+            - creation
+            - modification
+            """
+
+            if input_arg == "creation":
+                self.by_creation_date = True
+                checkbox_modification_date.deselect()
+
+            elif input_arg == "modification":
+                self.by_creation_date = False
+                checkbox_creation_date.deselect()
+
         window = customtkinter.CTkToplevel()
         window.after(200, lambda: window.iconbitmap(app_icon))
         window.title("Nastavení nového úkolu")
@@ -2895,7 +3072,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             if self.more_dirs:
                 subfolder_checkbox.select()
 
-        path_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
+        path_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0,fg_color="#212121")
         context_menu_button  =  customtkinter.CTkButton(master = path_frame, width = 50,height=50, text = "V",font=("Arial",20,"bold"),corner_radius=0,fg_color="#505050")
         operating_path = customtkinter.CTkEntry(master = path_frame,font=("Arial",20),height=50,corner_radius=0)
         explorer_btn = customtkinter.CTkButton(master = path_frame,text = "...",font=("Arial",22,"bold"),width = 50,height=50,corner_radius=0,command=lambda: call_browse_directories())
@@ -2906,6 +3083,19 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         explorer_btn.pack(pady = (10,0),padx = (0,10),side="left",anchor="w")
         path_frame.pack(side="top",anchor="w",fill="x",expand = True)
         context_menu_button.bind("<Button-1>", call_path_context_menu)
+
+        decision_date_frame = customtkinter.CTkFrame(master=parameter_frame,corner_radius=0,fg_color="#212121")
+        decision_date_label = customtkinter.CTkLabel(master = decision_date_frame,text = "Řídit se podle: ",justify = "left",font=("Arial",20,"bold"))
+        checkbox_creation_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data vytvoření",font=("Arial",18),command=lambda:set_decision_date("creation"))
+        checkbox_modification_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data poslední změny",font=("Arial",18),command=lambda:set_decision_date("modification"))
+        decision_date_label.pack(pady = (10,10),padx =(10,0),side="left",anchor="w")
+        checkbox_creation_date.pack(pady = (10,10),padx =(10,0),side="left",anchor="w")
+        checkbox_modification_date.pack(pady = (10,10),padx =(10,0),side="left",anchor="w")
+        decision_date_frame.pack(pady = (0,0),padx =0,side="top",anchor="w",fill="x")
+        if self.by_creation_date:
+            checkbox_creation_date.select()
+        else:
+            checkbox_modification_date.select()
 
         older_then_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
         older_then_label = customtkinter.CTkLabel(master = older_then_frame,text = "Odstanit soubory starší než:",font=("Arial",22,"bold"))
@@ -3133,7 +3323,7 @@ def start_new_root():
     app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")
-    root=customtkinter.CTk()
+    root=customtkinter.CTk(fg_color="#212121")
     root.geometry("1200x900")
     root.title("jhv_MAZ v_1.0.0")
     root.wm_iconbitmap(app_icon)
