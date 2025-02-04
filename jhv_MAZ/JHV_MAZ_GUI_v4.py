@@ -207,17 +207,19 @@ class Tools:
         """
         found_processes = Tools.get_all_app_processes()
         print("found processes (duplicity): ",found_processes)
-        if found_processes[0] > 3:
+        if found_processes[0] > 1:
             return True
         else:
             return False
 
     @classmethod
     def resource_path(cls,relative_path):
+        #PYINSTALLER
         """ Get the absolute path to a resource, works for dev and for PyInstaller """
-        if hasattr(sys, '_MEIPASS'):
-            return os.path.join(sys._MEIPASS, relative_path)
-        return os.path.join(os.path.abspath("."), relative_path)
+        # if hasattr(sys, '_MEIPASS'):
+        # return os.path.join(os.path.abspath("."), relative_path)
+        BASE_DIR = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.abspath(".")
+        return os.path.join(BASE_DIR, relative_path)
     
     @classmethod
     def create_new_json_config(cls,default_value_list,default_labels):
@@ -237,7 +239,7 @@ class Tools:
         ]
         
 
-        with open(cls.config_json_filename, "w") as file:
+        with open(initial_path+cls.config_json_filename, "w") as file:
             json.dump({"settings": updated_settings}, file, indent=4)
 
     @classmethod
@@ -297,7 +299,7 @@ class Tools:
         if os.path.exists(initial_path+cls.config_json_filename):
             try:
                 output_data = []
-                with open(cls.config_json_filename, "r") as file:
+                with open(initial_path+cls.config_json_filename, "r") as file:
                     data = json.load(file)
 
                 settings = data["settings"]
@@ -306,7 +308,7 @@ class Tools:
                 for item in settings:
                     output_data.append(item['value'])
 
-                print("config data: ", output_data, len(output_data))
+                # print("config data: ", output_data, len(output_data))
                 return output_data
 
             except Exception as e:
@@ -366,7 +368,7 @@ class Tools:
 
         
         if os.path.exists(initial_path + cls.config_json_filename):
-            with open(cls.config_json_filename, "r") as file:
+            with open(initial_path+cls.config_json_filename, "r") as file:
                 data = json.load(file)
             settings = data["settings"]
             try:
@@ -422,7 +424,7 @@ class Tools:
             else:
                 rewrite_value(which_parameter,str(input_data))
                               
-            with open(cls.config_json_filename, "w") as file:
+            with open(initial_path+cls.config_json_filename, "w") as file:
                 if new_tasks == None:
                     json.dump({"settings": settings}, file, indent=4)
                 else:
@@ -1008,7 +1010,7 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
         checking = Tools.get_all_app_processes()
         print("SYSTEM application processes: ",checking)
         # if it is running more then one application, execute (root + self.root)
-        if checking[0]>2:
+        if checking[0]>1:
             pid_list = checking[1]
             # try to send command to every process which has application name
             for pids in pid_list:
@@ -1970,13 +1972,14 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             options0.configure(state = "disabled")
             options2.configure(state = "disabled")
             options3.configure(state = "disabled")
+            if self.selected_language == "en":
+                error_label.configure(text = "Failed to load the jhv_MAZ.json configuration file (settings have nowhere to save)")
 
         if self.selected_language == "en":
             label0.configure(text = "Set the desired parameters (settings will be saved even after the application is shut down): ")
             options0.configure(text = "Basic settings")
             options2.configure(text = "Initial parameters")
             options3.configure(text = "Supported formats")
-            error_label.configure(text = "Failed to load the jhv_MAZ.json configuration file (settings have nowhere to save)")
 
         def maximalize_window(e):
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
@@ -2027,6 +2030,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         self.more_dirs = False
         self.testing_mode = True
         self.by_creation_date = False
+        self.directories_to_keep = 10
         self.create_deleting_option_widgets()
  
     def call_extern_function(self,list_of_frames=[],function=""): # Tlačítko menu (konec, návrat do menu)
@@ -2107,6 +2111,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
 
     def del_files(self,path): # zde se volá externí script: Deleting
         del_option = self.selected_option
+        files_to_keep = self.files_to_keep
         if self.checkbox_testing.get() == 1:
             testing_mode = True
         else:
@@ -2119,11 +2124,14 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         def call_deleting_main(whole_instance):
             whole_instance.main()
 
+        if self.selected_option == 4:
+            files_to_keep = self.directories_to_keep
+
         running_deleting = Deleting.whole_deleting_function(
             path,
             more_dirs,
             del_option,
-            self.files_to_keep,
+            files_to_keep,
             self.cutoff_date,
             self.supported_formats_deleting,
             testing_mode,
@@ -2709,6 +2717,8 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 self.root.after(100, lambda: set_max_days(flag))
             elif flag == "max_days":
                 self.root.after(100, lambda: set_max_days(flag))
+            elif flag == "ftk":
+                self.root.after(100, lambda: set_files_to_keep())
 
         def set_testing_mode():
             if self.checkbox_testing.get() == 1:
@@ -2730,6 +2740,29 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             elif input_arg == "modification":
                 self.by_creation_date = False
                 checkbox_creation_date.deselect()
+
+        def set_files_to_keep():
+            input_files_to_keep = files_to_keep_set.get()
+            if input_files_to_keep.isdigit():
+                if int(input_files_to_keep) >= 0:
+                    self.directories_to_keep = input_files_to_keep
+                    if self.selected_language == "en":
+                        summary_label.configure(text= f"Directories (including all subdirectories) that are evaluated as older than the set date will be deleted\nwhile retaining the minimum number of directories: {input_files_to_keep}")
+                        Tools.add_colored_line(console, "Number of older directories left set to: " + str(input_files_to_keep),"green",None,True)
+                    else:
+                        summary_label.configure(text= f"Budou smazány adresáře (včetně všech subadresářů), které jsou vyhodnoceny jako starší než nastavené datum\npřičemž bude ponechán minimální počet složek: {input_files_to_keep}")
+                        Tools.add_colored_line(console, "Počet ponechaných starších adresářů nastaven na: " + str(input_files_to_keep),"green",None,True)
+                else:
+                    if self.selected_language == "en":
+                        Tools.add_colored_line(console, "Out of range","red",None,True)
+                    else:
+                        Tools.add_colored_line(console, "Mimo rozsah","red",None,True)
+            else:
+                if self.selected_language == "en":
+                    Tools.add_colored_line(console, "You didn't enter a number","red",None,True)
+                else:
+                    Tools.add_colored_line(console, "Nazadali jste číslo","red",None,True)
+
 
         top_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121",height=240)
         left_side = customtkinter.CTkFrame(master=top_frame,corner_radius=0,fg_color="#212121")
@@ -2771,7 +2804,21 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         max_days_entry. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
         days_label2. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
         day_format_input_frame.pack(padx=5,pady=(0,10),side="top",anchor="w")
+        if option == 4:
+            day_format_input_frame.pack(padx=5,pady=(0,0),side="top",anchor="w")
         max_days_entry.bind("<Key>",lambda e: update_entry(e,flag="cutoff"))
+
+        ftk_frame = customtkinter.CTkFrame(master=user_input_frame,corner_radius=0,fg_color="#212121")
+        ftk_label = customtkinter.CTkLabel(master = ftk_frame,text = "‣ přičemž bude ponecháno:",justify = "left",font=("Arial",20))
+        files_to_keep_set = customtkinter.CTkEntry(master = ftk_frame,width=70,font=("Arial",20), placeholder_text= self.directories_to_keep)
+        ftk_label2 = customtkinter.CTkLabel(master = ftk_frame,text = "adresářů, vyhodnocených, jako starších",justify = "left",font=("Arial",20))
+        ftk_label. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        files_to_keep_set. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        ftk_label2. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        if option == 4:
+            ftk_frame.pack(padx=5,pady=(0,10),side="top",anchor="w")
+            files_to_keep_set.bind("<Key>",lambda e: update_entry(e,flag="ftk"))
+            files_to_keep_set.insert(0,self.directories_to_keep)
 
         directories_image = customtkinter.CTkImage(Image.open(Tools.resource_path("images/directories.png")),size=(240, 190))
         image_description = customtkinter.CTkLabel(master = right_side,text = "Ukázka:",font=("Arial",20,"bold"))
@@ -2820,6 +2867,8 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             insert_button.configure(text= "Insert today's date")
             days_label.configure(text= "‣ it means older than:")
             days_label2.configure(text= "days")
+            ftk_label.configure(text= "‣ whereby it will be retained:")
+            ftk_label2.configure(text= "directories, evaluated as older")
             image_description.configure(text= "Example:")
             summary_label.configure(text= "Only directories (including all subdirectories) that contain a supported date format in their name and are evaluated as older than the set date will be deleted")
             deletable_formats.configure(text= f"Supported date formats: {Deleting.supported_date_formats}\nSupported date separators: {Deleting.supported_separators}")
@@ -2829,10 +2878,10 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         if option == 4:
             self.selected_option =4
             option_title.configure(text = "Mazání adresářů starších než: nastavené datum")
-            summary_label.configure(text= "Budou smazány VŠECHNY adresáře (včetně všech subadresářů), které jsou vyhodnoceny jako starší než nastavené datum")
+            summary_label.configure(text= f"Budou smazány adresáře (včetně všech subadresářů), které jsou vyhodnoceny jako starší než nastavené datum\npřičemž bude ponechán minimální počet složek: {self.directories_to_keep}")
             if self.selected_language == "en":
                 option_title.configure(text = "Deleting directories older than: set date")
-                summary_label.configure(text= "ALL directories (including all subdirectories) that are evaluated as older than the set date will be deleted")    
+                summary_label.configure(text= f"Directories (including all subdirectories) that are evaluated as older than the set date will be deleted\nwhile retaining the minimum number of directories: {self.directories_to_keep}")
                 decision_date_label.configure(text = "To decide by:")
                 checkbox_creation_date.configure(text = "date of creation")
                 checkbox_modification_date.configure(text = "date of modification")
@@ -3114,7 +3163,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         minimum_file_entry = customtkinter.CTkEntry(master = minimum_file_frame,font=("Arial",20),width=100,height=40,corner_radius=0)
         minimum_file_label.pack(pady = (10,0),padx = (10,10),side="left")
         minimum_file_entry.pack(pady = (10,0),padx = (0,10),side="left")
-        if self.selected_option != 3 and self.selected_option != 4:
+        if self.selected_option != 3:
             minimum_file_frame.pack(side="top",fill="x",anchor="w")
         minimum_file_entry.bind("<Key>",lambda e: check_entry(e,number=True))
 
@@ -3143,6 +3192,9 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         max_days = Deleting.get_max_days(self.cutoff_date)
         self.older_then_entry.insert("0",max_days)
         minimum_file_entry.insert("0",self.files_to_keep)
+        if self.selected_option == 4:
+            minimum_file_entry.delete("0","200")
+            minimum_file_entry.insert("0",self.directories_to_keep)
         frequency_entry.insert("0","12:00")
         refresh_cutoff_date()
 
@@ -3157,7 +3209,10 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             show_tasks_btn.configure(text = "Show set tasks")
             save_task_btn.configure(text = "Save new task")
             cancel_btn.configure(text = "Close")
-
+            decision_date_label.configure(text = "To decide by: ")
+            checkbox_modification_date.configure(text = "date modified")
+            checkbox_creation_date.configure(text = "date created")
+            
         if self.selected_option == 1:
             selected_option.configure(text = f"Zvolená možnost mazání: {self.selected_option}. (Redukce starších souborů)")
             if self.selected_language == "en":
@@ -3175,9 +3230,11 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         elif self.selected_option == 4:
             selected_option.configure(text = f"Zvolená možnost mazání: {self.selected_option}. (Mazání starších adresářů)")
             older_then_label.configure(text = "Odstanit adresáře starší než:")
+            minimum_file_label.configure(text = "Ponechat adresářů:")
             if self.selected_language == "en":
                 selected_option.configure(text = f"Selected delete option: {self.selected_option}. (Deleting older directories)")
                 older_then_label.configure(text = "Remove directories older than:")
+                minimum_file_label.configure(text = "Keep directories:")
         window.update()
         window.update_idletasks()
         # window_width = window.winfo_width()

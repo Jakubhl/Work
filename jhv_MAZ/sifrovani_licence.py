@@ -37,7 +37,7 @@ def make_licence(hwid):
         private_key = serialization.load_pem_private_key(f.read(), password=None)
 
     # Licence
-    licence_data = hwid+"|EXPIRES:31.12.2050"
+    licence_data = hwid+"|EXPIRES:31.12.2040"
 
     # Podepsání licence soukromým klíčem
     signature = private_key.sign(
@@ -91,5 +91,6 @@ def check_licence():
         print("Chyba ověření licence!", e)
 
 # generate_rsa_keys()
-make_licence("E823_8FA6_BF53_0001_001B_444A_4876_94E7")
+# make_licence("B841925X0SNLM7S") #kingspan
+make_licence("FSB5N690910705S61_00000001") #dell ntb pracovni
 # check_licence()

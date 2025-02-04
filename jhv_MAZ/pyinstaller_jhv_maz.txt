@@ -3,7 +3,7 @@ pyinstaller --noconfirm --onefile -w --console --icon=images\logo_TRIMAZKON.ico 
 
 pyinstaller --noconfirm --onefile -w --console --icon=images\logo_TRIMAZKON.ico --add-data images\*;images --name jhv_MAZ JHV_MAZ_GUI_v3.py
 
-pyinstaller --noconfirm --onefile -w --console --icon=images\logo_TRIMAZKON.ico --add-data images\*;images --add-data public.pem;. --name jhv_MAZ JHV_MAZ_GUI_v4.py
+pyinstaller --noconfirm --onefile -w --noconsole --icon=images\logo_TRIMAZKON.ico --add-data images\*;images --add-data public.pem;. --name jhv_MAZ JHV_MAZ_GUI_v4.py
 
 
 běží jeden pipeline server
@@ -21,3 +21,8 @@ běží jeden pipeline server
 	- u admina znovu načíst (nebo také ne, záleží jestli je task zrušen nebo nastaven)
 	- když vypínám admin celou apku, potřeba opět shodit tray a pokud má být spuštěný tray:
 		- potřeba spustit tray přes TS (příkaz "run_tray" zapíná pipeline server) porotže jinak by měla admin práva a kdybych chtěl spustit apku přes tray ikonu - nešlo by to (šlo by jen spustit jako admin)
+
+pro msi installer jsem upravoval:
+- resource path... neni to primo naicludovane v exe...
+- počet aplikací v call checking ze 2 na 1
+- počet aplikací v check_runing_app_duplicity ze 3 na 1

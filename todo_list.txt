@@ -792,7 +792,9 @@ jhv_MAZ - přidat do argumentů (pri volani) creation a modif date rozlisovani -
 jhv_MAZ - preložit tlačítka u confirm oken - hotovo
 jhv_MAZ - licencovat aplikaci - hotovo
 
-
+12:13 PM 2/4/2025
+jhv_MAZ - možnost 4 - ponechani minimalniho poctu složek - hotovo
+jhv_MAZ - přidat do vizualizace ukolu jestli je zvoleno podle creation nebo modification - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -814,10 +816,9 @@ TRIMAZKON - licencovat aplikaci
 TRIMAZKON - udelat specialni launcher na obrazky - aby se nenacitaly vsechny knihovny - aby to bylo rychlé
 
 
-jhv_MAZ - přidat do vizualizace ukolu jestli je zvoleno podle creation nebo modification
-jhv_MAZ - predbezna analyza souboru - x souboru starsich nez... (pres tlacitko?)
-jhv_MAZ - možnost 4 - ponechani minimalniho poctu složek
+jhv_MAZ - novy instaler, nelze spoustet ukoly
 
+jhv_MAZ - predbezna analyza souboru - x souboru starsich nez... (pres tlacitko?)
 
 
 ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...

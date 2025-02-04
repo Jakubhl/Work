@@ -79,7 +79,8 @@ class Tools:
 
 class tray_app_service:
     def __init__(self,initial_path,icon_path,exe_name,config_name):
-        self.app_icon = Tools.resource_path(icon_path)
+        # self.app_icon = Tools.resource_path(icon_path)
+        self.app_icon = icon_path
         self.config_filename = config_name
         self.initial_path = initial_path
         self.main_app_exe_name = exe_name
@@ -403,18 +404,28 @@ class tray_app_service:
             param3_label = customtkinter.CTkLabel(master=param3_frame,text = "Nastavení: ",font=("Arial",20,"bold"),anchor="w")
             older_then_str = str(tasks["max_days"])
             files_to_keep_str = str(tasks["files_to_keep"])
+            creation_date = "řídit se podle: data změny"
+            creation_date_eng = "to decide by: modification date"
+            if int(tasks["creation_date"]) == 1:
+                creation_date = "řídit se podle: data vytvoření"
+                creation_date_eng = "to decide by: creation date"
             param3_label2 = customtkinter.CTkLabel(master=param3_frame,text = "",font=("Arial",20),anchor="w")
             param3_label.pack(pady=10,padx=(10,0),anchor="w",side="left")
             param3_label2.pack(pady=10,padx=(10,0),anchor="w",side="left")
             param3_frame.pack(pady=(0,3),padx=3,fill="x",side="top")
-            if int(tasks["selected_option"]) != 3 and int(tasks["selected_option"]) != 4: # u adresářů se neprochází subsložky
-                param3_label2.configure(text = f"starší než: {older_then_str} dní, minimum = {files_to_keep_str} souborů")
+            if int(tasks["selected_option"]) == 3:
+                param3_label2.configure(text = f"starší než: {older_then_str} dní, {creation_date}")
                 if self.selected_language == "en":
-                    param3_label2.configure(text = f"older then: {older_then_str} days, minimum = {files_to_keep_str} files")
-            else:
-                param3_label2.configure(text = f"starší než: {older_then_str} dní")
+                    param3_label2.configure(text = f"older then: {older_then_str} days, {creation_date_eng}")
+            elif int(tasks["selected_option"]) == 4:
+                param3_label2.configure(text = f"starší než: {older_then_str} dní, minimum = {files_to_keep_str} adresářů, {creation_date}")
                 if self.selected_language == "en":
-                    param3_label2.configure(text = f"older then: {older_then_str} days")
+                    param3_label2.configure(text = f"older then: {older_then_str} days, minimum = {files_to_keep_str} directories, {creation_date_eng}")
+            else:                    
+                param3_label2.configure(text = f"starší než: {older_then_str} dní, minimum = {files_to_keep_str} souborů, {creation_date}")
+                if self.selected_language == "en":
+                    param3_label2.configure(text = f"older then: {older_then_str} days, minimum = {files_to_keep_str} files, {creation_date_eng}")
+
                 
             param3_label.bind("<Button-3>",lambda e,widget = "settings",task=tasks: self.show_context_menu(child_root,e,widget,task))
             param3_label2.bind("<Button-3>",lambda e,widget = "settings",task=tasks: self.show_context_menu(child_root,e,widget,task))
@@ -429,7 +440,6 @@ class tray_app_service:
                 param2_label.configure(text = "Working in: ")
                 param4_label.configure(text = "Browse subfolders: ")
                 param3_label.configure(text = "Parameters set: ")
-
             i+=1
 
         if len(all_tasks) == 0:
@@ -493,21 +503,25 @@ class tray_app_service:
             all_task_logs = task["del_log"]
             if get_log_count:
                 return len(all_task_logs)
-            
+            file_str = "souborů"
+            file_str_eng = "files"
             for logs in all_task_logs:
+                if int(tasks["selected_option"]) == 4:
+                    file_str = "adresářů"
+                    file_str_eng = "directories"
                 # label_data = str(log_data[0])+"\n"+str(log_data[1])+"\n"+str(log_data[2])+"\n"+str(log_data[3])
                 date_added_label = "Datum provedení: " + str(logs["del_date"]) + "\n"
-                files_checked_label = "Zkontrolováno: "+str(logs["files_checked"]) + " souborů\n"
-                files_older_label ="Starších: "+str(logs["files_older"])+" souborů\n"
-                files_newer_label = "Novějších: "+str(logs["files_newer"])+" souborů\n"
-                files_deleted_label = "Smazáno: "+str(logs["files_deleted"])+" souborů\n"
+                files_checked_label = "Zkontrolováno: "+str(logs["files_checked"]) + f" {file_str}\n"
+                files_older_label ="Starších: "+str(logs["files_older"])+f" {file_str}\n"
+                files_newer_label = "Novějších: "+str(logs["files_newer"])+f" {file_str}\n"
+                files_deleted_label = "Smazáno: "+str(logs["files_deleted"])+f" {file_str}\n"
                 path_count_label = "Prohledáno: "+str(logs["path_count"])+" subsložek\n"
                 if self.selected_language == "en":
                     date_added_label = "Date of execution: "+str(logs["del_date"])+"\n"
-                    files_checked_label = "Total checked: "+str(logs["files_checked"])+" files\n"
-                    files_older_label = "Total older: "+str(logs["files_older"])+" files\n"
-                    files_newer_label = "Total newer: "+str(logs["files_newer"])+" files\n"
-                    files_deleted_label = "Total deleted: "+str(logs["files_deleted"])+" files\n"
+                    files_checked_label = "Total checked: "+str(logs["files_checked"])+f" {file_str_eng}\n"
+                    files_older_label = "Total older: "+str(logs["files_older"])+f" {file_str_eng}\n"
+                    files_newer_label = "Total newer: "+str(logs["files_newer"])+f" {file_str_eng}\n"
+                    files_deleted_label = "Total deleted: "+str(logs["files_deleted"])+f" {file_str_eng}\n"
                     path_count_label = "Browsed: "+str(logs["path_count"])+" subdirectories\n"
 
                 if int(tasks["selected_option"]) == 1:

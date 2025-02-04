@@ -118,7 +118,6 @@ class whole_deleting_function:
         self.directories_deleted = 0
         self.finish = False
 
-
     def make_dir(self,name,path):
         if not os.path.exists(path + name): #pokud uz neni vytvorena, vytvor...
             os.mkdir(path + name + "/")
@@ -429,6 +428,7 @@ class whole_deleting_function:
         """
         deleted_directores = 0
         directories_checked = 0
+        older_directories=0
         folder_list = [entry.name for entry in os.scandir(self.path) if entry.is_dir()]
         cutoff_days = self.calc_cutoffdays_given()
         cutoff_days = cutoff_days[0]
@@ -441,16 +441,18 @@ class whole_deleting_function:
                 folder_date = self.get_mod_date_of_file(self.path,folder_list[i],dir=True)
 
             if int(folder_date) < int(cutoff_days):
-                deleted_directores +=1
-                if self.testing_mode == True:
-                    self.make_dir(self.to_delete_folder,self.path)
-                    try:
-                        shutil.move(self.path + folder_list[i] , self.path + self.to_delete_folder + '/' + folder_list[i])
-                    except Exception as e:
-                        print("Nastala chyba: ",e)
-                    print(f"Mazání: {self.path + folder_list[i]}")
-                elif self.testing_mode == False:
-                    shutil.rmtree(self.path + folder_list[i])
+                older_directories +=1
+                if older_directories > self.files_to_keep:
+                    deleted_directores +=1
+                    if self.testing_mode == True:
+                        self.make_dir(self.to_delete_folder,self.path)
+                        try:
+                            shutil.move(self.path + folder_list[i] , self.path + self.to_delete_folder + '/' + folder_list[i])
+                        except Exception as e:
+                            print("Nastala chyba: ",e)
+                        print(f"Mazání: {self.path + folder_list[i]}")
+                    elif self.testing_mode == False:
+                        shutil.rmtree(self.path + folder_list[i])
         
         self.directories_deleted += deleted_directores
         self.directories_checked += directories_checked

@@ -46,6 +46,9 @@ Když je desynchronizace mezi lokalem a originem.
 git reset --hard origin/main
 git clean -fd
 
+windows exception:
+Add-MpPreference -ExclusionPath "C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\jhv_MAZ"
+
 
 
 
