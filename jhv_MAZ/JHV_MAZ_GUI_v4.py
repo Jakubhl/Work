@@ -164,6 +164,74 @@ class Subwindows:
         child_root.focus_force()
         child_root.grab_set()
 
+class WindowsBalloonTip:
+    """
+    Windows system notification (balloon tip).
+    """
+    _class_registered = False  # Ensures window class is registered only once
+
+    def __init__(self, title, msg, app_icon):
+        message_map = {
+            win32con.WM_DESTROY: self.OnDestroy,
+        }
+
+        hinst = GetModuleHandle(None)
+        class_name = "PythonTaskbar"
+        try:
+            if not WindowsBalloonTip._class_registered:
+                # Register the Window class once
+                wc = WNDCLASS()
+                wc.hInstance = hinst
+                wc.lpszClassName = class_name
+                wc.lpfnWndProc = message_map
+                RegisterClass(wc)
+                WindowsBalloonTip._class_registered = True  # Mark as registered
+        except Exception:
+            wc = WNDCLASS()
+            wc.hInstance = hinst
+            wc.lpszClassName = class_name
+            wc.lpfnWndProc = message_map
+            RegisterClass(wc)
+
+        # Create a new window (without re-registering the class)
+        style = win32con.WS_OVERLAPPED | win32con.WS_SYSMENU
+        self.hwnd = CreateWindow(class_name, "Taskbar", style, 
+                                 0, 0, win32con.CW_USEDEFAULT, win32con.CW_USEDEFAULT, 
+                                 0, 0, hinst, None)
+
+        UpdateWindow(self.hwnd)
+
+        # Load icon
+        icon_flags = win32con.LR_LOADFROMFILE | win32con.LR_DEFAULTSIZE
+        try:
+            hicon = LoadImage(hinst, app_icon, win32con.IMAGE_ICON, 0, 0, icon_flags)
+        except:
+            hicon = LoadIcon(0, win32con.IDI_APPLICATION)
+
+        # Display notification
+        # flags = win32gui.NIF_ICON | win32gui.NIF_MESSAGE | win32gui.NIF_TIP
+        flags = NIF_ICON | NIF_MESSAGE | NIF_TIP
+        nid = (self.hwnd, 0, flags, win32con.WM_USER+20, hicon, "tooltip")
+        Shell_NotifyIcon(NIM_ADD, nid)
+
+        Shell_NotifyIcon(NIM_MODIFY, 
+                         (self.hwnd, 0, NIF_INFO, win32con.WM_USER+20,
+                          hicon, "Balloon tooltip", msg, 200, title))
+
+        # time.sleep(10)  # Display the notification for 10 seconds
+        # self.cleanup()
+
+    def cleanup(self):
+        """ Removes the notification icon and destroys the window. """
+        nid = (self.hwnd, 0)
+        Shell_NotifyIcon(NIM_DELETE, nid)
+        DestroyWindow(self.hwnd)
+
+    def OnDestroy(self, hwnd, msg, wparam, lparam):
+        """ Handles window destruction. """
+        self.cleanup()
+        PostQuitMessage(0)  # Terminate the app.
+
 class Tools:
     task_name = "jhv_MAZ_startup_tray_setup"
     config_json_filename = config_filename
@@ -611,6 +679,7 @@ class Tools:
     
     @classmethod
     def is_thread_running(cls,name):
+        print(threading.enumerate())
         for thread in threading.enumerate():
             if thread.name == name:
                 return True
@@ -625,14 +694,16 @@ class Tools:
         if Tools.is_thread_running(cls.Tray_thread_name): # Pokud tray aplikace už běží nezapínej novou
             print("tray app is already running")
             return
-
+        
+        print("tray app is not running yet")
         def call_tray_class():
             tray_app_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
             tray_app_instance.main()
 
         blocking_task = threading.Thread(target=call_tray_class,name=cls.Tray_thread_name)
         blocking_task.start()
-    
+        print(threading.enumerate())
+
     @classmethod
     def establish_startup_tray(cls):
         """
@@ -1010,110 +1081,64 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
         checking = Tools.get_all_app_processes()
         print("SYSTEM application processes: ",checking)
         # if it is running more then one application, execute (root + self.root)
-        if checking[0]>1:
-            pid_list = checking[1]
-            # try to send command to every process which has application name
-            for pids in pid_list:
-                if pids != self.current_pid:
-                    try:
-                        pipe_name = f"jhv_MAZ_pipe_{pids}"
-                        self.client(pipe_name,command,parameters)
-                    except Exception:
-                        pass
-            return True
-        else:
-            return False
-
-class WindowsBalloonTip:
-    """
-    Windows system notification (balloon tip).
-    """
-    _class_registered = False  # Ensures window class is registered only once
-
-    def __init__(self, title, msg, app_icon):
-        message_map = {
-            win32con.WM_DESTROY: self.OnDestroy,
-        }
-
-        hinst = GetModuleHandle(None)
-        class_name = "PythonTaskbar"
-
-        if not WindowsBalloonTip._class_registered:
-            # Register the Window class once
-            wc = WNDCLASS()
-            wc.hInstance = hinst
-            wc.lpszClassName = class_name
-            wc.lpfnWndProc = message_map
-            RegisterClass(wc)
-            WindowsBalloonTip._class_registered = True  # Mark as registered
-
-        # Create a new window (without re-registering the class)
-        style = win32con.WS_OVERLAPPED | win32con.WS_SYSMENU
-        self.hwnd = CreateWindow(class_name, "Taskbar", style, 
-                                 0, 0, win32con.CW_USEDEFAULT, win32con.CW_USEDEFAULT, 
-                                 0, 0, hinst, None)
-
-        UpdateWindow(self.hwnd)
-
-        # Load icon
-        icon_flags = win32con.LR_LOADFROMFILE | win32con.LR_DEFAULTSIZE
-        try:
-            hicon = LoadImage(hinst, app_icon, win32con.IMAGE_ICON, 0, 0, icon_flags)
-        except:
-            hicon = LoadIcon(0, win32con.IDI_APPLICATION)
-
-        # Display notification
-        # flags = win32gui.NIF_ICON | win32gui.NIF_MESSAGE | win32gui.NIF_TIP
-        flags = NIF_ICON | NIF_MESSAGE | NIF_TIP
-        nid = (self.hwnd, 0, flags, win32con.WM_USER+20, hicon, "tooltip")
-        Shell_NotifyIcon(NIM_ADD, nid)
-
-        Shell_NotifyIcon(NIM_MODIFY, 
-                         (self.hwnd, 0, NIF_INFO, win32con.WM_USER+20,
-                          hicon, "Balloon tooltip", msg, 200, title))
-
-        time.sleep(10)  # Display the notification for 10 seconds
-        self.cleanup()
-
-    def cleanup(self):
-        """ Removes the notification icon and destroys the window. """
-        nid = (self.hwnd, 0)
-        Shell_NotifyIcon(NIM_DELETE, nid)
-        DestroyWindow(self.hwnd)
-
-    def OnDestroy(self, hwnd, msg, wparam, lparam):
-        """ Handles window destruction. """
-        self.cleanup()
-        PostQuitMessage(0)  # Terminate the app.
+        # if checking[0]>1:
+        pid_list = checking[1]
+        # try to send command to every process which has application name
+        for pids in pid_list:
+            if pids != self.current_pid:
+                try:
+                    pipe_name = f"jhv_MAZ_pipe_{pids}"
+                    self.client(pipe_name,command,parameters)
+                except Exception:
+                    pass
+        return True
+        # else:
+            # return False
 
 load_gui=True
+app_running_status = Tools.check_runing_app_duplicity()
+print("already opened app status: ",app_running_status)
+
 print("SYSTEM: ",sys.argv)
-if len(sys.argv) > 1 and not global_licence_load_error:
+if len(sys.argv) > 1 and not global_licence_load_error: # kontrola tady, aby se znovu nedefinovala classa windowsballoontip, řve to...
     if sys.argv[1] == "deleting":
-        if Tools.check_runing_app_duplicity():
+        if app_running_status:
             pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
             pipeline_duplex_instance.call_checking(f"Execute file deleting",[str(sys.argv[2]),str(sys.argv[3]),int(sys.argv[4]),int(sys.argv[5]),int(sys.argv[6]),int(sys.argv[7]),int(sys.argv[8])])
             load_gui = False
-            sys.exit(0)
-        else: # aplikace není spuštěna - jen spustím a vezme si systémové patametry
+            # sys.exit(0)
+        else:# aplikace není spuštěna - jen spustím a vezme si systémové patametry
             del_thread = threading.Thread(target=Tools.deleting_via_cmd,name="Deleting_thread")
             del_thread.start()
             load_gui = False
-            sys.exit(0)
-    
+            # sys.exit(0)
+
     elif sys.argv[1] == "run_tray":
         pipeline_duplex = system_pipeline_communication(exe_name)# potřeba spustit server, protože neběží nic (nikdy nedojde k tomu aby byla spuštěna aplikace)
         Tools.tray_startup_cmd()
         load_gui = False
+        # sys.exit(0)
 
     elif sys.argv[1] == "settings_tray" or sys.argv[1] == "settings_tray_del" or sys.argv[1] == "admin_menu":
         pid = int(sys.argv[2])
         Tools.terminate_pid(pid) #vypnout thread s tray aplikací
 
-if load_gui:
-    app_running_status = Tools.check_runing_app_duplicity()
-    print("already opened app status: ",app_running_status)
 
+# if len(sys.argv) > 1 and not global_licence_load_error:
+#     if sys.argv[1] == "deleting":
+#         # if Tools.check_runing_app_duplicity():
+#         #     pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
+#         #     pipeline_duplex_instance.call_checking(f"Execute file deleting",[str(sys.argv[2]),str(sys.argv[3]),int(sys.argv[4]),int(sys.argv[5]),int(sys.argv[6]),int(sys.argv[7]),int(sys.argv[8])])
+#         #     load_gui = False
+#         #     sys.exit(0)
+#         if not app_running_status: # aplikace není spuštěna - jen spustím a vezme si systémové patametry
+#             del_thread = threading.Thread(target=Tools.deleting_via_cmd,name="Deleting_thread")
+#             del_thread.start()
+#             load_gui = False
+#             # sys.exit(0)
+    
+    
+if load_gui:
     if not app_running_status: # aplikace ještě neběží -> spustit server
         pipeline_duplex = system_pipeline_communication(exe_name)# Establishment of pipeline server for duplex communication between running applications
         customtkinter.set_appearance_mode("dark")
@@ -3376,7 +3401,6 @@ def start_new_root():
     global app_icon
     global initial_path
     initial_path = Tools.get_init_path()
-
     app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")

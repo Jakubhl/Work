@@ -795,6 +795,11 @@ jhv_MAZ - licencovat aplikaci - hotovo
 12:13 PM 2/4/2025
 jhv_MAZ - možnost 4 - ponechani minimalniho poctu složek - hotovo
 jhv_MAZ - přidat do vizualizace ukolu jestli je zvoleno podle creation nebo modification - hotovo
+jhv_MAZ - novy instaler, nelze spoustet ukoly - hotovo
+
+4:01 PM 2/11/2025
+jhv_MAZ - opraveno chybove hlaseni pri vytvareni notifikaci pres ballon tooltip - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -815,8 +820,10 @@ TRIMAZKON - u konzoli, kde se dynamicky pise text - pouzit console.see(tk.END)
 TRIMAZKON - licencovat aplikaci
 TRIMAZKON - udelat specialni launcher na obrazky - aby se nenacitaly vsechny knihovny - aby to bylo rychlé
 
+jhv_MAZ - mnejde spousteni pres tray a spinani ukolu...
 
-jhv_MAZ - novy instaler, nelze spoustet ukoly
+jhv_MAZ - chova se divne, kdyz mam ukoly nebo log pres tray ikonu, nefunguje kontext menu a rozklikavaci tlacitko...
+jhv_MAZ - na NUC nejde prvotni startup spousteni aplikace... nezavede se do TS ale vypise, ze vse ok a nechce admina
 
 jhv_MAZ - predbezna analyza souboru - x souboru starsich nez... (pres tlacitko?)
 

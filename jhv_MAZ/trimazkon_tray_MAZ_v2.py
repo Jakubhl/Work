@@ -129,7 +129,7 @@ class tray_app_service:
             if len(tasks["del_log"]) > 0:
                 self.task_log_list.append(tasks["del_log"])
 
-        print("config raw tasks data: ", task_list)
+        # print("config raw tasks data: ", task_list)
         return task_list
 
     def save_new_log(self,task_name:str,new_log:str): #musim mit na vstupu nazev tasku abych ho mohl najit a prepsat to u nej
@@ -215,6 +215,7 @@ class tray_app_service:
         elif widget == "time" or widget == "settings" or widget == "name":
             name_of_task = task["name"]
             path_app_location = str(self.initial_path+"/"+self.main_app_exe_name) 
+            print("calling path: ",path_app_location)
             task_command = path_app_location + " deleting " + name_of_task + " " + str(task["operating_path"]) + " " + str(task["max_days"]) + " " + str(task["files_to_keep"])+ " " + str(task["more_dirs"])+ " " + str(task["selected_option"]) + " " + str(task["creation_date"])
             context_menu.add_command(label=execute_task,font=preset_font,command=lambda: subprocess.call(task_command,shell=True,text=True))
             context_menu.add_separator()
@@ -283,7 +284,7 @@ class tray_app_service:
 
     def show_all_tasks(self,toplevel=False,root_given = False,maximalized=False):
         try:
-            self.selected_language = Tools.read_json_config(self.initial_path)[11]
+            self.selected_language = Tools.read_json_config(self.initial_path,self.config_filename)[11]
         except Exception as e:
             print(e)
         if root_given != False:
@@ -461,7 +462,7 @@ class tray_app_service:
 
     def show_task_log(self,specify_task=False,task_given = None,root_given = False,maximalized=False):
         try:
-            self.selected_language = Tools.read_json_config(self.initial_path)[11]
+            self.selected_language = Tools.read_json_config(self.initial_path,self.config_filename)[11]
         except Exception as e:
             print(e)
         
@@ -618,7 +619,7 @@ class tray_app_service:
     def quit_application(self):
         self.icon.stop()
         try:
-            sys.exit()
+            sys.exit(0)
         except Exception:
             pass
 

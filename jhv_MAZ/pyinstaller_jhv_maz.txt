@@ -22,6 +22,10 @@ běží jeden pipeline server
 	- když vypínám admin celou apku, potřeba opět shodit tray a pokud má být spuštěný tray:
 		- potřeba spustit tray přes TS (příkaz "run_tray" zapíná pipeline server) porotže jinak by měla admin práva a kdybych chtěl spustit apku přes tray ikonu - nešlo by to (šlo by jen spustit jako admin)
 
+msi installer:
+python generovani_MSI.py bdist_msi 
+C:\Users\jakub.hlavacek.local\AppData\Local\Programs\jhv_MAZ
+
 pro msi installer jsem upravoval:
 - resource path... neni to primo naicludovane v exe...
 - počet aplikací v call checking ze 2 na 1

@@ -10,7 +10,7 @@ include_files = [
 
 # Define the base
 base = "Win32GUI" if sys.platform == "win32" else None  # Hide console for GUI apps
-
+base = None
 # Define the executable
 exe = Executable(
     script="JHV_MAZ_GUI_v4.py",  # Main script to convert to EXE
