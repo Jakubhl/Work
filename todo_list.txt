@@ -800,32 +800,43 @@ jhv_MAZ - novy instaler, nelze spoustet ukoly - hotovo
 4:01 PM 2/11/2025
 jhv_MAZ - opraveno chybove hlaseni pri vytvareni notifikaci pres ballon tooltip - hotovo
 
+11:55 AM 2/17/2025
+TRIMAZKON - opraven windows balloon tooltip - hotovo
+TRIMAZKON - prohlížeč - malování - zrušit přepsat na zavřít - hotovo
+jhv_MAZ - nemazalo to log - hotovo
+jhv_MAZ - nejde spousteni pres tray a spinani ukolu... - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 TRIMAZKON - prohlížeč nejde otevírat ifz v novém okně...
-TRIMAZKON - prohlížeč - malování - zrušit přepsat na zavřít
-TRIMAZKON - prohlížeč - pamatovat si historii cest - otevíráním přes obrázky... mít třeba 10 uložených cest
 TRIMAZKON - prohlížeč - když vyberu neco z histoie cest z nabídky, rovnou otevřít...
+
 TRIMAZKON - když aplikaci otevřu přes tray, tak mi to skočí do prohlížeče obrázků
 TRIMAZKON - na cestě z nastavení, pokud vypnute startup zapinani - vzdycky to chce admina v menu
 
 TRIMAZKON - kouknout na directories z configu u advanced option v initu
 TRIMAZKON - hláška na úvodní obrazovce - o spuštění s adminem - upřesnit
-TRIMAZKON - přidat automatické vytvoření configu
 
-TRIMAZKON - nastavení folderu nebo filu v exploreru - neulozi se
+
 TRIMAZKON - delete confirm window má špatné hlášky
 TRIMAZKON - u konzoli, kde se dynamicky pise text - pouzit console.see(tk.END)
 TRIMAZKON - licencovat aplikaci
 TRIMAZKON - udelat specialni launcher na obrazky - aby se nenacitaly vsechny knihovny - aby to bylo rychlé
 
-jhv_MAZ - mnejde spousteni pres tray a spinani ukolu...
+TRIMAZKON - na ukládání nastavení použít .json config... xls používat jen na ip setting
+	TRIMAZKON - nastavení folderu nebo filu v exploreru - neulozi se
+	TRIMAZKON - přidat automatické vytvoření configu
+	TRIMAZKON - prohlížeč - pamatovat si historii cest - otevíráním přes obrázky... mít třeba 10 uložených cest
+
+
+jhv_MAZ - nefunguje run_tray
+jhv_MAZ - predbezna analyza souboru - x souboru starsich nez... (pres tlacitko?)
+
 
 jhv_MAZ - chova se divne, kdyz mam ukoly nebo log pres tray ikonu, nefunguje kontext menu a rozklikavaci tlacitko...
 jhv_MAZ - na NUC nejde prvotni startup spousteni aplikace... nezavede se do TS ale vypise, ze vse ok a nechce admina
 
-jhv_MAZ - predbezna analyza souboru - x souboru starsich nez... (pres tlacitko?)
 
 
 ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...

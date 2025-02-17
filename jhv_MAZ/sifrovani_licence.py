@@ -92,5 +92,6 @@ def check_licence():
 
 # generate_rsa_keys()
 # make_licence("B841925X0SNLM7S") #kingspan
-make_licence("FSB5N690910705S61_00000001") #dell ntb pracovni
+make_licence("0025_3848_41A1_B7DF") #kingspan
+# make_licence("FSB5N690910705S61_00000001") #dell ntb pracovni
 # check_licence()

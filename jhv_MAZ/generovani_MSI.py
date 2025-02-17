@@ -22,8 +22,8 @@ exe = Executable(
 # Setup configuration
 setup(
     name="jhv_MAZ",
-    version="1.0.0",
-    description="jhv_MAZ v1.0.0",
+    version="1.0.1",
+    description="jhv_MAZ v1.0.1",
     executables=[exe],
     options={
         "build_exe": {

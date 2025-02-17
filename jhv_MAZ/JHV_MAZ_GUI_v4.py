@@ -40,8 +40,8 @@ class Subwindows:
                 pid = "None"
                 try:
                     pid = os.getpid()
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(e)
                 ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join([input_flag,str(pid)]), None, 1)
                 sys.exit()
 
@@ -714,18 +714,52 @@ class Tools:
         print("task presence: ",task_presence)
 
         if not task_presence:
-            path_app_location = str(initial_path + exe_name)
-            task_command = "\"" + path_app_location + " run_tray" + "\" /sc onlogon"
-            process = subprocess.Popen(f"schtasks /Create /TN {cls.task_name} /TR {task_command}",
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE,
-                                        creationflags=subprocess.CREATE_NO_WINDOW)
-            
-            stdout, stderr = process.communicate()
-            output_message = "out"+str(stdout) +"err"+str(stderr)
-            print(output_message)
-            if "Access is denied" in output_message:
-                return "need_access"
+            # path_app_location = str(initial_path + exe_name)
+            path_app_location = str(initial_path) + str(exe_name)
+            exe_args = "run_tray"
+            # task_command = "\"" + path_app_location + " run_tray" + "\" /sc onlogon"
+            # ps_command = f"schtasks /Create /TN {cls.task_name} /TR {task_command}"
+            ps_command = f"""
+            $action = New-ScheduledTaskAction -Execute "{path_app_location}" -Argument "{exe_args}";
+            $trigger = New-ScheduledTaskTrigger -AtLogon;
+            Register-ScheduledTask -TaskName "{cls.task_name}" -Action $action -Trigger $trigger -User "SYSTEM" -RunLevel Highest
+            """
+            # powershell_command = [
+            #     'powershell.exe',
+            #     '-Command', f'Start-Process powershell -Verb RunAs -ArgumentList \'-Command "{ps_command}"\' -WindowStyle Hidden -PassThru'
+            # ]
+
+            powershell_command = [
+                'powershell.exe',
+                # '-WindowStyle hidden',
+                '-ExecutionPolicy', 'Bypass',
+                '-NoProfile',
+                '-Command', f'Start-Process powershell -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -NoProfile -Command \"{ps_command}\""'
+            ]
+
+            try:
+                process = subprocess.Popen(powershell_command,
+                # process = subprocess.Popen(["powershell", "-ExecutionPolicy", "Bypass", "-NoProfile", "-Command", powershell_command],
+                                            stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE,
+                                            creationflags=subprocess.CREATE_NO_WINDOW)
+
+                # process = subprocess.Popen(f"schtasks /Create /TN {cls.task_name} /TR {task_command}",
+                #                             stdout=subprocess.PIPE,
+                #                             stderr=subprocess.PIPE,
+                #                             creationflags=subprocess.CREATE_NO_WINDOW)
+                
+                stdout, stderr = process.communicate()
+                stdout_str = stdout.decode('utf-8').strip()
+                stderr_str = stderr.decode('utf-8').strip()
+                output_message = "out"+str(stdout_str) +"err"+str(stderr_str)
+                print(output_message)
+
+                if "Access is denied" in output_message or "Run as administrator" in output_message:
+                    return "need_access"
+                
+            except Exception as e:
+                return False
             
         Tools.tray_startup_cmd() # init sepnutí po prvním zavedení tasku
     
@@ -778,6 +812,8 @@ class Tools:
             initial_path = ""
             for i in range(0,len(initial_path_splitted)-2):
                 initial_path += str(initial_path_splitted[i])+"/"
+
+        initial_path.replace("//","/")
         return initial_path
     
     @classmethod
@@ -973,7 +1009,7 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
     """
     def __init__(self,exe_name,no_server = False):
         self.root = None #define later (to prevend gui loading when 2 apps opened)
-        self.current_pid = None
+        # self.current_pid = None
         self.exe_name = exe_name
         self.current_pid = os.getpid()
         if not no_server:
@@ -1047,6 +1083,7 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
         odesílá zprávu
         """
         pipe_name = fr'\\.\pipe\{pipe_name_given}'
+        print("client_pipe_name: ",pipe_name,command,parameters)
         handle = win32file.CreateFile(
             pipe_name,
             win32file.GENERIC_READ | win32file.GENERIC_WRITE,
@@ -1056,21 +1093,23 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
             0,
             None
         )
-
-        if "Establish main menu gui" in command:
+        print("not here anymore")
+        if "Establish main menu gui" in str(command):
             message = "Establish main menu gui"
             print("Message sent.")
             win32file.WriteFile(handle, message.encode())
-        elif "Execute file deleting" in command:
-            message = command + "|||"
+        
+        if "Execute file deleting" in str(command):
+            message = str(command) + "|||"
             for params in parameters:
                 message = message + str(params) + "|||"
-            print("Message sent.")
+            print("Message sent: ",message)
             win32file.WriteFile(handle, message.encode())
 
     def start_server(self):
-        self.pipe_name = f"jhv_MAZ_pipe_{self.current_pid}"
-        running_server = threading.Thread(target=self.server, args=(self.pipe_name,), daemon=True)
+        pipe_name = f"jhv_MAZ_pipe_{self.current_pid}"
+        running_server = threading.Thread(target=self.server, args=(pipe_name,), daemon=True)
+        # running_server = threading.Thread(target=self.server, args=(pipe_name,))
         running_server.start()
         time.sleep(0.5)  # Wait for the server to start
 
@@ -1085,9 +1124,11 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
         pid_list = checking[1]
         # try to send command to every process which has application name
         for pids in pid_list:
-            if pids != self.current_pid:
+
+            if pids != os.getpid():
                 try:
                     pipe_name = f"jhv_MAZ_pipe_{pids}"
+                    print("calling client",pipe_name,command,parameters)
                     self.client(pipe_name,command,parameters)
                 except Exception:
                     pass
@@ -1096,22 +1137,20 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
             # return False
 
 load_gui=True
-app_running_status = Tools.check_runing_app_duplicity()
-print("already opened app status: ",app_running_status)
-
 print("SYSTEM: ",sys.argv)
 if len(sys.argv) > 1 and not global_licence_load_error: # kontrola tady, aby se znovu nedefinovala classa windowsballoontip, řve to...
     if sys.argv[1] == "deleting":
-        if app_running_status:
-            pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
-            pipeline_duplex_instance.call_checking(f"Execute file deleting",[str(sys.argv[2]),str(sys.argv[3]),int(sys.argv[4]),int(sys.argv[5]),int(sys.argv[6]),int(sys.argv[7]),int(sys.argv[8])])
-            load_gui = False
-            # sys.exit(0)
-        else:# aplikace není spuštěna - jen spustím a vezme si systémové patametry
-            del_thread = threading.Thread(target=Tools.deleting_via_cmd,name="Deleting_thread")
-            del_thread.start()
-            load_gui = False
-            # sys.exit(0)
+        # if app_running_status:
+        #     pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
+        #     print("calling: ",f"Execute file deleting",[str(sys.argv[2]),str(sys.argv[3]),int(sys.argv[4]),int(sys.argv[5]),int(sys.argv[6]),int(sys.argv[7]),int(sys.argv[8])])
+        #     pipeline_duplex_instance.call_checking(f"Execute file deleting",[str(sys.argv[2]),str(sys.argv[3]),int(sys.argv[4]),int(sys.argv[5]),int(sys.argv[6]),int(sys.argv[7]),int(sys.argv[8])])
+        #     load_gui = False
+        #     # sys.exit(0)
+        # else:# aplikace není spuštěna - jen spustím a vezme si systémové patametry
+        del_thread = threading.Thread(target=Tools.deleting_via_cmd,name="Deleting_thread")
+        del_thread.start()
+        load_gui = False
+        # sys.exit(0)
 
     elif sys.argv[1] == "run_tray":
         pipeline_duplex = system_pipeline_communication(exe_name)# potřeba spustit server, protože neběží nic (nikdy nedojde k tomu aby byla spuštěna aplikace)
@@ -1123,21 +1162,10 @@ if len(sys.argv) > 1 and not global_licence_load_error: # kontrola tady, aby se 
         pid = int(sys.argv[2])
         Tools.terminate_pid(pid) #vypnout thread s tray aplikací
 
+#Musi byt az tady, protoze muzu terminatenout aplikaci (vyse v kodu)
+app_running_status = Tools.check_runing_app_duplicity()
+print("already opened app status: ",app_running_status)
 
-# if len(sys.argv) > 1 and not global_licence_load_error:
-#     if sys.argv[1] == "deleting":
-#         # if Tools.check_runing_app_duplicity():
-#         #     pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
-#         #     pipeline_duplex_instance.call_checking(f"Execute file deleting",[str(sys.argv[2]),str(sys.argv[3]),int(sys.argv[4]),int(sys.argv[5]),int(sys.argv[6]),int(sys.argv[7]),int(sys.argv[8])])
-#         #     load_gui = False
-#         #     sys.exit(0)
-#         if not app_running_status: # aplikace není spuštěna - jen spustím a vezme si systémové patametry
-#             del_thread = threading.Thread(target=Tools.deleting_via_cmd,name="Deleting_thread")
-#             del_thread.start()
-#             load_gui = False
-#             # sys.exit(0)
-    
-    
 if load_gui:
     if not app_running_status: # aplikace ještě neběží -> spustit server
         pipeline_duplex = system_pipeline_communication(exe_name)# Establishment of pipeline server for duplex communication between running applications

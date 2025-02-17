@@ -23,7 +23,7 @@ běží jeden pipeline server
 		- potřeba spustit tray přes TS (příkaz "run_tray" zapíná pipeline server) porotže jinak by měla admin práva a kdybych chtěl spustit apku přes tray ikonu - nešlo by to (šlo by jen spustit jako admin)
 
 msi installer:
-python generovani_MSI.py bdist_msi 
+python generovani_MSI.py bdist_msi
 C:\Users\jakub.hlavacek.local\AppData\Local\Programs\jhv_MAZ
 
 pro msi installer jsem upravoval:

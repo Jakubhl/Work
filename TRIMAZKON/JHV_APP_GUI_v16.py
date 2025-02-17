@@ -2739,7 +2739,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         update_thickness(self.drawing_thickness)
         update_color("")
 
-        button_exit = customtkinter.CTkButton(master = window,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
+        button_exit = customtkinter.CTkButton(master = window,text = "Zavřít",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
         button_exit.pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
         # self.root.bind("<Button-1>",lambda e: close_window(window))
         window.update()
@@ -2762,7 +2762,6 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.released = False
         self.start_x = 0
         self.start_y = 0
-
         self.main_frame.unbind("<Button-1>")
         self.main_frame.unbind("<B1-Motion>")
         self.main_frame.unbind("<ButtonRelease-1>")

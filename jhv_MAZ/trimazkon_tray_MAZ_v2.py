@@ -156,6 +156,7 @@ class tray_app_service:
         for tasks in current_tasks:
             if str(tasks["name"]) == task_name:
                 tasks["del_log"] = []
+                self.save_task_to_config(current_tasks)    
                 break
 
         self.show_task_log(root_given=childroot)
@@ -179,11 +180,14 @@ class tray_app_service:
         delete_from_scheduler(task["name"])
         all_tasks.pop(all_tasks.index(task))
         
-        status = self.save_task_to_config(all_tasks)
-        if status != False:
+        self.save_task_to_config(all_tasks)
+        # if status != False:
             # root.destroy()
+        try:
             self.show_all_tasks(root_given=root)
-
+        except Exception as e:
+            print(e)
+            
     def show_context_menu(self,root,event,widget,task):
         self.check_task_existence()
         # all_tasks = self.read_config()
