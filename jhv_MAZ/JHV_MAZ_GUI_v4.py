@@ -23,11 +23,13 @@ import struct
 
 testing = False
 
+
 global_recources_load_error = False
 global_licence_load_error = False
 exe_path = sys.executable
 exe_name = os.path.basename(exe_path)
 config_filename = "config_MAZ.json"
+app_version = "1.0.3"
 print("exe name: ",exe_name)
 if testing:
     exe_name = "trimazkon_test.exe"
@@ -672,6 +674,8 @@ class Tools:
             except UnicodeDecodeError:
                 data = str(stdout)
                 error_data = str(stderr)
+
+        print(data,error_data)
         if "ERROR" in error_data:
             return False
         else:
@@ -710,56 +714,23 @@ class Tools:
         Sets the startup task of switching on the tray application icon
         - if it doesnt exist already
         """
+        
         task_presence = Tools.check_task_existence_in_TS(cls.task_name)
         print("task presence: ",task_presence)
 
         if not task_presence:
-            # path_app_location = str(initial_path + exe_name)
-            path_app_location = str(initial_path) + str(exe_name)
-            exe_args = "run_tray"
-            # task_command = "\"" + path_app_location + " run_tray" + "\" /sc onlogon"
-            # ps_command = f"schtasks /Create /TN {cls.task_name} /TR {task_command}"
-            ps_command = f"""
-            $action = New-ScheduledTaskAction -Execute "{path_app_location}" -Argument "{exe_args}";
-            $trigger = New-ScheduledTaskTrigger -AtLogon;
-            Register-ScheduledTask -TaskName "{cls.task_name}" -Action $action -Trigger $trigger -User "SYSTEM" -RunLevel Highest
-            """
-            # powershell_command = [
-            #     'powershell.exe',
-            #     '-Command', f'Start-Process powershell -Verb RunAs -ArgumentList \'-Command "{ps_command}"\' -WindowStyle Hidden -PassThru'
-            # ]
-
-            powershell_command = [
-                'powershell.exe',
-                # '-WindowStyle hidden',
-                '-ExecutionPolicy', 'Bypass',
-                '-NoProfile',
-                '-Command', f'Start-Process powershell -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -NoProfile -Command \"{ps_command}\""'
-            ]
-
-            try:
-                process = subprocess.Popen(powershell_command,
-                # process = subprocess.Popen(["powershell", "-ExecutionPolicy", "Bypass", "-NoProfile", "-Command", powershell_command],
-                                            stdout=subprocess.PIPE,
-                                            stderr=subprocess.PIPE,
-                                            creationflags=subprocess.CREATE_NO_WINDOW)
-
-                # process = subprocess.Popen(f"schtasks /Create /TN {cls.task_name} /TR {task_command}",
-                #                             stdout=subprocess.PIPE,
-                #                             stderr=subprocess.PIPE,
-                #                             creationflags=subprocess.CREATE_NO_WINDOW)
-                
-                stdout, stderr = process.communicate()
-                stdout_str = stdout.decode('utf-8').strip()
-                stderr_str = stderr.decode('utf-8').strip()
-                output_message = "out"+str(stdout_str) +"err"+str(stderr_str)
-                print(output_message)
-
-                if "Access is denied" in output_message or "Run as administrator" in output_message:
-                    return "need_access"
-                
-            except Exception as e:
-                return False
+            path_app_location = str(initial_path + exe_name)
+            task_command = "\"" + path_app_location + " run_tray" + "\" /sc onlogon"
+            process = subprocess.Popen(f"schtasks /Create /TN {cls.task_name} /TR {task_command}",
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
+                                        creationflags=subprocess.CREATE_NO_WINDOW)
+            
+            stdout, stderr = process.communicate()
+            output_message = "out"+str(stdout) +"err"+str(stderr)
+            print(output_message)
+            if "Access is denied" in output_message or "stup byl odep" in output_message:
+                return "need_access"
             
         Tools.tray_startup_cmd() # init sepnutí po prvním zavedení tasku
     
@@ -783,7 +754,7 @@ class Tools:
         stdout, stderr = process.communicate()
         output_message = "out"+str(stdout) +"err"+str(stderr)
         print(output_message)
-        if "Access is denied" in output_message:
+        if "Access is denied" in output_message or "stup byl odep" in output_message:
             return "need_access"
 
     @classmethod
@@ -941,7 +912,8 @@ class Tools:
         if new_path not in current_paths:
             if len(current_paths) > 9:
                 current_paths.pop()
-            current_paths.append(str(new_path))
+            # current_paths.append(str(new_path))
+            current_paths.insert(0,str(new_path))
             Tools.save_to_json_config(current_paths,"path_history_list")
 
     @classmethod
@@ -1096,7 +1068,7 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
         print("not here anymore")
         if "Establish main menu gui" in str(command):
             message = "Establish main menu gui"
-            print("Message sent.")
+            print("Message sent.",message)
             win32file.WriteFile(handle, message.encode())
         
         if "Execute file deleting" in str(command):
@@ -1107,8 +1079,8 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
             win32file.WriteFile(handle, message.encode())
 
     def start_server(self):
-        pipe_name = f"jhv_MAZ_pipe_{self.current_pid}"
-        running_server = threading.Thread(target=self.server, args=(pipe_name,), daemon=True)
+        self.pipe_name = f"jhv_MAZ_pipe_{self.current_pid}"
+        running_server = threading.Thread(target=self.server, args=(self.pipe_name,),daemon=True)
         # running_server = threading.Thread(target=self.server, args=(pipe_name,))
         running_server.start()
         time.sleep(0.5)  # Wait for the server to start
@@ -1124,8 +1096,7 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
         pid_list = checking[1]
         # try to send command to every process which has application name
         for pids in pid_list:
-
-            if pids != os.getpid():
+            if pids != self.current_pid:
                 try:
                     pipe_name = f"jhv_MAZ_pipe_{pids}"
                     print("calling client",pipe_name,command,parameters)
@@ -1173,7 +1144,7 @@ if load_gui:
         customtkinter.set_default_color_theme("dark-blue")
         root=customtkinter.CTk(fg_color="#212121")
         root.geometry("1200x900")
-        root.title("jhv_MAZ v_1.0.0")
+        root.title("jhv_MAZ v_"+str(app_version))
         root.wm_iconbitmap(app_icon)
 
     else:# předání parametrů pipeline komunikací
@@ -1351,9 +1322,12 @@ class main_menu:
                 licence_info_status.configure(text="chyba ověření")
             elif "EXPIRED:" in app_licence_validity:
                 licence_info_status.configure(text=app_licence_validity.replace("EXPIRED:","platnost vypršela:"))
+            insert_licence_btn = customtkinter.CTkButton(master = licence_info_frame, width = 200,height=40, text = "Vložit licenci", command = lambda: os.startfile(initial_path),font=("Arial",24,"bold"))
+            insert_licence_btn.pack(pady =(7,5),padx=(15,0),side="left",anchor="w")
 
             if self.selected_language == "en":
                 licence_info_status.configure(text=app_licence_validity)
+                insert_licence_btn.configure(text="Insert license")
             self.root.after(500, lambda: Subwindows.licence_window(self.selected_language))
 
         # initial promenna aby se to nespoustelo porad do kola pri navratu do menu (system argumenty jsou stále uložené v aplikaci)
@@ -1528,10 +1502,16 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             """
             Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
             """
+            start_path = None
+            try:
+                start_path = self.path_set.get()
+            except Exception:
+                start_path = None
+                pass
             if select_by_dir.get() == 1:
-                output = Tools.browseDirectories("only_dirs")
+                output = Tools.browseDirectories("only_dirs",start_path)
             else:
-                output = Tools.browseDirectories("all")
+                output = Tools.browseDirectories("all",start_path)
             if str(output[1]) != "/":
                 self.path_set.delete("0","200")
                 self.path_set.insert("0", output[1])
@@ -2109,7 +2089,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         if function == "menu":
             menu.menu()
 
-    def start(self):# Ověřování cesty, init, spuštění
+    def start(self,only_analyze=False):# Ověřování cesty, init, spuštění
         """
         Ověřování cesty, init, spuštění
         """
@@ -2121,6 +2101,16 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 Tools.add_colored_line(self.console,"Zadaná cesta: "+str(path)+" nebyla nalezena","red")
             else:
                 path = check
+                if only_analyze:
+                    info_msg = "- Provádím analýzu souborů v cestě: " + str(path) + "\n"
+                    if self.selected_language == "en":
+                        info_msg = "- Analyzing files in the path: " + str(path) + "\n"
+                    Tools.add_colored_line(self.console,info_msg,"orange")
+                    self.console.update_idletasks()
+                    self.root.update_idletasks()
+                    self.del_files(path,only_analyze)
+                    return
+
                 if self.checkbox_testing.get() != 1:
                     if self.more_dirs == True and self.selected_option != 3: # sublozky, ne u adresaru...
                         confirm_prompt_msg = f"Opravdu si přejete spustit navolené mazání souborů v cestě:\n{path}\na procházet přitom i SUBSLOŽKY?"
@@ -2162,7 +2152,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 no_path_msg = "The path to the files has not been inserted"
             Tools.add_colored_line(self.console,no_path_msg,"red")
 
-    def del_files(self,path): # zde se volá externí script: Deleting
+    def del_files(self,path,only_analyze = False): # zde se volá externí script: Deleting
         del_option = self.selected_option
         files_to_keep = self.files_to_keep
         if self.checkbox_testing.get() == 1:
@@ -2180,6 +2170,12 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         if self.selected_option == 4:
             files_to_keep = self.directories_to_keep
 
+        only_analyze_status = False
+        if only_analyze:
+            testing_mode = True
+            only_analyze_status = True
+
+
         running_deleting = Deleting.whole_deleting_function(
             path,
             more_dirs,
@@ -2189,7 +2185,8 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             self.supported_formats_deleting,
             testing_mode,
             self.to_delete_folder_name,
-            creation_date = self.by_creation_date
+            creation_date = self.by_creation_date,
+            only_analyze = only_analyze_status
             )
 
         run_del_background = threading.Thread(target=call_deleting_main, args=(running_deleting,))
@@ -2201,7 +2198,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             output_messages = running_deleting.output_eng
 
         while not running_deleting.finish or completed == False:
-            time.sleep(0.05)
+            time.sleep(0.01)
             if int(len(output_messages)) > previous_len:
                 new_row = str(output_messages[previous_len])
                 if "Mazání dokončeno" in new_row or "Zkontrolováno" in new_row or "Deleting complete" in new_row or "checked" in new_row:
@@ -2226,6 +2223,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         """
         Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
+        self.temp_path_for_explorer = self.path_set.get()
         if self.more_dirs or self.selected_option == 3 or self.selected_option == 4: # pokud je zvoleno more_dirs v exploreru pouze slozky...
             output = Tools.browseDirectories("only_dirs",self.temp_path_for_explorer)
         else:
@@ -2551,7 +2549,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         decision_date_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121")
         decision_date_label = customtkinter.CTkLabel(master = decision_date_frame,text = "Řídit se podle: ",justify = "left",font=("Arial",20,"bold"))
         checkbox_creation_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data vytvoření",font=("Arial",18),command=lambda:set_decision_date("creation"))
-        checkbox_modification_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data poslední změny",font=("Arial",18),command=lambda:set_decision_date("modification"))
+        checkbox_modification_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data poslední změny (doporučeno)",font=("Arial",18),command=lambda:set_decision_date("modification"))
         decision_date_label.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
         checkbox_creation_date.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
         checkbox_modification_date.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
@@ -2581,7 +2579,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             current_date.configure(text = "Current date: "+today[1])
             decision_date_label.configure(text = "To decide by:")
             checkbox_creation_date.configure(text = "date of creation")
-            checkbox_modification_date.configure(text = "date of modification")
+            checkbox_modification_date.configure(text = "date of modification (recommended)")
 
         if option == 2:
             self.selected_option = 2
@@ -2798,7 +2796,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             input_files_to_keep = files_to_keep_set.get()
             if input_files_to_keep.isdigit():
                 if int(input_files_to_keep) >= 0:
-                    self.directories_to_keep = input_files_to_keep
+                    self.directories_to_keep = int(input_files_to_keep)
                     if self.selected_language == "en":
                         summary_label.configure(text= f"Directories (including all subdirectories) that are evaluated as older than the set date will be deleted\nwhile retaining the minimum number of directories: {input_files_to_keep}")
                         Tools.add_colored_line(console, "Number of older directories left set to: " + str(input_files_to_keep),"green",None,True)
@@ -2901,7 +2899,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         decision_date_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121")
         decision_date_label = customtkinter.CTkLabel(master = decision_date_frame,text = "Řídit se podle: ",justify = "left",font=("Arial",20,"bold"))
         checkbox_creation_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data vytvoření",font=("Arial",18),command=lambda:set_decision_date("creation"))
-        checkbox_modification_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data poslední změny",font=("Arial",18),command=lambda:set_decision_date("modification"))
+        checkbox_modification_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data poslední změny (doporučeno)",font=("Arial",18),command=lambda:set_decision_date("modification"))
         decision_date_label.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
         checkbox_creation_date.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
         checkbox_modification_date.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
@@ -2937,7 +2935,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 summary_label.configure(text= f"Directories (including all subdirectories) that are evaluated as older than the set date will be deleted\nwhile retaining the minimum number of directories: {self.directories_to_keep}")
                 decision_date_label.configure(text = "To decide by:")
                 checkbox_creation_date.configure(text = "date of creation")
-                checkbox_modification_date.configure(text = "date of modification")
+                checkbox_modification_date.configure(text = "date of modification (recommended)")
             self.options1.deselect()
             self.options2.deselect()
             self.options3.deselect()
@@ -3189,7 +3187,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         decision_date_frame = customtkinter.CTkFrame(master=parameter_frame,corner_radius=0,fg_color="#212121")
         decision_date_label = customtkinter.CTkLabel(master = decision_date_frame,text = "Řídit se podle: ",justify = "left",font=("Arial",20,"bold"))
         checkbox_creation_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data vytvoření",font=("Arial",18),command=lambda:set_decision_date("creation"))
-        checkbox_modification_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data poslední změny",font=("Arial",18),command=lambda:set_decision_date("modification"))
+        checkbox_modification_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data poslední změny (doporučeno)",font=("Arial",18),command=lambda:set_decision_date("modification"))
         decision_date_label.pack(pady = (10,10),padx =(10,0),side="left",anchor="w")
         checkbox_creation_date.pack(pady = (10,10),padx =(10,0),side="left",anchor="w")
         checkbox_modification_date.pack(pady = (10,10),padx =(10,0),side="left",anchor="w")
@@ -3263,7 +3261,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             save_task_btn.configure(text = "Save new task")
             cancel_btn.configure(text = "Close")
             decision_date_label.configure(text = "To decide by: ")
-            checkbox_modification_date.configure(text = "date modified")
+            checkbox_modification_date.configure(text = "date modified (recommended)")
             checkbox_creation_date.configure(text = "date created")
             
         if self.selected_option == 1:
@@ -3358,19 +3356,30 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         double_frame.           pack(pady=0,padx=0,fill="x",side = "top",anchor="w")
         double_frame.           propagate(False)
         
+        def call_start(analyze=False):
+            run_background = threading.Thread(target=self.start, args=(analyze,))
+            run_background.start()
+            # self.start(only_analyze=True)
+
         bottom_frame =          customtkinter.CTkFrame(master=header_frame,corner_radius=0,fg_color="#212121",border_width=0,border_color="#636363")
         execution_btn_frame =   customtkinter.CTkFrame(master=bottom_frame,corner_radius=0,fg_color="#212121")
-        button =                customtkinter.CTkButton(master = execution_btn_frame,width = 300,height = 60,text = "SPUSTIT", command = self.start,font=("Arial",20,"bold"))
+        button =                customtkinter.CTkButton(master = execution_btn_frame,width = 300,height = 60,text = "SPUSTIT", command = lambda: call_start(),font=("Arial",20,"bold"))
         create_task_btn =       customtkinter.CTkButton(master = execution_btn_frame,width = 300,height = 60,text = "Nastavit aut. spouštění",command = lambda: self.save_new_task(),font=("Arial",20,"bold"))
+        analyze_btn =           customtkinter.CTkButton(master = execution_btn_frame,width = 300,height = 60,text = "Analyzovat cestu",command = lambda: call_start(analyze=True),font=("Arial",20,"bold"))
         button.                 pack(pady=10,padx=(10,0),side="left",anchor="w")
         create_task_btn.        pack(pady=10,padx=(10,0),side="left",anchor="w")
+        analyze_btn.            pack(pady=10,padx=(10,0),side="left",anchor="w")
         self.console =          tk.Text(bottom_frame, wrap="word",background="black",font=("Arial",16),state=tk.DISABLED)
         execution_btn_frame.    pack(pady =3,padx=3,side = "top",anchor="n")
-        self.console.           pack(pady =10,padx=10,side = "top",fill="both",expand=False)
+        self.console.           pack(pady =0,padx=(10,0),side = "left",fill="both",expand=True)
         bottom_frame .          pack(pady =0,padx=0,side = "top",fill="both",expand=False)
         header_frame.           pack(pady=0,padx=0,fill="x",side = "top")
         self.selected(option=1)
         self.options1.select()
+
+        scrollbar = tk.Scrollbar(bottom_frame, command=self.console.yview)
+        scrollbar.pack(side="right", fill="y")
+        self.console.config(yscrollcommand=scrollbar.set)
 
         if self.selected_language == "en":
             deleting_button.configure(text = "File deletion")
@@ -3382,6 +3391,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             # current_date.configure(text = "Current date: "+today[1])
             button.configure(text = "EXECUTE")
             create_task_btn.configure(text = "Set auto. boot")
+            analyze_btn.configure(text = "Analyze path")
 
         if global_recources_load_error:
             create_task_btn.configure(state = "disabled")
@@ -3428,13 +3438,14 @@ def start_new_root():
     global root
     global app_icon
     global initial_path
+    # global app_version
     initial_path = Tools.get_init_path()
     app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")
     root=customtkinter.CTk(fg_color="#212121")
     root.geometry("1200x900")
-    root.title("jhv_MAZ v_1.0.0")
+    root.title("jhv_MAZ v_"+str(app_version))
     root.wm_iconbitmap(app_icon)
 
     menu = main_menu(root)

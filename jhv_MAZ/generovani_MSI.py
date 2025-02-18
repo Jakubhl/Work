@@ -6,6 +6,7 @@ import os
 include_files = [
     ("images", "images"),  # Include entire 'images' folder
     ("public.pem", "public.pem"),  # Include public.pem file
+    ("Rights_maker.bat", "Rights_maker.bat"),  
 ]
 
 # Define the base
@@ -22,8 +23,8 @@ exe = Executable(
 # Setup configuration
 setup(
     name="jhv_MAZ",
-    version="1.0.1",
-    description="jhv_MAZ v1.0.1",
+    version="1.0.3",
+    description="jhv_MAZ v1.0.3",
     executables=[exe],
     options={
         "build_exe": {

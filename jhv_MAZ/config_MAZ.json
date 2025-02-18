@@ -2,7 +2,7 @@
     "settings": [
         {
             "key": "default_path",
-            "value": "C:/Users/jakub.hlavacek.local/Desktop/JHV/mazani_test/"
+            "value": "D:/515/St_40/"
         },
         {
             "key": "supported_formats_deleting",
@@ -53,12 +53,8 @@
         {
             "key": "path_history_list",
             "value": [
-                "C:/Users/",
-                "C:/Users/kubah/Desktop/JHV/mazani_test/",
-                "D:/kingspan/IV3_Series_FTP_Test/",
-                "D:/514/040/01_Image/2024_10_02/",
-                "D:/514/160/24_10_02/",
-                "C:/Users/jakub.hlavacek.local/Desktop/JHV/mazani_test/"
+                "D:/515/St_40/Archive_Old/001_34035982F/",
+                "D:/515/St_40/"
             ]
         },
         {
@@ -76,18 +72,6 @@
             "more_dirs": 0,
             "selected_option": 4,
             "date_added": "04.02.2025 12:15:46",
-            "del_log": [],
-            "creation_date": 0
-        },
-        {
-            "name": "jhv_MAZ_task_2",
-            "operating_path": "C:/Users/jakub.hlavacek.local/Desktop/JHV/mazani_test/",
-            "max_days": "341",
-            "files_to_keep": "1000",
-            "frequency": "12:00",
-            "more_dirs": 0,
-            "selected_option": 1,
-            "date_added": "04.02.2025 12:16:32",
             "del_log": [],
             "creation_date": 0
         }

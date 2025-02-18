@@ -2,7 +2,7 @@
     "settings": [
         {
             "key": "default_path",
-            "value": "C:/Users/"
+            "value": "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/"
         },
         {
             "key": "supported_formats_deleting",
@@ -53,12 +53,36 @@
         {
             "key": "path_history_list",
             "value": [
-                "C:/Users/"
+                "C:/Users/",
+                "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/"
             ]
         },
         {
             "key": "default_language",
             "value": "cz"
+        }
+    ],
+    "task_list": [
+        {
+            "name": "jhv_MAZ_task_1",
+            "operating_path": "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/",
+            "max_days": "355",
+            "files_to_keep": "1000",
+            "frequency": "12:00",
+            "more_dirs": 0,
+            "selected_option": 1,
+            "date_added": "18.02.2025 07:51:59",
+            "del_log": [
+                {
+                    "del_date": "18.02.2025 07:52:04",
+                    "files_checked": 154,
+                    "files_older": 0,
+                    "files_newer": "",
+                    "files_deleted": 0,
+                    "path_count": 2
+                }
+            ],
+            "creation_date": 0
         }
     ]
 }
