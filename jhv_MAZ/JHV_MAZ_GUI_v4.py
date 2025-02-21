@@ -29,7 +29,9 @@ global_licence_load_error = False
 exe_path = sys.executable
 exe_name = os.path.basename(exe_path)
 config_filename = "config_MAZ.json"
-app_version = "1.0.3"
+app_version = "1.0.4"
+loop_request = False
+root = None
 print("exe name: ",exe_name)
 if testing:
     exe_name = "trimazkon_test.exe"
@@ -989,9 +991,9 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
             run_server_background = threading.Thread(target=self.start_server,)
             run_server_background.start()
 
-    def check_root_existence(self):
+    def check_root_existence(self,root_given):
         try:
-            if self.root.winfo_exists():
+            if root_given.winfo_exists():
                 return True
         except Exception as e:
             # if "main thread is not in main loop" in str(e):
@@ -1025,11 +1027,18 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
                     received_data = data.decode()
                     print(f"Received: {received_data}")
                     if "Establish main menu gui" in received_data:
-                        root_existance = self.check_root_existence()
+                        global root
+                        root_existance = self.check_root_existence(root)
                         print("root_status: ",root_existance)
 
                         if root_existance == True:
-                            self.root.after(0,menu.menu(clear_root=True))
+                            try:
+                                root.deiconify()
+                            except Exception as e:
+                                print(e)
+                            global menu
+                            
+                            root.after(0,lambda: menu.menu(clear_root=True))
                         else:
                             start_new_root()
                             # self.root.after(0,menu.menu(clear_root=True))
@@ -1129,6 +1138,19 @@ if len(sys.argv) > 1 and not global_licence_load_error: # kontrola tady, aby se 
         load_gui = False
         # sys.exit(0)
 
+    elif sys.argv[1] == "trigger_by_tray":
+        loop_request = False
+        root.deiconify()
+        root.after(0,lambda: menu.menu(clear_root=True))
+    #     if root.winfo_exist():
+            
+    #     # Tools.tray_startup_cmd()
+    #     try:
+    #         root.deiconify()
+    #     except Exception as e:
+    #         print(e)
+    #     load_gui = True
+
     elif sys.argv[1] == "settings_tray" or sys.argv[1] == "settings_tray_del" or sys.argv[1] == "admin_menu":
         pid = int(sys.argv[2])
         Tools.terminate_pid(pid) #vypnout thread s tray aplikací
@@ -1146,6 +1168,7 @@ if load_gui:
         root.geometry("1200x900")
         root.title("jhv_MAZ v_"+str(app_version))
         root.wm_iconbitmap(app_icon)
+        loop_request=True
 
     else:# předání parametrů pipeline komunikací
         pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
@@ -1154,8 +1177,8 @@ if load_gui:
 class main_menu:
     def __init__(self,root,new_loop=False):
         self.root = root
-        if not new_loop:
-            pipeline_duplex.root = self.root # předání rootu do pipeline_duplex až ve chvílí, kdy je jasné, že aplikace není vícekrát spuštěná:
+        # if not new_loop:
+            # pipeline_duplex.root = self.root # předání rootu do pipeline_duplex až ve chvílí, kdy je jasné, že aplikace není vícekrát spuštěná:
         self.data_read_in_txt = Tools.read_json_config()
         self.database_downloaded = False
         self.ib_running = False
@@ -1204,7 +1227,8 @@ class main_menu:
                     pass
             Tools.terminate_pid(os.getpid()) #vypnout thread s tray aplikací
         else:
-            self.root.destroy()
+            # self.root.destroy()
+            self.root.withdraw()
 
     def is_root_zoomed(self):
         if self.root.state() == "zoomed":
@@ -1245,7 +1269,8 @@ class main_menu:
                     licence_info_status.configure(text=f"platná do {app_licence_validity}")
 
         if clear_root:
-            self.root.after(0, lambda:self.clear_frames())
+            self.clear_frames()
+            # self.root.after(0, lambda:self.clear_frames())
 
         if self.data_read_in_txt[5] == "ano" and initial:
             self.root.after(0, lambda:self.root.state('zoomed')) # max zoom, porad v okne
@@ -1358,7 +1383,7 @@ class main_menu:
         #     self.root.after(100, lambda: self.call_deleting_option())
         try:
             self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
-            self.root.mainloop()
+            # self.root.mainloop()
         except Exception as e:
             print("already looped? ",e)
 
@@ -3434,6 +3459,7 @@ if load_gui:
         menu.menu(initial=True)
 
 def start_new_root():
+    print("starting new root")
     global menu
     global root
     global app_icon
@@ -3447,6 +3473,31 @@ def start_new_root():
     root.geometry("1200x900")
     root.title("jhv_MAZ v_"+str(app_version))
     root.wm_iconbitmap(app_icon)
-
     menu = main_menu(root)
     menu.menu(initial=True)
+    root.mainloop()
+
+if loop_request:
+    root.mainloop()
+# try:
+# if len(sys.argv) > 1 and not global_licence_load_error:
+#     if sys.argv[1] == "run_tray":
+#         try:
+#             if root.winfo_exists():
+#                 pass
+#         except Exception as e:
+#             print(e)
+#             initial_path = Tools.get_init_path()
+#             app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
+#             customtkinter.set_appearance_mode("dark")
+#             customtkinter.set_default_color_theme("dark-blue")
+#             root=customtkinter.CTk(fg_color="#212121")
+#             root.geometry("1200x900")
+#             root.title("jhv_MAZ v_"+str(app_version))
+#             root.wm_iconbitmap(app_icon)
+
+#             menu = main_menu(root)
+#             menu.menu(initial=True)
+#             root.withdraw()
+#     else:
+#         root.mainloop()

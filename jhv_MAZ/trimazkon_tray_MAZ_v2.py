@@ -462,7 +462,8 @@ class tray_app_service:
         child_root.geometry(f"{1200}x{800}")
         child_root.focus_force()
         child_root.focus()
-        child_root.mainloop()
+        # child_root.mainloop()
+        child_root.wait_window()
 
     def show_task_log(self,specify_task=False,task_given = None,root_given = False,maximalized=False):
         try:
@@ -511,7 +512,7 @@ class tray_app_service:
             file_str = "souborů"
             file_str_eng = "files"
             for logs in all_task_logs:
-                if int(tasks["selected_option"]) == 4:
+                if int(task["selected_option"]) == 4:
                     file_str = "adresářů"
                     file_str_eng = "directories"
                 # label_data = str(log_data[0])+"\n"+str(log_data[1])+"\n"+str(log_data[2])+"\n"+str(log_data[3])
@@ -529,17 +530,17 @@ class tray_app_service:
                     files_deleted_label = "Total deleted: "+str(logs["files_deleted"])+f" {file_str_eng}\n"
                     path_count_label = "Browsed: "+str(logs["path_count"])+" subdirectories\n"
 
-                if int(tasks["selected_option"]) == 1:
+                if int(task["selected_option"]) == 1:
                     label_data = date_added_label + files_checked_label + files_older_label + files_deleted_label
-                    if int(tasks["more_dirs"]) == 1:
+                    if int(task["more_dirs"]) == 1:
                         label_data += path_count_label
 
-                elif int(tasks["selected_option"]) == 2:
+                elif int(task["selected_option"]) == 2:
                     label_data = date_added_label + files_checked_label + files_older_label + files_newer_label + files_deleted_label
-                    if int(tasks["more_dirs"]) == 1:
+                    if int(task["more_dirs"]) == 1:
                         label_data += path_count_label
 
-                elif int(tasks["selected_option"]) == 3 or int(tasks["selected_option"]) == 4:
+                elif int(task["selected_option"]) == 3 or int(task["selected_option"]) == 4:
                     label_data = date_added_label + files_checked_label + files_deleted_label
 
                 log_frame = customtkinter.CTkFrame(master=given_task_frame,corner_radius=0,border_width=2)
@@ -595,7 +596,9 @@ class tray_app_service:
         child_root.update()
         child_root.update_idletasks()
         child_root.geometry(f"{1200}x{800}")
-        child_root.mainloop()
+        # child_root.mainloop()
+        child_root.wait_window()
+
 
     def create_menu(self):
         def call_main_app():
@@ -603,7 +606,20 @@ class tray_app_service:
             print("calling main app with: ",command)
             # command = command.replace("/","\\")
             # subprocess.call(command,shell=True,text=True)
-            subprocess.Popen(command, shell=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+            process = subprocess.Popen(command, 
+                                        shell=True, 
+                                        text=True,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
+                                        creationflags=subprocess.CREATE_NO_WINDOW)
+            stdout, stderr = process.communicate()
+            try:
+                stdout_str = stdout.decode('utf-8')
+                stderr_str = stderr.decode('utf-8')
+                print(stdout_str,stderr_str)
+            except Exception as e:
+                print(stdout,stderr)
+                # print(e)
                 
         run_app_label = 'Spustit aplikaci jhv_MAZ'
         show_scheduled_tasks_label = 'Nastavené úkoly'

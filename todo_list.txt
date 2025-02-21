@@ -807,7 +807,7 @@ jhv_MAZ - nemazalo to log - hotovo
 jhv_MAZ - nejde spousteni pres tray a spinani ukolu... - hotovo
 
 9:51 AM 2/18/2025
-exclusion path... nedovoli nic
+exclusion path pres batak... defender nedovoli nic
 	jhv_MAZ - chova se divne, kdyz mam ukoly nebo log pres tray ikonu, nefunguje kontext menu a rozklikavaci tlacitko... - hotovo
 	jhv_MAZ - na NUC nejde prvotni startup spousteni aplikace... nezavede se do TS ale vypise, ze vse ok a nechce admina - hotovo
 	jhv_MAZ - nefunguje run_tray - hotovo
@@ -840,7 +840,7 @@ TRIMAZKON - na ukládání nastavení použít .json config... xls používat je
 	TRIMAZKON - prohlížeč - pamatovat si historii cest - otevíráním přes obrázky... mít třeba 10 uložených cest
 
 
-
+jhv_MAZ - předělat loopy, deiconify a withdraw... vše aby běželo v jednom loopu není potřeba pipeline server?
 
 ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...
 ip setting - opravit duplicity - manage bin
