@@ -25,6 +25,7 @@ běží jeden pipeline server
 msi installer:
 python generovani_MSI.py bdist_msi
 C:\Users\jakub.hlavacek.local\AppData\Local\Programs\jhv_MAZ
+C:\Users\kubah\AppData\Local\Programs\jhv_MAZ
 
 pro msi installer jsem upravoval:
 - resource path... neni to primo naicludovane v exe...

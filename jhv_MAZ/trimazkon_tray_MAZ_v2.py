@@ -9,6 +9,8 @@ import os
 import subprocess
 import sys
 import json
+import threading
+
 
 class Tools:
     @classmethod
@@ -103,6 +105,12 @@ class tray_app_service:
                 widget.unbind("<MouseWheel>")
                 widget.destroy()
     
+    def on_closing(self,to_close):
+        try:
+            to_close.destroy()
+        except Exception as e:
+            print(e)
+
     def read_config(self):
         """
         TASK SYNTAX:\n
@@ -463,7 +471,8 @@ class tray_app_service:
         child_root.focus_force()
         child_root.focus()
         # child_root.mainloop()
-        child_root.wait_window()
+        child_root.protocol("WM_DELETE_WINDOW", lambda: self.on_closing(child_root))
+        child_root.after(10, child_root.wait_window())
 
     def show_task_log(self,specify_task=False,task_given = None,root_given = False,maximalized=False):
         try:
@@ -597,8 +606,9 @@ class tray_app_service:
         child_root.update_idletasks()
         child_root.geometry(f"{1200}x{800}")
         # child_root.mainloop()
-        child_root.wait_window()
-
+        child_root.protocol("WM_DELETE_WINDOW", lambda: self.on_closing(child_root))
+        child_root.after(10, child_root.wait_window())
+        # child_root.wait_window()
 
     def create_menu(self):
         def call_main_app():
@@ -620,6 +630,25 @@ class tray_app_service:
             except Exception as e:
                 print(stdout,stderr)
                 # print(e)
+
+        def open_window():
+            command = self.initial_path +"/"+ self.main_app_exe_name + " open_window"
+            print("calling main app with: ",command)
+            # command = command.replace("/","\\")
+            # subprocess.call(command,shell=True,text=True)
+            process = subprocess.Popen(command, 
+                                        shell=True, 
+                                        text=True,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
+                                        creationflags=subprocess.CREATE_NO_WINDOW)
+            stdout, stderr = process.communicate()
+            try:
+                stdout_str = stdout.decode('utf-8')
+                stderr_str = stderr.decode('utf-8')
+                print(stdout_str,stderr_str)
+            except Exception as e:
+                print(stdout,stderr)
                 
         run_app_label = 'Spustit aplikaci jhv_MAZ'
         show_scheduled_tasks_label = 'Nastavené úkoly'
@@ -632,7 +661,7 @@ class tray_app_service:
             shut_down_label = "Quit"
 
         self.menu = Menu(MenuItem(run_app_label, lambda: call_main_app()),
-                         MenuItem(show_scheduled_tasks_label, lambda: self.show_all_tasks()),
+                         MenuItem(show_scheduled_tasks_label, lambda: open_window()),
                          MenuItem(deletion_log_label, lambda: self.show_task_log()),
                          MenuItem(shut_down_label, lambda: self.quit_application()))
 
@@ -655,7 +684,9 @@ class tray_app_service:
             "jhv_MAZ",
             self.menu
         )
-        self.icon.run() # Run the tray icon
+        icon_thread = threading.Thread(target=self.icon.run,)
+        icon_thread.start()
+        # self.icon.run() # Run the tray icon
 
 
 # inst = tray_app_service(r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON/",Tools.resource_path('images/logo_TRIMAZKON.ico'),"jhv_MAZ.exe","config_MAZ.json")

@@ -701,6 +701,7 @@ class Tools:
             print("tray app is already running")
             return
         
+
         print("tray app is not running yet")
         def call_tray_class():
             tray_app_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
@@ -1034,11 +1035,12 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
                         if root_existance == True:
                             try:
                                 root.deiconify()
+                                root.update_idletasks()
                             except Exception as e:
                                 print(e)
                             global menu
                             
-                            root.after(0,lambda: menu.menu(clear_root=True))
+                            root.after(100,lambda: menu.menu(clear_root=True))
                         else:
                             start_new_root()
                             # self.root.after(0,menu.menu(clear_root=True))
@@ -1136,20 +1138,28 @@ if len(sys.argv) > 1 and not global_licence_load_error: # kontrola tady, aby se 
         pipeline_duplex = system_pipeline_communication(exe_name)# potřeba spustit server, protože neběží nic (nikdy nedojde k tomu aby byla spuštěna aplikace)
         Tools.tray_startup_cmd()
         load_gui = False
+        if root == None:
+            customtkinter.set_appearance_mode("dark")
+            customtkinter.set_default_color_theme("dark-blue")
+            root=customtkinter.CTk(fg_color="#212121")
+            root.geometry("1200x900")
+            root.title("jhv_MAZ v_"+str(app_version))
+            root.wm_iconbitmap(app_icon)
+            root.update_idletasks()
+            root.withdraw()
+
+        loop_request = True
         # sys.exit(0)
 
-    elif sys.argv[1] == "trigger_by_tray":
+    # elif sys.argv[1] == "trigger_by_tray":
+    #     loop_request = False
+    #     root.deiconify()
+    #     root.after(0,lambda: menu.menu(clear_root=True))
+    elif sys.argv[1] == "open_window":
         loop_request = False
-        root.deiconify()
-        root.after(0,lambda: menu.menu(clear_root=True))
-    #     if root.winfo_exist():
-            
-    #     # Tools.tray_startup_cmd()
-    #     try:
-    #         root.deiconify()
-    #     except Exception as e:
-    #         print(e)
-    #     load_gui = True
+        load_gui = False
+        # root.deiconify()
+        Subwindows.licence_window()
 
     elif sys.argv[1] == "settings_tray" or sys.argv[1] == "settings_tray_del" or sys.argv[1] == "admin_menu":
         pid = int(sys.argv[2])
@@ -1173,6 +1183,8 @@ if load_gui:
     else:# předání parametrů pipeline komunikací
         pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
         pipeline_duplex_instance.call_checking(f"Establish main menu gui",[])
+
+    
 
 class main_menu:
     def __init__(self,root,new_loop=False):
@@ -1215,6 +1227,7 @@ class main_menu:
         change_log.see(tk.END)
 
     def on_closing(self):
+        global root
         if Tools.is_admin(): # pokud se vypíná admin app - vypnout i admin tray a zapnout bez práv
             data_read_in_config = Tools.read_json_config()
             if data_read_in_config[9] == "ano":
@@ -1228,7 +1241,7 @@ class main_menu:
             Tools.terminate_pid(os.getpid()) #vypnout thread s tray aplikací
         else:
             # self.root.destroy()
-            self.root.withdraw()
+            root.withdraw()
 
     def is_root_zoomed(self):
         if self.root.state() == "zoomed":
@@ -1382,7 +1395,7 @@ class main_menu:
         # if initial and len(sys.argv) == 1:
         #     self.root.after(100, lambda: self.call_deleting_option())
         try:
-            self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+            self.root.protocol("WM_DELETE_WINDOW", lambda: self.on_closing())
             # self.root.mainloop()
         except Exception as e:
             print("already looped? ",e)
@@ -3473,6 +3486,7 @@ def start_new_root():
     root.geometry("1200x900")
     root.title("jhv_MAZ v_"+str(app_version))
     root.wm_iconbitmap(app_icon)
+    root.update_idletasks()
     menu = main_menu(root)
     menu.menu(initial=True)
     root.mainloop()

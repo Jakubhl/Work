@@ -840,7 +840,10 @@ TRIMAZKON - na ukládání nastavení použít .json config... xls používat je
 	TRIMAZKON - prohlížeč - pamatovat si historii cest - otevíráním přes obrázky... mít třeba 10 uložených cest
 
 
-jhv_MAZ - předělat loopy, deiconify a withdraw... vše aby běželo v jednom loopu není potřeba pipeline server?
+jhv_MAZ - předělat loopy, deiconify a withdraw... vše aby běželo v jednom loopu
+jhv_MAZ - udělat komunikaci přes server - volat do hlavní smyčky pro otevírání tray oken s úkoly a s logy
+	- musí mi pořád běžet loop - proto i run tray udělá loop s rootem
+	- když potřeba nějaké okno - zavolám přes server - otevři okno to a to
 
 ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...
 ip setting - opravit duplicity - manage bin
