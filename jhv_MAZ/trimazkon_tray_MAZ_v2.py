@@ -701,9 +701,9 @@ class tray_app_service:
             "jhv_MAZ",
             self.menu
         )
-        icon_thread = threading.Thread(target=self.icon.run,)
-        icon_thread.start()
-        # self.icon.run() # Run the tray icon
+        # icon_thread = threading.Thread(target=self.icon.run,)
+        # icon_thread.start()
+        self.icon.run() # Run the tray icon
 
 
 # inst = tray_app_service(r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON/",Tools.resource_path('images/logo_TRIMAZKON.ico'),"jhv_MAZ.exe","config_MAZ.json")
