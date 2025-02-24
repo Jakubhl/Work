@@ -472,7 +472,8 @@ class tray_app_service:
         child_root.focus()
         # child_root.mainloop()
         child_root.protocol("WM_DELETE_WINDOW", lambda: self.on_closing(child_root))
-        child_root.after(10, child_root.wait_window())
+        child_root.wait_window()
+        # child_root.after(10, child_root.wait_window())
 
     def show_task_log(self,specify_task=False,task_given = None,root_given = False,maximalized=False):
         try:
@@ -607,7 +608,8 @@ class tray_app_service:
         child_root.geometry(f"{1200}x{800}")
         # child_root.mainloop()
         child_root.protocol("WM_DELETE_WINDOW", lambda: self.on_closing(child_root))
-        child_root.after(10, child_root.wait_window())
+        child_root.wait_window()
+        # child_root.after(10, child_root.wait_window())
         # child_root.wait_window()
 
     def create_menu(self):
@@ -631,11 +633,26 @@ class tray_app_service:
                 print(stdout,stderr)
                 # print(e)
 
-        def open_window():
-            command = self.initial_path +"/"+ self.main_app_exe_name + " open_window"
+        def call_show_all_tasks():
+            command = self.initial_path +"/"+ self.main_app_exe_name + " open_task_list"
             print("calling main app with: ",command)
-            # command = command.replace("/","\\")
-            # subprocess.call(command,shell=True,text=True)
+            process = subprocess.Popen(command, 
+                                        shell=True, 
+                                        text=True,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
+                                        creationflags=subprocess.CREATE_NO_WINDOW)
+            stdout, stderr = process.communicate()
+            try:
+                stdout_str = stdout.decode('utf-8')
+                stderr_str = stderr.decode('utf-8')
+                print(stdout_str,stderr_str)
+            except Exception as e:
+                print(stdout,stderr)
+
+        def call_show_all_logs():
+            command = self.initial_path +"/"+ self.main_app_exe_name + " open_log_list"
+            print("calling main app with: ",command)
             process = subprocess.Popen(command, 
                                         shell=True, 
                                         text=True,
@@ -661,8 +678,8 @@ class tray_app_service:
             shut_down_label = "Quit"
 
         self.menu = Menu(MenuItem(run_app_label, lambda: call_main_app()),
-                         MenuItem(show_scheduled_tasks_label, lambda: open_window()),
-                         MenuItem(deletion_log_label, lambda: self.show_task_log()),
+                         MenuItem(show_scheduled_tasks_label, lambda: call_show_all_tasks()),
+                         MenuItem(deletion_log_label, lambda: call_show_all_logs()),
                          MenuItem(shut_down_label, lambda: self.quit_application()))
 
     def quit_application(self):

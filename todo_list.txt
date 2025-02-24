@@ -815,8 +815,17 @@ jhv_MAZ - predbezna analyza souboru - x souboru starsich nez... (pres tlacitko?)
 jhv_MAZ - provadet mazani a analyzu na pozadi - hotovo
 jhv_MAZ - pridat scrollbar na konzoli - hotovo
 jhv_MAZ - opravit path history list - hotovo
+
+10:36 AM 2/24/2025
+jhv_MAZ - předělat loopy, deiconify a withdraw... vše aby běželo v jednom loopu - hotovo
+jhv_MAZ - udělat komunikaci přes server - volat do hlavní smyčky pro otevírání tray oken s úkoly a s logy - hotovo
+	- musí mi pořád běžet loop - proto i run tray udělá loop s rootem - hotovo
+	- když potřeba nějaké okno - zavolám přes server - otevři okno to a to - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
+TRIMAZKON - katalog - když prohodím kontroler u editu kamery - smažou se okolní kontrolery
+TRIMAZKON - katalog - prohodit tlačítko zavřít a uložit
 
 TRIMAZKON - prohlížeč nejde otevírat ifz v novém okně...
 TRIMAZKON - prohlížeč - když vyberu neco z histoie cest z nabídky, rovnou otevřít...
@@ -840,13 +849,12 @@ TRIMAZKON - na ukládání nastavení použít .json config... xls používat je
 	TRIMAZKON - prohlížeč - pamatovat si historii cest - otevíráním přes obrázky... mít třeba 10 uložených cest
 
 
-jhv_MAZ - předělat loopy, deiconify a withdraw... vše aby běželo v jednom loopu
-jhv_MAZ - udělat komunikaci přes server - volat do hlavní smyčky pro otevírání tray oken s úkoly a s logy
-	- musí mi pořád běžet loop - proto i run tray udělá loop s rootem
-	- když potřeba nějaké okno - zavolám přes server - otevři okno to a to
+
 
 ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...
 ip setting - opravit duplicity - manage bin
+
+
 
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
 ??? Koumu: admin práva, online auto aktualizace nové verze

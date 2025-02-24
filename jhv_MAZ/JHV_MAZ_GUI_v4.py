@@ -1039,10 +1039,11 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
                             except Exception as e:
                                 print(e)
                             global menu
-                            
+                            menu = main_menu(root)
                             root.after(100,lambda: menu.menu(clear_root=True))
+                            # menu.menu(clear_root=True)
                         else:
-                            start_new_root()
+                            start_new_root() # spousteni pres admina, bylo potreba shodit cely processID
                             # self.root.after(0,menu.menu(clear_root=True))
 
                     elif "Execute file deleting" in received_data:
@@ -1052,6 +1053,14 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
                         print("params to send: ",params_to_send)
                         del_thread = threading.Thread(target=Tools.deleting_via_cmd,args=[params_to_send],name="Deleting_thread")
                         del_thread.start()
+
+                    elif "Open list with del tasks" in received_data:
+                        trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
+                        trimazkon_tray_instance.show_all_tasks(toplevel=True)
+
+                    elif "Open list with del logs" in received_data:
+                        trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
+                        trimazkon_tray_instance.show_task_log()
                         
             except pywintypes.error as e:
                 if e.args[0] == 109:  # ERROR_BROKEN_PIPE
@@ -1076,17 +1085,27 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
             0,
             None
         )
-        print("not here anymore")
+
         if "Establish main menu gui" in str(command):
             message = "Establish main menu gui"
             print("Message sent.",message)
             win32file.WriteFile(handle, message.encode())
         
-        if "Execute file deleting" in str(command):
+        elif "Execute file deleting" in str(command):
             message = str(command) + "|||"
             for params in parameters:
                 message = message + str(params) + "|||"
             print("Message sent: ",message)
+            win32file.WriteFile(handle, message.encode())
+        
+        elif "Open list with del tasks" in str(command):
+            message = "Open list with del tasks"
+            print("Message sent.",message)
+            win32file.WriteFile(handle, message.encode())
+
+        elif "Open list with del logs" in str(command):
+            message = "Open list with del logs"
+            print("Message sent.",message)
             win32file.WriteFile(handle, message.encode())
 
     def start_server(self):
@@ -1132,7 +1151,6 @@ if len(sys.argv) > 1 and not global_licence_load_error: # kontrola tady, aby se 
         del_thread = threading.Thread(target=Tools.deleting_via_cmd,name="Deleting_thread")
         del_thread.start()
         load_gui = False
-        # sys.exit(0)
 
     elif sys.argv[1] == "run_tray":
         pipeline_duplex = system_pipeline_communication(exe_name)# potřeba spustit server, protože neběží nic (nikdy nedojde k tomu aby byla spuštěna aplikace)
@@ -1149,17 +1167,24 @@ if len(sys.argv) > 1 and not global_licence_load_error: # kontrola tady, aby se 
             root.withdraw()
 
         loop_request = True
-        # sys.exit(0)
 
-    # elif sys.argv[1] == "trigger_by_tray":
-    #     loop_request = False
-    #     root.deiconify()
-    #     root.after(0,lambda: menu.menu(clear_root=True))
-    elif sys.argv[1] == "open_window":
-        loop_request = False
+    elif sys.argv[1] == "trigger_by_tray":
         load_gui = False
-        # root.deiconify()
-        Subwindows.licence_window()
+        loop_request = False
+        pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
+        pipeline_duplex_instance.call_checking(f"Establish main menu gui",[])
+    
+    elif sys.argv[1] == "open_task_list":
+        load_gui = False
+        loop_request = False
+        pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
+        pipeline_duplex_instance.call_checking(f"Open list with del tasks",[])
+    
+    elif sys.argv[1] == "open_log_list":
+        load_gui = False
+        loop_request = False
+        pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
+        pipeline_duplex_instance.call_checking(f"Open list with del logs",[])
 
     elif sys.argv[1] == "settings_tray" or sys.argv[1] == "settings_tray_del" or sys.argv[1] == "admin_menu":
         pid = int(sys.argv[2])
@@ -1180,11 +1205,9 @@ if load_gui:
         root.wm_iconbitmap(app_icon)
         loop_request=True
 
-    else:# předání parametrů pipeline komunikací
-        pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
-        pipeline_duplex_instance.call_checking(f"Establish main menu gui",[])
-
-    
+    # else:# předání parametrů pipeline komunikací
+    #     pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
+    #     pipeline_duplex_instance.call_checking(f"Establish main menu gui",[])
 
 class main_menu:
     def __init__(self,root,new_loop=False):
