@@ -49,6 +49,8 @@ git clean -fd
 windows exception:
 Add-MpPreference -ExclusionPath "C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\jhv_MAZ"
 
+python generovani_MSI_TRIMAZKON.py bdist_msi
+
 
 
 

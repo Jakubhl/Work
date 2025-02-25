@@ -822,6 +822,13 @@ jhv_MAZ - udělat komunikaci přes server - volat do hlavní smyčky pro otevír
 	- musí mi pořád běžet loop - proto i run tray udělá loop s rootem - hotovo
 	- když potřeba nějaké okno - zavolám přes server - otevři okno to a to - hotovo
 
+3:12 PM 2/25/2025
+jhv_MAZ - když vypnu přes tray, pořád běží na pozadí - hotovo
+TRIMAZKON - hláška na úvodní obrazovce - o spuštění s adminem - upřesnit - hotovo
+TRIMAZKON - delete confirm window má špatné hlášky - hotovo
+TRIMAZKON - implementovat deleting z jhv_MAZ - hotovo
+TRIMAZKON - implementovat novou logiku gui rootu - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 TRIMAZKON - katalog - když prohodím kontroler u editu kamery - smažou se okolní kontrolery
@@ -829,14 +836,13 @@ TRIMAZKON - katalog - prohodit tlačítko zavřít a uložit
 
 TRIMAZKON - prohlížeč nejde otevírat ifz v novém okně...
 TRIMAZKON - prohlížeč - když vyberu neco z histoie cest z nabídky, rovnou otevřít...
-TRIMAZKON - prohlížeč - zkontrolovat historii cest, používat insert(0,...
+
 
 TRIMAZKON - když aplikaci otevřu přes tray, tak mi to skočí do prohlížeče obrázků
 TRIMAZKON - na cestě z nastavení, pokud vypnute startup zapinani - vzdycky to chce admina v menu
 
 TRIMAZKON - kouknout na directories z configu u advanced option v initu
-TRIMAZKON - hláška na úvodní obrazovce - o spuštění s adminem - upřesnit
-TRIMAZKON - delete confirm window má špatné hlášky
+
 
 
 TRIMAZKON - u konzoli, kde se dynamicky pise text - pouzit console.see(tk.END)
@@ -847,7 +853,7 @@ TRIMAZKON - na ukládání nastavení použít .json config... xls používat je
 	TRIMAZKON - nastavení folderu nebo filu v exploreru - neulozi se
 	TRIMAZKON - přidat automatické vytvoření configu
 	TRIMAZKON - prohlížeč - pamatovat si historii cest - otevíráním přes obrázky... mít třeba 10 uložených cest
-
+	TRIMAZKON - prohlížeč - zkontrolovat historii cest, používat insert(0,...
 
 
 

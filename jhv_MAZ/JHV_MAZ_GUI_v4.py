@@ -19,9 +19,11 @@ import win32con
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization, hashes
 import datetime
+import wmi
 import struct
 
 testing = False
+
 
 
 global_recources_load_error = False
@@ -29,7 +31,7 @@ global_licence_load_error = False
 exe_path = sys.executable
 exe_name = os.path.basename(exe_path)
 config_filename = "config_MAZ.json"
-app_version = "1.0.4"
+app_version = "1.0.5"
 loop_request = False
 root = None
 print("exe name: ",exe_name)
@@ -967,10 +969,29 @@ class Tools:
             global_licence_load_error = True
             return "verification error"
 
+    # @classmethod
+    # def get_volume_serial(cls):
+    #     output = subprocess.check_output('wmic diskdrive get serialnumber', shell=True).decode().split("\n")[1].strip()
+    #     return output.rstrip(".")
+
     @classmethod
     def get_volume_serial(cls):
-        output = subprocess.check_output('wmic diskdrive get serialnumber', shell=True).decode().split("\n")[1].strip()
-        return output.rstrip(".")
+        # Get system drive letter (e.g., "C:")
+        drive_letter = subprocess.check_output(
+            'wmic os get systemdrive', shell=True
+        ).decode().split("\n")[1].strip().replace(":", "")
+        
+        c = wmi.WMI()
+        
+        # Find the physical disk corresponding to the system drive
+        for disk in c.Win32_DiskDrive():
+            for partition in disk.associators("Win32_DiskDriveToDiskPartition"):
+                for logical_disk in partition.associators("Win32_LogicalDiskToPartition"):
+                    if logical_disk.DeviceID == f"{drive_letter}:":  # Match the system drive
+                        serial_number = disk.SerialNumber.strip()  # Get serial number
+                        return serial_number.rstrip(".")
+
+        return None  # Return None if not found
 
 initial_path = Tools.get_init_path()
 print("init path: ",initial_path)
@@ -1061,7 +1082,12 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
                     elif "Open list with del logs" in received_data:
                         trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
                         trimazkon_tray_instance.show_task_log()
-                        
+
+                    elif "Shutdown application" in received_data:
+                        # global root
+                        root.destroy()
+                        # root.after(100,lambda: root.destroy())
+
             except pywintypes.error as e:
                 if e.args[0] == 109:  # ERROR_BROKEN_PIPE
                     print("jhv_MAZ disconnected.")
@@ -1108,6 +1134,11 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
             print("Message sent.",message)
             win32file.WriteFile(handle, message.encode())
 
+        elif "Shutdown application" in str(command):
+            message = "Shutdown application"
+            print("Message sent.",message)
+            win32file.WriteFile(handle, message.encode())
+
     def start_server(self):
         self.pipe_name = f"jhv_MAZ_pipe_{self.current_pid}"
         running_server = threading.Thread(target=self.server, args=(self.pipe_name,),daemon=True)
@@ -1141,13 +1172,6 @@ load_gui=True
 print("SYSTEM: ",sys.argv)
 if len(sys.argv) > 1 and not global_licence_load_error: # kontrola tady, aby se znovu nedefinovala classa windowsballoontip, řve to...
     if sys.argv[1] == "deleting":
-        # if app_running_status:
-        #     pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
-        #     print("calling: ",f"Execute file deleting",[str(sys.argv[2]),str(sys.argv[3]),int(sys.argv[4]),int(sys.argv[5]),int(sys.argv[6]),int(sys.argv[7]),int(sys.argv[8])])
-        #     pipeline_duplex_instance.call_checking(f"Execute file deleting",[str(sys.argv[2]),str(sys.argv[3]),int(sys.argv[4]),int(sys.argv[5]),int(sys.argv[6]),int(sys.argv[7]),int(sys.argv[8])])
-        #     load_gui = False
-        #     # sys.exit(0)
-        # else:# aplikace není spuštěna - jen spustím a vezme si systémové patametry
         del_thread = threading.Thread(target=Tools.deleting_via_cmd,name="Deleting_thread")
         del_thread.start()
         load_gui = False
@@ -1186,6 +1210,12 @@ if len(sys.argv) > 1 and not global_licence_load_error: # kontrola tady, aby se 
         pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
         pipeline_duplex_instance.call_checking(f"Open list with del logs",[])
 
+    elif sys.argv[1] == "app_shutdown":
+        load_gui = False
+        loop_request = False
+        pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True)
+        pipeline_duplex_instance.call_checking(f"Shutdown application",[])
+
     elif sys.argv[1] == "settings_tray" or sys.argv[1] == "settings_tray_del" or sys.argv[1] == "admin_menu":
         pid = int(sys.argv[2])
         Tools.terminate_pid(pid) #vypnout thread s tray aplikací
@@ -1205,9 +1235,9 @@ if load_gui:
         root.wm_iconbitmap(app_icon)
         loop_request=True
 
-    # else:# předání parametrů pipeline komunikací
-    #     pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
-    #     pipeline_duplex_instance.call_checking(f"Establish main menu gui",[])
+    else:# předání parametrů pipeline komunikací PUKUD NEJSOU NA VSTUPU ZADNE SYSTEMOVE PARAMETRY, SPOUSTENO PRES ZÁSTUPCE
+        pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
+        pipeline_duplex_instance.call_checking(f"Establish main menu gui",[])
 
 class main_menu:
     def __init__(self,root,new_loop=False):
@@ -3516,25 +3546,4 @@ def start_new_root():
 
 if loop_request:
     root.mainloop()
-# try:
-# if len(sys.argv) > 1 and not global_licence_load_error:
-#     if sys.argv[1] == "run_tray":
-#         try:
-#             if root.winfo_exists():
-#                 pass
-#         except Exception as e:
-#             print(e)
-#             initial_path = Tools.get_init_path()
-#             app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
-#             customtkinter.set_appearance_mode("dark")
-#             customtkinter.set_default_color_theme("dark-blue")
-#             root=customtkinter.CTk(fg_color="#212121")
-#             root.geometry("1200x900")
-#             root.title("jhv_MAZ v_"+str(app_version))
-#             root.wm_iconbitmap(app_icon)
 
-#             menu = main_menu(root)
-#             menu.menu(initial=True)
-#             root.withdraw()
-#     else:
-#         root.mainloop()

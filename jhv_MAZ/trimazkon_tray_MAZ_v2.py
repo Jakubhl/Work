@@ -683,11 +683,29 @@ class tray_app_service:
                          MenuItem(shut_down_label, lambda: self.quit_application()))
 
     def quit_application(self):
+        def call_app_shutdown():
+            command = self.initial_path +"/"+ self.main_app_exe_name + " app_shutdown"
+            print("calling main app with: ",command)
+            process = subprocess.Popen(command, 
+                                        shell=True, 
+                                        text=True,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
+                                        creationflags=subprocess.CREATE_NO_WINDOW)
+            stdout, stderr = process.communicate()
+            try:
+                stdout_str = stdout.decode('utf-8')
+                stderr_str = stderr.decode('utf-8')
+                print(stdout_str,stderr_str)
+            except Exception as e:
+                print(stdout,stderr)
+
         self.icon.stop()
         try:
+            call_app_shutdown()
             sys.exit(0)
-        except Exception:
-            pass
+        except Exception as e:
+            print(e)
 
     def main(self):
         def create_image():

@@ -11,7 +11,9 @@ include_files = [
 
 # Define the base
 base = "Win32GUI" if sys.platform == "win32" else None  # Hide console for GUI apps
-base = None
+# base = None
+
+
 # Define the executable
 exe = Executable(
     script="JHV_MAZ_GUI_v4.py",  # Main script to convert to EXE
@@ -23,8 +25,8 @@ exe = Executable(
 # Setup configuration
 setup(
     name="jhv_MAZ",
-    version="1.0.4",
-    description="jhv_MAZ v1.0.4",
+    version="1.0.5",
+    description="jhv_MAZ v1.0.5",
     executables=[exe],
     options={
         "build_exe": {

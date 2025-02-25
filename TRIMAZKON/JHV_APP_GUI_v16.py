@@ -4,7 +4,7 @@ import time
 from openpyxl import load_workbook
 from PIL import Image, ImageTk
 import Sorting_option_v5 as Trideni
-import Deleting_option_v1 as Deleting
+import Deleting_option_v2 as Deleting
 import Converting_option_v3 as Converting
 import catalogue_maker_v5 as Catalogue
 import sharepoint_download as download_database
@@ -22,17 +22,224 @@ import subprocess
 from win32api import *
 from win32gui import *
 import win32con
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import serialization, hashes
+import datetime
+import wmi
 import struct
 
 testing = False
 
 trimazkon_tray_exe_name = "trimazkon_tray_v2.exe"
 global_recources_load_error = False
+global_licence_load_error = False
 exe_path = sys.executable
 exe_name = os.path.basename(exe_path)
+config_filename = "TRIMAZKON.json"
+app_version = "4.3.0"
 print("exe name: ",exe_name)
 if testing:
     exe_name = "trimazkon_test.exe"
+
+class Subwindows:
+    @classmethod
+    def call_again_as_admin(cls,input_flag:str,window_title,main_title,language_given="cz"):
+        def run_as_admin():# Vyžádání admin práv: nefunkční ve vscode
+            if not Tools.is_admin():
+                pid = "None"
+                try:
+                    pid = os.getpid()
+                except Exception as e:
+                    print(e)
+                ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join([input_flag,str(pid)]), None, 1)
+                sys.exit()
+
+        def close_prompt(child_root):
+            child_root.grab_release()
+            child_root.destroy()
+
+        child_root = customtkinter.CTkToplevel()
+        child_root.after(200, lambda: child_root.iconbitmap(app_icon))
+        child_root.title(window_title)
+        label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        proceed_label = customtkinter.CTkLabel(master = label_frame,text = main_title,font=("Arial",25),anchor="w",justify="left")
+        proceed_label.pack(pady=5,padx=10,anchor="w",side = "left")
+        button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        button_yes =    customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: run_as_admin())
+        button_no =     customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+        button_no       .pack(pady = 5, padx = 10,anchor="e",side="right")
+        button_yes      .pack(pady = 5, padx = 10,anchor="e",side="right")
+        label_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+        button_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+        if language_given == "en":
+            button_yes.configure(text = "YES")
+            button_no.configure(text = "Cancel")
+        child_root.update()
+        child_root.update_idletasks()
+        child_root.focus()
+        child_root.focus_force()
+        child_root.grab_set()
+
+    @classmethod
+    def confirm_window(cls,prompt_message,title_message,language_given="cz"):
+        selected_option = False
+        def selected_yes(child_root):# Vyžádání admin práv: nefunkční ve vscode
+            child_root.grab_release()
+            child_root.destroy()
+            nonlocal selected_option
+            selected_option = True
+
+        def close_prompt(child_root):
+            child_root.grab_release()
+            child_root.destroy()
+            nonlocal selected_option
+            selected_option = False
+            
+        child_root = customtkinter.CTkToplevel()
+        child_root.after(200, lambda: child_root.iconbitmap(app_icon))
+        child_root.title(title_message)
+        label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        proceed_label = customtkinter.CTkLabel(master = label_frame,text = prompt_message,font=("Arial",25),anchor="w",justify="left")
+        proceed_label.pack(pady=5,padx=10,anchor="w",side = "left")
+        button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        button_yes =   customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: selected_yes(child_root))
+        button_no =    customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+        button_no      .pack(pady = 5, padx = 10,anchor="e",side="right")
+        button_yes     .pack(pady = 5, padx = 10,anchor="e",side="right")
+        label_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+        button_frame   .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+        if language_given == "en":
+            button_yes.configure(text = "YES")
+            button_no.configure(text = "Cancel")
+        child_root.update()
+        child_root.update_idletasks()
+        child_root.focus()
+        child_root.focus_force()
+        child_root.grab_set()
+        child_root.wait_window()
+        return selected_option
+
+    @classmethod
+    def licence_window(cls,language_given="cz"):
+        def close_prompt(child_root):
+            child_root.grab_release()
+            child_root.destroy()
+
+        user_HWID = Tools.get_volume_serial()
+        prompt_message1 = "Nemáte platnou licenci pro spuštění aplikace jhv_MAZ."
+        prompt_message2 = f"Váš HWID:"
+        prompt_message3 = f"\n{user_HWID}\n"
+        prompt_message4 = "odešlete na email: "
+        prompt_message5 = "jakub.hlavacek@jhv.cz "
+        prompt_message6 = "s žádostí o licenci."
+        title_message = "Upozornění"
+
+        if language_given == "en":
+            prompt_message1 = "You do not have a valid license to run the application jhv_MAZ."
+            prompt_message2 = f"Your HWID:"
+            prompt_message3 = f"\n{user_HWID}\n"
+            prompt_message4 = "send to email: "
+            prompt_message5 = "jakub.hlavacek@jhv.cz "
+            prompt_message6 = "with an application for a license."
+            title_message = "Notice"
+            
+        child_root = customtkinter.CTkToplevel(fg_color="#212121")
+        child_root.after(200, lambda: child_root.iconbitmap(app_icon))
+        child_root.title(title_message)
+        label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        proceed_label = customtkinter.CTkLabel(master = label_frame,text = prompt_message1,font=("Arial",25,"bold"),anchor="w",justify="left")
+        proceed_label.pack(pady=(5,0),padx=10,anchor="w",side = "left")
+        label_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+
+        text_widget = tk.Text(master = child_root,background="#212121",borderwidth=0,height=9)
+        Tools.add_colored_line(text_widget,text=prompt_message2,color="gray84",font=("Arial",16),no_indent=True)
+        Tools.add_colored_line(text_widget,text=prompt_message3,color="white",font=("Arial",16,"bold"),no_indent=True)
+        Tools.add_colored_line(text_widget,text=prompt_message4,color="gray84",font=("Arial",16),no_indent=True, sameline=True)
+        Tools.add_colored_line(text_widget,text=prompt_message5,color="skyblue",font=("Arial",16),no_indent=True, sameline=True)
+        Tools.add_colored_line(text_widget,text=prompt_message6,color="gray84",font=("Arial",16),no_indent=True, sameline=True)
+        text_widget    .pack(pady=10,padx=(30,10),anchor="w",side = "top",fill="both",expand=True)
+
+        button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        button_close =    customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+        button_close     .pack(pady = 5, padx = 10,anchor="e",side="right")
+        button_frame   .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+
+        if language_given == "en":
+            button_close.configure(text = "Close")
+        child_root.update()
+        child_root.update_idletasks()
+        child_root.geometry("800x260")
+        child_root.focus()
+        child_root.focus_force()
+        child_root.grab_set()
+
+class WindowsBalloonTip:
+    """
+    Windows system notification (balloon tip).
+    """
+    _class_registered = False  # Ensures window class is registered only once
+
+    def __init__(self, title, msg, app_icon):
+        message_map = {
+            win32con.WM_DESTROY: self.OnDestroy,
+        }
+
+        hinst = GetModuleHandle(None)
+        class_name = "PythonTaskbar"
+        try:
+            if not WindowsBalloonTip._class_registered:
+                # Register the Window class once
+                wc = WNDCLASS()
+                wc.hInstance = hinst
+                wc.lpszClassName = class_name
+                wc.lpfnWndProc = message_map
+                RegisterClass(wc)
+                WindowsBalloonTip._class_registered = True  # Mark as registered
+        except Exception:
+            wc = WNDCLASS()
+            wc.hInstance = hinst
+            wc.lpszClassName = class_name
+            wc.lpfnWndProc = message_map
+            RegisterClass(wc)
+
+        # Create a new window (without re-registering the class)
+        style = win32con.WS_OVERLAPPED | win32con.WS_SYSMENU
+        self.hwnd = CreateWindow(class_name, "Taskbar", style, 
+                                 0, 0, win32con.CW_USEDEFAULT, win32con.CW_USEDEFAULT, 
+                                 0, 0, hinst, None)
+
+        UpdateWindow(self.hwnd)
+
+        # Load icon
+        icon_flags = win32con.LR_LOADFROMFILE | win32con.LR_DEFAULTSIZE
+        try:
+            hicon = LoadImage(hinst, app_icon, win32con.IMAGE_ICON, 0, 0, icon_flags)
+        except:
+            hicon = LoadIcon(0, win32con.IDI_APPLICATION)
+
+        # Display notification
+        # flags = win32gui.NIF_ICON | win32gui.NIF_MESSAGE | win32gui.NIF_TIP
+        flags = NIF_ICON | NIF_MESSAGE | NIF_TIP
+        nid = (self.hwnd, 0, flags, win32con.WM_USER+20, hicon, "tooltip")
+        Shell_NotifyIcon(NIM_ADD, nid)
+
+        Shell_NotifyIcon(NIM_MODIFY, 
+                         (self.hwnd, 0, NIF_INFO, win32con.WM_USER+20,
+                          hicon, "Balloon tooltip", msg, 200, title))
+
+        # time.sleep(10)  # Display the notification for 10 seconds
+        # self.cleanup()
+
+    def cleanup(self):
+        """ Removes the notification icon and destroys the window. """
+        nid = (self.hwnd, 0)
+        Shell_NotifyIcon(NIM_DELETE, nid)
+        DestroyWindow(self.hwnd)
+
+    def OnDestroy(self, hwnd, msg, wparam, lparam):
+        """ Handles window destruction. """
+        self.cleanup()
+        PostQuitMessage(0)  # Terminate the app.
 
 class Tools:
     @classmethod
@@ -71,7 +278,7 @@ class Tools:
         - v top případě zajistí aby se nenačítalo gui a pouze zajistí odeslání paramterů pro image browser
         """
         found_processes = Tools.get_all_app_processes()
-        if found_processes[0] > 2:
+        if found_processes[0] > 1:
             return True
         else:
             return False
@@ -79,9 +286,11 @@ class Tools:
     @classmethod
     def resource_path(cls,relative_path):
         """ Get the absolute path to a resource, works for dev and for PyInstaller """
-        if hasattr(sys, '_MEIPASS'):
-            return os.path.join(sys._MEIPASS, relative_path)
-        return os.path.join(os.path.abspath("."), relative_path)
+        # if hasattr(sys, '_MEIPASS'):
+        #     return os.path.join(sys._MEIPASS, relative_path)
+        # return os.path.join(os.path.abspath("."), relative_path)
+        BASE_DIR = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.abspath(".")
+        return os.path.join(BASE_DIR, relative_path)
     
     @classmethod
     def read_config_data(cls): # Funkce vraci data z config_TRIMAZKON.
@@ -1072,44 +1281,6 @@ class Tools:
             # tray_thread.start()
     
     @classmethod
-    def call_again_as_admin(cls,input_flag:str,window_title,main_title):
-        def run_as_admin():# Vyžádání admin práv: nefunkční ve vscode
-            def is_admin():
-                try:
-                    return ctypes.windll.shell32.IsUserAnAdmin()
-                except:
-                    return False
-            if not is_admin():
-                ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join([input_flag]), None, 1)
-                sys.exit()
-
-        def close_prompt(child_root):
-            child_root.grab_release()
-            child_root.destroy()
-
-        child_root = customtkinter.CTkToplevel()
-        child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(app_icon)))
-        # child_root.geometry(f"620x150+{300}+{300}")  
-        child_root.title(window_title)
-        label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-        proceed_label = customtkinter.CTkLabel(master = label_frame,text = main_title,font=("Arial",25),anchor="w",justify="left")
-        proceed_label.pack(pady=5,padx=10,anchor="w",side = "left")
-        button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-        button_yes =    customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: run_as_admin())
-        button_no =     customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
-        button_no       .pack(pady = 5, padx = 10,anchor="e",side="right")
-        button_yes      .pack(pady = 5, padx = 10,anchor="e",side="right")
-        label_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
-        button_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
-
-        child_root.update()
-        child_root.update_idletasks()
-        # child_root.geometry(f"{child_root.winfo_width()}x{child_root.winfo_height()}+{300}+{300}")
-        child_root.focus()
-        child_root.focus_force()
-        child_root.grab_set()
-
-    @classmethod
     def remove_task_from_TS(cls,name_of_task):
         cmd_command = f"schtasks /Delete /TN {name_of_task} /F"
         # subprocess.call(cmd_command,shell=True,text=True)
@@ -1125,89 +1296,98 @@ class Tools:
         if "Access is denied" in output_message:
             return "need_access"
 
-def get_init_path():
-    initial_path = Tools.path_check(os.getcwd())
-    if len(sys.argv) > 1: #spousteni pres cmd (kliknuti na obrazek) nebo task scheduler - mazání
-        raw_path = str(sys.argv[0])
-        initial_path = Tools.path_check(raw_path,True)
-        initial_path_splitted = initial_path.split("/")
-        initial_path = ""
-        for i in range(0,len(initial_path_splitted)-2):
-            initial_path += str(initial_path_splitted[i])+"/"
-        print("SYSTEM: ",sys.argv)
-
-    return initial_path
-
-initial_path = get_init_path()
-print("init path: ",initial_path)
-
-class WindowsBalloonTip:
-    """
-    Windows system notification (balloon tip).
-    """
-    _class_registered = False  # Ensures window class is registered only once
-
-    def __init__(self, title, msg, app_icon):
-        message_map = {
-            win32con.WM_DESTROY: self.OnDestroy,
-        }
-
-        hinst = GetModuleHandle(None)
-        class_name = "PythonTaskbar"
+    @classmethod
+    def is_admin(cls):
         try:
-            if not WindowsBalloonTip._class_registered:
-                # Register the Window class once
-                wc = WNDCLASS()
-                wc.hInstance = hinst
-                wc.lpszClassName = class_name
-                wc.lpfnWndProc = message_map
-                RegisterClass(wc)
-                WindowsBalloonTip._class_registered = True  # Mark as registered
-        except Exception:
-            wc = WNDCLASS()
-            wc.hInstance = hinst
-            wc.lpszClassName = class_name
-            wc.lpfnWndProc = message_map
-            RegisterClass(wc)
-
-        # Create a new window (without re-registering the class)
-        style = win32con.WS_OVERLAPPED | win32con.WS_SYSMENU
-        self.hwnd = CreateWindow(class_name, "Taskbar", style, 
-                                 0, 0, win32con.CW_USEDEFAULT, win32con.CW_USEDEFAULT, 
-                                 0, 0, hinst, None)
-
-        UpdateWindow(self.hwnd)
-
-        # Load icon
-        icon_flags = win32con.LR_LOADFROMFILE | win32con.LR_DEFAULTSIZE
-        try:
-            hicon = LoadImage(hinst, app_icon, win32con.IMAGE_ICON, 0, 0, icon_flags)
+            return ctypes.windll.shell32.IsUserAnAdmin()
         except:
-            hicon = LoadIcon(0, win32con.IDI_APPLICATION)
+            return False
 
-        # Display notification
-        # flags = win32gui.NIF_ICON | win32gui.NIF_MESSAGE | win32gui.NIF_TIP
-        flags = NIF_ICON | NIF_MESSAGE | NIF_TIP
-        nid = (self.hwnd, 0, flags, win32con.WM_USER+20, hicon, "tooltip")
-        Shell_NotifyIcon(NIM_ADD, nid)
+    @classmethod
+    def get_init_path(cls):
+        initial_path = Tools.path_check(os.getcwd())
+        if len(sys.argv) > 1: #spousteni pres cmd (kliknuti na obrazek) nebo task scheduler - mazání
+            raw_path = str(sys.argv[0])
+            initial_path = Tools.path_check(raw_path,True)
+            initial_path_splitted = initial_path.split("/")
+            initial_path = ""
+            for i in range(0,len(initial_path_splitted)-2):
+                initial_path += str(initial_path_splitted[i])+"/"
 
-        Shell_NotifyIcon(NIM_MODIFY, 
-                         (self.hwnd, 0, NIF_INFO, win32con.WM_USER+20,
-                          hicon, "Balloon tooltip", msg, 200, title))
+        initial_path.replace("//","/")
+        return initial_path
 
-        # time.sleep(10)  # Display the notification for 10 seconds
-        # self.cleanup()
+    @classmethod
+    def check_licence(cls):
+        global global_licence_load_error 
+        # Načtení veřejného klíče
+        with open(Tools.resource_path("public.pem"), "rb") as f:
+            public_key = serialization.load_pem_public_key(f.read())
 
-    def cleanup(self):
-        """ Removes the notification icon and destroys the window. """
-        nid = (self.hwnd, 0)
-        Shell_NotifyIcon(NIM_DELETE, nid)
-        DestroyWindow(self.hwnd)
+        # Načtení licence a podpisu
+        if os.path.exists(initial_path + "/license.lic"):
+            with open(initial_path + "/license.lic", "r") as f:
+                lines = f.readlines()
+        else:
+            global_licence_load_error = True
+            return "verification error"
 
-    def OnDestroy(self, hwnd, msg, wparam, lparam):
-        """ Handles window destruction. """
-        self.cleanup()
-        PostQuitMessage(0)  # Terminate the app.
+        # Ověření podpisu
+        licence_data = lines[0].strip()  # První řádek je expirace
+        signature = bytes.fromhex(lines[1].strip())  # Druhý řádek je podpis
+
+        # Ověření podpisu
+        try:
+            public_key.verify(
+                signature,
+                licence_data.encode(),
+                padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+                hashes.SHA256()
+            )
+            
+            # Ověření expirace
+            exp_date = datetime.datetime.strptime(licence_data.split(":")[1], "%d.%m.%Y")
+            hwid_lic = licence_data.split("|")[0]
+            if hwid_lic != Tools.get_volume_serial():
+                print("now valid hwid")
+                global_licence_load_error = True
+                return "verification error"
+
+            if exp_date >= datetime.datetime.today():
+                print(f"License valid until: {exp_date.date()}")
+                return exp_date.date()
+            else:
+                global_licence_load_error = True
+                return f"EXPIRED: {exp_date.date()}"
+
+        except Exception as e:
+            print("License verification error!", e)
+            global_licence_load_error = True
+            return "verification error"
+
+    @classmethod
+    def get_volume_serial(cls):
+        # Get system drive letter (e.g., "C:")
+        drive_letter = subprocess.check_output(
+            'wmic os get systemdrive', shell=True
+        ).decode().split("\n")[1].strip().replace(":", "")
+        
+        c = wmi.WMI()
+        
+        # Find the physical disk corresponding to the system drive
+        for disk in c.Win32_DiskDrive():
+            for partition in disk.associators("Win32_DiskDriveToDiskPartition"):
+                for logical_disk in partition.associators("Win32_LogicalDiskToPartition"):
+                    if logical_disk.DeviceID == f"{drive_letter}:":  # Match the system drive
+                        serial_number = disk.SerialNumber.strip()  # Get serial number
+                        return serial_number.rstrip(".")
+
+        return None  # Return None if not found
+
+initial_path = Tools.get_init_path()
+print("init path: ",initial_path)
+app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
+app_licence_validity = Tools.check_licence()
 
 def deleting_via_cmd():
     print("deleting system entry: ",sys.argv)
@@ -1386,7 +1566,7 @@ if load_gui:
         customtkinter.set_default_color_theme("dark-blue")
         root=customtkinter.CTk()
         root.geometry("1200x900")
-        root.title("TRIMAZKON v_4.2.1")
+        root.title("TRIMAZKON v_"+str(app_version))
         root.wm_iconbitmap(Tools.resource_path(app_icon))
 
     else:# předání parametrů v případě spuštění obrázkem (základní obrázkový prohlížeč)
@@ -1584,9 +1764,9 @@ class main_menu:
                 self.call_view_option(IB_as_def_browser_path,selected_image)
         
         if self.run_as_admin:
-            self.root.after(1000, lambda: Tools.call_again_as_admin("admin_menu","Upozornění","Aplikace vyžaduje práva pro nastavení aut. spouštění na pozadí\n\n- přejete si znovu spustit aplikaci, jako administrátor?"))
+            self.root.after(1000, lambda: Tools.call_again_as_admin("admin_menu","Upozornění","Aplikace vyžaduje práva pro nastavení aut. spouštění na pozadí\n     - možné změnit v nastavení\n\nPřejete si znovu spustit aplikaci, jako administrátor?"))
 
-        self.root.mainloop()
+        # self.root.mainloop()
 
 class Image_browser: # Umožňuje procházet obrázky a přitom například vybrané přesouvat do jiné složky
     """
@@ -4370,60 +4550,25 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
     -umožňuje procházet více subsložek
     
     """
-    @classmethod
-    def confirm_window(cls,prompt_message):
-        selected_option = False
-        def selected_yes(child_root):# Vyžádání admin práv: nefunkční ve vscode
-            child_root.grab_release()
-            child_root.destroy()
-            nonlocal selected_option
-            selected_option = True
-
-        def close_prompt(child_root):
-            child_root.grab_release()
-            child_root.destroy()
-            nonlocal selected_option
-            selected_option = False
-            
-        child_root = customtkinter.CTkToplevel()
-        child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(app_icon)))
-        # child_root.geometry(f"620x150+{300}+{300}")  
-        child_root.title("Upozornění (první spuštění aplikace)")
-        label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-        proceed_label = customtkinter.CTkLabel(master = label_frame,text = prompt_message,font=("Arial",25),anchor="w",justify="left")
-        proceed_label.pack(pady=5,padx=10,anchor="w",side = "left")
-        button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-        button_yes =   customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: selected_yes(child_root))
-        button_no =    customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
-        button_no      .pack(pady = 5, padx = 10,anchor="e",side="right")
-        button_yes     .pack(pady = 5, padx = 10,anchor="e",side="right")
-        label_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
-        button_frame   .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
-        child_root.update()
-        child_root.update_idletasks()
-        # child_root.geometry(f"{child_root.winfo_width()}x{child_root.winfo_height()}+{300}+{300}")
-        child_root.focus()
-        child_root.focus_force()
-        child_root.grab_set()
-        child_root.wait_window()
-        return selected_option
 
     def __init__(self,root):
         self.root = root
         self.unbind_list = []
-        self.text_file_data = Tools.read_config_data()
+        self.text_file_data = Tools.read_json_config()
         self.supported_formats_deleting = self.text_file_data[1]
-        self.files_to_keep = self.text_file_data[3]
-        self.cutoff_date = self.text_file_data[4]
-        list_of_folder_names = self.text_file_data[9]
-        self.to_delete_folder_name = list_of_folder_names[2]
-        self.console_frame_right_1_text = "","white"
-        self.console_frame_right_2_text = "","white"
-        self.config_filename = "config_TRIMAZKON.xlsx"
+        self.files_to_keep = self.text_file_data[2]
+        self.cutoff_date = self.text_file_data[3]
+        self.to_delete_folder_name = self.text_file_data[4]
+        self.selected_language = self.text_file_data[11]
         self.temp_path_for_explorer = None
+        self.selected_option = 1
+        self.more_dirs = False
+        self.testing_mode = True
+        self.by_creation_date = False
+        self.directories_to_keep = 10
         self.create_deleting_option_widgets()
  
-    def call_extern_function(self,list_of_frames,function:str): # Tlačítko menu (konec, návrat do menu)
+    def call_extern_function(self,list_of_frames=[],function=""): # Tlačítko menu (konec, návrat do menu)
         """
         Funkce čistí všechny zaplněné rámečky a funguje, jako tlačítko zpět do menu\n
         function:
@@ -4441,106 +4586,137 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         for binds in self.unbind_list:
             self.root.unbind(binds)
 
+        self.clear_frame(self.root)
+
         if function == "menu":
             menu.menu()
-        elif function == "sorting":
-            Sorting_option(self.root)
-        elif function == "converting":
-            Converting_option(self.root)
 
-    def start(self):# Ověřování cesty, init, spuštění
+    def start(self,only_analyze=False):# Ověřování cesty, init, spuštění
         """
         Ověřování cesty, init, spuštění
         """
-        if self.checkbox.get()+self.checkbox2.get()+self.checkbox3.get() == 0:
-            Tools.add_colored_line(self.console,"Nevybrali jste žádný způsob mazání","red")
-            self.info.configure(text = "")
-
-        else:
-            path = self.path_set.get() 
-            if path != "":
-                check = Tools.path_check(path)
-                if check == False:
-                    Tools.add_colored_line(self.console,"Zadaná cesta: "+str(path)+" nebyla nalezena","red")
-                else:
-                    path = check
-                    if self.checkbox_testing.get() != 1:
-                        if self.checkbox6.get() == 1 and self.checkbox3.get() != 1: # sublozky u adresaru
-                            confirm_prompt_msg = f"Opravdu si přejete spustit navolené mazání souborů v cestě:\n{path}\na procházet přitom i SUBSLOŽKY?"
-                        elif self.checkbox3.get() == 1:
-                            confirm_prompt_msg = f"Opravdu si přejete spustit navolené mazání ADRESÁŘŮ v cestě:\n{path}"
-                        else:
-                            confirm_prompt_msg = f"Opravdu si přejete spustit navolené mazání souborů v cestě:\n{path}"
-                        # confirm = tk.messagebox.askokcancel("Potvrzení", confirm_prompt_msg)
-                        confirm = Deleting_option.confirm_window(confirm_prompt_msg)
-                    else: # pokud je zapnut rezim testovani
-                        confirm = True
-
-                    if confirm == True:
-                        Tools.add_colored_line(self.console,"- Provádím navolené možnosti mazání v cestě: " + str(path) + "\n","orange")
-                        self.console.update_idletasks()
-                        self.root.update_idletasks()
-                        self.del_files(path)
-                    else:
-                        Tools.add_colored_line(self.console,"Zrušeno uživatelem","red")
+        Tools.clear_console(self.console)
+        path = self.path_set.get() 
+        if path != "":
+            check = Tools.path_check(path)
+            if check == False:
+                Tools.add_colored_line(self.console,"Zadaná cesta: "+str(path)+" nebyla nalezena","red")
             else:
-                Tools.add_colored_line(self.console,"Nebyla vložena cesta k souborům","red")
+                path = check
+                if only_analyze:
+                    info_msg = "- Provádím analýzu souborů v cestě: " + str(path) + "\n"
+                    if self.selected_language == "en":
+                        info_msg = "- Analyzing files in the path: " + str(path) + "\n"
+                    Tools.add_colored_line(self.console,info_msg,"orange")
+                    self.console.update_idletasks()
+                    self.root.update_idletasks()
+                    self.del_files(path,only_analyze)
+                    return
 
-    def del_files(self,path): # zde se volá externí script: Deleting
-        testing_mode = True
-        del_option = 0
-        if self.checkbox.get() == 1:
-            del_option = 1
-        if self.checkbox2.get() == 1:
-            del_option = 2
-        if self.checkbox3.get() == 1:
-            del_option = 3
-        if self.checkbox6.get() == 1:
-            self.more_dirs = True
+                if self.checkbox_testing.get() != 1:
+                    if self.more_dirs == True and self.selected_option != 3: # sublozky, ne u adresaru...
+                        confirm_prompt_msg = f"Opravdu si přejete spustit navolené mazání souborů v cestě:\n{path}\na procházet přitom i SUBSLOŽKY?"
+                        if self.selected_language == "en":
+                            confirm_prompt_msg = f"Do you really want to start the custom deletion of files in the path:\n{path}\nand browse SUBFOLDERS?"
+                    elif self.selected_option == 3:
+                        confirm_prompt_msg = f"Opravdu si přejete spustit navolené mazání ADRESÁŘŮ v cestě:\n{path}"
+                        if self.selected_language == "en":
+                            confirm_prompt_msg = f"You really want to start the custom deletion of DIRECTORIES in the path:\n{path}"
+                    else:
+                        confirm_prompt_msg = f"Opravdu si přejete spustit navolené mazání souborů v cestě:\n{path}"
+                        if self.selected_language == "en":
+                            confirm_prompt_msg = f"Do you really want to start the custom deletion of files in the path:\n{path}"
+                    # confirm = tk.messagebox.askokcancel("Potvrzení", confirm_prompt_msg)
+                    if self.selected_language == "en":
+                        confirm = Subwindows.confirm_window(confirm_prompt_msg,"Notice",self.selected_language)
+                    else:
+                        confirm = Subwindows.confirm_window(confirm_prompt_msg,"Upozornění",self.selected_language)
+                else: # pokud je zapnut rezim testovani
+                    confirm = True
+
+                if confirm == True:
+                    info_msg = "- Provádím navolené možnosti mazání v cestě: " + str(path) + "\n"
+                    if self.selected_language == "en":
+                        info_msg = "- I perform the selected deletion options in the path: " + str(path) + "\n"
+                    Tools.add_colored_line(self.console,info_msg,"orange")
+
+                    self.console.update_idletasks()
+                    self.root.update_idletasks()
+                    self.del_files(path)
+                else:
+                    cancel_msg = "Zrušeno uživatelem"
+                    if self.selected_language == "en":
+                        cancel_msg = "Cancelled by user"
+                    Tools.add_colored_line(self.console,cancel_msg,"red")
         else:
-            self.more_dirs = False
+            no_path_msg = "Nebyla vložena cesta k souborům"
+            if self.selected_language == "en":
+                no_path_msg = "The path to the files has not been inserted"
+            Tools.add_colored_line(self.console,no_path_msg,"red")
+
+    def del_files(self,path,only_analyze = False): # zde se volá externí script: Deleting
+        del_option = self.selected_option
+        files_to_keep = self.files_to_keep
         if self.checkbox_testing.get() == 1:
             testing_mode = True
         else:
             testing_mode = False
 
+        more_dirs = self.more_dirs
+        if self.selected_option == 3:
+            more_dirs = False
+
         def call_deleting_main(whole_instance):
             whole_instance.main()
 
+        if self.selected_option == 4:
+            files_to_keep = self.directories_to_keep
+
+        only_analyze_status = False
+        if only_analyze:
+            testing_mode = True
+            only_analyze_status = True
+
+
         running_deleting = Deleting.whole_deleting_function(
             path,
-            self.more_dirs,
+            more_dirs,
             del_option,
-            self.files_to_keep,
+            files_to_keep,
             self.cutoff_date,
             self.supported_formats_deleting,
             testing_mode,
-            self.to_delete_folder_name
+            self.to_delete_folder_name,
+            creation_date = self.by_creation_date,
+            only_analyze = only_analyze_status
             )
 
         run_del_background = threading.Thread(target=call_deleting_main, args=(running_deleting,))
         run_del_background.start()
-
         completed = False
         previous_len = 0
+        output_messages = running_deleting.output
+        if self.selected_language == "en":
+            output_messages = running_deleting.output_eng
 
         while not running_deleting.finish or completed == False:
-            time.sleep(0.05)
-            if int(len(running_deleting.output)) > previous_len:
-                new_row = str(running_deleting.output[previous_len])
-                if "Mazání dokončeno" in new_row or "Zkontrolováno" in new_row:
+            time.sleep(0.01)
+            if int(len(output_messages)) > previous_len:
+                new_row = str(output_messages[previous_len])
+                if "Mazání dokončeno" in new_row or "Zkontrolováno" in new_row or "Deleting complete" in new_row or "checked" in new_row:
                     Tools.add_colored_line(self.console,str(new_row),"green",("Arial",15,"bold"))
-                elif "Chyba" in new_row or "Nebyly nalezeny" in new_row or "- zrušeno" in new_row:
+                elif "Chyba" in new_row or "Nebyly nalezeny" in new_row or "- zrušeno" in new_row or "Error" in new_row or "No directories found" in new_row or "No files found" in new_row or "cancelled" in new_row:
                     Tools.add_colored_line(self.console,str(new_row),"red",("Arial",15,"bold"))
-                elif "Smazalo by se" in new_row or "Smazáno souborů" in new_row:
+                elif "Smazalo by se" in new_row or "Smazáno" in new_row or "It would delete" in new_row or "deleted" in new_row:
                     Tools.add_colored_line(self.console,str(new_row),"orange",("Arial",15,"bold"))
                 else:
                     Tools.add_colored_line(self.console,str(new_row),"white")
                 self.console.update_idletasks()
+                self.console.see(tk.END)
                 self.root.update_idletasks()
                 previous_len +=1
 
-            if running_deleting.finish and (int(len(running_deleting.output)) == previous_len):
+            if running_deleting.finish and (int(len(output_messages)) == previous_len):
                 completed = True
         
         run_del_background.join()
@@ -4549,45 +4725,406 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         """
         Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
-        if self.checkbox6.get() == 1: # pokud je zvoleno more_dirs v exploreru pouze slozky...
+        self.temp_path_for_explorer = self.path_set.get()
+        if self.more_dirs or self.selected_option == 3 or self.selected_option == 4: # pokud je zvoleno more_dirs v exploreru pouze slozky...
             output = Tools.browseDirectories("only_dirs",self.temp_path_for_explorer)
         else:
             output = Tools.browseDirectories("all",self.temp_path_for_explorer)
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])
-            Tools.add_colored_line(self.console,f"Byla vložena cesta: {output[1]}","green")
+            Tools.add_new_path_to_history(str(output[1]))
+            if self.selected_language == "en":
+                Tools.add_colored_line(self.console,f"The path has been added: {output[1]}","green")
+            else:
+                Tools.add_colored_line(self.console,f"Byla vložena cesta: {output[1]}","green")
             self.temp_path_for_explorer = output[1]
         else:
-            Tools.add_colored_line(self.console,str(output[0]),"red")
+            if self.selected_language == "en":
+                if str(output[0]) == "Přes explorer nebyla vložena žádná cesta":
+                    Tools.add_colored_line(self.console,"No path was inserted via explorer","red")
+            else:
+                Tools.add_colored_line(self.console,str(output[0]),"red")
 
     def clear_frame(self,frame):
         for widget in frame.winfo_children():
             widget.destroy()
 
-    def selected(self,clear:bool): # První možnost mazání, od nejstarších
+    def selected(self,option): # První možnost mazání, od nejstarších
         """
-        Nastavení widgets pro první možnost mazání
-
-        -vstup: console text a barva textu
-
-        -Budou smazány soubory starší než nastavené datum, přičemž bude ponechán nastavený počet souborů, vyhodnocených, jako starších\n
-        -Podporované formáty jsou uživatelem nastavené a uložené v textovém souboru
+        Vstup:\n
+        - option = 1:
+            - Redukce souborů starších než: nastavené datum
+        - option = 2:
+            - Redukce novějších, mazání souborů starších než: nastavené datum\n
+        -Podporované formáty jsou uživatelem nastavené a uložené v konfiguračním souboru
         """
-        self.clear_frame(self.frame_right)
-        self.bottom_frame2.unbind("<Enter>")
-        #self.console.configure(text = "")
-        Tools.clear_console(self.console)
-        self.checkbox.select()
-        self.checkbox2.deselect()
-        self.checkbox3.deselect()
-        self.info.configure(text = f"- Budou smazány soubory starší než nastavené datum, přičemž bude ponechán nastavený počet souborů, vyhodnocených, jako starších\n(Ponechány budou všechny novější než nastavené datum a k tomu bude ponecháno: {self.files_to_keep} starších souborů)\nPodporované formáty: {self.supported_formats_deleting}\n\n",
-                            font = ("Arial",16,"bold"),justify="left")
-        self.selected6() #update
+        self.clear_frame(self.changable_frame)
+        
+        def set_cutoff_date():
+            # if set_month.get() == self.cutoff_date[1] and set_day.get() == self.cutoff_date[0] and set_day.get() == self.cutoff_date[2]
+            input_month = set_month.get()
+            if input_month != "":
+                if input_month.isdigit():
+                    if int(input_month) < 13 and int(input_month) > 0:
+                        self.cutoff_date[1] = int(input_month)
+                        max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
+                        if int(self.cutoff_date[0]) > max_days_in_month:
+                            self.cutoff_date[0] = str(max_days_in_month)
+                        if self.selected_language == "en":
+                            Tools.add_colored_line(console,"Date changed to: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green",None,True)
+                        else:
+                            Tools.add_colored_line(console,"Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green",None,True)
+                        max_days_entry.delete(0,"100")
+                        max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
+                    else:
+                        if self.selected_language == "en":
+                            Tools.add_colored_line(console,"Month: " + str(input_month) + " is out of range","red",None,True)
+                        else:
+                            Tools.add_colored_line(console,"Měsíc: " + str(input_month) + " je mimo rozsah","red",None,True)
+                else:
+                    if self.selected_language == "en":
+                        Tools.add_colored_line(console, "You did not enter a number for the month settings","red",None,True)
+                    else:
+                        Tools.add_colored_line(console, "U nastavení měsíce jste nezadali číslo","red",None,True)
 
-        if clear == True:
-            self.console_frame_right_1_text = "","white"
-            self.console_frame_right_2_text = "","white"
+            input_day = set_day.get()
+            max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
+
+            if input_day != "":
+                if input_day.isdigit():
+                    if int(input_day) <= int(max_days_in_month) and int(input_day) > 0:
+                        self.cutoff_date[0] = int(input_day)
+                        if self.selected_language == "en":
+                            Tools.add_colored_line(console, "Date changed to: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green",None,True)
+                        else:
+                            Tools.add_colored_line(console, "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green",None,True)
+                        max_days_entry.delete(0,"100")
+                        max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
+                    else:
+                        if self.selected_language == "en":
+                            Tools.add_colored_line(console, "Day: " + str(input_day) + " is out of range","red",None,True)
+                        else:
+                            Tools.add_colored_line(console, "Den: " + str(input_day) + " je mimo rozsah","red",None,True)
+                else:
+                    if self.selected_language == "en":
+                        Tools.add_colored_line(console, "You did not enter a number for the day settings","red",None,True)
+                    else:
+                        Tools.add_colored_line(console, "U nastavení dne jste nezadali číslo","red",None,True)
+
+            input_year = set_year.get()
+            if input_year != "":
+                if input_year.isdigit():
+                    if len(str(input_year)) == 2:
+                        self.cutoff_date[2] = int(input_year) + 2000
+                        if self.selected_language == "en":
+                            Tools.add_colored_line(console,"Date changed to: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green",None,True)
+                        else:
+                            Tools.add_colored_line(console,"Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green",None,True)
+
+                        max_days_entry.delete(0,"100")
+                        max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
+                    elif len(str(input_year)) == 4:
+                        self.cutoff_date[2] = int(input_year)
+                        if self.selected_language == "en":
+                            Tools.add_colored_line(console,"Date changed to: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green",None,True)
+                        else:
+                            Tools.add_colored_line(console,"Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green",None,True)
+                        max_days_entry.delete(0,"100")
+                        max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
+                    else:
+                        if self.selected_language == "en":
+                            Tools.add_colored_line(console, "Year: " + str(input_year) + " is out of range","red",None,True)
+                        else:
+                            Tools.add_colored_line(console, "Rok: " + str(input_year) + " je mimo rozsah","red",None,True)
+                else:
+                    if self.selected_language == "en":
+                        Tools.add_colored_line(console, "You did not enter a number for the year setting","red",None,True)
+                    else:
+                        Tools.add_colored_line(console, "U nastavení roku jste nezadali číslo","red",None,True)
+
+        def set_files_to_keep():
+            input_files_to_keep = files_to_keep_set.get()
+            if input_files_to_keep.isdigit():
+                if int(input_files_to_keep) >= 0:
+                    self.files_to_keep = int(input_files_to_keep)
+                    if self.selected_language == "en":
+                        Tools.add_colored_line(console, "Number of older files left set to: " + str(self.files_to_keep),"green",None,True)
+                    else:
+                        Tools.add_colored_line(console, "Počet ponechaných starších souborů nastaven na: " + str(self.files_to_keep),"green",None,True)
+
+                    if option == 1:
+                        summary_label.configure(text = f"Ponechány tedy budou všechny soubory NOVĚJŠÍ než nastavené datum a současně bude ponecháno: {self.files_to_keep} STARŠÍCH souborů.")
+                        if self.selected_language == "en":
+                            summary_label.configure(text = f"So all files LATER than the set date will be kept and at the same time: {self.files_to_keep} OLDER files will be kept.")
+
+                    else:
+                        summary_label.configure(text =f"Budou SMAZÁNY VŠECHNY soubory STARŠÍ než nastavené datum, přičemž budou redukovány i soubroy NOVĚJŠÍ na počet: {self.files_to_keep} souborů\n(pokud jsou v dané cestě všechny soubory starší, mazání se neprovede)")
+                        if self.selected_language == "en":
+                            summary_label.configure(text =f"ALL files OLDER than the set date will be DELETED, while files newer than the set date will be reduced to the number of: {self.files_to_keep} files\n(if all files in the path are older, the deletion will not be performed)")
+                else:
+                    if self.selected_language == "en":
+                        Tools.add_colored_line(console, "Out of range","red",None,True)
+                    else:
+                        Tools.add_colored_line(console, "Mimo rozsah","red",None,True)
+            else:
+                if self.selected_language == "en":
+                    Tools.add_colored_line(console, "You didn't enter a number","red",None,True)
+                else:
+                    Tools.add_colored_line(console, "Nazadali jste číslo","red",None,True)
+
+        def insert_current_date():
+            today = Deleting.get_current_date()
+            today_split = today[1].split(".")
+            i=0
+            for items in today_split:
+                i+=1
+                self.cutoff_date[i-1]=items
+            set_day.delete(0,"100")
+            set_month.delete(0,"100")
+            set_year.delete(0,"100")
+            set_day.insert(0,self.cutoff_date[0])
+            set_month.insert(0,self.cutoff_date[1])
+            set_year.insert(0,self.cutoff_date[2])
+            max_days_entry.delete(0,"100")
+            max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
+            if self.selected_language == "en":
+                Tools.add_colored_line(console, "Today's date has been inserted (currently all files are evaluated as older!)","orange",None,True)
+            else:
+                Tools.add_colored_line(console, "Bylo vloženo dnešní datum (Momentálně všechny soubory vyhodnoceny, jako starší!)","orange",None,True)
+
+        def save_before_execution():
+            input_month = set_month.get()
+            if input_month != "":
+                if input_month.isdigit():
+                    if int(input_month) < 13 and int(input_month) > 0:
+                        self.cutoff_date[1] = int(input_month)
+                        max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
+                        if int(self.cutoff_date[0]) > max_days_in_month:
+                            self.cutoff_date[0] = str(max_days_in_month)
+
+            input_day = set_day.get()
+            max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
+            if input_day != "":
+                if input_day.isdigit():
+                    if int(input_day) <= int(max_days_in_month) and int(input_day) > 0:
+                        self.cutoff_date[0] = int(input_day)
+
+            input_year = set_year.get()
+            if input_year != "":
+                if input_year.isdigit():
+                    if len(str(input_year)) == 2:
+                        self.cutoff_date[2] = int(input_year) + 2000
+                    elif len(str(input_year)) == 4:
+                        self.cutoff_date[2] = int(input_year)
+
+            input_files_to_keep = files_to_keep_set.get()
+            if input_files_to_keep.isdigit():
+                if int(input_files_to_keep) >= 0:
+                    self.files_to_keep = int(input_files_to_keep)
+
+        def set_max_days(flag=""):
+            if flag == "cutoff":
+                new_cutoff = Deleting.get_cutoff_date(int(max_days_entry.get()))
+                set_day.delete(0,"100")
+                set_month.delete(0,"100")
+                set_year.delete(0,"100")
+                set_day.insert(0,new_cutoff[0])
+                set_month.insert(0,new_cutoff[1])
+                set_year.insert(0,new_cutoff[2])
+                set_cutoff_date()
+            elif flag == "max_days":
+                set_cutoff_date()
+                # max_days_entry.delete(0,"100")
+                # max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
+        
+        def update_entry(event,flag=""):
+            if flag == "cutoff":
+                self.root.after(100, lambda: set_max_days(flag))
+            elif flag == "max_days":
+                self.root.after(100, lambda: set_max_days(flag))
+            elif flag == "ftk":
+                self.root.after(100, lambda: set_files_to_keep())
+
+        def search_subfolders():
+            if subfolder_checkbox.get() == 1:
+                self.more_dirs = True
+                if self.selected_language == "en":
+                    subfolder_warning.configure(text = "- WARNING: You have image file deletion options running in all subfolders of the embedded path (max: 6 subfolders)",font=("Arial",18,"bold"),text_color="yellow")
+                    return
+                subfolder_warning.configure(text = "- VAROVÁNÍ: Máte spuštěné možnosti mazání obrázkových souborů i ve všech subsložkách vložené cesty (max: 6 subsložek)",font=("Arial",18,"bold"),text_color="yellow")
+            else:
+                self.more_dirs = False
+                subfolder_warning.configure(text = "")
+
+        def set_testing_mode():
+            if self.checkbox_testing.get() == 1:
+                self.testing_mode = True
+            else:
+                self.testing_mode = False
+
+        def set_decision_date(input_arg):
+            """
+            input_arg:
+            - creation
+            - modification
+            """
+
+            if input_arg == "creation":
+                self.by_creation_date = True
+                checkbox_modification_date.deselect()
+
+            elif input_arg == "modification":
+                self.by_creation_date = False
+                checkbox_creation_date.deselect()
+
+        top_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121",height=240)
+        title_and_date_frame= customtkinter.CTkFrame(master=top_frame,corner_radius=0,fg_color="#212121")
+        option_title = customtkinter.CTkLabel(master = title_and_date_frame,height=20,text = "Redukce souborů starších než: nastavené datum",justify = "left",font=("Arial",25,"bold"))
+        today = Deleting.get_current_date()
+        current_date = customtkinter.CTkLabel(master = title_and_date_frame,text = "Dnešní datum: "+today[1],justify = "left",font=("Arial",20,"bold"),bg_color="black")
+        option_title.pack(padx=10,pady=10,side="left",anchor="w")
+        current_date.pack(padx=5,pady=(0,0),side="left",anchor="e",expand = True,fill="y",ipadx = 10)
+        title_and_date_frame.pack(padx=(0,0),pady=(0,0),side="top",anchor="w",fill="both")
+        user_input_frame = customtkinter.CTkFrame(master=top_frame,corner_radius=0,fg_color="#212121",border_width=4,border_color="#636363")
+        date_input_frame = customtkinter.CTkFrame(master=user_input_frame,corner_radius=0,fg_color="#212121")
+        date_label = customtkinter.CTkLabel(master = date_input_frame,text = "‣ budou smazány soubory starší než nastavené datum:",justify = "left",font=("Arial",20))
+        set_day     = customtkinter.CTkEntry(master = date_input_frame,width=40,font=("Arial",20), placeholder_text= self.cutoff_date[0])
+        sep1        = customtkinter.CTkLabel(master = date_input_frame,width=10,text = ".",font=("Arial",20))
+        set_month   = customtkinter.CTkEntry(master = date_input_frame,width=40,font=("Arial",20), placeholder_text= self.cutoff_date[1])
+        sep2        = customtkinter.CTkLabel(master = date_input_frame,width=10,text = ".",font=("Arial",20))
+        set_year    = customtkinter.CTkEntry(master = date_input_frame,width=60,font=("Arial",20), placeholder_text= self.cutoff_date[2])
+        insert_button = customtkinter.CTkButton(master = date_input_frame,width=190, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",20,"bold"))
+        date_label. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        set_day.    pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        sep1.       pack(padx=(5,0),pady=(0,0),side="left",anchor="w")
+        set_month.  pack(padx=(5,0),pady=(0,0),side="left",anchor="w")
+        sep2.       pack(padx=(5,0),pady=(0,0),side="left",anchor="w")
+        set_year.   pack(padx=(5,0),pady=(0,0),side="left",anchor="w")
+        insert_button.   pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        date_input_frame.pack(padx=5,pady=(10,0),side="top",anchor="w")
+        set_day.bind("<Key>",lambda e: update_entry(e,flag="max_days"))
+        set_month.bind("<Key>",lambda e: update_entry(e,flag="max_days"))
+        set_year.bind("<Key>",lambda e: update_entry(e,flag="max_days"))
+
+        day_format_input_frame = customtkinter.CTkFrame(master=user_input_frame,corner_radius=0,fg_color="#212121")
+        days_label = customtkinter.CTkLabel(master = day_format_input_frame,text = "‣ to znamená starší než:",justify = "left",font=("Arial",20))
+        max_days_entry = customtkinter.CTkEntry(master = day_format_input_frame,width=60,font=("Arial",20))
+        max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
+        days_label2 = customtkinter.CTkLabel(master = day_format_input_frame,text = "dní",justify = "left",font=("Arial",20))
+        days_label. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        max_days_entry. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        days_label2. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        day_format_input_frame.pack(padx=5,pady=0,side="top",anchor="w")
+        max_days_entry.bind("<Key>",lambda e: update_entry(e,flag="cutoff"))
+
+        ftk_frame = customtkinter.CTkFrame(master=user_input_frame,corner_radius=0,fg_color="#212121")
+        ftk_label = customtkinter.CTkLabel(master = ftk_frame,text = "‣ přičemž bude ponecháno:",justify = "left",font=("Arial",20))
+        files_to_keep_set = customtkinter.CTkEntry(master = ftk_frame,width=70,font=("Arial",20), placeholder_text= self.files_to_keep)
+        ftk_label2 = customtkinter.CTkLabel(master = ftk_frame,text = "souborů, vyhodnocených, jako starších",justify = "left",font=("Arial",20))
+        ftk_label. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        files_to_keep_set. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        ftk_label2. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        ftk_frame.pack(padx=5,pady=(0,10),side="top",anchor="w")
+        user_input_frame.pack(padx=5,pady=(0,0),side="top",anchor="w",fill="x")
+        files_to_keep_set.bind("<Key>",lambda e: update_entry(e,flag="ftk"))
+
+        summary_label = customtkinter.CTkLabel(master = top_frame,text = f"Ponechány tedy budou všechny soubory NOVĚJŠÍ než nastavené datum a současně bude ponecháno: {self.files_to_keep} STARŠÍCH souborů.",justify = "left",font=("Arial",20,"bold"))
+        summary_label.pack(padx=10,pady=(10,0),side="top",anchor="w")
+        deletable_formats = customtkinter.CTkLabel(master = top_frame,text = f"Smazatelné formáty: {self.supported_formats_deleting}",justify = "left",font=("Arial",20))
+        deletable_formats.pack(padx=10,pady=(0,0),side="top",anchor="w")
+        top_frame.pack(padx=(0,0),pady=(0),side="top",anchor="w",fill="x")
+        top_frame.propagate(False)
+        console = tk.Text(self.changable_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED)
+        console.pack(pady = (10,0),padx =10,side="top",anchor="w",fill="x")
+
+        subfolder_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121")
+        subfolder_checkbox = customtkinter.CTkCheckBox(master = subfolder_frame, text = "Procházet subsložky? (max: 6)",command = lambda: search_subfolders(),font=("Arial",18,"bold"))
+        subfolder_warning = customtkinter.CTkLabel(master = subfolder_frame,text = "",font=("Arial",18,"bold"))
+        subfolder_checkbox.pack(padx=(10,0),pady=(5,0),side="left",anchor="w")
+        subfolder_warning.pack(padx=(10,0),pady=(5,0),side="left",anchor="w")
+        subfolder_frame.pack(padx=(0,0),pady=0,side="top",anchor="w")
+
+        self.checkbox_testing = customtkinter.CTkCheckBox(master =self.changable_frame, text = f"Režim TESTOVÁNÍ (Soubory vyhodnocené ke smazání se pouze přesunou do složky s názvem: \"{self.to_delete_folder_name}\")",font=("Arial",18,"bold"),command=lambda: set_testing_mode())
+        self.checkbox_testing.pack(pady = (10,0),padx =10,side="top",anchor="w")
+
+        decision_date_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121")
+        decision_date_label = customtkinter.CTkLabel(master = decision_date_frame,text = "Řídit se podle: ",justify = "left",font=("Arial",20,"bold"))
+        checkbox_creation_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data vytvoření",font=("Arial",18),command=lambda:set_decision_date("creation"))
+        checkbox_modification_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data poslední změny (doporučeno)",font=("Arial",18),command=lambda:set_decision_date("modification"))
+        decision_date_label.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
+        checkbox_creation_date.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
+        checkbox_modification_date.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
+        decision_date_frame.pack(pady = (0,0),padx =0,side="top",anchor="w",fill="x")
+        if self.by_creation_date:
+            checkbox_creation_date.select()
+        else:
+            checkbox_modification_date.select()
+        if self.testing_mode:
+            self.checkbox_testing.select()
+        if self.more_dirs:
+            subfolder_checkbox.select()
+            search_subfolders()
+
+        if self.selected_language == "en":
+            option_title.configure(text= "Reducing files older than: set date")
+            date_label.configure(text= "‣ files older than the set date will be deleted:")
+            insert_button.configure(text= "Insert today's date")
+            days_label.configure(text= "‣ it means older than:")
+            days_label2.configure(text= "days")
+            ftk_label.configure(text= "‣ whereby it will be retained:")
+            ftk_label2.configure(text= "files, evaluated as older")
+            summary_label.configure(text= f"So all files LATER than the set date will be kept and at the same time: {self.files_to_keep} OLDER files will be kept.")
+            deletable_formats.configure(text= f"Deletable formats: {self.supported_formats_deleting}")
+            subfolder_checkbox.configure(text= "Browse subfolders? (max: 6)")
+            self.checkbox_testing.configure(text= f"TEST mode (Files evaluated for deletion are only moved to a folder named: \"{self.to_delete_folder_name}\")")
+            current_date.configure(text = "Current date: "+today[1])
+            decision_date_label.configure(text = "To decide by:")
+            checkbox_creation_date.configure(text = "date of creation")
+            checkbox_modification_date.configure(text = "date of modification (recommended)")
+
+        if option == 2:
+            self.selected_option = 2
+            self.options1.deselect()
+            self.options2.select()
+            self.options3.deselect()
+            self.options4.deselect()
+            if self.selected_language == "en":
+                option_title.configure(text="Reducing newer, deleting files older than: set date")
+                date_label.configure(text= "‣ ALL files older than the set date will be deleted:")
+                ftk_label2.configure(text= "files, evaluated as newer")
+                summary_label.configure(text=f"ALL files OLDER than the set date will be DELETED, while files newer than the set date will be reduced to the number of: {self.files_to_keep} files\n(if all files in the path are older, the deletion will not be performed)")
+            else:
+                option_title.configure(text="Redukce novějších, mazání souborů starších než: nastavené datum")
+                date_label.configure(text= "‣ budou smazány VŠECHNY soubory starší než nastavené datum:")
+                ftk_label2.configure(text= "souborů, vyhodnocených, jako novějších")
+                summary_label.configure(text=f"Budou SMAZÁNY VŠECHNY soubory STARŠÍ než nastavené datum, přičemž budou redukovány i soubroy NOVĚJŠÍ na počet: {self.files_to_keep} souborů\n(pokud jsou v dané cestě všechny soubory starší, mazání se neprovede)")
+        else:
+            self.selected_option = 1
+            self.options1.select()
+            self.options2.deselect()
+            self.options3.deselect()
+            self.options4.deselect()
+        
+        def new_date_enter_btn(e):
+            set_cutoff_date()
+        set_day.bind("<Return>",new_date_enter_btn)
+        set_month.bind("<Return>",new_date_enter_btn)
+        set_year.bind("<Return>",new_date_enter_btn)
+
+        def new_FTK_enter_btn(e):
+            set_files_to_keep()
+        files_to_keep_set.bind("<Return>",new_FTK_enter_btn)
+        # self.changable_frame.bind("<Enter>",lambda e: save_before_execution()) # případ, že se nestiskne uložit - aby nedošlo ke ztrátě souborů
+        
+    def selected3(self,option): # První možnost mazání, od nejstarších
+        """
+        Budou smazány VŠECHNY adresáře (včetně všech subadresářů), které obsahují v názvu podporovaný formát datumu a jsou vyhodnoceny,jako starší než nastavené datum\n
+        - podporované datumové formáty jsou ["YYYYMMDD","DDMMYYYY","YYMMDD"]
+        - podporované datumové separátory: [".","/","_"]
+        """
+        self.clear_frame(self.changable_frame)
+        self.more_dirs = False
 
         def set_cutoff_date():
             # if set_month.get() == self.cutoff_date[1] and set_day.get() == self.cutoff_date[0] and set_day.get() == self.cutoff_date[2]
@@ -4599,11 +5136,22 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                         max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
                         if int(self.cutoff_date[0]) > max_days_in_month:
                             self.cutoff_date[0] = str(max_days_in_month)
-                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
+                        if self.selected_language == "en":
+                            Tools.add_colored_line(console,"Date changed to: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green",None,True)
+                        else:
+                            Tools.add_colored_line(console,"Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green",None,True)
+                        max_days_entry.delete(0,"100")
+                        max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
                     else:
-                        self.console_frame_right_1_text = "Měsíc: " + str(input_month) + " je mimo rozsah","red"
+                        if self.selected_language == "en":
+                            Tools.add_colored_line(console,"Month: " + str(input_month) + " is out of range","red",None,True)
+                        else:
+                            Tools.add_colored_line(console,"Měsíc: " + str(input_month) + " je mimo rozsah","red",None,True)
                 else:
-                    self.console_frame_right_1_text = "U nastavení měsíce jste nezadali číslo","red"
+                    if self.selected_language == "en":
+                        Tools.add_colored_line(console, "You did not enter a number for the month settings","red",None,True)
+                    else:
+                        Tools.add_colored_line(console, "U nastavení měsíce jste nezadali číslo","red",None,True)
 
             input_day = set_day.get()
             max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
@@ -4612,464 +5160,302 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 if input_day.isdigit():
                     if int(input_day) <= int(max_days_in_month) and int(input_day) > 0:
                         self.cutoff_date[0] = int(input_day)
-                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
+                        if self.selected_language == "en":
+                            Tools.add_colored_line(console, "Date changed to: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green",None,True)
+                        else:
+                            Tools.add_colored_line(console, "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green",None,True)
+                        max_days_entry.delete(0,"100")
+                        max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
                     else:
-                        self.console_frame_right_1_text = "Den: " + str(input_day) + " je mimo rozsah","red"
+                        if self.selected_language == "en":
+                            Tools.add_colored_line(console, "Day: " + str(input_day) + " is out of range","red",None,True)
+                        else:
+                            Tools.add_colored_line(console, "Den: " + str(input_day) + " je mimo rozsah","red",None,True)
                 else:
-                    self.console_frame_right_1_text = "U nastavení dne jste nezadali číslo","red"
+                    if self.selected_language == "en":
+                        Tools.add_colored_line(console, "You did not enter a number for the day settings","red",None,True)
+                    else:
+                        Tools.add_colored_line(console, "U nastavení dne jste nezadali číslo","red",None,True)
 
             input_year = set_year.get()
             if input_year != "":
                 if input_year.isdigit():
                     if len(str(input_year)) == 2:
                         self.cutoff_date[2] = int(input_year) + 2000
-                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
+                        if self.selected_language == "en":
+                            Tools.add_colored_line(console,  "Date changed to: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green",None,True)
+                        else:
+                            Tools.add_colored_line(console,  "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green",None,True)
+                        max_days_entry.delete(0,"100")
+                        max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
                     elif len(str(input_year)) == 4:
                         self.cutoff_date[2] = int(input_year)
-                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
+                        if self.selected_language == "en":
+                            Tools.add_colored_line(console,  "Date changed to: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green",None,True)
+                        else:
+                            Tools.add_colored_line(console,  "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green",None,True)
+                        max_days_entry.delete(0,"100")
+                        max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
                     else:
-                        self.console_frame_right_1_text = "Rok: " + str(input_year) + " je mimo rozsah","red"
+                        if self.selected_language == "en":
+                            Tools.add_colored_line(console, "Year: " + str(input_year) + " is out of range","red",None,True)
+                        else:
+                            Tools.add_colored_line(console, "Rok: " + str(input_year) + " je mimo rozsah","red",None,True)
                 else:
-                    self.console_frame_right_1_text = "U nastavení roku jste nezadali číslo","red"
+                    if self.selected_language == "en":
+                        Tools.add_colored_line(console, "You did not enter a number for the year settings","red",None,True)
+                    else:
+                        Tools.add_colored_line(console, "U nastavení roku jste nezadali číslo","red",None,True)
 
-            self.selected(False)
+        def insert_current_date():
+            today = Deleting.get_current_date()
+            today_split = today[1].split(".")
+            i=0
+            for items in today_split:
+                i+=1
+                self.cutoff_date[i-1]=items
+            set_day.delete(0,"100")
+            set_month.delete(0,"100")
+            set_year.delete(0,"100")
+            set_day.insert(0,self.cutoff_date[0])
+            set_month.insert(0,self.cutoff_date[1])
+            set_year.insert(0,self.cutoff_date[2])
+            max_days_entry.delete(0,"100")
+            max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
+            if self.selected_language == "en":
+                Tools.add_colored_line(console, "Today's date has been inserted (currently all directories are evaluated as older!)","orange",None,True)
+            else:
+                Tools.add_colored_line(console, "Bylo vloženo dnešní datum (Momentálně jsou všechny adresáře vyhodnoceny, jako starší!)","orange",None,True)
+
+        def save_before_execution():
+            input_month = set_month.get()
+            if input_month != "":
+                if input_month.isdigit():
+                    if int(input_month) < 13 and int(input_month) > 0:
+                        self.cutoff_date[1] = int(input_month)
+                        max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
+                        if int(self.cutoff_date[0]) > max_days_in_month:
+                            self.cutoff_date[0] = str(max_days_in_month)
+
+            input_day = set_day.get()
+            max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
+            if input_day != "":
+                if input_day.isdigit():
+                    if int(input_day) <= int(max_days_in_month) and int(input_day) > 0:
+                        self.cutoff_date[0] = int(input_day)
+
+            input_year = set_year.get()
+            if input_year != "":
+                if input_year.isdigit():
+                    if len(str(input_year)) == 2:
+                        self.cutoff_date[2] = int(input_year) + 2000
+                    elif len(str(input_year)) == 4:
+                        self.cutoff_date[2] = int(input_year)
+
+        def set_max_days(flag=""):
+            if flag == "cutoff":
+                new_cutoff = Deleting.get_cutoff_date(int(max_days_entry.get()))
+                set_day.delete(0,"100")
+                set_month.delete(0,"100")
+                set_year.delete(0,"100")
+                set_day.insert(0,new_cutoff[0])
+                set_month.insert(0,new_cutoff[1])
+                set_year.insert(0,new_cutoff[2])
+                set_cutoff_date()
+            elif flag == "max_days":
+                set_cutoff_date()
+        
+        def update_entry(event,flag=""):
+            if flag == "cutoff":
+                self.root.after(100, lambda: set_max_days(flag))
+            elif flag == "max_days":
+                self.root.after(100, lambda: set_max_days(flag))
+            elif flag == "ftk":
+                self.root.after(100, lambda: set_files_to_keep())
+
+        def set_testing_mode():
+            if self.checkbox_testing.get() == 1:
+                self.testing_mode = True
+            else:
+                self.testing_mode = False
+
+        def set_decision_date(input_arg):
+            """
+            input_arg:
+            - creation
+            - modification
+            """
+
+            if input_arg == "creation":
+                self.by_creation_date = True
+                checkbox_modification_date.deselect()
+
+            elif input_arg == "modification":
+                self.by_creation_date = False
+                checkbox_creation_date.deselect()
 
         def set_files_to_keep():
             input_files_to_keep = files_to_keep_set.get()
             if input_files_to_keep.isdigit():
                 if int(input_files_to_keep) >= 0:
-                    self.files_to_keep = int(input_files_to_keep)
-                    self.console_frame_right_2_text = "Počet ponechaných starších souborů nastaven na: " + str(self.files_to_keep),"green"
+                    self.directories_to_keep = int(input_files_to_keep)
+                    if self.selected_language == "en":
+                        summary_label.configure(text= f"Directories (including all subdirectories) that are evaluated as older than the set date will be deleted\nwhile retaining the minimum number of directories: {input_files_to_keep}")
+                        Tools.add_colored_line(console, "Number of older directories left set to: " + str(input_files_to_keep),"green",None,True)
+                    else:
+                        summary_label.configure(text= f"Budou smazány adresáře (včetně všech subadresářů), které jsou vyhodnoceny jako starší než nastavené datum\npřičemž bude ponechán minimální počet složek: {input_files_to_keep}")
+                        Tools.add_colored_line(console, "Počet ponechaných starších adresářů nastaven na: " + str(input_files_to_keep),"green",None,True)
                 else:
-                    self.console_frame_right_2_text = "Mimo rozsah","red"
+                    if self.selected_language == "en":
+                        Tools.add_colored_line(console, "Out of range","red",None,True)
+                    else:
+                        Tools.add_colored_line(console, "Mimo rozsah","red",None,True)
             else:
-                self.console_frame_right_2_text = "Nazadali jste číslo","red"
+                if self.selected_language == "en":
+                    Tools.add_colored_line(console, "You didn't enter a number","red",None,True)
+                else:
+                    Tools.add_colored_line(console, "Nazadali jste číslo","red",None,True)
 
-            self.selected(False)
 
-        def insert_current_date():
-            today = Deleting.get_current_date()
-            today_split = today[1].split(".")
-            i=0
-            for items in today_split:
-                i+=1
-                self.cutoff_date[i-1]=items
-
-            self.console_frame_right_1_text = "Bylo vloženo dnešní datum (Momentálně všechny soubory vyhodnoceny, jako starší!)","orange"
-
-            self.selected(False)
-
-        def save_before_execution():
-            input_month = set_month.get()
-            if input_month != "":
-                if input_month.isdigit():
-                    if int(input_month) < 13 and int(input_month) > 0:
-                        self.cutoff_date[1] = int(input_month)
-                        max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
-                        if int(self.cutoff_date[0]) > max_days_in_month:
-                            self.cutoff_date[0] = str(max_days_in_month)
-
-            input_day = set_day.get()
-            max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
-            if input_day != "":
-                if input_day.isdigit():
-                    if int(input_day) <= int(max_days_in_month) and int(input_day) > 0:
-                        self.cutoff_date[0] = int(input_day)
-
-            input_year = set_year.get()
-            if input_year != "":
-                if input_year.isdigit():
-                    if len(str(input_year)) == 2:
-                        self.cutoff_date[2] = int(input_year) + 2000
-                    elif len(str(input_year)) == 4:
-                        self.cutoff_date[2] = int(input_year)
-
-            input_files_to_keep = files_to_keep_set.get()
-            if input_files_to_keep.isdigit():
-                if int(input_files_to_keep) >= 0:
-                    self.files_to_keep = int(input_files_to_keep)
-
-        def set_max_days():
-            new_cutoff = Deleting.get_cutoff_date(int(max_days_entry.get()))
-            set_day.insert(0,new_cutoff[0])
-            set_month.insert(0,new_cutoff[1])
-            set_year.insert(0,new_cutoff[2])
-            set_cutoff_date()
-
-        console_1_text, console_1_color = self.console_frame_right_1_text
+        top_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121",height=240)
+        left_side = customtkinter.CTkFrame(master=top_frame,corner_radius=0,fg_color="#212121")
+        right_side = customtkinter.CTkFrame(master=top_frame,corner_radius=0,fg_color="#212121")
+        header_frame = customtkinter.CTkFrame(master=left_side,corner_radius=0,fg_color="#212121")
+        option_title = customtkinter.CTkLabel(master = header_frame,text = "Mazání adresářů podle data v jejich názvu",justify = "left",font=("Arial",25,"bold"))
         today = Deleting.get_current_date()
-        row_index = 0
-        label0      = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Dnešní datum: "+today[1],justify = "left",font=("Arial",16,"bold"))
-        label1      = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte datum pro vyhodnocení souborů, jako starších:",justify = "left",font=("Arial",16))
-        set_day     = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[0])
-        sep1        = customtkinter.CTkLabel(master = self.frame_right,height=20,width=10,text = ".",font=("Arial",20))
-        set_month   = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[1])
-        sep2        = customtkinter.CTkLabel(master = self.frame_right,height=20,width=10,text = ".",font=("Arial",20))
-        set_year    = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[2])
-        button_save1 = customtkinter.CTkButton(master = self.frame_right,width=100,height=30, text = "Nastavit", command = lambda: set_cutoff_date(),font=("Arial",18,"bold"))
-        max_days_entry = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[0])
-        max_days_label = customtkinter.CTkLabel(master = self.frame_right,text = "dní",font=("Arial",16))
-        max_days_save = customtkinter.CTkButton(master = self.frame_right,width=100,height=30, text = "Nastavit", command = lambda: set_max_days(),font=("Arial",18,"bold"))
-        insert_button = customtkinter.CTkButton(master = self.frame_right,width=190,height=30, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",18,"bold"))
-        console_frame_right_1 = customtkinter.CTkLabel(master = self.frame_right,height=30,text = console_1_text,justify = "left",font=("Arial",18),text_color=console_1_color)
-        label0.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
-        label1.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
-        set_day.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
-        sep1.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=40)
-        set_month.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=50)
-        sep2.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=80)
-        set_year.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=90)
-        button_save1.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=150)
-        max_days_entry.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=260)
-        max_days_label.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=320)
-        max_days_save.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=350)
-        insert_button.grid(column =0,row=row_index+3,sticky = tk.W,pady =5,padx=10)
-        console_frame_right_1.grid(column =0,row=row_index+4,sticky = tk.W,pady =0,padx=10)
-        def new_date_enter_btn(e):
-            set_cutoff_date()
-        set_day.bind("<Return>",new_date_enter_btn)
-        set_month.bind("<Return>",new_date_enter_btn)
-        set_year.bind("<Return>",new_date_enter_btn)
+        current_date = customtkinter.CTkLabel(master = header_frame,text = "Dnešní datum: "+today[1],justify = "left",font=("Arial",20,"bold"),bg_color="black")
+        option_title.pack(padx=10,pady=(10),side="left",anchor="w")
+        current_date.pack(padx=3,pady=(0,0),side="left",anchor="e",expand = True,fill="y",ipadx = 10)
+        header_frame.pack(padx=0,pady=(0,0),side="top",anchor="w",fill="x",expand=False)
+        user_input_frame = customtkinter.CTkFrame(master=left_side,corner_radius=0,fg_color="#212121",border_width=4,border_color="#636363")
+        date_input_frame = customtkinter.CTkFrame(master=user_input_frame,corner_radius=0,fg_color="#212121")
+        date_label = customtkinter.CTkLabel(master = date_input_frame,text = "‣ budou smazány adresáře starší než nastavené datum:",justify = "left",font=("Arial",20))
+        set_day     = customtkinter.CTkEntry(master = date_input_frame,width=40,font=("Arial",20), placeholder_text= self.cutoff_date[0])
+        sep1        = customtkinter.CTkLabel(master = date_input_frame,width=10,text = ".",font=("Arial",20))
+        set_month   = customtkinter.CTkEntry(master = date_input_frame,width=40,font=("Arial",20), placeholder_text= self.cutoff_date[1])
+        sep2        = customtkinter.CTkLabel(master = date_input_frame,width=10,text = ".",font=("Arial",20))
+        set_year    = customtkinter.CTkEntry(master = date_input_frame,width=60,font=("Arial",20), placeholder_text= self.cutoff_date[2])
+        insert_button = customtkinter.CTkButton(master = date_input_frame,width=190, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",20,"bold"))
+        date_label. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        set_day.    pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        sep1.       pack(padx=(5,0),pady=(0,0),side="left",anchor="w")
+        set_month.  pack(padx=(5,0),pady=(0,0),side="left",anchor="w")
+        sep2.       pack(padx=(5,0),pady=(0,0),side="left",anchor="w")
+        set_year.   pack(padx=(5,0),pady=(0,0),side="left",anchor="w")
+        insert_button.   pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        date_input_frame.pack(padx=5,pady=(10,0),side="top",anchor="w")
+        set_day.bind("<Key>",lambda e: update_entry(e,flag="max_days"))
+        set_month.bind("<Key>",lambda e: update_entry(e,flag="max_days"))
+        set_year.bind("<Key>",lambda e: update_entry(e,flag="max_days"))
+
+        day_format_input_frame = customtkinter.CTkFrame(master=user_input_frame,corner_radius=0,fg_color="#212121")
+        days_label = customtkinter.CTkLabel(master = day_format_input_frame,text = "‣ to znamená starší než:",justify = "left",font=("Arial",20))
+        max_days_entry = customtkinter.CTkEntry(master = day_format_input_frame,width=60,font=("Arial",20))
         max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
+        days_label2 = customtkinter.CTkLabel(master = day_format_input_frame,text = "dní",justify = "left",font=("Arial",20))
+        days_label. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        max_days_entry. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        days_label2. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        day_format_input_frame.pack(padx=5,pady=(0,10),side="top",anchor="w")
+        if option == 4:
+            day_format_input_frame.pack(padx=5,pady=(0,0),side="top",anchor="w")
+        max_days_entry.bind("<Key>",lambda e: update_entry(e,flag="cutoff"))
 
-        console_2_text, console_2_color = self.console_frame_right_2_text
-        label2          = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte počet ponechaných souborů, vyhodnocených jako starších:",justify = "left",font=("Arial",16))
-        files_to_keep_set = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30,font=("Arial",16), placeholder_text= self.files_to_keep)
-        button_save2    = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Nastavit", command = lambda: set_files_to_keep(),font=("Arial",18,"bold"))
-        console_frame_right_2 = customtkinter.CTkLabel(master = self.frame_right,height=30,text =console_2_text,justify = "left",font=("Arial",18),text_color=console_2_color)
-        label2.grid(column =0,row=5,sticky = tk.W,pady =0,padx=10)
-        files_to_keep_set.grid(column =0,row=6,sticky = tk.W,pady =0,padx=10)
-        button_save2.grid(column =0,row=6,sticky = tk.W,pady =0,padx=60)
-        console_frame_right_2.grid(column =0,row=7,sticky = tk.W,pady =0,padx=10)
-        def new_FTK_enter_btn(e):
-            set_files_to_keep()
-        files_to_keep_set.bind("<Return>",new_FTK_enter_btn)
-        self.bottom_frame2.bind("<Enter>",lambda e: save_before_execution()) # případ, že se nestiskne uložit - aby nedošlo ke ztrátě souborů
-        
-    def selected2(self,clear:bool): # Druhá možnost mazání, mazání všech starých, redukce nových
-        """
-        Nastavení widgets pro druhou možnost mazání
+        ftk_frame = customtkinter.CTkFrame(master=user_input_frame,corner_radius=0,fg_color="#212121")
+        ftk_label = customtkinter.CTkLabel(master = ftk_frame,text = "‣ přičemž bude ponecháno:",justify = "left",font=("Arial",20))
+        files_to_keep_set = customtkinter.CTkEntry(master = ftk_frame,width=70,font=("Arial",20), placeholder_text= self.directories_to_keep)
+        ftk_label2 = customtkinter.CTkLabel(master = ftk_frame,text = "adresářů, vyhodnocených, jako starších",justify = "left",font=("Arial",20))
+        ftk_label. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        files_to_keep_set. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        ftk_label2. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
+        if option == 4:
+            ftk_frame.pack(padx=5,pady=(0,10),side="top",anchor="w")
+            files_to_keep_set.bind("<Key>",lambda e: update_entry(e,flag="ftk"))
+            files_to_keep_set.insert(0,self.directories_to_keep)
 
-        -Budou smazány VŠECHNY soubory starší než nastavené datum, přičemž budou redukovány i soubory novější\n
-        -Souborů, vyhodnocených, jako novější, bude ponechán nastavený počet\n
-        -(vhodné při situacích rychlého pořizování velkého množství fotografií, kde je potřebné ponechat nějaké soubory pro referenci)\n
-        -Podporované formáty jsou uživatelem nastavené a uložené v textovém souboru
-        """
-        self.clear_frame(self.frame_right)
-        self.bottom_frame2.unbind("<Enter>")
-        Tools.clear_console(self.console)
-        self.checkbox.deselect()
-        self.checkbox2.select()
-        self.checkbox3.deselect()
-        self.info.configure(text = f"- Budou smazány VŠECHNY soubory starší než nastavené datum, přičemž budou redukovány i soubory novější\n(Ošetřeno: pokud se v dané cestě nacházejí pouze starší soubory, než nastavené datum, zruší se mazání)\n- Souborů, vyhodnocených, jako novější, než nastavené datum, bude ponecháno: {self.files_to_keep}\n(vhodné při situacích rychlého pořizování velkého množství fotografií, kde je potřebné ponechat nějaké soubory pro referenci)\nPodporované formáty: {self.supported_formats_deleting}",font = ("Arial",16,"bold"),justify="left")
-        self.selected6() #update
+        directories_image = customtkinter.CTkImage(Image.open(Tools.resource_path("images/directories.png")),size=(240, 190))
+        image_description = customtkinter.CTkLabel(master = right_side,text = "Ukázka:",font=("Arial",20,"bold"))
+        images_label = customtkinter.CTkLabel(master = right_side,text = "",image=directories_image)
+        image_description.pack(padx=10,pady=(10),side="top",anchor="w")
+        images_label.pack(padx=10,pady=(10),side="top",anchor="w")
+        user_input_frame.pack(padx=5,pady=(0,0),side="top",anchor="w",fill="x")
+        summary_label = customtkinter.CTkLabel(master = left_side,text = f"Budou smazány jen adresáře (včetně všech subadresářů), které obsahují v názvu podporovaný formát datumu\na jsou vyhodnoceny jako starší než nastavené datum",justify = "left",font=("Arial",20,"bold"))
+        summary_label.pack(padx=10,pady=(10,0),side="top",anchor="w")
 
-        if clear == True:
-            self.console_frame_right_1_text = "","white"
-            self.console_frame_right_2_text = "","white"
-
-        def set_cutoff_date():
-            input_month = set_month.get()
-            if input_month != "":
-                if input_month.isdigit():
-                    if int(input_month) < 13 and int(input_month) > 0:
-                        self.cutoff_date[1] = int(input_month)
-                        max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
-                        if int(self.cutoff_date[0]) > max_days_in_month:
-                            self.cutoff_date[0] = str(max_days_in_month)
-                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
-                    else:
-                        self.console_frame_right_1_text = "Měsíc: " + str(input_month) + " je mimo rozsah","red"
-                else:
-                    self.console_frame_right_1_text = "Nezadali jste číslo","red"
-
-            input_day = set_day.get()
-            max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
-
-            if input_day != "":
-                if input_day.isdigit():
-                    if int(input_day) <= int(max_days_in_month) and int(input_day) > 0:
-                        self.cutoff_date[0] = int(input_day)
-                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
-                    else:
-                        self.console_frame_right_1_text = "Den: " + str(input_day) + " je mimo rozsah","red"
-                else:
-                    self.console_frame_right_1_text = "Nezadali jste číslo","red"
-
-            input_year = set_year.get()
-            if input_year != "":
-                if input_year.isdigit():
-                    if len(str(input_year)) == 2:
-                        self.cutoff_date[2] = int(input_year) + 2000
-                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
-                    elif len(str(input_year)) == 4:
-                        self.cutoff_date[2] = int(input_year)
-                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
-                    else:
-                        self.console_frame_right_1_text = "Rok: " + str(input_year) + " je mimo rozsah","red"
-                else:
-                    self.console_frame_right_1_text = "Nezadali jste číslo","red"            
-            self.selected2(False)
-
-        def set_files_to_keep():
-            input_files_to_keep = files_to_keep_set.get()
-            if input_files_to_keep.isdigit():
-                if int(input_files_to_keep) >= 0:
-                    self.files_to_keep = int(input_files_to_keep)
-                    self.console_frame_right_2_text = "Počet ponechaných starších souborů nastaven na: " + str(self.files_to_keep),"green"
-                else:
-                    self.console_frame_right_2_text = "Mimo rozsah","red"
-            else:
-                self.console_frame_right_2_text = "Nazadali jste číslo","red"
-
-            self.selected2(False)
-
-        def insert_current_date():
-            today = Deleting.get_current_date()
-            today_split = today[1].split(".")
-            i=0
-            for items in today_split:
-                i+=1
-                self.cutoff_date[i-1]=items
-
-            self.console_frame_right_1_text = "Bylo vloženo dnešní datum (Momentálně všechny soubory vyhodnoceny, jako starší!)","orange"
-            self.selected2(False)
-
-        def save_before_execution():
-            input_month = set_month.get()
-            if input_month != "":
-                if input_month.isdigit():
-                    if int(input_month) < 13 and int(input_month) > 0:
-                        self.cutoff_date[1] = int(input_month)
-                        max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
-                        if int(self.cutoff_date[0]) > max_days_in_month:
-                            self.cutoff_date[0] = str(max_days_in_month)
-
-            input_day = set_day.get()
-            max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
-            if input_day != "":
-                if input_day.isdigit():
-                    if int(input_day) <= int(max_days_in_month) and int(input_day) > 0:
-                        self.cutoff_date[0] = int(input_day)
-
-            input_year = set_year.get()
-            if input_year != "":
-                if input_year.isdigit():
-                    if len(str(input_year)) == 2:
-                        self.cutoff_date[2] = int(input_year) + 2000
-                    elif len(str(input_year)) == 4:
-                        self.cutoff_date[2] = int(input_year)
-
-            input_files_to_keep = files_to_keep_set.get()
-            if input_files_to_keep.isdigit():
-                if int(input_files_to_keep) >= 0:
-                    self.files_to_keep = int(input_files_to_keep)
-
-        def set_max_days():
-            new_cutoff = Deleting.get_cutoff_date(int(max_days_entry.get()))
-            set_day.insert(0,new_cutoff[0])
-            set_month.insert(0,new_cutoff[1])
-            set_year.insert(0,new_cutoff[2])
-            set_cutoff_date()
-
-        console_frame_right_1_text, console_frame_right_1_color = self.console_frame_right_1_text
-        today = Deleting.get_current_date()
-        row_index = 0
-        label0      = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Dnešní datum: "+today[1],justify = "left",font=("Arial",16,"bold"))
-        label1      = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte datum pro vyhodnocení souborů, jako starších:",justify = "left",font=("Arial",16))
-        set_day     = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[0])
-        sep1        = customtkinter.CTkLabel(master = self.frame_right,height=20,width=10,text = ".",font=("Arial",20))
-        set_month   = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[1])
-        sep2        = customtkinter.CTkLabel(master = self.frame_right,height=20,width=10,text = ".",font=("Arial",20))
-        set_year    = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[2])
-        button_save1 = customtkinter.CTkButton(master = self.frame_right,width=100,height=30, text = "Nastavit", command = lambda: set_cutoff_date(),font=("Arial",18,"bold"))
-        max_days_entry = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[0])
-        max_days_label = customtkinter.CTkLabel(master = self.frame_right,text = "dní",font=("Arial",16))
-        max_days_save = customtkinter.CTkButton(master = self.frame_right,width=100,height=30, text = "Nastavit", command = lambda: set_max_days(),font=("Arial",18,"bold"))
-        insert_button = customtkinter.CTkButton(master = self.frame_right,width=190,height=30, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",18,"bold"))
-        console_frame_right_1=customtkinter.CTkLabel(master = self.frame_right,height=30,text = console_frame_right_1_text,justify = "left",font=("Arial",18),text_color=console_frame_right_1_color)
-        label0.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
-        label1.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
-        set_day.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
-        sep1.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=40)
-        set_month.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=50)
-        sep2.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=80)
-        set_year.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=90)
-        button_save1.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=150)
-        max_days_entry.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=260)
-        max_days_label.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=320)
-        max_days_save.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=350)
-        insert_button.grid(column =0,row=row_index+3,sticky = tk.W,pady =5,padx=10)
-        console_frame_right_1.grid(column =0,row=row_index+4,sticky = tk.W,pady =0,padx=10)
-        def new_date_enter_btn(e):
-            set_cutoff_date()
-        set_day.bind("<Return>",new_date_enter_btn)
-        set_month.bind("<Return>",new_date_enter_btn)
-        set_year.bind("<Return>",new_date_enter_btn)
-        max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
-        
-        console_frame_right_2_text, console_frame_right_2_color = self.console_frame_right_2_text
-        label2          = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte počet ponechaných novějších souborů:",justify = "left",font=("Arial",16))
-        files_to_keep_set = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30,font=("Arial",16), placeholder_text= self.files_to_keep)
-        button_save2    = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Nastavit", command = lambda: set_files_to_keep(),font=("Arial",18,"bold"))
-        console_frame_right_2=customtkinter.CTkLabel(master = self.frame_right,height=30,text =console_frame_right_2_text,justify = "left",font=("Arial",18),text_color=console_frame_right_2_color)
-        label2.grid(column =0,row=5,sticky = tk.W,pady =0,padx=10)
-        files_to_keep_set.grid(column =0,row=6,sticky = tk.W,pady =0,padx=10)
-        button_save2.grid(column =0,row=6,sticky = tk.W,pady =0,padx=60)
-        console_frame_right_2.grid(column =0,row=7,sticky = tk.W,pady =0,padx=10)
-        def new_FTK_enter_btn(e):
-            set_files_to_keep()
-        files_to_keep_set.bind("<Return>",new_FTK_enter_btn)
-        self.bottom_frame2.bind("<Enter>",lambda e: save_before_execution()) # případ, že se nestiskne uložit - aby nedošlo ke ztrátě souborů
-   
-    def selected3(self,clear:bool): # Třetí možnost mazání, mazání datumových adresářů
-        """
-        Nastavení widgets pro třetí možnost mazání
-
-        Budou smazány VŠECHNY adresáře (včetně všech subadresářů), které obsahují v názvu podporovaný formát datumu a jsou vyhodnoceny,jako starší než nastavené datum\n
-        -Podporované datumové formáty jsou ["YYYYMMDD","DDMMYYYY","YYMMDD"] a podporované datumové separátory: [".","/","_"]
-
-        """
-        self.clear_frame(self.frame_right)
-        self.bottom_frame2.unbind("<Enter>")
-        Tools.clear_console(self.console)
-        self.checkbox2.deselect()
-        self.checkbox3.select()
-        self.checkbox.deselect()
-        self.info.configure(text = f"- Budou smazány VŠECHNY adresáře (včetně všech subadresářů), které obsahují v názvu podporovaný formát datumu a jsou vyhodnoceny,\njako starší než nastavené datum\nPodporované datumové formáty: {Deleting.supported_date_formats}\nPodporované separátory datumu: {Deleting.supported_separators}",font = ("Arial",16,"bold"),justify="left")
-        self.selected6() #update
-
-        if clear == True:
-            self.console_frame_right_1_text = "","white"
-            self.console_frame_right_2_text = "","white"
-
-        def set_cutoff_date():
-            input_month = set_month.get()
-            if input_month != "":
-                if input_month.isdigit():
-                    if int(input_month) < 13 and int(input_month) > 0:
-                        self.cutoff_date[1] = int(input_month)
-                        max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
-                        if int(self.cutoff_date[0]) > max_days_in_month:
-                            self.cutoff_date[0] = str(max_days_in_month)
-                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
-                    else:
-                        self.console_frame_right_1_text = "Měsíc: " + str(input_month) + " je mimo rozsah","red"
-                else:
-                    self.console_frame_right_1_text = "Nezadali jste číslo","red"
-
-            input_day = set_day.get()
-            max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
-
-            if input_day != "":
-                if input_day.isdigit():
-                    if int(input_day) <= int(max_days_in_month) and int(input_day) > 0:
-                        self.cutoff_date[0] = int(input_day)
-                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
-                    else:
-                        self.console_frame_right_1_text = "Den: " + str(input_day) + " je mimo rozsah","red"
-                else:
-                    self.console_frame_right_1_text = "Nezadali jste číslo","red"
-
-            input_year = set_year.get()
-            if input_year != "":
-                if input_year.isdigit():
-                    if len(str(input_year)) == 2:
-                        self.cutoff_date[2] = int(input_year) + 2000
-                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
-                    elif len(str(input_year)) == 4:
-                        self.cutoff_date[2] = int(input_year)
-                        self.console_frame_right_1_text = "Datum přenastaveno na: "+ str(self.cutoff_date[0])+ "."+str(self.cutoff_date[1])+"."+ str(self.cutoff_date[2]),"green"
-                    else:
-                        self.console_frame_right_1_text = "Rok: " + str(input_year) + " je mimo rozsah","red"
-                else:
-                    self.console_frame_right_1_text = "Nezadali jste číslo","red"
-
-                        
-            self.selected3(False)
-
-        def insert_current_date():
-            today = Deleting.get_current_date()
-            today_split = today[1].split(".")
-            i=0
-            for items in today_split:
-                i+=1
-                self.cutoff_date[i-1]=items
-
-            self.console_frame_right_1_text = "Bylo vloženo dnešní datum (Momentálně všechny adresáře vyhodnoceny, jako starší!)","orange"
-
-            self.selected3(False) #refresh
-
-        def save_before_execution():
-            input_month = set_month.get()
-            if input_month != "":
-                if input_month.isdigit():
-                    if int(input_month) < 13 and int(input_month) > 0:
-                        self.cutoff_date[1] = int(input_month)
-                        max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
-                        if int(self.cutoff_date[0]) > max_days_in_month:
-                            self.cutoff_date[0] = str(max_days_in_month)
-
-            input_day = set_day.get()
-            max_days_in_month = Deleting.calc_days_in_month(int(self.cutoff_date[1]))
-            if input_day != "":
-                if input_day.isdigit():
-                    if int(input_day) <= int(max_days_in_month) and int(input_day) > 0:
-                        self.cutoff_date[0] = int(input_day)
-
-            input_year = set_year.get()
-            if input_year != "":
-                if input_year.isdigit():
-                    if len(str(input_year)) == 2:
-                        self.cutoff_date[2] = int(input_year) + 2000
-                    elif len(str(input_year)) == 4:
-                        self.cutoff_date[2] = int(input_year)
-
-        console_frame_right_1_text, console_frame_right_1_color = self.console_frame_right_1_text
-        today = Deleting.get_current_date()
-        row_index = 0
-        label0          = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Dnešní datum: "+today[1],justify = "left",font=("Arial",16,"bold"))
-        images2         = customtkinter.CTkLabel(master = self.frame_right,text = "")
-        label1          = customtkinter.CTkLabel(master = self.frame_right,height=20,text = "Nastavte datum pro vyhodnocení datumu v názvu adresářů, jako staršího:",justify = "left",font=("Arial",16))
-        set_day         = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[0])
-        sep1            = customtkinter.CTkLabel(master = self.frame_right,height=20,width=10,text = ".",font=("Arial",20))
-        set_month       = customtkinter.CTkEntry(master = self.frame_right,width=30,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[1])
-        sep2            = customtkinter.CTkLabel(master = self.frame_right,height=20,width=10,text = ".",font=("Arial",20))
-        set_year        = customtkinter.CTkEntry(master = self.frame_right,width=50,height=30,font=("Arial",16), placeholder_text= self.cutoff_date[2])
-        button_save1    = customtkinter.CTkButton(master = self.frame_right,width=50,height=30, text = "Nastavit", command = lambda: set_cutoff_date(),font=("Arial",18,"bold"))
-        insert_button = customtkinter.CTkButton(master = self.frame_right,width=190,height=30, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",18,"bold"))
-        console_frame_right_1 = customtkinter.CTkLabel(master = self.frame_right,height=30,text = console_frame_right_1_text,justify = "left",font=("Arial",18),text_color=console_frame_right_1_color)
-        directories     = customtkinter.CTkImage(Image.open(Tools.resource_path("images/directories.png")),size=(240, 190))
-        label0.grid(column =0,row=row_index,sticky = tk.W,pady =0,padx=10)
-        images2.grid(column =0,row=row_index,sticky = tk.W,pady =15,padx=600,rowspan=5)
-        label1.grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=10)
-        set_day.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
-        sep1.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=40)
-        set_month.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=50)
-        sep2.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=80)
-        set_year.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=90)
-        button_save1.grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=140)
-        insert_button.grid(column =0,row=row_index+3,sticky = tk.W,pady =0,padx=10)
-        console_frame_right_1.grid(column =0,row=row_index+4,sticky = tk.W,pady =0,padx=10)
-        images2.configure(image = directories)
-        def new_date_enter_btn(e):
-            set_cutoff_date()
-        set_day.bind("<Return>",new_date_enter_btn)
-        set_month.bind("<Return>",new_date_enter_btn)
-        set_year.bind("<Return>",new_date_enter_btn)
-        self.bottom_frame2.bind("<Enter>",lambda e: save_before_execution()) # případ, že se nestiskne uložit - aby nedošlo ke ztrátě souborů
-
-    def selected6(self): # checkbox s dotazem procházet subsložky
-        """
-        checkbox s dotazem procházet subsložky
-        """
-        if self.checkbox6.get() == 1:
-            if self.checkbox3.get() == 1:
-                self.info2.configure(text = "- Pro tuto možnost třídění není tato funkce podporována",font=("Arial",16,"bold"),text_color="white")
-            else:
-                self.info2.configure(text = "- VAROVÁNÍ: Máte spuštěné možnosti mazání obrázkových souborů i ve všech subsložkách vložené cesty (max:6 subsložek)",font=("Arial",16,"bold"),text_color="yellow")
+        deletable_formats = customtkinter.CTkLabel(master = left_side,text = f"Podporované datumové formáty: {Deleting.supported_date_formats}\nPodporované separátory datumu: {Deleting.supported_separators}",justify = "left",font=("Arial",20))
+        if option == 3:
+            deletable_formats.pack(padx=10,pady=(10,0),side="top",anchor="w")
+            left_side.pack(padx=0,pady=(0),side="left",anchor="n",expand=True,fill="x")
+            right_side.pack(padx=0,pady=(0),side="left",anchor="w",expand=False)        
         else:
-            self.info2.configure(text = "")
+            left_side.pack(padx=0,pady=(0),side="left",anchor="n",expand=True,fill="x")
+
+        top_frame.pack(padx=0,pady=(0),side="top",anchor="w",fill="x")
+        top_frame.propagate(False)
+        console = tk.Text(self.changable_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED)
+        console.pack(pady = (10,0),padx =10,side="top",anchor="w",fill="x")
+
+        self.checkbox_testing = customtkinter.CTkCheckBox(master =self.changable_frame, text = f"Režim TESTOVÁNÍ (Soubory vyhodnocené ke smazání se pouze přesunou do složky s názvem: \"{self.to_delete_folder_name}\")",font=("Arial",18,"bold"),command=lambda:set_testing_mode())
+        self.checkbox_testing.pack(pady = (10,0),padx =10,side="top",anchor="w")
+
+        decision_date_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121")
+        decision_date_label = customtkinter.CTkLabel(master = decision_date_frame,text = "Řídit se podle: ",justify = "left",font=("Arial",20,"bold"))
+        checkbox_creation_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data vytvoření",font=("Arial",18),command=lambda:set_decision_date("creation"))
+        checkbox_modification_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data poslední změny (doporučeno)",font=("Arial",18),command=lambda:set_decision_date("modification"))
+        decision_date_label.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
+        checkbox_creation_date.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
+        checkbox_modification_date.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
+        if option == 4:
+            decision_date_frame.pack(pady = (0,0),padx =0,side="top",anchor="w",fill="x")
+            if self.by_creation_date:
+                checkbox_creation_date.select()
+            else:
+                checkbox_modification_date.select()
+        if self.testing_mode:
+            self.checkbox_testing.select()
+       
+        if self.selected_language == "en":
+            option_title.configure(text= "Delete directories by date in their name")
+            date_label.configure(text= "‣ directories older than the set date will be deleted:")
+            insert_button.configure(text= "Insert today's date")
+            days_label.configure(text= "‣ it means older than:")
+            days_label2.configure(text= "days")
+            ftk_label.configure(text= "‣ whereby it will be retained:")
+            ftk_label2.configure(text= "directories, evaluated as older")
+            image_description.configure(text= "Example:")
+            summary_label.configure(text= "Only directories (including all subdirectories) that contain a supported date format in their name and are evaluated as older than the set date will be deleted")
+            deletable_formats.configure(text= f"Supported date formats: {Deleting.supported_date_formats}\nSupported date separators: {Deleting.supported_separators}")
+            self.checkbox_testing.configure(text= f"TEST mode (Files evaluated for deletion are only moved to a folder named: \"{self.to_delete_folder_name}\")")
+            current_date.configure(text = "Current date: "+today[1])
+
+        if option == 4:
+            self.selected_option =4
+            option_title.configure(text = "Mazání adresářů starších než: nastavené datum")
+            summary_label.configure(text= f"Budou smazány adresáře (včetně všech subadresářů), které jsou vyhodnoceny jako starší než nastavené datum\npřičemž bude ponechán minimální počet složek: {self.directories_to_keep}")
+            if self.selected_language == "en":
+                option_title.configure(text = "Deleting directories older than: set date")
+                summary_label.configure(text= f"Directories (including all subdirectories) that are evaluated as older than the set date will be deleted\nwhile retaining the minimum number of directories: {self.directories_to_keep}")
+                decision_date_label.configure(text = "To decide by:")
+                checkbox_creation_date.configure(text = "date of creation")
+                checkbox_modification_date.configure(text = "date of modification (recommended)")
+            self.options1.deselect()
+            self.options2.deselect()
+            self.options3.deselect()
+            self.options4.select()
+        else:
+            self.selected_option =3
+            self.options1.deselect()
+            self.options2.deselect()
+            self.options3.select()
+            self.options4.deselect()
+        
+        def new_date_enter_btn(e):
+            set_cutoff_date()
+        set_day.bind("<Return>",new_date_enter_btn)
+        set_month.bind("<Return>",new_date_enter_btn)
+        set_year.bind("<Return>",new_date_enter_btn)
+
+        # self.changable_frame.bind("<Enter>",lambda e: save_before_execution()) # případ, že se nestiskne uložit - aby nedošlo ke ztrátě souborů
 
     def save_new_task(self):
         def call_browse_directories():
@@ -5083,7 +5469,12 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             if str(output[1]) != "/":
                 operating_path.delete(0,300)
                 operating_path.insert(0, str(output[1]))
-                Tools.add_colored_line(console,"Byla vložena cesta pro vykonávání úkolu","green",None,True)
+                Tools.add_new_path_to_history(str(output[1]))
+                if self.selected_language == "en":
+                    Tools.add_colored_line(console,"The path where the task will be executed has been inserted.","green",None,True)
+                else:
+                    Tools.add_colored_line(console,"Byla vložena cesta pro vykonávání úkolu","green",None,True)
+
             print(output[0])
             window.focus()
             window.focus_force()
@@ -5091,16 +5482,20 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         def save_task_to_config():
             if check_entry("",hour_format=True,input_char=str(frequency_entry.get())) == False:
                 return
+            
             def get_task_name(current_tasks):
                 names_taken = []
-                new_task_name = "TRIMAZKON_task_xx"
+                new_task_name = "jhv_MAZ_task_xx"
                 for tasks in current_tasks:
-                    names_taken.append(tasks[0])
+                    names_taken.append(tasks["name"])
                 for i in range(1,100):
-                    name_suggestion = "TRIMAZKON_task_" + str(i)
-                    if not name_suggestion in names_taken:
-                        new_task_name = name_suggestion
-                        break
+                    name_suggestion = "jhv_MAZ_task_" + str(i)
+                    if name_suggestion in names_taken:
+                        continue
+                    if Tools.check_task_existence_in_TS(name_suggestion):
+                        continue
+                    new_task_name = name_suggestion
+                    break
                 return new_task_name
 
             def set_up_task_in_ts():
@@ -5112,12 +5507,12 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                     else:
                         return freq_input
                         
-                name_of_task = new_task[0]
-                repaired_freq_param = check_freq_format(str(new_task[4]))
+                task_name = str(new_task["name"])
+                repaired_freq_param = check_freq_format(str(new_task["frequency"]))
                 path_app_location = str(initial_path+"/"+exe_name) 
-                # task_command = "/c start \""+ path_app_location+ " deleting " + name_of_task + " " + str(new_task[1]) + " " + str(new_task[2]) + " " + str(new_task[3]) + "\" /SC DAILY /ST " + repaired_freq_param
-                task_command = "\""+ path_app_location+ " deleting " + name_of_task + " " + str(new_task[1]) + " " + str(new_task[2]) + " " + str(new_task[3]) + "\" /SC DAILY /ST " + repaired_freq_param
-                process = subprocess.Popen(f"schtasks /Create /TN {name_of_task} /TR {task_command}",
+                # task_command = "\""+ path_app_location+ " deleting " + task_name + " " + str(new_task["operating_path"]) + " " + str(new_task["max_days"]) + " " + str(new_task["files_to_keep"]) + "\" /SC DAILY /ST " + repaired_freq_param
+                task_command = "\""+ path_app_location+ " deleting " + task_name + " " + str(new_task["operating_path"]) + " " + str(new_task["max_days"]) + " " + str(new_task["files_to_keep"]) + " " + str(new_task["more_dirs"]) + " " + str(new_task["selected_option"]) + " " + str(new_task["creation_date"]) + "\" /SC DAILY /ST " + repaired_freq_param
+                process = subprocess.Popen(f"schtasks /Create /TN {task_name} /TR {task_command}",
                                             stdout=subprocess.PIPE,
                                             stderr=subprocess.PIPE,
                                             creationflags=subprocess.CREATE_NO_WINDOW)
@@ -5134,49 +5529,47 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                 output_message = "out"+str(stdout) +"err"+str(stderr)
                 print(output_message)
                 if "SUCCESS" in stdout_str:
-                    os.startfile("taskschd.msc")
+                    # os.startfile("taskschd.msc")
                     return True
                 else:
                     return False
 
             current_tasks = trimazkon_tray_instance.read_config()
-            wb = load_workbook(initial_path + self.config_filename)
-            ws = wb["Task_settings"]
-            # subexe_path = Tools.resource_path(trimazkon_tray_exe_name)
-            # process_output = subprocess.run(subexe_path + " " + initial_path + " read_config",
-            #                 creationflags=subprocess.CREATE_NO_WINDOW,
-            #                 stdout=subprocess.PIPE,
-            #                 text = True)
-            # current_tasks = list(process_output.stdout)
-            if len(current_tasks) == 0:
-                current_tasks = []
             print("current tasks: ",current_tasks)
-            new_task_name = get_task_name(current_tasks)
-            new_task = [new_task_name,operating_path.get(),self.older_then_entry.get(),minimum_file_entry.get(),frequency_entry.get(),str(Deleting.get_current_date()[2]),""]
-            current_tasks.insert(0,new_task)
 
-            row_to_print = 1
-            for tasks in current_tasks:
-                ws['A' + str(row_to_print)] = tasks[0] # název tasku
-                ws['B' + str(row_to_print)] = tasks[1] # cesta vykonavani
-                ws['C' + str(row_to_print)] = tasks[2] # max days
-                ws['D' + str(row_to_print)] = tasks[3] # min left
-                ws['E' + str(row_to_print)] = tasks[4] # frequency
-                ws['F' + str(row_to_print)] = tasks[5] # datum přidání tasku
-                ws['G' + str(row_to_print)] = tasks[6] # log mazání (pocet smazanych,datum,seznam smazanych)
-                row_to_print +=1
+            new_task = {'name': get_task_name(current_tasks),
+                        'operating_path': operating_path.get(),
+                        'max_days': self.older_then_entry.get(),
+                        'files_to_keep': minimum_file_entry.get(),
+                        'frequency': frequency_entry.get(),
+                        'more_dirs': subfolder_checkbox.get(),
+                        'selected_option': self.selected_option,
+                        'date_added': str(Deleting.get_current_date()[2]),
+                        'del_log': [],
+                        'creation_date': checkbox_creation_date.get(),
+                        }
+
             try:
                 success_status = set_up_task_in_ts()
                 if success_status:
-                    Tools.add_colored_line(console,"Nový úkol byl uložen a zaveden do task scheduleru","green",None,True)
-                    wb.save(self.config_filename)
+                    if self.selected_language == "en":
+                        Tools.add_colored_line(console,"The new task has been saved and entered into the task scheduler","green",None,True)
+                    else:
+                        Tools.add_colored_line(console,"Nový úkol byl uložen a zaveden do task scheduleru","green",None,True)
+
+                    current_tasks.append(new_task)
+                    trimazkon_tray_instance.save_task_to_config(current_tasks)
                 else:
-                    Tools.add_colored_line(console,"Neočekávaná chyba, nepovedlo se nastavit nový úkol","red",None,True)
-                wb.close()  
+                    if self.selected_language == "en":
+                        Tools.add_colored_line(console,"Unexpected error, failed to set a new task","red",None,True)
+                    else:
+                        Tools.add_colored_line(console,"Neočekávaná chyba, nepovedlo se nastavit nový úkol","red",None,True)
 
             except Exception as e:
-                Tools.add_colored_line(console,f"Prosím zavřete konfigurační soubor ({e})","red",None,True)
-                wb.close()
+                if self.selected_language == "en":
+                    Tools.add_colored_line(console,f"Please close the configuration file ({e})","red",None,True)
+                else:
+                    Tools.add_colored_line(console,f"Prosím zavřete konfigurační soubor ({e})","red",None,True)
 
         def refresh_cutoff_date():
             self.older_then_entry.update()
@@ -5184,6 +5577,8 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             try:
                 cutoffdate_list = Deleting.get_cutoff_date(int(self.older_then_entry.get()))
                 new_date = "(starší než: "+str(cutoffdate_list[0])+"."+str(cutoffdate_list[1])+"."+str(cutoffdate_list[2])+")"
+                if self.selected_language == "en":
+                    new_date = "(older then: "+str(cutoffdate_list[0])+"."+str(cutoffdate_list[1])+"."+str(cutoffdate_list[2])+")"
                 if older_then_label3.cget("text") != new_date:
                     older_then_label3.configure(text = new_date)
             except Exception:
@@ -5198,41 +5593,111 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
 
             if number:
                 if not event.char.isdigit():
-                    Tools.add_colored_line(console,"Vkládejte pouze čísla","red",None,True)
+                    if self.selected_language == "en":
+                        Tools.add_colored_line(console,"Enter only numbers","red",None,True)
+                    else:
+                        Tools.add_colored_line(console,"Vkládejte pouze čísla","red",None,True)
                     event.widget.insert(tk.INSERT,"")
                     return "break"  # Stop the event from inserting the original character
                 
             elif hour_format:
+                separator_err_msg = "Neplatný formát času, chybí separátor (vkládejte ve formátu: 00:00)"
+                time_format_err_msg = "Neplatný formát času (vkládejte ve formátu: 00:00)"
+                bad_chars_err_msg = "Neplatné znaky u času (vkládejte ve formátu: 00:00)"
+                out_of_range_err_msg = "Neplatný formát času, mimo rozsah (vkládejte ve formátu: 00:00)"
+                if self.selected_language == "en":
+                    separator_err_msg = "Invalid time format, missing separator (insert in format: 00:00)"
+                    time_format_err_msg = "Invalid time format (enter in format: 00:00)"
+                    bad_chars_err_msg = "Invalid characters for time (enter in format: 00:00)"
+                    out_of_range_err_msg = "Invalid time format, out of range (insert in format: 00:00)"
+
                 if not ":" in input_char:
-                    Tools.add_colored_line(console,"Neplatný formát času, chybí separátor (vkládejte ve formátu: 00:00)","red",None,True)
+                    Tools.add_colored_line(console,separator_err_msg,"red",None,True)
                     return False
                 elif len(input_char.split(":")) != 2:
-                    Tools.add_colored_line(console,"Neplatný formát času (vkládejte ve formátu: 00:00)","red",None,True)
+                    Tools.add_colored_line(console,time_format_err_msg,"red",None,True)
                     return False
                 elif len(str(input_char.split(":")[1])) != 2:
-                    Tools.add_colored_line(console,"Neplatný formát času (vkládejte ve formátu: 00:00)","red",None,True)
+                    Tools.add_colored_line(console,time_format_err_msg,"red",None,True)
                     return False
                 elif not input_char.split(":")[0].isdigit() or not input_char.split(":")[1].isdigit():
-                    Tools.add_colored_line(console,"Neplatné znaky u času (vkládejte ve formátu: 00:00)","red",None,True)
+                    Tools.add_colored_line(console,bad_chars_err_msg,"red",None,True)
                     return False
                 elif int(input_char.split(":")[0]) > 23 or int(input_char.split(":")[0]) < 0 or int(input_char.split(":")[1]) > 59 or int(input_char.split(":")[1]) < 0:
-                    Tools.add_colored_line(console,"Neplatný formát času, mimo rozsah (vkládejte ve formátu: 00:00)","red",None,True)
+                    Tools.add_colored_line(console,out_of_range_err_msg,"red",None,True)
                     return False
-                
+            
+        def call_path_context_menu(event):
+            path_history = Tools.read_json_config()[10]
+            def insert_path(path):
+                operating_path.delete("0","200")
+                operating_path.insert("0", path)
+            if len(path_history) > 0:
+                path_context_menu = tk.Menu(self.root, tearoff=0,fg="white",bg="black")
+                for i in range(0,len(path_history)):
+                    path_context_menu.add_command(label=path_history[i], command=lambda row_path = path_history[i]: insert_path(row_path),font=("Arial",22,"bold"))
+                    if i < len(path_history)-1:
+                        path_context_menu.add_separator()
+                        
+                path_context_menu.tk_popup(context_menu_button.winfo_rootx(),context_menu_button.winfo_rooty()+50)
+
+        def set_decision_date(input_arg):
+            """
+            input_arg:
+            - creation
+            - modification
+            """
+
+            if input_arg == "creation":
+                self.by_creation_date = True
+                checkbox_modification_date.deselect()
+
+            elif input_arg == "modification":
+                self.by_creation_date = False
+                checkbox_creation_date.deselect()
+
         window = customtkinter.CTkToplevel()
         window.after(200, lambda: window.iconbitmap(app_icon))
         window.title("Nastavení nového úkolu")
-        trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path)
+        if self.selected_language == "en":
+            window.title("Setting up a new task")
 
+        trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
         parameter_frame = customtkinter.CTkFrame(master = window,corner_radius=0)
-        path_label = customtkinter.CTkLabel(master = parameter_frame,text = "Zadejte cestu, kde bude úkol spouštěn:",font=("Arial",22,"bold"))
-        path_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
+        selected_option = customtkinter.CTkLabel(master = parameter_frame,text = "Zvolená možnost mazání: ",font=("Arial",25,"bold"))
+        path_label_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0,fg_color="#212121")
+        path_label = customtkinter.CTkLabel(master = path_label_frame,text = "Zadejte cestu, kde bude úkol spouštěn:",font=("Arial",22))
+        path_label.pack(pady = (10,0),padx = (10,0),side="left",anchor="w")
+        subfolder_checkbox = customtkinter.CTkCheckBox(master = path_label_frame, text = "Procházet subsložky? (max: 6)",font=("Arial",20,"bold"))
+        if self.selected_option != 3 and self.selected_option != 4:
+            subfolder_checkbox.pack(pady = (10,0),padx = (0,10),side="right",anchor="e")
+            if self.more_dirs:
+                subfolder_checkbox.select()
+
+        path_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0,fg_color="#212121")
+        context_menu_button  =  customtkinter.CTkButton(master = path_frame, width = 50,height=50, text = "V",font=("Arial",20,"bold"),corner_radius=0,fg_color="#505050")
         operating_path = customtkinter.CTkEntry(master = path_frame,font=("Arial",20),height=50,corner_radius=0)
-        explorer_btn = customtkinter.CTkButton(master = path_frame,text = "...",font=("Arial",22,"bold"),width = 40,height=50,corner_radius=0,command=lambda: call_browse_directories())
-        path_label.pack(pady = (10,0),padx = (10,0),side="top",anchor="w")
-        operating_path.pack(pady = (10,0),padx = (10,0),side="left",anchor="w",expand = True,fill="x")
+        explorer_btn = customtkinter.CTkButton(master = path_frame,text = "...",font=("Arial",22,"bold"),width = 50,height=50,corner_radius=0,command=lambda: call_browse_directories())
+        selected_option.pack(pady = (10,0),padx = (10,0),side="top",anchor="w")
+        path_label_frame.pack(side="top",anchor="w",fill="x",expand = True)
+        context_menu_button.pack(pady = (10,0),padx = (10,0),side="left",anchor="w")
+        operating_path.pack(pady = (10,0),padx = (0,0),side="left",anchor="w",expand = True,fill="x")
         explorer_btn.pack(pady = (10,0),padx = (0,10),side="left",anchor="w")
         path_frame.pack(side="top",anchor="w",fill="x",expand = True)
+        context_menu_button.bind("<Button-1>", call_path_context_menu)
+
+        decision_date_frame = customtkinter.CTkFrame(master=parameter_frame,corner_radius=0,fg_color="#212121")
+        decision_date_label = customtkinter.CTkLabel(master = decision_date_frame,text = "Řídit se podle: ",justify = "left",font=("Arial",20,"bold"))
+        checkbox_creation_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data vytvoření",font=("Arial",18),command=lambda:set_decision_date("creation"))
+        checkbox_modification_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data poslední změny (doporučeno)",font=("Arial",18),command=lambda:set_decision_date("modification"))
+        decision_date_label.pack(pady = (10,10),padx =(10,0),side="left",anchor="w")
+        checkbox_creation_date.pack(pady = (10,10),padx =(10,0),side="left",anchor="w")
+        checkbox_modification_date.pack(pady = (10,10),padx =(10,0),side="left",anchor="w")
+        decision_date_frame.pack(pady = (0,0),padx =0,side="top",anchor="w",fill="x")
+        if self.by_creation_date:
+            checkbox_creation_date.select()
+        else:
+            checkbox_modification_date.select()
 
         older_then_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
         older_then_label = customtkinter.CTkLabel(master = older_then_frame,text = "Odstanit soubory starší než:",font=("Arial",22,"bold"))
@@ -5251,7 +5716,8 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         minimum_file_entry = customtkinter.CTkEntry(master = minimum_file_frame,font=("Arial",20),width=100,height=40,corner_radius=0)
         minimum_file_label.pack(pady = (10,0),padx = (10,10),side="left")
         minimum_file_entry.pack(pady = (10,0),padx = (0,10),side="left")
-        minimum_file_frame.pack(side="top",fill="x",anchor="w")
+        if self.selected_option != 3:
+            minimum_file_frame.pack(side="top",fill="x",anchor="w")
         minimum_file_entry.bind("<Key>",lambda e: check_entry(e,number=True))
 
         frequency_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
@@ -5279,102 +5745,172 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         max_days = Deleting.get_max_days(self.cutoff_date)
         self.older_then_entry.insert("0",max_days)
         minimum_file_entry.insert("0",self.files_to_keep)
+        if self.selected_option == 4:
+            minimum_file_entry.delete("0","200")
+            minimum_file_entry.insert("0",self.directories_to_keep)
         frequency_entry.insert("0","12:00")
         refresh_cutoff_date()
+
+        if self.selected_language == "en":
+            path_label.configure(text = "Specify the path where the task will run:")
+            subfolder_checkbox.configure(text = "Browse subfolders? (max: 6)")
+            older_then_label.configure(text = "Remove files older than:")
+            older_then_label2.configure(text = "days")
+            minimum_file_label.configure(text = "Keep files:")
+            frequency_label.configure(text = "Frequency: daily, ")
+            frequency_label2.configure(text = "hours (ex.: 0:00, 6:00, 14:30)")
+            show_tasks_btn.configure(text = "Show set tasks")
+            save_task_btn.configure(text = "Save new task")
+            cancel_btn.configure(text = "Close")
+            decision_date_label.configure(text = "To decide by: ")
+            checkbox_modification_date.configure(text = "date modified (recommended)")
+            checkbox_creation_date.configure(text = "date created")
+            
+        if self.selected_option == 1:
+            selected_option.configure(text = f"Zvolená možnost mazání: {self.selected_option}. (Redukce starších souborů)")
+            if self.selected_language == "en":
+                selected_option.configure(text = f"Selected delete option: {self.selected_option}. (Reducing older files)")
+        elif self.selected_option == 2:
+            selected_option.configure(text = f"Zvolená možnost mazání: {self.selected_option}. (Redukce novějších, mazání starších souborů)")
+            if self.selected_language == "en":
+                selected_option.configure(text = f"Selected delete option: {self.selected_option}. (Reducing newer, deleting older files)")
+        elif self.selected_option == 3:
+            selected_option.configure(text = f"Zvolená možnost mazání: {self.selected_option}. (Mazání adresářů podle názvu)")
+            older_then_label.configure(text = "Odstanit adresáře starší než:")
+            if self.selected_language == "en":
+                selected_option.configure(text = f"Selected delete option: {self.selected_option}. (Deleting directories by name)")
+                older_then_label.configure(text = "Remove directories older than:")
+        elif self.selected_option == 4:
+            selected_option.configure(text = f"Zvolená možnost mazání: {self.selected_option}. (Mazání starších adresářů)")
+            older_then_label.configure(text = "Odstanit adresáře starší než:")
+            minimum_file_label.configure(text = "Ponechat adresářů:")
+            if self.selected_language == "en":
+                selected_option.configure(text = f"Selected delete option: {self.selected_option}. (Deleting older directories)")
+                older_then_label.configure(text = "Remove directories older than:")
+                minimum_file_label.configure(text = "Keep directories:")
         window.update()
         window.update_idletasks()
-        window_width = window.winfo_width()
-        if window_width < 1200:
-            window_width = 1200
-        window.geometry(f"{window_width}x{window.winfo_height()}")
-        window.after(100,window.focus_force())
+        # window_width = window.winfo_width()
+        # if window_width < 1200:
+        #     window_width = 1200
+        window.geometry(f"{1200}x{window.winfo_height()}")
+        window.after(10,window.focus_force())
         window.focus()
 
     def create_deleting_option_widgets(self):  # Vytváří veškeré widgets (delete option MAIN)
-        #definice ramcu
-        frame_with_logo =       customtkinter.CTkFrame(master=self.root,corner_radius=0)
-        logo =                  customtkinter.CTkImage(Image.open(Tools.resource_path("images/logo.png")),size=(1200, 100))
+        def call_path_context_menu(event):
+            path_history = Tools.read_json_config()[10]
+            def insert_path(path):
+                self.path_set.delete("0","200")
+                self.path_set.insert("0", path)
+            if len(path_history) > 0:
+                path_context_menu = tk.Menu(self.root, tearoff=0,fg="white",bg="black")
+                for i in range(0,len(path_history)):
+                    path_context_menu.add_command(label=path_history[i], command=lambda row_path = path_history[i]: insert_path(row_path),font=("Arial",22,"bold"))
+                    if i < len(path_history)-1:
+                        path_context_menu.add_separator()
+                        
+                path_context_menu.tk_popup(context_menu_button.winfo_rootx(),context_menu_button.winfo_rooty()+50)
+
+        header_frame =          customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#212121")
+        top_frame =             customtkinter.CTkFrame(master=header_frame,corner_radius=0,fg_color="#212121")
+        frame_with_cards =      customtkinter.CTkFrame(master=top_frame,corner_radius=0,fg_color="#636363",height=100)
+        menu_button =           customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "MENU", command =  lambda: self.call_extern_function(function="menu"),font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        deleting_button =       customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Mazání souborů",font=("Arial",20,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
+        menu_button.            pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
+        deleting_button.        pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
+        frame_with_cards.       pack(pady=0,padx=0,fill="both",expand=True,side = "left",anchor="w")
+        frame_with_logo =       customtkinter.CTkFrame(master=top_frame,corner_radius=0)
+        logo =                  customtkinter.CTkImage(Image.open(Tools.resource_path("images/jhv_logo.png")),size=(300, 100))
         image_logo =            customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
-        frame_with_logo.        pack(pady=0,padx=0,fill="both",expand=False,side = "top")
-        image_logo.pack()
-        frame_with_cards =      customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=100)
-        self.frame_path_input = customtkinter.CTkFrame(master=self.root,corner_radius=0)
-        self.bottom_frame2 =    customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
-        self.bottom_frame1 =    customtkinter.CTkFrame(master=self.root,height = 80,corner_radius=0)
-        checkbox_frame =        customtkinter.CTkFrame(master=self.root,width=400,height = 150,corner_radius=0)
-        self.frame_right =      customtkinter.CTkFrame(master=self.root,corner_radius=0,height = 150)
-        frame_with_cards.       pack(pady=0,padx=0,fill="x",expand=False,side = "top")
-        self.frame_path_input.  pack(pady=5,padx=5,fill="both",expand=False,side = "top")
-        self.bottom_frame2.     pack(pady=0,padx=5,fill="both",expand=True,side = "bottom")
-        self.bottom_frame1.     pack(pady=5,padx=5,fill="x",expand=False,side = "bottom")
-        checkbox_frame.         pack(pady=0,padx=5,fill="y",expand=False,side="left")
-        self.frame_right.       pack(pady=0,padx=0,fill="both",expand=True,side="right")
-        self.frame_with_checkboxes = checkbox_frame
-        list_of_frames = [self.frame_path_input,self.bottom_frame1,self.bottom_frame2,self.frame_right,self.frame_with_checkboxes,frame_with_cards,frame_with_logo]
+        frame_with_logo.        pack(pady=0,padx=0,expand=False,side = "left",anchor="e")
+        image_logo.             pack(pady = 0,padx =(15,0),ipadx = 20,ipady = 10,expand=False)
+        top_frame.              pack(pady=0,padx=0,fill="x",side = "top")
 
-        shift_const = 250
-        menu_button =       customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "MENU",                  command =  lambda: self.call_extern_function(list_of_frames,function="menu"),
-                                                    font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
-        sorting_button =    customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Třídění souborů",      command =  lambda: self.call_extern_function(list_of_frames,function="sorting"),
-                                                    font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
-        deleting_button =   customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Mazání souborů",
-                                                    font=("Arial",20,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
-        converting_button = customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Konvertování souborů",  command =  lambda: self.call_extern_function(list_of_frames,function="converting"),
-                                                    font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
-        menu_button.        grid(column = 0,row=0,pady = (10,0),padx =260-shift_const,sticky = tk.W)
-        sorting_button.     grid(column = 0,row=0,pady = (10,0),padx =520-shift_const,sticky = tk.W)
-        deleting_button.    grid(column = 0,row=0,pady = (10,0),padx =780-shift_const,sticky = tk.W)
-        converting_button.  grid(column = 0,row=0,pady = (10,0),padx =1040-shift_const,sticky = tk.W)
+        frame_path_input =      customtkinter.CTkFrame(master=header_frame,corner_radius=0)
+        context_menu_button  =  customtkinter.CTkButton(master =frame_path_input, width = 50,height=50, text = "V",font=("Arial",20,"bold"),corner_radius=0,fg_color="#505050")
+        self.path_set    =      customtkinter.CTkEntry(master =frame_path_input,height=50,font=("Arial",20),corner_radius=0)
+        tree        =           customtkinter.CTkButton(master =frame_path_input,height=50,width = 180,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"))
+        button_save_path =      customtkinter.CTkButton(master =frame_path_input,height=50,text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get()),font=("Arial",20,"bold"))
+        button_open_setting =   customtkinter.CTkButton(master =frame_path_input,height=50,width=50, text = "⚙️", command = lambda: Advanced_option(self.root,windowed=True,spec_location="deleting_option"),font=(None,20))
+        context_menu_button.    pack(pady = 10,padx =(10,0),anchor ="w",side = "left")
+        self.path_set.          pack(pady = 10,padx =(0,0),anchor ="w",side = "left",fill="both",expand=True)
+        tree.                   pack(pady = 10,padx =(10,0),anchor ="w",side = "left")
+        button_save_path.       pack(pady = 10,padx =(10,0),anchor ="w",side = "left")
+        button_open_setting.    pack(pady = 10,padx =(10,10),anchor = "w",side = "left")
+        frame_path_input.       pack(pady=0,padx=0,fill="both",side = "top")
+        context_menu_button.bind("<Button-1>", call_path_context_menu)
+
+        double_frame =          customtkinter.CTkFrame(master=header_frame,corner_radius=0,height=400,fg_color="#212121",border_width=2,border_color="#636363")
+        option_menu_cards =     customtkinter.CTkFrame(master=double_frame,corner_radius=0,fg_color="#212121",border_width=2,border_color="#636363")
+        self.options1 =         customtkinter.CTkCheckBox(master = option_menu_cards,text = "Možnost 1",font=("Arial",20,"bold"),corner_radius=0,command = lambda: self.selected(option=1))
+        self.options2 =         customtkinter.CTkCheckBox(master = option_menu_cards,text = "Možnost 2",font=("Arial",20,"bold"),corner_radius=0,command = lambda: self.selected(option=2))
+        self.options3 =         customtkinter.CTkCheckBox(master = option_menu_cards,text = "Možnost 3",font=("Arial",20,"bold"),corner_radius=0,command = lambda: self.selected3(option = 3))
+        self.options4 =         customtkinter.CTkCheckBox(master = option_menu_cards,text = "Možnost 4",font=("Arial",20,"bold"),corner_radius=0,command = lambda: self.selected3(option = 4))
+        self.options1.          pack(pady = (10,0),padx =(10,15),anchor = "w",side = "top")
+        self.options2.          pack(pady = (10,0),padx =(10,15),anchor = "w",side = "top")
+        self.options3.          pack(pady = (10,0),padx =(10,15),anchor = "w",side = "top")
+        self.options4.          pack(pady = (10,0),padx =(10,15),anchor = "w",side = "top")
+
+        self.changable_frame =  customtkinter.CTkFrame(master=double_frame,corner_radius=0,fg_color="#212121")
+        option_menu_cards.      pack(pady=0,padx=0,fill="y",side = "left")
+        self.changable_frame.   pack(pady=(2,0),padx=(0,2),fill="x",side = "left",expand=True,anchor="n")
+        double_frame.           pack(pady=0,padx=0,fill="x",side = "top",anchor="w")
+        double_frame.           propagate(False)
         
-        # menu_button =           customtkinter.CTkButton(master = self.frame_path_input, width = 180, text = "MENU", command = lambda: self.call_menu(),font=("Arial",20,"bold"))
-        self.path_set    =      customtkinter.CTkEntry(master = self.frame_path_input,font=("Arial",18),placeholder_text="Zadejte cestu k souborům z kamery (kde se přímo nacházejí soubory nebo datumové složky)")
-        tree        =           customtkinter.CTkButton(master = self.frame_path_input, width = 180,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"))
-        button_save_path =      customtkinter.CTkButton(master = self.frame_path_input,width=50,text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get()),font=("Arial",20,"bold"))
-        button_open_setting =   customtkinter.CTkButton(master = self.frame_path_input,width=30,height=30, text = "⚙️", command = lambda: Advanced_option(self.root,windowed=True,spec_location="deleting_option"),font=("Arial",16))
-        # menu_button.            pack(pady =12,padx=10,anchor ="w",side = "left")
-        self.path_set.          pack(pady = 12,padx =(10,0),anchor ="w",side = "left",fill="both",expand=True)
-        tree.                   pack(pady = 12,padx =10,anchor ="w",side = "left")
-        button_save_path.       pack(pady = 12,padx =0,anchor ="w",side = "left")
-        button_open_setting.    pack(pady = 12,padx =10,anchor = "w",side = "left")
+        def call_start(analyze=False):
+            run_background = threading.Thread(target=self.start, args=(analyze,))
+            run_background.start()
+            # self.start(only_analyze=True)
 
-        self.checkbox  =        customtkinter.CTkCheckBox(master = self.frame_with_checkboxes,font=("Arial",16), text = "Mazání souborů starších než: určité datum",command = lambda: self.selected(True))
-        self.checkbox2 =        customtkinter.CTkCheckBox(master = self.frame_with_checkboxes,font=("Arial",16), text = "Redukce novějších, mazání souborů starších než: určité datum",command = lambda: self.selected2(True))
-        self.checkbox3 =        customtkinter.CTkCheckBox(master = self.frame_with_checkboxes,font=("Arial",16), text = "Mazání adresářů s názvem ve formátu určitého datumu",command = lambda: self.selected3(True))
-        self.checkbox.          pack(pady =10,padx=10,anchor ="w")
-        self.checkbox2.         pack(pady =10,padx=10,anchor ="w")
-        self.checkbox3.         pack(pady =10,padx=10,anchor ="w")
-
-        self.checkbox6 =        customtkinter.CTkCheckBox(master = self.bottom_frame1, text = "Procházet subsložky? (max:6)",command = self.selected6,font=("Arial",16,"bold"))
-        self.info2 =            customtkinter.CTkLabel(   master = self.bottom_frame1,text = "",font=("Arial",16,"bold"))
-        self.checkbox_testing = customtkinter.CTkCheckBox(master = self.bottom_frame1, text = f"Režim TESTOVÁNÍ (Soubory vyhodnocené ke smazání se pouze přesunou do složky s názvem: \"{self.to_delete_folder_name}\")",font=("Arial",16,"bold"))
-        self.checkbox6.         grid(column =0,row=0,sticky = tk.W,pady =5,padx=10)
-        self.info2.             grid(column =0,row=0,sticky = tk.W,pady =5,padx=280)
-        self.checkbox_testing.  grid(column =0,row=1,sticky = tk.W,pady =5,padx=10)
-        self.info =             customtkinter.CTkLabel(master = self.bottom_frame2,text = "",font=("Arial",16,"bold"))
-        execution_btn_frame =   customtkinter.CTkFrame(master=self.bottom_frame2,corner_radius=0)
-        button =                customtkinter.CTkButton(master = execution_btn_frame,width = 300,height = 60,text = "SPUSTIT", command = self.start,font=("Arial",20,"bold"))
+        bottom_frame =          customtkinter.CTkFrame(master=header_frame,corner_radius=0,fg_color="#212121",border_width=0,border_color="#636363")
+        execution_btn_frame =   customtkinter.CTkFrame(master=bottom_frame,corner_radius=0,fg_color="#212121")
+        button =                customtkinter.CTkButton(master = execution_btn_frame,width = 300,height = 60,text = "SPUSTIT", command = lambda: call_start(),font=("Arial",20,"bold"))
         create_task_btn =       customtkinter.CTkButton(master = execution_btn_frame,width = 300,height = 60,text = "Nastavit aut. spouštění",command = lambda: self.save_new_task(),font=("Arial",20,"bold"))
+        analyze_btn =           customtkinter.CTkButton(master = execution_btn_frame,width = 300,height = 60,text = "Analyzovat cestu",command = lambda: call_start(analyze=True),font=("Arial",20,"bold"))
         button.                 pack(pady=10,padx=(10,0),side="left",anchor="w")
         create_task_btn.        pack(pady=10,padx=(10,0),side="left",anchor="w")
-        self.console =          tk.Text(self.bottom_frame2, wrap="word", height=20, width=1200,background="black",font=("Arial",16),state=tk.DISABLED)
-        self.info.              pack(pady = 12,padx =10,anchor="w",side = "top")
-        execution_btn_frame.    pack(pady =20,padx=10,side = "top",anchor="n")
-        self.console.           pack(pady =10,padx=10,side = "top")
-        #default:
-        self.checkbox.select()
-        self.checkbox_testing.select()
-        self.selected(False)
+        analyze_btn.            pack(pady=10,padx=(10,0),side="left",anchor="w")
+        self.console =          tk.Text(bottom_frame, wrap="word",background="black",font=("Arial",16),state=tk.DISABLED)
+        execution_btn_frame.    pack(pady =3,padx=3,side = "top",anchor="n")
+        self.console.           pack(pady =0,padx=(10,0),side = "left",fill="both",expand=True)
+        bottom_frame .          pack(pady =0,padx=0,side = "top",fill="both",expand=False)
+        header_frame.           pack(pady=0,padx=0,fill="x",side = "top")
+        self.selected(option=1)
+        self.options1.select()
+
+        scrollbar = tk.Scrollbar(bottom_frame, command=self.console.yview)
+        scrollbar.pack(side="right", fill="y")
+        self.console.config(yscrollcommand=scrollbar.set)
+
+        if self.selected_language == "en":
+            deleting_button.configure(text = "File deletion")
+            button_save_path.configure(text = "Save path")
+            self.options1.configure(text = "Option 1")
+            self.options2.configure(text = "Option 2")
+            self.options3.configure(text = "Option 3")
+            self.options4.configure(text = "Option 4")
+            # current_date.configure(text = "Current date: "+today[1])
+            button.configure(text = "EXECUTE")
+            create_task_btn.configure(text = "Set auto. boot")
+            analyze_btn.configure(text = "Analyze path")
 
         if global_recources_load_error:
             create_task_btn.configure(state = "disabled")
 
-        recources_path = self.text_file_data[2]
+        recources_path = self.text_file_data[0]
         if recources_path != False and recources_path != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", str(recources_path))
-            Tools.add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white")
+            if self.selected_language == "en":
+                Tools.add_colored_line(self.console,"The path from the configuration file has been inserted","white")
+            else:
+                Tools.add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white")
         else:
-            Tools.add_colored_line(self.console,"Konfigurační soubor obsahuje neplatnou cestu k souborům (můžete vložit v pokročilém nastavení)","orange")
+            if self.selected_language == "en":
+                Tools.add_colored_line(self.console,"The configuration file contains an invalid file path (you can insert in advanced settings)","orange")
+            else:
+                Tools.add_colored_line(self.console,"Konfigurační soubor obsahuje neplatnou cestu k souborům (můžete vložit v pokročilém nastavení)","orange")
         def maximalize_window(e):
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
             currently_focused = str(self.root.focus_get())
@@ -6127,3 +6663,4 @@ if load_gui:
         menu = main_menu(root)
         menu.menu(initial=True)
 
+root.mainloop()
