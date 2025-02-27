@@ -7,9 +7,9 @@ import Sorting_option_v5 as Trideni
 import Deleting_option_v2 as Deleting
 import Converting_option_v3 as Converting
 import catalogue_maker_v5 as Catalogue
-import sharepoint_download as download_database
+# import sharepoint_download as download_database
 import IP_setting_v4 as IP_setting
-import trimazkon_tray_v2 as trimazkon_tray
+import trimazkon_tray_v3 as trimazkon_tray
 import string_database
 from tkinter import filedialog
 import tkinter as tk
@@ -26,17 +26,20 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization, hashes
 import datetime
 import wmi
-import struct
+import json
+# import struct
 
 testing = False
 
-trimazkon_tray_exe_name = "trimazkon_tray_v2.exe"
 global_recources_load_error = False
 global_licence_load_error = False
 exe_path = sys.executable
 exe_name = os.path.basename(exe_path)
 config_filename = "TRIMAZKON.json"
+app_name = "TRIMAZKON"
 app_version = "4.3.0"
+loop_request = False
+root = None
 print("exe name: ",exe_name)
 if testing:
     exe_name = "trimazkon_test.exe"
@@ -126,7 +129,7 @@ class Subwindows:
             child_root.destroy()
 
         user_HWID = Tools.get_volume_serial()
-        prompt_message1 = "Nemáte platnou licenci pro spuštění aplikace jhv_MAZ."
+        prompt_message1 = f"Nemáte platnou licenci pro spuštění aplikace {app_name}."
         prompt_message2 = f"Váš HWID:"
         prompt_message3 = f"\n{user_HWID}\n"
         prompt_message4 = "odešlete na email: "
@@ -135,7 +138,7 @@ class Subwindows:
         title_message = "Upozornění"
 
         if language_given == "en":
-            prompt_message1 = "You do not have a valid license to run the application jhv_MAZ."
+            prompt_message1 = f"You do not have a valid license to run the application {app_name}."
             prompt_message2 = f"Your HWID:"
             prompt_message3 = f"\n{user_HWID}\n"
             prompt_message4 = "send to email: "
@@ -242,6 +245,11 @@ class WindowsBalloonTip:
         PostQuitMessage(0)  # Terminate the app.
 
 class Tools:
+    task_name = "TRIMAZKON_startup_tray_setup"
+    config_json_filename = config_filename
+    setting_list_name = "Settings_recources"
+    Tray_thread_name = "Main_app_tray_thread"
+
     @classmethod
     def path_check(cls,path_raw,only_repair = None):
         path=path_raw
@@ -292,6 +300,231 @@ class Tools:
         BASE_DIR = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.abspath(".")
         return os.path.join(BASE_DIR, relative_path)
     
+
+
+    @classmethod
+    def create_new_json_config(cls,default_value_list,default_labels):
+        updated_settings = [
+            {"key": "supported_formats_sorting", "value": default_value_list[0]},
+            {"key": "supported_formats_deleting", "value": default_value_list[1]},
+            {"key": "default_path", "value": default_value_list[2]},
+            {"key": "default_files_to_keep", "value": default_value_list[2]},
+            {"key": "default_cutoff_date", "value": default_value_list[3]},
+            {"key": "prefix_function", "value": default_value_list[3]},
+            {"key": "prefix_camera", "value": default_value_list[3]},
+            {"key": "maximalized", "value": default_value_list[4]},
+            {"key": "max_pallets", "value": default_value_list[5]},
+            {"key": "sorting_safe_mode", "value": default_value_list[6]},
+            {"key": "app_zoom", "value": default_value_list[7]},
+
+            {"key": "app_zoom_checkbox", "value": default_value_list[8]},
+            {"key": "tray_icon_startup", "value": default_value_list[9]},
+            {"key": "path_history_list", "value": [default_value_list[0]]},
+            {"key": "default_language", "value": default_value_list[11]},
+        ]
+        
+
+        with open(initial_path+cls.config_json_filename, "w") as file:
+            json.dump({"settings": updated_settings}, file, indent=4)
+
+    @classmethod
+    def read_json_config(cls): # Funkce vraci data z configu
+        """
+        Funkce vrací data z konfiguračního souboru
+
+        data jsou v pořadí:
+
+        0 default_path\n
+        1 supported_formats_deleting\n
+        2 default_files_to_keep\n
+        3 default_cutoff_date\n
+        4 default_deleting_dir_name\n
+        5 maximalized\n
+        6 sorting_safe_mode\n
+        7 app_zoom\n
+        8 app_zoom_checkbox\n
+        9 tray_icon_startup\n
+        10 path_history_list\n
+        11 default_language\n
+        """
+        def filter_unwanted_chars(to_filter_data, directory = False,even_space=False):
+            unwanted_chars = ["\n","\"","\'","[","]"]
+            if directory:
+                unwanted_chars = ["\n","\"","\'","[","]","\\","/"]
+            if even_space:
+                unwanted_chars.append(" ")
+            filtered_data = ""
+            for letters in to_filter_data:
+                if letters not in unwanted_chars:
+                    filtered_data += letters
+            return filtered_data
+
+        def load_default_values():
+            output_array = [default_setting_parameters[0],
+                            default_setting_parameters[1],
+                            default_setting_parameters[2],
+                            default_setting_parameters[3],
+                            default_setting_parameters[4],
+                            default_setting_parameters[5],
+                            default_setting_parameters[6],
+                            default_setting_parameters[7],
+                            default_setting_parameters[8],
+                            default_setting_parameters[9],
+                            default_setting_parameters[10],
+                            default_setting_parameters[11],
+                            ]
+            
+            print("read intern database (default values)",output_array,len(output_array))
+            return output_array
+
+        global global_recources_load_error
+        default_setting_parameters = string_database.default_setting_database_param
+        default_labels = string_database.default_setting_database
+
+        if os.path.exists(initial_path+cls.config_json_filename):
+            try:
+                output_data = []
+                with open(initial_path+cls.config_json_filename, "r") as file:
+                    data = json.load(file)
+
+                settings = data["settings"]
+
+                # print("config raw data: ", settings)
+                for item in settings:
+                    output_data.append(item['value'])
+
+                # print("config data: ", output_data, len(output_data))
+                return output_data
+
+            except Exception as e:
+                print(f"Nejdřív zavřete soubor {cls.config_json_filename} Chyba: {e}")   
+                print("Budou načteny defaultní hodnoty")
+                global_recources_load_error = True
+                output_array = load_default_values()
+                return output_array
+        else:
+            print(f"Chybí konfigurační soubor {cls.config_json_filename}, bude vytvořen")
+            Tools.create_new_json_config(default_setting_parameters,default_labels)
+            output_array = load_default_values()
+            return output_array
+        
+    @classmethod
+    def save_to_json_config(cls,input_data,which_parameter,language_force = "cz"): # Funkce zapisuje data do souboru configu
+        """
+        Funkce zapisuje data do konfiguračního souboru
+
+        vraci vystupni zpravu: report
+
+        which_parameter je bud: 
+        
+        1 default_path\n
+        2 add_supported_deleting_formats\n
+        3 pop_supported_deleting_formats\n
+        4 default_files_to_keep\n
+        5 default_cutoff_date\n
+        6 default_deleting_dir_name\n
+        7 maximalized\n
+        8 sorting_safe_mode\n
+        9 app_zoom\n
+        10 app_zoom_checkbox\n
+        11 tray_icon_startup\n
+        12 path_history_list\n
+        13 default_language\n
+        """
+
+        def filter_unwanted_chars(to_filter_data, directory = False,formats = False):
+            unwanted_chars = ["\n","\"","\'","[","]"]
+            if directory:
+                unwanted_chars = ["\n","\"","\'","[","]","\\","/"]
+            if formats:
+                unwanted_chars = ["\n","\"","\'","[","]"," ",".","/","\\"]
+
+            filtered_data = ""
+            for letters in to_filter_data:
+                if letters not in unwanted_chars:
+                    filtered_data += letters
+            return filtered_data
+        
+        def rewrite_value(key,new_data):
+            for item in settings:
+                if item["key"] == str(key):
+                    item["value"] = new_data  # New value
+                    break
+
+        
+        if os.path.exists(initial_path + cls.config_json_filename):
+            with open(initial_path+cls.config_json_filename, "r") as file:
+                data = json.load(file)
+            settings = data["settings"]
+            try:
+                new_tasks = data["task_list"]
+            except:
+                new_tasks = None
+            report = ""
+
+            supported_formats_deleting = next((item["value"] for item in settings if item["key"] == "supported_formats_deleting"), None)
+            print("found formats: ", supported_formats_deleting)
+
+            
+            if which_parameter == "add_supported_deleting_formats":
+                corrected_input = filter_unwanted_chars(str(input_data),formats=True)
+                if str(corrected_input) not in supported_formats_deleting:
+                    supported_formats_deleting.append(str(corrected_input))
+                    report =  (f"Byl přidán formát: \"{corrected_input}\" do podporovaných formátů pro možnosti mazání")
+                    if language_force == "en":
+                        report =  (f"Added format: \"{corrected_input}\" to supported formats for deletion options")
+                    rewrite_value("supported_formats_deleting",supported_formats_deleting)
+                else:
+                    report =  (f"Formát: \"{corrected_input}\" je již součástí podporovaných formátů možností mazání")
+                    if language_force == "en":
+                        report =  (f"Format: \"{corrected_input}\" is already part of the supported delete option formats")
+                
+            elif which_parameter == "pop_supported_deleting_formats":
+                # poped = 0
+                found = False
+                range_to = len(supported_formats_deleting)
+                for i in range(0,range_to):
+                    if i < range_to:
+                        if str(input_data) == supported_formats_deleting[i] and len(str(input_data)) == len(supported_formats_deleting[i]):
+                            supported_formats_deleting.pop(i)
+                            report =  (f"Z podporovaných formátů možností mazání byl odstraněn formát: \".{input_data}\"")
+                            if language_force == "en":
+                                report =  (f"The format \".{input_data}\" has been removed from the supported delete option formats")
+                            found = True
+                            rewrite_value("supported_formats_deleting",supported_formats_deleting)
+                            break
+
+                if found == False:
+                    report =  (f"Formát: \"{input_data}\" nebyl nalezen v podporovaných formátech možností mazání, nemůže tedy být odstraněn")
+                    if language_force == "en":
+                        report =  (f"The format \".{input_data}\" was not found in the supported delete option formats, so it cannot be deleted")
+
+            elif which_parameter == "default_path":
+                report = (f"Základní cesta přenastavena na: {str(input_data)}")
+                rewrite_value(which_parameter,str(input_data))
+            elif which_parameter == "default_cutoff_date" or which_parameter == "path_history_list":
+                rewrite_value(which_parameter,input_data)
+            elif which_parameter == "default_files_to_keep" or which_parameter == "app_zoom":
+                rewrite_value(which_parameter,int(input_data))
+            else:
+                rewrite_value(which_parameter,str(input_data))
+                              
+            with open(initial_path+cls.config_json_filename, "w") as file:
+                if new_tasks == None:
+                    json.dump({"settings": settings}, file, indent=4)
+                else:
+                    json.dump({"settings": settings, "task_list": new_tasks}, file, indent=4)
+
+            return report
+        
+        else:
+            print("Chybí konfigurační soubor (nelze ukládat změny)")
+            return "Chybí konfigurační soubor (nelze ukládat změny)"
+   
+
+
+
+
     @classmethod
     def read_config_data(cls): # Funkce vraci data z config_TRIMAZKON.
         """
@@ -583,181 +816,6 @@ class Tools:
             return output_array
             
     @classmethod
-    def read_text_file_data_temp(cls): # Funkce vraci data z textoveho souboru Recources.txt
-        """
-        !!!!TEMP!!!! nez se prejde na novy standard s config\n
-
-        Funkce vraci data z textoveho souboru Recources.txt
-
-        data jsou v poradi:
-
-        0 supported_formats_sorting\n
-        1 supported_formats_deleting\n
-        2 path_repaired\n
-        3 files_to_keep\n
-        4 cutoff_date\n
-        5 prefix_function\n
-        6 prefix_camera\n
-        7 maximalized\n
-        8 max_pallets\n
-        9 static_dirs_names\n
-        10 sorting_safe_mode\n
-        11 image_browser_setting [checkbox, increment, movement]\n
-        12 show_changelog\n
-        13 image_film\n
-        14 num_of_IB_film_images\n
-        15 default sharepoint database filename\n
-        16 default excel filnename prefix for catalogue output\n
-        17 default xml filename for catalogue output \n
-        18 default subwindow behavior status in catalogue menu\n
-        19 default format of catalogue export\n
-        20 default path catalogue\n
-        21 app zoom\n
-        """
-
-        if os.path.exists(initial_path+'Recources.txt'):
-            cutoff_date = ["","",""]
-            with open(initial_path+'Recources.txt','r',encoding='utf-8',errors='replace') as recources_file:
-                Lines = recources_file.readlines()
-            supported_formats_sorting = []
-            supported_formats_deleting = []
-            unwanted_chars = ["\n","\"","[","]"]
-            for chars in unwanted_chars:
-                if chars in Lines[2]:
-                    Lines[2] = Lines[2].replace(chars,"")
-                if chars in Lines[4]:
-                    Lines[4] = Lines[4].replace(chars,"")
-                
-            found_formats = Lines[2].split(",") 
-            for items in found_formats:
-                supported_formats_sorting.append(str(items))
-            found_formats = Lines[4].split(",")
-            for items in found_formats:
-                supported_formats_deleting.append(str(items))
-            
-            inserted_path = Lines[6].replace("\n","")
-            inserted_path = str(inserted_path)
-
-            path_repaired = Tools.path_check(inserted_path)
-
-            Lines[8] = Lines[8].replace("\n","")
-            files_to_keep = int(Lines[8])
-            
-            Lines[10] = Lines[10].replace("\n","")
-            cutoffdate_splitted = Lines[10].split(".")
-            i=0
-            for items in cutoffdate_splitted:
-                i+=1
-                cutoff_date[i-1] = items
-
-            Lines[12] = Lines[12].replace("\n","")
-            Lines[12] = Lines[12].replace("\"","")
-            Lines[12] = Lines[12].replace("/","")
-            if str(Lines[12]) != "":
-                prefix_function = Lines[12]
-            else:
-                prefix_function = "Func_"
-
-            Lines[14] = Lines[14].replace("\n","")
-            Lines[14] = Lines[14].replace("\"","")
-            Lines[14] = Lines[14].replace("/","")
-            if str(Lines[14]) != "":
-                prefix_camera = Lines[14]
-            else:
-                prefix_camera = "Cam_"
-
-            #spoustet v maximalizovanem okne?
-            Lines[16] = Lines[16].replace("\n","")
-            if str(Lines[16]) != "":
-                maximalized = Lines[16]
-            else:
-                maximalized = "ne"
-            #maximalni pocet palet v obehu
-            Lines[18] = Lines[18].replace("\n","")
-            if str(Lines[18]) != "":
-                max_pallets = int(Lines[18])
-            else:
-                max_pallets = 55
-
-            # cteme nekolik nazvu slozek:
-            static_dirs_names = []
-            for i in range(20,34,2):
-                Lines[i] = Lines[i].replace("\n","")
-                Lines[i] = Lines[i].replace("\"","")
-                Lines[i] = Lines[i].replace("/","")
-                static_dirs_names.append(Lines[i])
-                
-            #bezpecny mod?
-            Lines[34] = Lines[34].replace("\n","")
-            if str(Lines[34]) != "":
-                safe_mode = Lines[34]
-            else:
-                safe_mode = "ano"
-
-            #image browser parametry
-            image_browser_param = [1,10,200] #default
-            Lines[36] = Lines[36].replace("\n","")
-            Lines[37] = Lines[37].replace("\n","")
-            Lines[38] = Lines[38].replace("\n","")
-            if (str(Lines[36]) != "") and Lines[36].isdigit():
-                image_browser_param[0] = int(Lines[36])
-            if (str(Lines[37]) != "") and Lines[37].isdigit():
-                image_browser_param[1] = int(Lines[37])
-            if (str(Lines[38]) != "") and Lines[38].isdigit():
-                image_browser_param[2] = int(Lines[38])
-                
-            Lines[40] = Lines[40].replace("\n","")
-            if Lines[40] != "ano":
-                show_changelog = "ne"
-            else:
-                show_changelog = Lines[40]
-            
-            Lines[42] = Lines[42].replace("\n","")
-            if Lines[42] != "ano":
-                image_film = "ne"
-            else:
-                image_film = Lines[42]
-
-            Lines[44] = Lines[44].replace("\n","")
-            if Lines[44].isdigit():
-                num_of_IB_film_images = int(Lines[44])
-            else:
-                num_of_IB_film_images = 6 #default
-
-            try:
-                default_sharepoint_database_filename = Lines[46].replace("\n","")
-                default_catalogue_excel_filename = Lines[48].replace("\n","")
-                default_catalogue_xml_filename = Lines[50].replace("\n","")
-                Lines[52] = Lines[52].replace("\n","")
-                if Lines[52].isdigit():
-                    default_catalogue_subwindow_behavior_status = int(Lines[52])
-                else:
-                    default_catalogue_subwindow_behavior_status = False
-                default_catalogue_export_extension = Lines[54].replace("\n","")
-                default_path_catalogue = Lines[56].replace("\n","")
-                catalogue_save_data = [default_sharepoint_database_filename,default_catalogue_excel_filename,default_catalogue_xml_filename,default_catalogue_subwindow_behavior_status,default_catalogue_export_extension,default_path_catalogue]
-                for i in range(0,len(catalogue_save_data)):
-                    if catalogue_save_data[i] == "":
-                        catalogue_save_data[i] = False
-            except Exception:
-                catalogue_save_data = [False]*6
-
-            # Lines[58] = Lines[58].replace("\n","")
-            # if Lines[58].isdigit():
-            #     app_zoom = int(Lines[58])
-            # else:
-            #     app_zoom = 100 #default
-
-            output_array = [supported_formats_sorting,supported_formats_deleting,path_repaired,files_to_keep,cutoff_date,
-                    prefix_function,prefix_camera,maximalized,max_pallets,static_dirs_names,safe_mode,image_browser_param,
-                    show_changelog,image_film,num_of_IB_film_images,catalogue_save_data[0],catalogue_save_data[1],catalogue_save_data[2],
-                    catalogue_save_data[3],catalogue_save_data[4],catalogue_save_data[5]]
-            return output_array
-        else:
-            print("Chybí konfigurační soubor Recources.txt")
-            return [False]*26
-
-    @classmethod
     def save_to_config(cls,input_data,which_parameter): # Funkce zapisuje data do souboru config_TRIMAZKON.xlsx
         """
         Funkce zapisuje data do textoveho souboru Recources.txt
@@ -995,6 +1053,65 @@ class Tools:
             return "Chybí konfigurační soubor config_TRIMAZKON.xlsx (nelze ukládat změny)"
    
     @classmethod
+    def check_config_file(cls,config_filename,setting_list_name):
+        """
+        TEMPORARY - kdyby někdo měl starou verzi
+        - kontroluje zda chybi excel s novym nazvem, pak kontroluje jesli excel obsahuje novy list Settings_recources
+        - přejmenuje si to config excel
+        - pretahne si to data z recources.txt do spolecneho excelu pod novy list
+        """
+        def move_to_temp_dir(filename:str):
+            if not os.path.exists(initial_path + "TRIMAZKON_uz_nechce_vzal_si_data"):
+                os.mkdir(initial_path + "TRIMAZKON_uz_nechce_vzal_si_data" + "/")
+            print(f"moving old config file {filename}")
+            shutil.move(initial_path +filename, initial_path + "TRIMAZKON_uz_nechce_vzal_si_data" + "/"+filename)
+        
+        if os.path.exists(initial_path+'saved_addresses_2.xlsx'):
+            if not os.path.exists(initial_path+config_filename):
+                shutil.copy(initial_path+'saved_addresses_2.xlsx',initial_path+config_filename)
+                print("copying old excel config file")
+            move_to_temp_dir('saved_addresses_2.xlsx')
+
+        try:
+            wb = load_workbook(initial_path+config_filename)
+            if not setting_list_name in wb.sheetnames:
+                user_config_file_data = []
+                ws = wb.create_sheet(title=setting_list_name)
+                wb.save(initial_path+config_filename)
+                if os.path.exists(initial_path+'Recources.txt'):
+                    # copy user settings
+                    recources_data = Tools.read_text_file_data_temp()
+                    for i in range(0,len(recources_data)):
+                        if i == 9 or i == 11:
+                            for subdata in recources_data[i]:
+                                user_config_file_data.append(subdata)
+                        else:
+                            user_config_file_data.append(recources_data[i])
+                    print("using user settings from Recources.txt")
+                    move_to_temp_dir('Recources.txt')        
+                else:
+                    user_config_file_data = string_database.default_setting_database_param
+                        
+                print(user_config_file_data,len(user_config_file_data))
+                user_config_file_data_labels = string_database.default_setting_database
+                
+                for i in range(1,len(user_config_file_data)+1):
+                    ws['A' + str(i)] = str(user_config_file_data_labels[i-1])
+                    ws['B' + str(i)] = str(user_config_file_data[i-1])
+                wb.save(initial_path+config_filename)
+
+            # renaming sheet with a typo in name:
+            if "ip_adress_fav_list" in wb.sheetnames:
+                ws = wb["ip_adress_fav_list"]
+                ws.title = "ip_address_fav_list"
+                wb.save(initial_path+config_filename)
+            wb.close()
+        except Exception as e:
+            print(f"Nejdřív zavřete soubor {config_filename} Chyba: {e}")
+
+
+
+    @classmethod
     def browseDirectories(cls,visible_files,start_path=None): # Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
         """
         Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
@@ -1088,7 +1205,7 @@ class Tools:
         return [output,corrected_path,name_of_selected_file]
 
     @classmethod
-    def add_colored_line(cls,text_widget, text, color,font=None,delete_line = None,no_indent=None):
+    def add_colored_line(cls,text_widget, text, color,font=None,delete_line = None,no_indent=None,sameline=False):
         """
         Vloží řádek do console
         """
@@ -1103,9 +1220,15 @@ class Tools:
             else:
                 text_widget.tag_configure(color, foreground=color,font=font)
                 if no_indent:
-                    text_widget.insert(tk.END,text+"\n", color)
+                    if sameline:
+                        text_widget.insert(tk.END,text, color)
+                    else:
+                        text_widget.insert(tk.END,text+"\n", color)
                 else:
-                    text_widget.insert(tk.END,"    > "+ text+"\n", color)
+                    if sameline:
+                        text_widget.insert(tk.END,"    > "+ text, color)
+                    else:
+                        text_widget.insert(tk.END,"    > "+ text+"\n", color)
 
             text_widget.configure(state=tk.DISABLED)
         except Exception as e:
@@ -1135,63 +1258,6 @@ class Tools:
         text_widget.configure(state=tk.DISABLED)
 
     @classmethod
-    def check_config_file(cls,config_filename,setting_list_name):
-        """
-        TEMPORARY - kdyby někdo měl starou verzi
-        - kontroluje zda chybi excel s novym nazvem, pak kontroluje jesli excel obsahuje novy list Settings_recources
-        - přejmenuje si to config excel
-        - pretahne si to data z recources.txt do spolecneho excelu pod novy list
-        """
-        def move_to_temp_dir(filename:str):
-            if not os.path.exists(initial_path + "TRIMAZKON_uz_nechce_vzal_si_data"):
-                os.mkdir(initial_path + "TRIMAZKON_uz_nechce_vzal_si_data" + "/")
-            print(f"moving old config file {filename}")
-            shutil.move(initial_path +filename, initial_path + "TRIMAZKON_uz_nechce_vzal_si_data" + "/"+filename)
-        
-        if os.path.exists(initial_path+'saved_addresses_2.xlsx'):
-            if not os.path.exists(initial_path+config_filename):
-                shutil.copy(initial_path+'saved_addresses_2.xlsx',initial_path+config_filename)
-                print("copying old excel config file")
-            move_to_temp_dir('saved_addresses_2.xlsx')
-
-        try:
-            wb = load_workbook(initial_path+config_filename)
-            if not setting_list_name in wb.sheetnames:
-                user_config_file_data = []
-                ws = wb.create_sheet(title=setting_list_name)
-                wb.save(initial_path+config_filename)
-                if os.path.exists(initial_path+'Recources.txt'):
-                    # copy user settings
-                    recources_data = Tools.read_text_file_data_temp()
-                    for i in range(0,len(recources_data)):
-                        if i == 9 or i == 11:
-                            for subdata in recources_data[i]:
-                                user_config_file_data.append(subdata)
-                        else:
-                            user_config_file_data.append(recources_data[i])
-                    print("using user settings from Recources.txt")
-                    move_to_temp_dir('Recources.txt')        
-                else:
-                    user_config_file_data = string_database.default_setting_database_param
-                        
-                print(user_config_file_data,len(user_config_file_data))
-                user_config_file_data_labels = string_database.default_setting_database
-                
-                for i in range(1,len(user_config_file_data)+1):
-                    ws['A' + str(i)] = str(user_config_file_data_labels[i-1])
-                    ws['B' + str(i)] = str(user_config_file_data[i-1])
-                wb.save(initial_path+config_filename)
-
-            # renaming sheet with a typo in name:
-            if "ip_adress_fav_list" in wb.sheetnames:
-                ws = wb["ip_adress_fav_list"]
-                ws.title = "ip_address_fav_list"
-                wb.save(initial_path+config_filename)
-            wb.close()
-        except Exception as e:
-            print(f"Nejdřív zavřete soubor {config_filename} Chyba: {e}")
-
-    @classmethod
     def check_task_existence_in_TS(cls,taskname):
         process = subprocess.Popen(f'schtasks /query /tn \"{taskname}\" /v /fo LIST',
                                                 stdout=subprocess.PIPE,
@@ -1212,39 +1278,38 @@ class Tools:
             except UnicodeDecodeError:
                 data = str(stdout)
                 error_data = str(stderr)
-        if "ERROR" in error_data:
+        if "ERROR" in error_data or "CHYBA" in error_data:
             return False
         else:
             return True
     
     @classmethod
+    def is_thread_running(cls,name):
+        print(threading.enumerate())
+        for thread in threading.enumerate():
+            if thread.name == name:
+                return True
+        return False
+
+    @classmethod
     def tray_startup_cmd(cls):
         """
-        už není potřebné - aplikace tray není součástí celého exe - je zvlášť
-        - protože musela souběžně běžet hlavní aplikace trimazkon kvuli pristupu k appdata temp složce
+        Sepnutí aplikace v system tray nabídce
+
         """
-        def is_process_running(process_name):
-            """
-            Check if a process with the given name is running.
-            :param process_name: Name of the process to check (e.g., 'name.exe')
-            :return: True if the process is running, False otherwise
-            """
-            for process in psutil.process_iter(['name']):
-                try:
-                    if process.info['name'] and process_name.lower() in process.info['name'].lower():
-                        return True
-                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-                    pass
-            return False
-        
-        if is_process_running(trimazkon_tray_exe_name):
+        if Tools.is_thread_running(cls.Tray_thread_name): # Pokud tray aplikace už běží nezapínej novou
+            print("tray app is already running")
             return
-        # resource_path = Tools.resource_path(trimazkon_tray_exe_name)
-        # resource_path = Tools.resource_path(exe_name)
-        # print("calling process: ",subexe_path + " " + initial_path + " run_tray")
-        cmd_command = initial_path+"/"+trimazkon_tray_exe_name + " run_tray"
-        print("calling process: ",cmd_command)
-        subprocess.Popen(cmd_command, shell=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+        
+
+        print("tray app is not running yet")
+        def call_tray_class():
+            tray_app_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
+            tray_app_instance.main()
+
+        blocking_task = threading.Thread(target=call_tray_class,name=cls.Tray_thread_name)
+        blocking_task.start()
+        print(threading.enumerate())
 
     @classmethod
     def establish_startup_tray(cls):
@@ -1252,18 +1317,14 @@ class Tools:
         Sets the startup task of switching on the tray application icon
         - if it doesnt exist already
         """
-        task_name = "TRIMAZKON_startup_tray_setup"
-        task_presence = Tools.check_task_existence_in_TS(task_name)
+        
+        task_presence = Tools.check_task_existence_in_TS(cls.task_name)
         print("task presence: ",task_presence)
+
         if not task_presence:
-            # path_app_location = str(initial_path+exe_name) # predelno na tray exe aplikaci zvlášť
-            path_app_location = str(initial_path + trimazkon_tray_exe_name)
-            # task_command = "\"" + path_app_location + " tray_startup_call" + "\" /sc onlogon"
-            # task_command = "/c start \"" + path_app_location + " " + initial_path + " run_tray" + "\" /sc onlogon"
-            # resource_path = Tools.resource_path(trimazkon_tray_exe_name)
-            # resource_path = Tools.resource_path(exe_name)
+            path_app_location = str(initial_path + exe_name)
             task_command = "\"" + path_app_location + " run_tray" + "\" /sc onlogon"
-            process = subprocess.Popen(f"schtasks /Create /TN {task_name} /TR {task_command}",
+            process = subprocess.Popen(f"schtasks /Create /TN {cls.task_name} /TR {task_command}",
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE,
                                         creationflags=subprocess.CREATE_NO_WINDOW)
@@ -1271,14 +1332,10 @@ class Tools:
             stdout, stderr = process.communicate()
             output_message = "out"+str(stdout) +"err"+str(stderr)
             print(output_message)
-            if "Access is denied" in output_message:
+            if "Access is denied" in output_message or "stup byl odep" in output_message:
                 return "need_access"
             
-            Tools.tray_startup_cmd() # init sepnutí po prvním zavedení tasku
-            # def long_execution():
-            #     tray_startup_cmd() # init sepnutí po prvním zavedení tasku
-            # tray_thread = threading.Thread(target=long_execution)
-            # tray_thread.start()
+        Tools.tray_startup_cmd() # init sepnutí po prvním zavedení tasku
     
     @classmethod
     def remove_task_from_TS(cls,name_of_task):
@@ -1355,6 +1412,7 @@ class Tools:
 
             if exp_date >= datetime.datetime.today():
                 print(f"License valid until: {exp_date.date()}")
+                global_licence_load_error = False
                 return exp_date.date()
             else:
                 global_licence_load_error = True
@@ -1384,77 +1442,137 @@ class Tools:
 
         return None  # Return None if not found
 
-initial_path = Tools.get_init_path()
-print("init path: ",initial_path)
-app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
-app_licence_validity = Tools.check_licence()
+    @classmethod
+    def deleting_via_cmd(cls,param_given = []):
+        if len(param_given) == 0:
+            print("deleting system entry: ",sys.argv)
+            task_name = str(sys.argv[2])
+            deleting_path = str(sys.argv[3])
+            max_days = int(sys.argv[4])
+            files_to_keep = int(sys.argv[5])
+            more_dirs = int(sys.argv[6])
+            selected_option = int(sys.argv[7])
+            by_creation_date = int(sys.argv[8])
+        else:
+            print("deleting system entry: ",param_given)
+            task_name = str(param_given[0])
+            deleting_path = str(param_given[1])
+            max_days = int(param_given[2])
+            files_to_keep = int(param_given[3])
+            more_dirs = int(param_given[4])
+            selected_option = int(param_given[5])
+            by_creation_date = int(param_given[6])
 
-def deleting_via_cmd():
-    print("deleting system entry: ",sys.argv)
-    task_name = str(sys.argv[2])
-    deleting_path = str(sys.argv[3])
-    max_days = int(sys.argv[4])
-    files_to_keep = int(sys.argv[5])
-    cutoff_date = Deleting.get_cutoff_date(days=max_days)
-    text_file_data = Tools.read_config_data()
-    supported_formats_deleting = text_file_data[1]
-    list_of_folder_names = text_file_data[9]
-    to_delete_folder_name = list_of_folder_names[2]
+        cutoff_date = Deleting.get_cutoff_date(days=max_days)
+        text_file_data = Tools.read_json_config()
+        supported_formats_deleting = text_file_data[1]
+        to_delete_folder_name = text_file_data[4]
 
-    del_instance = Deleting.whole_deleting_function(
-        deleting_path,
-        more_dirs=False,
-        del_option=1,
-        files_to_keep=files_to_keep,
-        cutoff_date_given=cutoff_date,
-        supported_formats=supported_formats_deleting,
-        testing_mode=False,
-        to_delete_folder_name=to_delete_folder_name
-        )
-    output_data = del_instance.main()
-    output_message = f"|||Datum provedení: {output_data[3]}||Zkontrolováno: {output_data[0]} souborů||Starších: {output_data[1]} souborů||Smazáno: {output_data[2]} souborů"
-    output_message_clear = f"Provedeno: {output_data[3]}\nZkontrolováno: {output_data[0]} souborů\nStarších: {output_data[1]} souborů\nSmazáno: {output_data[2]} souborů"
-    print(output_message)
+        if more_dirs == 0:
+            more_dirs = False
+        else:
+            more_dirs = True
 
-    trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path)
-    trimazkon_tray_instance.save_new_log(task_name,output_message)
+        if by_creation_date == 0:
+            by_creation_date = False
+        else:
+            by_creation_date = True
 
-    icon_path = Tools.resource_path('images/logo_TRIMAZKON.ico')
-    WindowsBalloonTip("Bylo provedeno automatické mazání",
-                        str(output_message_clear),
-                        icon_path)
-    # try:
-    #     notification.notify(title="Bylo provedeno automatické mazání",
-    #                         message=str(output_message_clear))
-    #                         # app_name="TRIMAZKON",
-    #                         # app_icon=icon_path)
-    # except Exception:
-    #     pass
+        del_instance = Deleting.whole_deleting_function(
+            deleting_path,
+            more_dirs=more_dirs,
+            del_option=selected_option,
+            files_to_keep=files_to_keep,
+            cutoff_date_given=cutoff_date,
+            supported_formats=supported_formats_deleting,
+            testing_mode=False,
+            to_delete_folder_name=to_delete_folder_name,
+            creation_date=by_creation_date
+            )
+        output_data = del_instance.main()
+        # output_message = f"|||Datum provedení: {output_data[3]}||Zkontrolováno: {output_data[0]} souborů||Starších: {output_data[1]} souborů||Smazáno: {output_data[2]} souborů"
+        if selected_option == 1:
+            new_log = {"del_date": output_data[3],
+                    "files_checked": output_data[0],
+                    "files_older": output_data[1],
+                    "files_newer": "",
+                    "files_deleted": output_data[2],
+                    "path_count": output_data[5],
+                    }
+            output_message = f"Provedeno: {output_data[3]}\nZkontrolováno: {output_data[0]} souborů\nStarších: {output_data[1]} souborů\nSmazáno: {output_data[2]} souborů"
+            output_message_eng = f"Date of execution: {output_data[3]}\nTotal checked: {output_data[0]} files\nTotal older: {output_data[1]} files\nTotal deleted: {output_data[2]} files"
 
-    # icon_path = Tools.resource_path('images/logo_TRIMAZKON.ico')
-    # notification.notify(title="Bylo provedeno automatické mazání",
-    #                     message=str(output_message_clear),
-    #                     # app_name="TRIMAZKON",
-    #                     app_icon=icon_path)
+        elif selected_option == 2:
+            new_log = {"del_date": output_data[3],
+                    "files_checked": output_data[0],
+                    "files_older": output_data[1],
+                    "files_newer": output_data[4],
+                    "files_deleted": output_data[2],
+                    "path_count": output_data[5],
+                    }
+            output_message = f"Provedeno: {output_data[3]}\nZkontrolováno: {output_data[0]} souborů\nStarších: {output_data[1]} souborů, novějších: {output_data[4]} souborů\nSmazáno: {output_data[2]} souborů"
+            output_message_eng = f"Date of execution: {output_data[3]}\nTotal checked: {output_data[0]} files\nTotal older: {output_data[1]} files, newer: {output_data[4]} files\nTotal deleted: {output_data[2]} files"
+
+        elif selected_option == 3 or selected_option == 4:
+            new_log = {"del_date": output_data[3],
+                    "files_checked": output_data[0],
+                    "files_older": "",
+                    "files_newer": "",
+                    "files_deleted": output_data[2],
+                    "path_count": "",
+                    }
+            output_message = f"Provedeno: {output_data[3]}\nZkontrolováno: {output_data[0]} adresářů\nSmazáno: {output_data[2]} adresářů"
+            output_message_eng = f"Date of execution: {output_data[3]}\nTotal checked: {output_data[0]} directories\nTotal deleted: {output_data[2]} directories"
+
+        if more_dirs:
+            output_message += f", prohledáno: {output_data[5]} subsložek"
+            output_message_eng += f", browsed: {output_data[5]} subdirectories"
+
+        print(output_message,output_message_eng)
+        title_message = "Bylo provedeno automatické mazání"
+        selected_language = "cz"
+        try:
+            selected_language = Tools.read_json_config()[11]
+        except Exception as e:
+            print(e)
+        if selected_language == "en":
+            title_message = "Automatic deletion has been performed"
+            output_message = output_message_eng
+        icon_path = app_icon
+        trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,icon_path,exe_name,config_filename)
+        trimazkon_tray_instance.save_new_log(task_name,new_log)
+        WindowsBalloonTip(title_message,
+                            str(output_message),
+                            icon_path)
     
-    # subexe_path = Tools.resource_path(trimazkon_tray_exe_name)
-    # subprocess.run(subexe_path + " " + initial_path + " save_new_log "+task_name+" "+output_message,
-    #                 creationflags=subprocess.CREATE_NO_WINDOW)
-    return output_message_clear
+        return output_message
 
-load_gui=True
-print(sys.argv)
-if len(sys.argv) > 1:
-    if sys.argv[1] == "deleting":
-        deleting_output_message = deleting_via_cmd()
-        load_gui = False
-        sys.exit(f"0: {deleting_output_message}")
+    @classmethod
+    def set_zoom(cls,zoom_factor,root):
+        try:
+            root.after(0, lambda: customtkinter.set_widget_scaling(zoom_factor / 100))
+            # customtkinter.set_widget_scaling(zoom_factor / 100)
+        except Exception as e:
+            print(f"error with zoom scaling: {e}")
         
-    # elif sys.argv[1] == "tray_startup_call":
-    #     tray_startup_cmd()
-    #     load_gui = False
-    #     sys.exit(0)
+        root.tk.call('tk', 'scaling', zoom_factor / 100)
+   
+    @classmethod
+    def terminate_pid(cls,pid:int):
+        print("pid to terminate: ",pid)
 
+        try:
+            process = psutil.Process(pid)
+            process.terminate()
+            process.wait(timeout=5)
+            print(f"Process with PID {pid} terminated.")
+        except psutil.NoSuchProcess:
+            print(f"No process with PID {pid} found.")
+        except psutil.AccessDenied:
+            print(f"Permission denied to terminate PID {pid}.")
+        except psutil.TimeoutExpired:
+            print(f"Process with PID {pid} did not terminate in time.")
+        
 class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
     """
     aby bylo možné posílat běžící aplikaci parametry:
@@ -1462,15 +1580,22 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
     """
     def __init__(self,exe_name,no_server = False):
         self.root = None #define later (to prevend gui loading when 2 apps opened)
-        self.current_pid = None
+        # self.current_pid = None
         self.exe_name = exe_name
-        if self.exe_name == None or self.exe_name == "":
-            self.exe_name = "TRIMAZKON.exe"
         self.current_pid = os.getpid()
         if not no_server:
             # self.start_server()
             run_server_background = threading.Thread(target=self.start_server,)
             run_server_background.start()
+
+    def check_root_existence(self,root_given):
+        try:
+            if root_given.winfo_exists():
+                return True
+        except Exception as e:
+            # if "main thread is not in main loop" in str(e):
+            # new_root = start_new_root()
+            return False
 
     def server(self,pipe_input):
         """
@@ -1478,7 +1603,7 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
         """
         pipe_name = fr'\\.\pipe\{pipe_input}'
         while True:
-            print(f"Waiting for a TRIMAZKON to connect on {pipe_name}...") 
+            print(f"Waiting for a {app_name} to connect on {pipe_name}...") 
             pipe = win32pipe.CreateNamedPipe(
                 pipe_name,
                 win32pipe.PIPE_ACCESS_DUPLEX,
@@ -1491,25 +1616,67 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
             )
 
             win32pipe.ConnectNamedPipe(pipe, None)
-            print("TRIMAZKON connected.")
+            print(f"{app_name} connected.")
 
             try:
                 while True:
                     hr, data = win32file.ReadFile(pipe, 64 * 1024)
                     received_data = data.decode()
                     print(f"Received: {received_data}")
-                    self.root.after(0,menu.command_landed,received_data)
+                    if "Establish main menu gui" in received_data:
+                        global root
+                        root_existance = self.check_root_existence(root)
+                        print("root_status: ",root_existance)
+
+                        if root_existance == True:
+                            try:
+                                root.deiconify()
+                                root.update_idletasks()
+                            except Exception as e:
+                                print(e)
+                            global menu
+                            menu = main_menu(root)
+                            root.after(100,lambda: menu.menu(clear_root=True))
+                            # menu.menu(clear_root=True)
+                        else:
+                            start_new_root() # spousteni pres admina, bylo potreba shodit cely processID
+                            # self.root.after(0,menu.menu(clear_root=True))
+
+                    elif "Execute file deleting" in received_data:
+                        received_params = received_data.split("|||")
+                        print("received_params: ",received_params)
+                        params_to_send = [received_params[1],received_params[2],received_params[3],received_params[4],received_params[5],received_params[6],received_params[7]]
+                        print("params to send: ",params_to_send)
+                        del_thread = threading.Thread(target=Tools.deleting_via_cmd,args=[params_to_send],name="Deleting_thread")
+                        del_thread.start()
+
+                    elif "Open list with del tasks" in received_data:
+                        trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
+                        trimazkon_tray_instance.show_all_tasks(toplevel=True)
+
+                    elif "Open list with del logs" in received_data:
+                        trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
+                        trimazkon_tray_instance.show_task_log()
+
+                    elif "Shutdown application" in received_data:
+                        # global root
+                        root.destroy()
+                        # root.after(100,lambda: root.destroy())
 
             except pywintypes.error as e:
                 if e.args[0] == 109:  # ERROR_BROKEN_PIPE
-                    print("TRIMAZKON disconnected.")
+                    print(f"{app_name} disconnected.")
             finally:
                 # Close the pipe after disconnection
                 win32file.CloseHandle(pipe)
             # Loop back to wait for new client connections
 
     def client(self,pipe_name_given,command,parameters):
+        """
+        odesílá zprávu
+        """
         pipe_name = fr'\\.\pipe\{pipe_name_given}'
+        print("client_pipe_name: ",pipe_name,command,parameters)
         handle = win32file.CreateFile(
             pipe_name,
             win32file.GENERIC_READ | win32file.GENERIC_WRITE,
@@ -1519,14 +1686,38 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
             0,
             None
         )
-        if "Open image browser" in command:
-            message = str(parameters[0]) + ",," + str(parameters[1])
+
+        if "Establish main menu gui" in str(command):
+            message = "Establish main menu gui"
+            print("Message sent.",message)
             win32file.WriteFile(handle, message.encode())
-            print("Message sent.")
+        
+        elif "Execute file deleting" in str(command):
+            message = str(command) + "|||"
+            for params in parameters:
+                message = message + str(params) + "|||"
+            print("Message sent: ",message)
+            win32file.WriteFile(handle, message.encode())
+        
+        elif "Open list with del tasks" in str(command):
+            message = "Open list with del tasks"
+            print("Message sent.",message)
+            win32file.WriteFile(handle, message.encode())
+
+        elif "Open list with del logs" in str(command):
+            message = "Open list with del logs"
+            print("Message sent.",message)
+            win32file.WriteFile(handle, message.encode())
+
+        elif "Shutdown application" in str(command):
+            message = "Shutdown application"
+            print("Message sent.",message)
+            win32file.WriteFile(handle, message.encode())
 
     def start_server(self):
-        self.pipe_name = f"TRIMAZKON_pipe_{self.current_pid}"
-        running_server = threading.Thread(target=self.server, args=(self.pipe_name,), daemon=True)
+        self.pipe_name = f"jhv_MAZ_pipe_{self.current_pid}"
+        running_server = threading.Thread(target=self.server, args=(self.pipe_name,),daemon=True)
+        # running_server = threading.Thread(target=self.server, args=(pipe_name,))
         running_server.start()
         time.sleep(0.5)  # Wait for the server to start
 
@@ -1537,37 +1728,92 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
         checking = Tools.get_all_app_processes()
         print("SYSTEM application processes: ",checking)
         # if it is running more then one application, execute (root + self.root)
-        if checking[0]>2:
-            pid_list = checking[1]
-            # try to send command to every process which has application name
-            for pids in pid_list:
-                if pids != self.current_pid:
-                    try:
-                        pipe_name = f"TRIMAZKON_pipe_{pids}"
-                        self.client(pipe_name,command,parameters)
-                    except Exception:
-                        pass
-            return True
-        else:
-            return False
+        # if checking[0]>1:
+        pid_list = checking[1]
+        # try to send command to every process which has application name
+        for pids in pid_list:
+            if pids != self.current_pid:
+                try:
+                    pipe_name = f"jhv_MAZ_pipe_{pids}"
+                    print("calling client",pipe_name,command,parameters)
+                    self.client(pipe_name,command,parameters)
+                except Exception:
+                    pass
+        return True
+
+initial_path = Tools.get_init_path()
+print("init path: ",initial_path)
+app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
+app_licence_validity = Tools.check_licence()    
+load_gui=True
+print("SYSTEM: ",sys.argv)
+if len(sys.argv) > 1 and not global_licence_load_error:
+    if sys.argv[1] == "deleting":
+        del_thread = threading.Thread(target=Tools.deleting_via_cmd,name="Deleting_thread")
+        del_thread.start()
+        load_gui = False
+
+    elif sys.argv[1] == "run_tray":
+        pipeline_duplex = system_pipeline_communication(exe_name)# potřeba spustit server, protože neběží nic (nikdy nedojde k tomu aby byla spuštěna aplikace)
+        Tools.tray_startup_cmd()
+        load_gui = False
+        if root == None:
+            customtkinter.set_appearance_mode("dark")
+            customtkinter.set_default_color_theme("dark-blue")
+            root=customtkinter.CTk(fg_color="#212121")
+            root.geometry("1200x900")
+            root.title(f"{app_name} v_{app_version}")
+            root.wm_iconbitmap(app_icon)
+            root.update_idletasks()
+            root.withdraw()
+        loop_request = True
+
+    elif sys.argv[1] == "trigger_by_tray":
+        load_gui = False
+        loop_request = False
+        pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
+        pipeline_duplex_instance.call_checking(f"Establish main menu gui",[])
+    
+    elif sys.argv[1] == "open_task_list":
+        load_gui = False
+        loop_request = False
+        pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
+        pipeline_duplex_instance.call_checking(f"Open list with del tasks",[])
+    
+    elif sys.argv[1] == "open_log_list":
+        load_gui = False
+        loop_request = False
+        pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
+        pipeline_duplex_instance.call_checking(f"Open list with del logs",[])
+
+    elif sys.argv[1] == "app_shutdown":
+        load_gui = False
+        loop_request = False
+        pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True)
+        pipeline_duplex_instance.call_checking(f"Shutdown application",[])
+    
+    elif sys.argv[1] == "settings_tray" or sys.argv[1] == "settings_tray_del" or sys.argv[1] == "admin_menu":
+        pid = int(sys.argv[2])
+        Tools.terminate_pid(pid) #vypnout thread s tray aplikací
+
+#Musi byt az tady, protoze muzu terminatenout aplikaci (vyse v kodu)
+app_running_status = Tools.check_runing_app_duplicity()
+print("already opened app status: ",app_running_status)
 
 if load_gui:
-    # pipeline_duplex = system_pipeline_communication(exe_name)# Establishment of pipeline server for duplex communication between running applications
-    app_running_status = Tools.check_runing_app_duplicity()
-    print("already opened app status: ",app_running_status)
     if len(sys.argv) > 1: # VÝJIMKA: pukud nové spuštění s admin právy načti i gui...
         if sys.argv[0] == sys.argv[1]:
             app_running_status = False
 
     if not app_running_status:
         pipeline_duplex = system_pipeline_communication(exe_name)# Establishment of pipeline server for duplex communication between running applications
-        app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
         customtkinter.set_appearance_mode("dark")
         customtkinter.set_default_color_theme("dark-blue")
         root=customtkinter.CTk()
         root.geometry("1200x900")
-        root.title("TRIMAZKON v_"+str(app_version))
+        root.title(f"{app_name} v_{app_version}")
         root.wm_iconbitmap(Tools.resource_path(app_icon))
+        loop_request=True
 
     else:# předání parametrů v případě spuštění obrázkem (základní obrázkový prohlížeč)
         pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
@@ -1581,15 +1827,10 @@ if load_gui:
                     IB_as_def_browser_path += IB_as_def_browser_path_splitted[i]+"/"
                 selected_image = IB_as_def_browser_path_splitted[len(IB_as_def_browser_path_splitted)-2]
                 pipeline_duplex_instance.call_checking(f"Open image browser starting with image: {IB_as_def_browser_path}, {selected_image}",[IB_as_def_browser_path,selected_image])
-
-def set_zoom(zoom_factor):
-    try:
-        root.after(0, lambda: customtkinter.set_widget_scaling(zoom_factor / 100))
-        # customtkinter.set_widget_scaling(zoom_factor / 100)
-    except Exception as e:
-        print(f"error with zoom scaling: {e}")
-    
-    root.tk.call('tk', 'scaling', zoom_factor / 100)
+            else:
+                pipeline_duplex_instance.call_checking(f"Establish main menu gui",[])
+        else:
+            pipeline_duplex_instance.call_checking(f"Establish main menu gui",[])# předání parametrů pipeline komunikací PUKUD NEJSOU NA VSTUPU ZADNE SYSTEMOVE PARAMETRY, SPOUSTENO PRES ZÁSTUPCE
 
 class main_menu:
     def __init__(self,root):
@@ -1602,23 +1843,19 @@ class main_menu:
         self.database_downloaded = False
         self.ib_running = False
         self.run_as_admin = False
+        self.TS_tray_taskname = "TRIMAZKON_startup_tray_setup"
         #init spínání tray podle nastavení
         if self.data_read_in_txt[24] == "ano":
             task_success = Tools.establish_startup_tray()
             if str(task_success) == "need_access":
                 self.run_as_admin = True
         else: # když nezaškrtnuto aut. spouštění ujisti se, že není nastavené - potřeba taky admin
-            if Tools.check_task_existence_in_TS("TRIMAZKON_startup_tray_setup"):
-                Tools.remove_task_from_TS("TRIMAZKON_startup_tray_setup")
+            if Tools.check_task_existence_in_TS(self.TS_tray_taskname):
+                Tools.remove_task_from_TS(self.TS_tray_taskname)
         
     def clear_frames(self):
         for widget in self.root.winfo_children():
             widget.destroy()
-        # for frames in self.list_of_menu_frames:
-        #     frames.pack_forget()
-        #     frames.grid_forget()
-        #     frames.destroy()
-        # self.list_of_menu_frames = []
         
     def call_sorting_option(self):
         self.clear_frames()
@@ -1676,21 +1913,46 @@ class main_menu:
             self.root.unbind("<Button-1>")
             self.call_view_option(params[0],params[1])
 
-    def menu(self,initial=False,catalogue_downloaded = False,zoom_disable = False): # Funkce spouští základní menu při spuštění aplikace (MAIN)
+    def on_closing(self):
+        global root
+        if Tools.is_admin(): # pokud se vypíná admin app - vypnout i admin tray a zapnout bez práv
+            data_read_in_config = Tools.read_json_config()
+            if data_read_in_config[9] == "ano":
+                task_name = self.TS_tray_taskname #musím přes task scheduler, když to spustím tady bude pořát s adminem... -> duplicita
+                try:
+                    run_task_command = f'schtasks /Run /TN "{task_name}"'
+                    print("Running task with command:", run_task_command)
+                    subprocess.run(run_task_command, shell=True)
+                except:
+                    pass
+            Tools.terminate_pid(os.getpid()) #vypnout thread s tray aplikací
+        else:
+            # self.root.destroy()
+            root.withdraw()
+
+    def check_licence(self):
+        global app_licence_validity
+        app_licence_validity = Tools.check_licence()
+        menu.menu(clear_root=True)
+
+    def menu(self,initial=False,catalogue_downloaded = False,zoom_disable = False,clear_root = False): # Funkce spouští základní menu při spuštění aplikace (MAIN)
         """
         Funkce spouští základní menu při spuštění aplikace (MAIN)
 
-        -obsahuje 3 rámce:
-
         list_of_menu_frames = [frame_with_buttons,frame_with_logo,frame_with_buttons_right]
         """
+        print("licence error:",global_licence_load_error)
+
+        if clear_root:
+            self.clear_frames()
+
         self.ib_running = False
         if self.data_read_in_txt[7] == "ano":
             self.root.after(0, lambda:self.root.state('zoomed')) # max zoom, porad v okne
             
         if self.data_read_in_txt[22] == "ne" and initial: # pokud není využito nastavení windows
             try:
-                root.after(0, lambda: set_zoom(int(self.data_read_in_txt[21])))
+                root.after(0, lambda: Tools.set_zoom(int(self.data_read_in_txt[21]),root))
             except Exception as e:
                 print("error with menu scaling")
 
@@ -1698,14 +1960,10 @@ class main_menu:
         # logo = customtkinter.CTkImage(Image.open(initial_path+"images/logo.png"),size=(1200, 100))
         logo = customtkinter.CTkImage(Image.open(Tools.resource_path("images/logo.png")),size=(1200, 100))
         image_logo = customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
-        
         frame_with_buttons_right = customtkinter.CTkFrame(master=self.root,corner_radius=0)
         frame_with_buttons = customtkinter.CTkFrame(master=self.root,corner_radius=0)
         frame_with_logo.pack(pady=0,padx=0,fill="both",expand=False,side = "top")
         image_logo.pack()
-        frame_with_buttons_right.pack(pady=0,padx=0,fill="both",expand=True,side = "right")
-        frame_with_buttons.pack(pady=0,padx=0,fill="both",expand=True,side = "left")
-        
         IB_as_def_browser_path = None
         # self.list_of_menu_frames = [frame_with_buttons,frame_with_logo,frame_with_buttons_right]
         
@@ -1726,7 +1984,14 @@ class main_menu:
         change_log.             pack(pady =0,       padx=20,side="top",anchor="w")
         if global_recources_load_error:
             resources_load_error.pack(pady = (5,5), padx=20,side="top",anchor="w")
-
+        frame_with_buttons_right.pack(pady=0,padx=0,fill="both",expand=True,side = "right")
+        licence_info_frame = customtkinter.CTkFrame(master=frame_with_buttons,corner_radius=0,fg_color="#212121")
+        licence_info_label = customtkinter.CTkLabel(master=licence_info_frame,font=("Arial",24,"bold"),text="Licence:")
+        licence_info_status = customtkinter.CTkLabel(master=licence_info_frame,font=("Arial",24),text="")
+        licence_info_label.pack(pady =5,padx=(5,0),side="left",anchor="w")
+        licence_info_status.pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
+        licence_info_frame.pack(pady =30,padx=20,side="left",anchor="s")
+        frame_with_buttons.pack(pady=0,padx=0,fill="both",expand=True,side = "left")
         self.fill_changelog(change_log)
         
         def maximalize_window(e):
@@ -1740,18 +2005,37 @@ class main_menu:
             else:
                 self.root.after(0, lambda:self.root.state('zoomed'))
             self.root.update()
-        
         self.root.bind("<f>",maximalize_window)
+
+        if global_licence_load_error:
+            manage_images.configure(state="disabled")
+            viewer_button.configure(state="disabled")
+            ip_setting_button.configure(state="disabled")
+            catalogue_button.configure(state="disabled")
+            advanced_button.configure(state="disabled")
+            if app_licence_validity == "verification error":
+                licence_info_status.configure(text="chyba ověření")
+            elif "EXPIRED:" in str(app_licence_validity):
+                licence_info_status.configure(text=app_licence_validity.replace("EXPIRED:","platnost vypršela:"))
+            insert_licence_btn = customtkinter.CTkButton(master = licence_info_frame, width = 200,height=40, text = "Vložit licenci", command = lambda: os.startfile(initial_path),font=("Arial",24,"bold"))
+            refresh_licence_btn = customtkinter.CTkButton(master = licence_info_frame, width = 40,height=40, text = "🔄", command = lambda: self.check_licence(),font=(None,24))
+            insert_licence_btn.pack(pady =(7,5),padx=(15,0),side="left",anchor="w")
+            refresh_licence_btn.pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
+            self.root.after(500, lambda: Subwindows.licence_window())
+        else:
+            licence_info_status.configure(text=f"platná do {app_licence_validity}")
+
         # initial promenna aby se to nespoustelo porad do kola pri navratu do menu (system argumenty jsou stále uložené v aplikaci)
         if len(sys.argv) > 1 and initial == True:
             raw_path = str(sys.argv[1])
             #klik na spusteni trimazkonu s admin právy
-            if sys.argv[0] == sys.argv[1]:
+            if sys.argv[1] == "admin_ip_setting":
                 self.call_ip_manager()
             elif sys.argv[1] == "settings_tray":
                 self.call_advanced_option(success_message="Automatické spouštění úspěšně nastaveno")
             elif sys.argv[1] == "settings_tray_del":
                 self.call_advanced_option(success_message="Automatické spouštění úspěšně odstraněno")
+
             elif sys.argv[1] != "admin_menu" and sys.argv[1] != "trigger_by_tray": # pokud se nerovnají jedná se nejspíše o volání základního prohlížeče obrázků (spuštění kliknutím na obrázek...)
                 IB_as_def_browser_path=Tools.path_check(raw_path,True)
                 IB_as_def_browser_path_splitted = IB_as_def_browser_path.split("/")
@@ -1763,9 +2047,13 @@ class main_menu:
                 selected_image = IB_as_def_browser_path_splitted[len(IB_as_def_browser_path_splitted)-2]
                 self.call_view_option(IB_as_def_browser_path,selected_image)
         
-        if self.run_as_admin:
-            self.root.after(1000, lambda: Tools.call_again_as_admin("admin_menu","Upozornění","Aplikace vyžaduje práva pro nastavení aut. spouštění na pozadí\n     - možné změnit v nastavení\n\nPřejete si znovu spustit aplikaci, jako administrátor?"))
-
+        if self.run_as_admin and not global_licence_load_error:
+            self.root.after(1000, lambda: Subwindows.call_again_as_admin("admin_menu","Upozornění","Aplikace vyžaduje práva pro nastavení aut. spouštění na pozadí\n     - možné změnit v nastavení\n\nPřejete si znovu spustit aplikaci, jako administrátor?"))
+        try:
+            root.protocol("WM_DELETE_WINDOW", lambda: self.on_closing())
+            # self.root.mainloop()
+        except Exception as e:
+            print("already looped? ",e)
         # self.root.mainloop()
 
 class Image_browser: # Umožňuje procházet obrázky a přitom například vybrané přesouvat do jiné složky
@@ -3496,13 +3784,13 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         
         self.creating_advanced_option_widgets()
     
-    def set_zoom(self,zoom_factor):
-        try:
-            root.after(0,customtkinter.set_widget_scaling(zoom_factor / 100))
-        except Exception as e:
-            print(f"error with zoom scaling: {e}")
+    # def set_zoom(self,zoom_factor):
+    #     try:
+    #         root.after(0,customtkinter.set_widget_scaling(zoom_factor / 100))
+    #     except Exception as e:
+    #         print(f"error with zoom scaling: {e}")
         
-        root.tk.call('tk', 'scaling', zoom_factor / 100)
+    #     root.tk.call('tk', 'scaling', zoom_factor / 100)
 
     def call_menu(self): # Tlačítko menu (konec, návrat do menu)
         """
@@ -3544,19 +3832,23 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             Tools.save_to_config("ano","tray_icon_startup")
             new_task_success = Tools.establish_startup_tray()
             if str(new_task_success) == "need_access":
-                Tools.call_again_as_admin("settings_tray","Upozornění","Aplikace vyžaduje práva pro nastavení aut. spouštění na pozadí\n\n- přejete si znovu spustit aplikaci, jako administrátor?")
+                menu.run_as_admin = True
+                Subwindows.call_again_as_admin("settings_tray","Upozornění","Aplikace vyžaduje práva pro nastavení aut. spouštění na pozadí\n\n- přejete si znovu spustit aplikaci, jako administrátor?")
                 main_console.configure(text = "Jsou vyžadována admin práva",text_color="red")
             else:
                 # Tools.establish_startup_tray()
+                menu.run_as_admin = False
                 main_console.configure(text = "Automatické spouštění úspěšně nastaveno",text_color="green")
 
         else:
             Tools.save_to_config("ne","tray_icon_startup")
             remove_task_success = Tools.remove_task_from_TS("TRIMAZKON_startup_tray_setup")
             if str(remove_task_success) == "need_access":
-                Tools.call_again_as_admin("settings_tray_del","Upozornění","Aplikace vyžaduje práva pro odstranění aut. spouštění na pozadí\n\n- přejete si znovu spustit aplikaci, jako administrátor?")
+                menu.run_as_admin = True
+                Subwindows.call_again_as_admin("settings_tray_del","Upozornění","Aplikace vyžaduje práva pro odstranění aut. spouštění na pozadí\n\n- přejete si znovu spustit aplikaci, jako administrátor?")
                 main_console.configure(text = "Jsou vyžadována admin práva",text_color="red")
             else:
+                menu.run_as_admin = False
                 main_console.configure(text = "Automatické spouštění úspěšně odstraněno",text_color="green")
 
     def set_safe_mode(self): # Nastavení základního spouštění (v okně/ maximalizované)
@@ -3902,16 +4194,16 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 Tools.save_to_config("ano","app_zoom_checkbox")
                 current_dpi = get_screen_dpi()
                 if current_dpi == 96:
-                    set_zoom(100)
+                    Tools.set_zoom(100,root)
                 elif current_dpi == 120:
-                    set_zoom(125)
+                    Tools.set_zoom(125,root)
                 elif current_dpi == 144:
-                    set_zoom(150)
+                    Tools.set_zoom(150,root)
                 app_zoom_slider.configure(state = "disabled",button_color = "gray50",button_hover_color = "gray50")
             else:
                 app_zoom_slider.configure(state = "normal",button_color = "#3a7ebf",button_hover_color = "#3a7ebf")
                 Tools.save_to_config("ne","app_zoom_checkbox")
-                set_zoom(int(app_zoom_slider.get()))
+                Tools.set_zoom(int(app_zoom_slider.get()),root)
 
         if submenu_option == "default_path":
             self.option_buttons[0].configure(fg_color="#212121")
@@ -3985,7 +4277,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 if not checkbox_app_zoom.get() == 1:
                     current_zoom = int(app_zoom_slider.get())
                     Tools.save_to_config(current_zoom,"app_zoom")
-                    self.set_zoom(current_zoom)
+                    Tools.set_zoom(current_zoom,root)
 
             app_zoom_slider.bind("<ButtonRelease-1>",lambda e: slider_released(e))
 
@@ -6663,4 +6955,25 @@ if load_gui:
         menu = main_menu(root)
         menu.menu(initial=True)
 
-root.mainloop()
+def start_new_root():
+    print("starting new root")
+    global menu
+    global root
+    global app_icon
+    global initial_path
+    # global app_version
+    initial_path = Tools.get_init_path()
+    app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
+    customtkinter.set_appearance_mode("dark")
+    customtkinter.set_default_color_theme("dark-blue")
+    root=customtkinter.CTk(fg_color="#212121")
+    root.geometry("1200x900")
+    root.title(f"{app_name} v_{app_version}")
+    root.wm_iconbitmap(app_icon)
+    root.update_idletasks()
+    menu = main_menu(root)
+    menu.menu(initial=True)
+    root.mainloop()
+
+if loop_request:
+    root.mainloop()

@@ -829,24 +829,33 @@ TRIMAZKON - delete confirm window má špatné hlášky - hotovo
 TRIMAZKON - implementovat deleting z jhv_MAZ - hotovo
 TRIMAZKON - implementovat novou logiku gui rootu - hotovo
 
+20:03 27.02.2025
+TRIMAZKON - na cestě z nastavení, pokud vypnute startup zapinani - vzdycky to chce admina v menu - hotovo
+TRIMAZKON - licencovat aplikaci - hotovo
+TRIMAZKON - vlozeni licence znovu overi a nacte pokud je spravna - hotovo
+jhv_MAZ - vlozeni licence znovu overi a nacte pokud je spravna - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 TRIMAZKON - katalog - když prohodím kontroler u editu kamery - smažou se okolní kontrolery
 TRIMAZKON - katalog - prohodit tlačítko zavřít a uložit
+TRIMAZKON - katalog - ukladani souboru - vytvaret lepsi nazev
+TRIMAZKON - catalogue - nabízet vsechny soubory xml v ceste + ukladat historii cest
+
+TRIMAZKON - predelat config na json - rozdelane
+
 
 TRIMAZKON - prohlížeč nejde otevírat ifz v novém okně...
 TRIMAZKON - prohlížeč - když vyberu neco z histoie cest z nabídky, rovnou otevřít...
 
 
 TRIMAZKON - když aplikaci otevřu přes tray, tak mi to skočí do prohlížeče obrázků
-TRIMAZKON - na cestě z nastavení, pokud vypnute startup zapinani - vzdycky to chce admina v menu
 
 TRIMAZKON - kouknout na directories z configu u advanced option v initu
 
 
+TRIMAZKON - u konzoli, kde se dynamicky pise text - pouzit console.see(tk.END) + zkontrolovat threads jako u mazani
 
-TRIMAZKON - u konzoli, kde se dynamicky pise text - pouzit console.see(tk.END)
-TRIMAZKON - licencovat aplikaci
 TRIMAZKON - udelat specialni launcher na obrazky - aby se nenacitaly vsechny knihovny - aby to bylo rychlé
 
 TRIMAZKON - na ukládání nastavení použít .json config... xls používat jen na ip setting
@@ -854,6 +863,7 @@ TRIMAZKON - na ukládání nastavení použít .json config... xls používat je
 	TRIMAZKON - přidat automatické vytvoření configu
 	TRIMAZKON - prohlížeč - pamatovat si historii cest - otevíráním přes obrázky... mít třeba 10 uložených cest
 	TRIMAZKON - prohlížeč - zkontrolovat historii cest, používat insert(0,...
+
 
 
 

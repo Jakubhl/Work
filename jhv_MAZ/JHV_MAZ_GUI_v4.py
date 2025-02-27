@@ -680,7 +680,7 @@ class Tools:
                 error_data = str(stderr)
 
         print(data,error_data)
-        if "ERROR" in error_data:
+        if "ERROR" in error_data or "CHYBA" in error_data:
             return False
         else:
             return True
@@ -959,6 +959,7 @@ class Tools:
 
             if exp_date >= datetime.datetime.today():
                 print(f"License valid until: {exp_date.date()}")
+                global_licence_load_error = False
                 return exp_date.date()
             else:
                 global_licence_load_error = True
@@ -1301,6 +1302,11 @@ class main_menu:
             return True
         else:
             return False
+    
+    def check_licence(self):
+        global app_licence_validity
+        app_licence_validity = Tools.check_licence()
+        menu.menu(clear_root=True)
 
     def menu(self,initial=False,zoom_disable = False,clear_root=False): # Funkce spouští základní menu při spuštění aplikace (MAIN)
         """
@@ -1411,10 +1417,12 @@ class main_menu:
             advanced_button.configure(state="disabled")
             if app_licence_validity == "verification error":
                 licence_info_status.configure(text="chyba ověření")
-            elif "EXPIRED:" in app_licence_validity:
+            elif "EXPIRED:" in str(app_licence_validity):
                 licence_info_status.configure(text=app_licence_validity.replace("EXPIRED:","platnost vypršela:"))
             insert_licence_btn = customtkinter.CTkButton(master = licence_info_frame, width = 200,height=40, text = "Vložit licenci", command = lambda: os.startfile(initial_path),font=("Arial",24,"bold"))
+            refresh_licence_btn = customtkinter.CTkButton(master = licence_info_frame, width = 40,height=40, text = "🔄", command = lambda: self.check_licence(),font=(None,24))
             insert_licence_btn.pack(pady =(7,5),padx=(15,0),side="left",anchor="w")
+            refresh_licence_btn.pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
 
             if self.selected_language == "en":
                 licence_info_status.configure(text=app_licence_validity)
@@ -1438,7 +1446,7 @@ class main_menu:
                     console_message = "Automatic startup successfully removed"
                 self.call_advanced_option(success_message=console_message)
              
-        if self.run_as_admin:
+        if self.run_as_admin and not global_licence_load_error:
             require_admin_msg1 = "Upozornění"
             require_admin_msg2 = "Aplikace vyžaduje práva pro nastavení aut. spouštění na pozadí\n     - možné změnit v nastavení\n\nPřejete si znovu spustit aplikaci, jako administrátor?"
             if self.selected_language == "en":

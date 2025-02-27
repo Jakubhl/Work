@@ -3282,8 +3282,9 @@ class main:
                         return ctypes.windll.shell32.IsUserAnAdmin()
                     except:
                         return False
+                pid = os.getpid()
                 if not is_admin():
-                    ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+                    ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(["admin_ip_setting",str(pid)]), None, 1)
                     sys.exit()
             def open_app_as_admin_prompt():
                 def close_prompt(child_root):
