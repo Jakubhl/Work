@@ -7,7 +7,7 @@ import Sorting_option_v5 as Trideni
 import Deleting_option_v2 as Deleting
 import Converting_option_v3 as Converting
 import catalogue_maker_v5 as Catalogue
-# import sharepoint_download as download_database
+import sharepoint_download as download_database
 import IP_setting_v4 as IP_setting
 import trimazkon_tray_v3 as trimazkon_tray
 import string_database
@@ -29,7 +29,7 @@ import wmi
 import json
 # import struct
 
-testing = False
+testing = True
 
 global_recources_load_error = False
 global_licence_load_error = False
@@ -303,29 +303,76 @@ class Tools:
 
 
     @classmethod
-    def create_new_json_config(cls,default_value_list,default_labels):
-        updated_settings = [
-            {"key": "supported_formats_sorting", "value": default_value_list[0]},
-            {"key": "supported_formats_deleting", "value": default_value_list[1]},
-            {"key": "default_path", "value": default_value_list[2]},
-            {"key": "default_files_to_keep", "value": default_value_list[2]},
-            {"key": "default_cutoff_date", "value": default_value_list[3]},
-            {"key": "prefix_function", "value": default_value_list[3]},
-            {"key": "prefix_camera", "value": default_value_list[3]},
-            {"key": "maximalized", "value": default_value_list[4]},
-            {"key": "max_pallets", "value": default_value_list[5]},
-            {"key": "sorting_safe_mode", "value": default_value_list[6]},
-            {"key": "app_zoom", "value": default_value_list[7]},
-
-            {"key": "app_zoom_checkbox", "value": default_value_list[8]},
-            {"key": "tray_icon_startup", "value": default_value_list[9]},
-            {"key": "path_history_list", "value": [default_value_list[0]]},
-            {"key": "default_language", "value": default_value_list[11]},
-        ]
+    def create_new_json_config(cls,default_value_list,load_values_only = False):
+        new_app_settings = {"default_path": default_value_list[2],
+                            "maximalized": default_value_list[7],
+                            "show_changelog": default_value_list[12],
+                            "app_zoom": default_value_list[14],
+                            "app_zoom_checkbox": default_value_list[15],
+                            "tray_icon_startup": default_value_list[16],
+                            # "path_history_list": default_value_list[17],
+                            "default_language": default_value_list[17],}
         
+        new_sort_conv_settings = {"supported_formats_sorting": default_value_list[0],
+                                "prefix_function": default_value_list[5],
+                                "prefix_camera": default_value_list[6],
+                                "max_pallets": default_value_list[8],
+                                "temp_dir_name": default_value_list[9][0],
+                                "pairs_dir_name": default_value_list[9][1],
+                                "convert_bmp_dir_name": default_value_list[9][3],
+                                "convert_jpg_dir_name": default_value_list[9][4],
+                                "sorting_safe_mode": default_value_list[10],
+                                "path_history_list": default_value_list[18],}
+        
+        new_del_settings = {"supported_formats_deleting": default_value_list[1],
+                            "default_files_to_keep": default_value_list[3],
+                            "default_cutoff_date": default_value_list[4],
+                            "to_delete_dir_name": default_value_list[9][2],
+                            "path_history_list": default_value_list[19],}
+        
+        new_image_browser_settings = {"selected_option": default_value_list[11][0],
+                                    "zoom_step": default_value_list[11][1],
+                                    "movement_step": default_value_list[11][2],
+                                    "show_image_film": default_value_list[11][3],
+                                    "image_film_count": default_value_list[11][4],
+                                    "copyed_dir_name": default_value_list[9][5],
+                                    "moved_dir_name": default_value_list[9][6],
+                                    "path_history_list": default_value_list[20],}
+        
+        new_catalogue_settings = {"database_filename": default_value_list[13][0],
+                                "catalogue_filename": default_value_list[13][1],
+                                "metadata_filename": default_value_list[13][2],
+                                "subwindow_behav": default_value_list[13][3],
+                                "default_export_suffix": default_value_list[13][4],
+                                "default_path": default_value_list[13][5],
+                                "render_mode": default_value_list[13][6],}
+                                # "path_history_list": default_value_list[19]},
+        
+        new_ip_settings = {"default_ip_interface": default_value_list[21][0],
+                            "favorite_ip_window_status": default_value_list[21][1],
+                            "disk_or_ip_window": default_value_list[21][2],
+                            "default_window_size": default_value_list[21][3],
+                            "init_disk_refresh": default_value_list[21][4],
+                            "editable_notes": default_value_list[21][5],
+                            "disk_persistent": default_value_list[21][6],
+                            "auto_order_when_edit": default_value_list[21][7],
+                            "ask_to_delete": default_value_list[21][8],}
+        
+        output_object = {"app_settings": new_app_settings,
+                       "sort_conv_settings": new_sort_conv_settings,
+                       "del_settings": new_del_settings,
+                       "image_browser_settings": new_image_browser_settings,
+                       "catalogue_settings": new_catalogue_settings,
+                       "ip_settings": new_ip_settings}
+        
+        if load_values_only:
+            return output_object
 
         with open(initial_path+cls.config_json_filename, "w") as file:
-            json.dump({"settings": updated_settings}, file, indent=4)
+            json.dump(output_object, file, indent=4)
+        
+        return output_object
+
 
     @classmethod
     def read_json_config(cls): # Funkce vraci data z configu
@@ -334,64 +381,68 @@ class Tools:
 
         data jsou v pořadí:
 
-        0 default_path\n
-        1 supported_formats_deleting\n
-        2 default_files_to_keep\n
-        3 default_cutoff_date\n
-        4 default_deleting_dir_name\n
-        5 maximalized\n
-        6 sorting_safe_mode\n
-        7 app_zoom\n
-        8 app_zoom_checkbox\n
-        9 tray_icon_startup\n
-        10 path_history_list\n
-        11 default_language\n
+        APP SETTINGS\n
+        - default_path
+        - maximalized
+        - show_changelog
+        - app_zoom
+        - app_zoom_checkbox
+        - tray_icon_startup
+        - default_language
+        \nSORT AND CONV SETTINGS\n
+        - supported_formats_sorting
+        - prefix_function
+        - prefix_camera
+        - max_pallets
+        - temp_dir_name
+        - pairs_dir_name
+        - convert_bmp_dir_name
+        - convert_jpg_dir_name
+        - sorting_safe_mode
+        - path_history_list
+        \nDELETING SETTINGS\n
+        - supported_formats_deleting
+        - default_files_to_keep
+        - default_cutoff_date
+        - to_delete_dir_name
+        - path_history_list
+        \nIMAGE BROWSER SETTINGS\n
+        - selected_option
+        - zoom_step
+        - movement_step
+        - show_image_film
+        - image_film_count
+        - copyed_dir_name
+        - moved_dir_name
+        - path_history_list
+        \nCATALOGUE SETTINGS\n
+        - database_filename
+        - catalogue_filename
+        - metadata_filename
+        - subwindow_behav
+        - default_export_suffix
+        - default_path
+        - render_mode
+        \nIP SETTINGS\n
+        - default_ip_interface
+        - favorite_ip_window_status
+        - disk_or_ip_window
+        - default_window_size
+        - init_disk_refresh
+        - editable_notes
+        - disk_persistent
+        - auto_order_when_edit
+        - ask_to_delete
         """
-        def filter_unwanted_chars(to_filter_data, directory = False,even_space=False):
-            unwanted_chars = ["\n","\"","\'","[","]"]
-            if directory:
-                unwanted_chars = ["\n","\"","\'","[","]","\\","/"]
-            if even_space:
-                unwanted_chars.append(" ")
-            filtered_data = ""
-            for letters in to_filter_data:
-                if letters not in unwanted_chars:
-                    filtered_data += letters
-            return filtered_data
-
-        def load_default_values():
-            output_array = [default_setting_parameters[0],
-                            default_setting_parameters[1],
-                            default_setting_parameters[2],
-                            default_setting_parameters[3],
-                            default_setting_parameters[4],
-                            default_setting_parameters[5],
-                            default_setting_parameters[6],
-                            default_setting_parameters[7],
-                            default_setting_parameters[8],
-                            default_setting_parameters[9],
-                            default_setting_parameters[10],
-                            default_setting_parameters[11],
-                            ]
-            
-            print("read intern database (default values)",output_array,len(output_array))
-            return output_array
-
         global global_recources_load_error
         default_setting_parameters = string_database.default_setting_database_param
-        default_labels = string_database.default_setting_database
+        # default_labels = string_database.default_setting_database
 
         if os.path.exists(initial_path+cls.config_json_filename):
             try:
                 output_data = []
                 with open(initial_path+cls.config_json_filename, "r") as file:
-                    data = json.load(file)
-
-                settings = data["settings"]
-
-                # print("config raw data: ", settings)
-                for item in settings:
-                    output_data.append(item['value'])
+                    output_data = json.load(file)
 
                 # print("config data: ", output_data, len(output_data))
                 return output_data
@@ -400,36 +451,81 @@ class Tools:
                 print(f"Nejdřív zavřete soubor {cls.config_json_filename} Chyba: {e}")   
                 print("Budou načteny defaultní hodnoty")
                 global_recources_load_error = True
-                output_array = load_default_values()
+                output_array = Tools.create_new_json_config(default_setting_parameters,load_values_only=True)
                 return output_array
         else:
             print(f"Chybí konfigurační soubor {cls.config_json_filename}, bude vytvořen")
-            Tools.create_new_json_config(default_setting_parameters,default_labels)
-            output_array = load_default_values()
+            output_array = Tools.create_new_json_config(default_setting_parameters)
             return output_array
         
     @classmethod
-    def save_to_json_config(cls,input_data,which_parameter,language_force = "cz"): # Funkce zapisuje data do souboru configu
+    def save_to_json_config(cls,input_data,which_settings,which_parameter,language_force = "cz"): # Funkce zapisuje data do souboru configu
         """
         Funkce zapisuje data do konfiguračního souboru
 
         vraci vystupni zpravu: report
 
-        which_parameter je bud: 
-        
-        1 default_path\n
-        2 add_supported_deleting_formats\n
-        3 pop_supported_deleting_formats\n
-        4 default_files_to_keep\n
-        5 default_cutoff_date\n
-        6 default_deleting_dir_name\n
-        7 maximalized\n
-        8 sorting_safe_mode\n
-        9 app_zoom\n
-        10 app_zoom_checkbox\n
-        11 tray_icon_startup\n
-        12 path_history_list\n
-        13 default_language\n
+        which_settings je bud: 
+        - app_settings
+        - sort_conv_settings
+        - del_settings
+        - image_browser_settings
+        - catalogue_settings
+        - ip_settings
+
+        \nwhich_parameter je bud:
+        \nAPP SETTINGS\n
+        - default_path
+        - maximalized
+        - show_changelog
+        - app_zoom
+        - app_zoom_checkbox
+        - tray_icon_startup
+        - default_language
+        \nSORT AND CONV SETTINGS\n
+        - supported_formats_sorting
+        - prefix_function
+        - prefix_camera
+        - max_pallets
+        - temp_dir_name
+        - pairs_dir_name
+        - convert_bmp_dir_name
+        - convert_jpg_dir_name
+        - sorting_safe_mode
+        - path_history_list
+        \nDELETING SETTINGS\n
+        - supported_formats_deleting
+        - default_files_to_keep
+        - default_cutoff_date
+        - to_delete_dir_name
+        - path_history_list
+        \nIMAGE BROWSER SETTINGS\n
+        - selected_option
+        - zoom_step
+        - movement_step
+        - show_image_film
+        - image_film_count
+        - copyed_dir_name
+        - moved_dir_name
+        - path_history_list
+        \nCATALOGUE SETTINGS\n
+        - database_filename
+        - catalogue_filename
+        - metadata_filename
+        - subwindow_behav
+        - default_export_suffix
+        - default_path
+        - render_mode
+        \nIP SETTINGS\n
+        - default_ip_interface
+        - favorite_ip_window_status
+        - disk_or_ip_window
+        - default_window_size
+        - init_disk_refresh
+        - editable_notes
+        - disk_persistent
+        - auto_order_when_edit
+        - ask_to_delete
         """
 
         def filter_unwanted_chars(to_filter_data, directory = False,formats = False):
@@ -445,75 +541,84 @@ class Tools:
                     filtered_data += letters
             return filtered_data
         
-        def rewrite_value(key,new_data):
-            for item in settings:
-                if item["key"] == str(key):
-                    item["value"] = new_data  # New value
-                    break
-
+        def get_input_data_format():
+            if isinstance(input_data,list):
+                return input_data
+            elif isinstance(input_data,str):
+                return str(input_data)
+            elif isinstance(input_data,int):
+                return int(input_data)
         
         if os.path.exists(initial_path + cls.config_json_filename):
             with open(initial_path+cls.config_json_filename, "r") as file:
-                data = json.load(file)
-            settings = data["settings"]
-            try:
-                new_tasks = data["task_list"]
-            except:
-                new_tasks = None
+                config_data = json.load(file)
+
             report = ""
-
-            supported_formats_deleting = next((item["value"] for item in settings if item["key"] == "supported_formats_deleting"), None)
-            print("found formats: ", supported_formats_deleting)
-
-            
-            if which_parameter == "add_supported_deleting_formats":
-                corrected_input = filter_unwanted_chars(str(input_data),formats=True)
-                if str(corrected_input) not in supported_formats_deleting:
-                    supported_formats_deleting.append(str(corrected_input))
-                    report =  (f"Byl přidán formát: \"{corrected_input}\" do podporovaných formátů pro možnosti mazání")
-                    if language_force == "en":
-                        report =  (f"Added format: \"{corrected_input}\" to supported formats for deletion options")
-                    rewrite_value("supported_formats_deleting",supported_formats_deleting)
+            if which_settings == "app_settings":
+                if which_parameter == "default_path":
+                    report = (f"Základní cesta přenastavena na: {str(input_data)}")
+                    config_data[which_settings][which_parameter] = get_input_data_format()
                 else:
-                    report =  (f"Formát: \"{corrected_input}\" je již součástí podporovaných formátů možností mazání")
-                    if language_force == "en":
-                        report =  (f"Format: \"{corrected_input}\" is already part of the supported delete option formats")
+                    config_data[which_settings][which_parameter] = get_input_data_format()
+
+            elif which_settings == "sort_conv_settings":
+                config_data[which_settings][which_parameter] = get_input_data_format()
+
+            elif which_settings == "del_settings":
+                supported_formats_deleting = config_data[which_settings]["supported_formats_deleting"]
+                print("found formats: ", supported_formats_deleting)
+
+                if which_parameter == "add_supported_deleting_formats":
+                    corrected_input = filter_unwanted_chars(str(input_data),formats=True)
+                    if str(corrected_input) not in supported_formats_deleting:
+                        supported_formats_deleting.append(str(corrected_input))
+                        report =  (f"Byl přidán formát: \"{corrected_input}\" do podporovaných formátů pro možnosti mazání")
+                        if language_force == "en":
+                            report =  (f"Added format: \"{corrected_input}\" to supported formats for deletion options")
+                        # rewrite_value("supported_formats_deleting",supported_formats_deleting)
+                        config_data[which_settings]["supported_formats_deleting"] = supported_formats_deleting
+                    else:
+                        report =  (f"Formát: \"{corrected_input}\" je již součástí podporovaných formátů možností mazání")
+                        if language_force == "en":
+                            report =  (f"Format: \"{corrected_input}\" is already part of the supported delete option formats")
+                    
+                elif which_parameter == "pop_supported_deleting_formats":
+                    # poped = 0
+                    found = False
+                    range_to = len(supported_formats_deleting)
+                    for i in range(0,range_to):
+                        if i < range_to:
+                            if str(input_data) == supported_formats_deleting[i] and len(str(input_data)) == len(supported_formats_deleting[i]):
+                                supported_formats_deleting.pop(i)
+                                report =  (f"Z podporovaných formátů možností mazání byl odstraněn formát: \".{input_data}\"")
+                                if language_force == "en":
+                                    report =  (f"The format \".{input_data}\" has been removed from the supported delete option formats")
+                                found = True
+                                # rewrite_value("supported_formats_deleting",supported_formats_deleting)
+                                config_data[which_settings]["supported_formats_deleting"] = supported_formats_deleting
+                                break
+
+                    if found == False:
+                        report =  (f"Formát: \"{input_data}\" nebyl nalezen v podporovaných formátech možností mazání, nemůže tedy být odstraněn")
+                        if language_force == "en":
+                            report =  (f"The format \".{input_data}\" was not found in the supported delete option formats, so it cannot be deleted")
                 
-            elif which_parameter == "pop_supported_deleting_formats":
-                # poped = 0
-                found = False
-                range_to = len(supported_formats_deleting)
-                for i in range(0,range_to):
-                    if i < range_to:
-                        if str(input_data) == supported_formats_deleting[i] and len(str(input_data)) == len(supported_formats_deleting[i]):
-                            supported_formats_deleting.pop(i)
-                            report =  (f"Z podporovaných formátů možností mazání byl odstraněn formát: \".{input_data}\"")
-                            if language_force == "en":
-                                report =  (f"The format \".{input_data}\" has been removed from the supported delete option formats")
-                            found = True
-                            rewrite_value("supported_formats_deleting",supported_formats_deleting)
-                            break
+                else:
+                    config_data[which_settings][which_parameter] = get_input_data_format()
 
-                if found == False:
-                    report =  (f"Formát: \"{input_data}\" nebyl nalezen v podporovaných formátech možností mazání, nemůže tedy být odstraněn")
-                    if language_force == "en":
-                        report =  (f"The format \".{input_data}\" was not found in the supported delete option formats, so it cannot be deleted")
 
-            elif which_parameter == "default_path":
-                report = (f"Základní cesta přenastavena na: {str(input_data)}")
-                rewrite_value(which_parameter,str(input_data))
-            elif which_parameter == "default_cutoff_date" or which_parameter == "path_history_list":
-                rewrite_value(which_parameter,input_data)
-            elif which_parameter == "default_files_to_keep" or which_parameter == "app_zoom":
-                rewrite_value(which_parameter,int(input_data))
-            else:
-                rewrite_value(which_parameter,str(input_data))
+            elif which_settings == "image_browser_settings":
+                config_data[which_settings][which_parameter] = get_input_data_format()
+
+            elif which_settings == "catalogue_settings":
+                config_data[which_settings][which_parameter] = get_input_data_format()
+
+            elif which_settings == "ip_settings":
+                config_data[which_settings][which_parameter] = get_input_data_format()
+
                               
             with open(initial_path+cls.config_json_filename, "w") as file:
-                if new_tasks == None:
-                    json.dump({"settings": settings}, file, indent=4)
-                else:
-                    json.dump({"settings": settings, "task_list": new_tasks}, file, indent=4)
+                json.dump(config_data, file, indent=4)
 
             return report
         
@@ -521,8 +626,6 @@ class Tools:
             print("Chybí konfigurační soubor (nelze ukládat změny)")
             return "Chybí konfigurační soubor (nelze ukládat změny)"
    
-
-
 
 
     @classmethod
@@ -547,15 +650,17 @@ class Tools:
         12 show_changelog\n
         13 image_film\n
         14 num_of_IB_film_images\n
+
         15 default sharepoint database filename\n
         16 default excel filnename prefix for catalogue output\n
         17 default xml filename for catalogue output \n
         18 default subwindow behavior status in catalogue menu\n
         19 default format of catalogue export\n
         20 default path catalogue\n
+
         21 app zoom\n
         22 app zoom checkbox\n
-        23 render mode\n
+        23 render mode\n - catalogue params
         24 establish tray icon in startup\n
         """
         def filter_unwanted_chars(to_filter_data, directory = False,even_space=False):
@@ -616,7 +721,7 @@ class Tools:
         config_filename = "config_TRIMAZKON.xlsx"
         setting_list_name = "Settings_recources"
         default_setting_parameters = string_database.default_setting_database_param
-        default_labels = string_database.default_setting_database
+        # default_labels = string_database.default_setting_database
 
         if os.path.exists(initial_path+config_filename):
             try:
@@ -1746,6 +1851,7 @@ print("init path: ",initial_path)
 app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
 app_licence_validity = Tools.check_licence()    
 load_gui=True
+
 print("SYSTEM: ",sys.argv)
 if len(sys.argv) > 1 and not global_licence_load_error:
     if sys.argv[1] == "deleting":

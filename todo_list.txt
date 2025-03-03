@@ -841,9 +841,10 @@ TRIMAZKON - katalog - když prohodím kontroler u editu kamery - smažou se okol
 TRIMAZKON - katalog - prohodit tlačítko zavřít a uložit
 TRIMAZKON - katalog - ukladani souboru - vytvaret lepsi nazev
 TRIMAZKON - catalogue - nabízet vsechny soubory xml v ceste + ukladat historii cest
+TRIMAZKON - catalogue - seznam materiálu
 
 TRIMAZKON - predelat config na json - rozdelane
-
+TRIMAZKON - upravit v nastavení historii cest
 
 TRIMAZKON - prohlížeč nejde otevírat ifz v novém okně...
 TRIMAZKON - prohlížeč - když vyberu neco z histoie cest z nabídky, rovnou otevřít...
