@@ -1,6 +1,7 @@
 import customtkinter
 import tkinter as tk
 from openpyxl import load_workbook
+from openpyxl import Workbook
 import subprocess
 import os
 import re
@@ -15,6 +16,7 @@ import winreg
 import win32net
 import copy
 import pyperclip
+import json
 
 testing_mode = False
 if testing_mode:
@@ -26,6 +28,7 @@ if testing_mode:
     root.state('zoomed')
 
 class Tools:
+    config_json_filename = "TRIMAZKON.json"
     @classmethod
     def resource_path(cls,relative_path):
         """ Get the absolute path to a resource, works for dev and for PyInstaller """
@@ -52,48 +55,21 @@ class Tools:
         text_widget.configure(state=tk.DISABLED)
     
     @classmethod
-    def save_setting_parameter(cls,parameter,status,excel_path):
+    def read_json_config(cls,config_file_path): # Funkce vraci data z configu
         """
-        list of parameters:\n
-        change_def_conn_option\n
-        new_conn_options\n
-        change_def_ip_window\n
-        change_def_main_window\n
-        change_def_window_size\n
-        change_def_disk_behav\n
-        change_def_notes_behav\n
-        change_mapping_cond\n
-        change_make_first_behav\n
-        delete_behav\n
-        """
+        Funkce vrací data z konfiguračního souboru
 
-        parameter_row_mapping = {
-        "change_def_conn_option": 1,
-        "new_conn_options": 2,
-        "change_def_ip_window": 3,
-        "change_def_main_window": 4,
-        "change_def_window_size": 5,
-        "change_def_disk_behav": 6,
-        "change_def_notes_behav": 7,
-        "change_mapping_cond": 8,
-        "change_make_first_behav": 9,
-        "delete_behav": 10
-        }
-
-        row = parameter_row_mapping.get(parameter)
-        if row is None:
-            print(f"Invalid parameter: {parameter}")
-            return
-        
-        workbook = load_workbook(excel_path)
-        worksheet = workbook["Settings"]
-        worksheet['B' + str(row)] = status
-        workbook.save(filename=excel_path)
-        workbook.close()
-
-    @classmethod
-    def read_setting_parameters(cls,excel_file_path):
-        """
+        \nIP SETTINGS\n
+        - default_ip_interface
+        - favorite_ip_window_status
+        - disk_or_ip_window
+        - default_window_size
+        - init_disk_refresh
+        - editable_notes
+        - disk_persistent
+        - auto_order_when_edit
+        - ask_to_delete
+        \n
         - [0] = default connection option (0/1)
         - [1] = show favourite ip as default (0/1)
         - [2] = show disk environment as default (0/1)
@@ -104,72 +80,63 @@ class Tools:
         - [7] = shift edited project on top status (0/1)
         - [8] = delete - pop up window main window (110), when edit (101)
         """
-        def insert_new_excel_param(wb,ws,row,param,text):
-            """
-            Oveřuje zda konfigurační excel již obsahuje tyto parametry, případně zapíše
-            """
-            ws['B' + str(row)] = param
-            ws['A' + str(row)] = text
-            wb.save(excel_file_path)
-            print('inserting new parameter to excel')
 
-        try:
-            workbook = load_workbook(excel_file_path)
-            worksheet = workbook["Settings"]
-            saved_def_con_option = worksheet['B' + str(1)].value
-            def_show_favourite = worksheet['B' + str(3)].value
-            def_show_disk = worksheet['B' + str(4)].value
-            def_window_size = worksheet['B' + str(5)].value
-            
-            value_check = worksheet['B' + str(6)].value
-            if value_check is None or str(value_check) == "":
-                insert_new_excel_param(workbook,worksheet,row=6,param=0,text="aktualizovat statusy disků při vstupu do okna s disky (default)")
-            else:
-                default_disk_status_behav = int(worksheet['B' + str(6)].value)
+        if os.path.exists(config_file_path):
+            try:
+                output_data = []
+                with open(config_file_path, "r") as file:
+                    output_data = json.load(file)
 
-            value_check = worksheet['B' + str(7)].value
-            if value_check is None or str(value_check) == "":
-                insert_new_excel_param(workbook,worksheet,row=7,param=0,text="editovatelné(1)/ needitovatelné(0) poznámky (default)")
-            else:
-                default_note_behav = int(worksheet['B' + str(7)].value)
+                return output_data["ip_settings"]
 
-            value_check = worksheet['B' + str(8)].value
-            if value_check is None or str(value_check) == "":
-                insert_new_excel_param(workbook,worksheet,row=8,param=0,text="disk persistentní - yes(1)/ no(0)")
-            else:
-                mapping_condition = int(worksheet['B' + str(8)].value)
+            except Exception as e:
+                print(f"Nejdřív zavřete soubor {cls.config_json_filename} Chyba: {e}")   
+                print("Budou načteny defaultní hodnoty")
+                return
+        else:
+            print(f"Chybí konfigurační soubor {cls.config_json_filename}")
+            return
+        
+    @classmethod
+    def save_to_json_config(cls,which_parameter,input_data,config_file_path,language_force = "cz",which_settings="ip_settings"): # Funkce zapisuje data do souboru configu
+        """
+        Funkce zapisuje data do konfiguračního souboru
 
-            value_check = worksheet['B' + str(9)].value
-            if value_check is None or str(value_check) == "":
-                insert_new_excel_param(workbook,worksheet,row=9,param=1,text="automaticky přesouvat upravené projekty na začátek")
-            else:
-                excel_value =  int(worksheet['B' + str(9)].value)
-                if excel_value == 1:
-                    make_edited_project_first = True
-                else:
-                    make_edited_project_first = False
-            
-            value_check = worksheet['B' + str(10)].value
-            if value_check is None or str(value_check) == "":
-                insert_new_excel_param(workbook,worksheet,row=10,param=100,text="statusy odvolby dotazování při mazání")
-            else:
-                deletion_behav = int(worksheet['B' + str(10)].value)
-            workbook.close()
+        vraci vystupni zpravu: report
 
-            return [int(saved_def_con_option),
-                    int(def_show_favourite),
-                    int(def_show_disk),
-                    int(def_window_size),
-                    default_disk_status_behav,
-                    default_note_behav,
-                    mapping_condition,
-                    make_edited_project_first,
-                    deletion_behav]
+        \nIP_SETTINGS\n
+        - default_ip_interface
+        - favorite_ip_window_status
+        - disk_or_ip_window
+        - default_window_size
+        - init_disk_refresh
+        - editable_notes
+        - disk_persistent
+        - auto_order_when_edit
+        - ask_to_delete
+        """
 
-        except Exception as e:
-            print(f"Nejdřív zavřete soubor {excel_file_path} Chyba: {e}")
-            return 
+        def get_input_data_format():
+            if isinstance(input_data,list):
+                return input_data
+            elif isinstance(input_data,str):
+                return str(input_data)
+            elif isinstance(input_data,int):
+                return int(input_data)
+        
+        if os.path.exists(config_file_path):
+            with open(config_file_path, "r") as file:
+                config_data = json.load(file)
 
+            config_data[which_settings][which_parameter] = get_input_data_format()
+                              
+            with open(config_file_path, "w") as file:
+                json.dump(config_data, file, indent=4)
+        
+        else:
+            print("Chybí konfigurační soubor (nelze ukládat změny)")
+            return
+   
     @classmethod
     def clear_frame(cls,frame):
         frame.update()
@@ -350,7 +317,7 @@ class main:
         def read_excel_data(cls,excel_file_path):
             """
             Returns:
-            - [disk_all_rows,disk_project_list,default_disk_status_behav]
+            - [disk_all_rows,disk_project_list]
             """
             workbook = load_workbook(excel_file_path,read_only=True)
             # seznam vsech ftp pripojeni k diskum
@@ -366,13 +333,11 @@ class main:
                         row_array.append(str(items))
                 disk_project_list.insert(0,row_array[0])
                 disk_all_rows.insert(0,row_array)
-
-            # ukladani nastavenych hodnot
-            worksheet = workbook["Settings"]
-            default_disk_status_behav = int(worksheet['B' + str(6)].value)
             workbook.close()
-
-            return [disk_all_rows,disk_project_list,default_disk_status_behav]
+            # worksheet = workbook["Settings"]
+            # default_disk_status_behav = int(worksheet['B' + str(6)].value)
+            
+            return [disk_all_rows,disk_project_list]
 
     class IP_tools:
         @classmethod
@@ -610,55 +575,59 @@ class main:
             except Exception:
                 return False
 
-    def __init__(self,root,menu_callback_function,window_mode,initial_path,zoom_factor):
+    def __init__(self,root,menu_callback_function,window_mode,initial_path,zoom_factor,config_filename):
         self.root = root
         self.menu_callback = menu_callback_function
         self.initial_path = initial_path
         self.window_mode = window_mode
         self.zoom_factor = zoom_factor
         self.show_favourite_ip = False
-        self.excel_file_path = initial_path + "config_TRIMAZKON.xlsx"
+        self.config_filename_path = initial_path + config_filename
+        self.excel_file_path = initial_path + "TRIMAZKON_address_list.xlsx"
+        # self.excel_file_path = initial_path + "config_TRIMAZKON.xlsx"
         self.app_icon = Tools.resource_path('images\\logo_TRIMAZKON.ico')
-        self.default_environment = self.check_default_env()
+        self.default_environment = "ip"
+        self.check_default_env()
+        self.check_excel_presence()
         if self.default_environment == "disk":
             self.Disk_management_gui(self)
         else:
             self.IP_assignment(self)
-        # ip_instance = main.IP_assignment(self.root,self.menu_callback,self.window_mode,self.initial_path)
-        # disk_instance = main.Disk_management_gui(self.root,self.menu_callback,self.window_mode,self.initial_path)
-
-        # if self.default_environment == "disk":
-        #     disk_instance.ip_instance = ip_instance
-        #     disk_instance.create_widgets_disk(init=True,disk_instance=disk_instance)
-
-        # elif self.default_environment == "config_load_error":
-        #     ip_instance.disk_instance = disk_instance
-        #     ip_instance.create_widgets(init=True,excel_load_error=True,ip_instance=ip_instance)     
-        # else:
-        #     ip_instance.disk_instance = disk_instance
-        #     ip_instance.create_widgets(fav_status=self.show_favourite_ip,init=True,ip_instance=ip_instance)
 
     def check_default_env(self):
         try:
-            workbook = load_workbook(self.excel_file_path)
-            worksheet = workbook["Settings"]
-            def_environment = worksheet['B' + str(4)].value
-            if int(def_environment) == 1:
-                def_environment = "disk"
+            default_environment = Tools.read_json_config(self.config_filename_path)["disk_or_ip_window"]
+            if int(default_environment) == 1:
+                self.default_environment = "disk"
 
-            def_show_favourite = worksheet['B' + str(3)].value
+            def_show_favourite = Tools.read_json_config(self.config_filename_path)["favorite_ip_window_status"]
             if int(def_show_favourite) == 1:
                 self.show_favourite_ip = True
             else:
                 self.show_favourite_ip = False
-
-            workbook.save(self.excel_file_path) #check if it is opened currently
-            workbook.close()
-            return def_environment
         
         except Exception as e:
+            print(f"Nejprve zavřete soubor {self.config_filename_path} Chyba: {e}")
+        
+    def check_excel_presence(self):
+        try:
+            workbook = load_workbook(self.excel_file_path)
+            workbook.save(self.excel_file_path) #check if it is opened currently
+            workbook.close()
+            return
+    
+        except Exception as e:
             print(f"Nejprve zavřete soubor {self.excel_file_path} Chyba: {e}")
-            return "config_load_error"
+            if "Errno 13" in str(e):
+                self.default_environment = "config_load_error"
+            else:
+                workbook = Workbook()
+                ws = workbook.active
+                ws.title = "ip_address_list"
+                workbook.create_sheet(title="ip_address_fav_list")
+                workbook.create_sheet(title="disk_list")
+                workbook.save(self.excel_file_path) #check if it is opened currently
+                workbook.close()
 
     class Disk_management_gui:
         def __init__(self,parent):
@@ -668,6 +637,7 @@ class main:
             self.window_mode = parent.window_mode
             self.excel_file_path = parent.excel_file_path
             self.app_icon = parent.app_icon
+            self.config_filename_path = parent.config_filename_path
             self.disk_all_rows = []
             self.disk_project_list = []
             self.bin_projects = [[None],[None]]
@@ -690,19 +660,19 @@ class main:
             self.selected_list_disk = []
             self.remember_to_change_back = []
             self.notes_frame_height = 50
-            read_parameters = Tools.read_setting_parameters(self.excel_file_path)
+            read_parameters = Tools.read_json_config(self.config_filename_path)
             if read_parameters != None:
-                if read_parameters[3] == 2:
+                if read_parameters["default_window_size"] == 2:
                     self.root.state('normal')
                     self.root.geometry(f"260x1000+{0}+{0}")
-                self.default_disk_status_behav = read_parameters[4]
-                self.default_note_behav = read_parameters[5]
-                self.mapping_condition = read_parameters[6]
-                if read_parameters[7] == 1:
+                self.default_disk_status_behav = read_parameters["init_disk_refresh"]
+                self.default_note_behav = read_parameters["editable_notes"]
+                self.mapping_condition = read_parameters["disk_persistent"]
+                if read_parameters["auto_order_when_edit"] == 1:
                     self.make_edited_project_first = True
                 else:
                     self.make_edited_project_first = False
-                self.deletion_behav = read_parameters[8]
+                self.deletion_behav = read_parameters["ask_to_delete"]
             else:
                 self.default_disk_status_behav = 0
                 self.default_note_behav = 0
@@ -710,6 +680,7 @@ class main:
                 self.make_edited_project_first = True
                 self.deletion_behav = 100
 
+            self.bin_projects = self.manage_bin("read_sheet")
             self.create_widgets_disk(init=True)
 
         def call_menu(self): # Tlačítko menu (konec, návrat do menu)
@@ -1073,7 +1044,9 @@ class main:
                 "change_notes_back_disk": change_notes_back_disk,
             }
 
-            output = mapping_logic[flag]()  # This will call the corresponding function
+            output = mapping_logic[flag]()
+
+            self.disk_all_rows, self.disk_project_list = main.DM_tools.read_excel_data(self.excel_file_path)
             return output
         
         def check_given_input(self,given_data = None):
@@ -1189,7 +1162,7 @@ class main:
                     for names in name_list:
                         print(names)
                         project_found = False
-                        self.disk_all_rows, self.disk_project_list, self.default_disk_status_behav = main.DM_tools.read_excel_data(self.excel_file_path)
+                        self.disk_all_rows, self.disk_project_list = main.DM_tools.read_excel_data(self.excel_file_path)
                         proceed(names,window,True)
                             
                     Tools.add_colored_line(self.main_console,f"Byly úspěšně odstraněny tyto projekty: {name_list}","orange",None,True)
@@ -1206,7 +1179,7 @@ class main:
                 # nonlocal wanted_project
 
                 if wanted_project == None:
-                    self.disk_all_rows, self.disk_project_list, self.default_disk_status_behav = main.DM_tools.read_excel_data(self.excel_file_path)
+                    self.disk_all_rows, self.disk_project_list = main.DM_tools.read_excel_data(self.excel_file_path)
                     wanted_project = str(self.search_input.get())
                 workbook = load_workbook(self.excel_file_path)
                 for i in range(0,len(self.disk_project_list)):
@@ -1305,7 +1278,7 @@ class main:
             
             # poznamky nejsou povinne
             if errors ==0:
-                main.DM_tools.read_excel_data(self.excel_file_path)
+                self.disk_all_rows, self.disk_project_list = main.DM_tools.read_excel_data(self.excel_file_path)
                 if only_edit == None:
                     main.DM_tools.save_excel_data_disk(self.excel_file_path,
                                                             len(self.disk_all_rows),
@@ -1653,7 +1626,7 @@ class main:
 
             context_menu.tk_popup(event.x_root, event.y_root)
 
-        def make_project_cells_disk(self,no_read = None,disk_statuses = False,init=False):
+        def make_project_cells_disk(self,no_read = False,disk_statuses = False,init=False):
             def opened_window_check():
                 if self.opened_window == "":
                     return False
@@ -1764,8 +1737,8 @@ class main:
                 widget[0].configure(height = expanded_dim)
                 widget[1].configure(height = expanded_dim-10)
 
-            if no_read == None:
-                self.disk_all_rows, self.disk_project_list, self.default_disk_status_behav = main.DM_tools.read_excel_data(self.excel_file_path)
+            if not no_read:
+                self.disk_all_rows, self.disk_project_list = main.DM_tools.read_excel_data(self.excel_file_path)
 
             Tools.clear_frame(self.project_tree)
             if self.default_disk_status_behav == 1:
@@ -1874,55 +1847,55 @@ class main:
                 nonlocal checkbox2
                 if int(checkbox2.get()) == 0:
                     self.default_disk_status_behav = 0
-                    Tools.save_setting_parameter(parameter="change_def_disk_behav",status=0,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("init_disk_refresh",0,self.config_filename_path)
                 elif int(checkbox2.get()) == 1:
                     self.default_disk_status_behav = 1
-                    Tools.save_setting_parameter(parameter="change_def_disk_behav",status=1,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("init_disk_refresh",1,self.config_filename_path)
                     self.make_project_cells_disk(no_read=True)
 
             def save_new_behav_notes():
                 nonlocal checkbox
                 if int(checkbox.get()) == 0:
                     self.default_note_behav = 0
-                    Tools.save_setting_parameter(parameter="change_def_notes_behav",status=0,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("editable_notes",0,self.config_filename_path)
                     self.make_project_cells_disk()
 
                 elif int(checkbox.get()) == 1:
                     self.default_note_behav = 1
-                    Tools.save_setting_parameter(parameter="change_def_notes_behav",status=1,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("editable_notes",1,self.config_filename_path)
                     self.make_project_cells_disk()
 
             def save_new_disk_map_cond():
                 nonlocal checkbox3
                 if int(checkbox3.get()) == 0:
                     self.mapping_condition = 0
-                    Tools.save_setting_parameter(parameter="change_mapping_cond",status=0,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("disk_persistent",0,self.config_filename_path)
                 elif int(checkbox3.get()) == 1:
                     self.mapping_condition = 1
-                    Tools.save_setting_parameter(parameter="change_mapping_cond",status=1,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("disk_persistent",1,self.config_filename_path)
 
             def change_make_first_behav():
                 nonlocal checkbox4
                 if int(checkbox4.get()) == 0:
                     self.make_edited_project_first = False
-                    Tools.save_setting_parameter(parameter="change_make_first_behav",status=0,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("auto_order_when_edit",0,self.config_filename_path)
                 elif int(checkbox4.get()) == 1:
                     self.make_edited_project_first = True
-                    Tools.save_setting_parameter(parameter="change_make_first_behav",status=1,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("auto_order_when_edit",1,self.config_filename_path)
 
             def delete_behav():
                 if int(checkbox5.get()) == 0 and int(checkbox6.get()) == 0:
                     self.deletion_behav = 100
-                    Tools.save_setting_parameter(parameter="delete_behav",status=self.deletion_behav,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("ask_to_delete",self.deletion_behav,self.config_filename_path)
                 elif int(checkbox5.get()) == 0 and int(checkbox6.get()) == 1:
                     self.deletion_behav = 101
-                    Tools.save_setting_parameter(parameter="delete_behav",status=self.deletion_behav,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("ask_to_delete",self.deletion_behav,self.config_filename_path)
                 elif int(checkbox5.get()) == 1 and int(checkbox6.get()) == 0:
                     self.deletion_behav = 110
-                    Tools.save_setting_parameter(parameter="delete_behav",status=self.deletion_behav,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("ask_to_delete",self.deletion_behav,self.config_filename_path)
                 elif int(checkbox5.get()) == 1 and int(checkbox6.get()) == 1:
                     self.deletion_behav = 111
-                    Tools.save_setting_parameter(parameter="delete_behav",status=self.deletion_behav,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("ask_to_delete",self.deletion_behav,self.config_filename_path)
 
             child_root = customtkinter.CTkToplevel()
             self.opened_window = child_root
@@ -2053,14 +2026,14 @@ class main:
         
             if init:
                 if self.window_mode == "max":
-                    Tools.save_setting_parameter(parameter="change_def_window_size",status=1,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("default_window_size",1,self.config_filename_path)
                 else:
-                    Tools.save_setting_parameter(parameter="change_def_window_size",status=0,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("default_window_size",0,self.config_filename_path)
                     
             Tools.clear_frame(self.root)
             self.selected_list_disk = []
             self.control_pressed = False
-            Tools.save_setting_parameter(parameter="change_def_main_window",status=1,excel_path=self.excel_file_path)
+            Tools.save_to_json_config("disk_or_ip_window",1,self.config_filename_path)
             menu_cards =                    customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=50)
             self.main_widgets =             customtkinter.CTkFrame(master=self.root,corner_radius=0)
             self.project_tree =             customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
@@ -2152,13 +2125,13 @@ class main:
                 if int(current_width) > 1200:
                     self.root.state('normal')
                     self.root.geometry(f"260x1000+{0}+{0}")
-                    Tools.save_setting_parameter(parameter="change_def_window_size",status=2,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("default_window_size",2,self.config_filename_path)
                 elif int(current_width) ==260:
                     self.root.geometry("1200x900")
-                    Tools.save_setting_parameter(parameter="change_def_window_size",status=0,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("default_window_size",0,self.config_filename_path)
                 else:
                     self.root.state('zoomed')
-                    Tools.save_setting_parameter(parameter="change_def_window_size",status=1,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("default_window_size",1,self.config_filename_path)
                 self.root.update_idletasks()
                 self.root.update()
             self.root.bind("<f>",lambda e: maximalize_window(e))
@@ -2199,7 +2172,7 @@ class main:
             self.root.bind("<KeyRelease-Control_L>",lambda e: control_button(False))
             self.root.bind("<Delete>",lambda e: self.delete_project_disk(button_trigger=True,flag="main_menu"))
             self.root.update()
-            self.make_project_cells_disk(disk_statuses=True,init=True)
+            self.make_project_cells_disk(disk_statuses=False,init=True)
             # self.root.mainloop()
 
     class IP_assignment: # Umožňuje měnit statickou IP
@@ -2216,6 +2189,7 @@ class main:
             self.all_rows = []
             self.project_list = []
             self.excel_file_path = parent.excel_file_path
+            self.config_filename_path = parent.config_filename_path
             self.last_project_name = ""
             self.last_project_ip = ""
             self.last_project_mask = ""
@@ -2238,22 +2212,22 @@ class main:
             self.changed_notes = []
             self.notes_frame_height = 50
 
-            read_parameters = Tools.read_setting_parameters(self.excel_file_path)
+            read_parameters = Tools.read_json_config(self.config_filename_path)
             if read_parameters != None:
-                self.default_connection_option = read_parameters[0]
-                if read_parameters[1] == 1:
+                self.default_connection_option = read_parameters["default_ip_interface"]
+                if read_parameters["favorite_ip_window_status"] == 1:
                     self.show_favourite = True
                 else:
                     self.show_favourite = False
-                if read_parameters[3] == 2:
+                if read_parameters["default_window_size"] == 2:
                     self.root.state('normal')
                     self.root.geometry(f"260x1000+{0}+{0}")
-                self.default_note_behav = read_parameters[5]
-                if read_parameters[7] == 1:
+                self.default_note_behav = read_parameters["editable_notes"]
+                if read_parameters["auto_order_when_edit"] == 1:
                     self.make_edited_project_first = True
                 else:
                     self.make_edited_project_first = False
-                self.deletion_behav = read_parameters[8]
+                self.deletion_behav = read_parameters["ask_to_delete"]
             else:
                 self.default_connection_option = 0
                 self.show_favourite = False
@@ -2264,8 +2238,10 @@ class main:
             if parent.default_environment == "config_load_error":
                 self.create_widgets(init=True,excel_load_error=True)
             elif fav_w_called == None:
+                self.bin_projects = self.manage_bin("read_sheet")
                 self.create_widgets(fav_status=self.show_favourite,init=True)
             else:
+                self.bin_projects = self.manage_bin("read_sheet")
                 self.create_widgets(fav_status=fav_w_called,init=True)
 
         def call_menu(self): # Tlačítko menu (konec, návrat do menu)
@@ -2315,6 +2291,7 @@ class main:
                 else:
                     ws = wb[bin_worksheet]
                     row_data_ip = list(ws.iter_rows(min_row=1, max_row=1, values_only=True))[0]
+                    # row_data_ip_edit = list(ws.iter_rows(min_row=3, max_row=3, values_only=True))[0]
                     wb.close()
                     return [list(row_data_ip),[None]] # provedene zmeny v editu pri spusteni programu nanacitam. Jen smazané projekty...
                 
@@ -3912,13 +3889,14 @@ class main:
                     self.remember_to_change_back.append([ip_frame,y])
                     notes_frame.configure(border_color="white")
                     self.remember_to_change_back.append([notes_frame,y])
-
+            
             column1.pack(fill="both",expand=False,side = "left")
             column2.pack(fill="both",expand=False,side = "left")
             column3.pack(fill="both",expand=True, side = "left")
             self.project_tree.update()
             self.project_tree.update_idletasks()
-            self.notes_frame_height = int(notes_frame._current_height)
+            if len(self.all_rows) > 0:
+                self.notes_frame_height = int(notes_frame._current_height)
             try:
                 self.project_tree._parent_canvas.yview_moveto(0.0)
             except Exception:
@@ -3947,7 +3925,7 @@ class main:
                     self.default_connection_option = 0
 
                 #pamatovat si naposledy zvoleny zpusob pripojeni:
-                Tools.save_setting_parameter(parameter="change_def_conn_option",status=int(self.default_connection_option),excel_path=self.excel_file_path)
+                Tools.save_to_json_config("default_ip_interface",int(self.default_connection_option),self.config_filename_path)
                 self.current_address_list = main.IP_tools.get_current_ip_list(self.connection_option_list)
                 if self.static_label2.winfo_exists():
                     self.static_label2.configure(text=self.current_address_list[self.default_connection_option])
@@ -3997,9 +3975,11 @@ class main:
                 else:
                     position = 0
 
-                self.all_rows.pop(self.last_project_id)
+                if len(self.all_rows) > 0:
+                    self.all_rows.pop(self.last_project_id)
                 self.all_rows.insert(position,project)
-                self.favourite_list.pop(self.last_project_id)
+                if len(self.favourite_list) > 0:
+                    self.favourite_list.pop(self.last_project_id)
                 self.favourite_list.insert(position,favourite_status)
                 self.last_project_id = position
 
@@ -4054,7 +4034,7 @@ class main:
                     self.check_given_input() #check ve druhem prostredi
                     self.make_project_cells(no_read=True)
                 self.button_remove_main.configure(command = lambda: self.delete_project(button_trigger=True,flag="main_menu"))
-                Tools.save_setting_parameter(parameter="change_def_ip_window",status=window_status,excel_path=self.excel_file_path)
+                Tools.save_to_json_config("favorite_ip_window_status",window_status,self.config_filename_path)
                 self.button_switch_favourite_ip. configure(fg_color="black")
                 self.button_switch_all_ip.       configure(fg_color="#212121")
                 self.button_remove_main.         configure(text="Smazat")
@@ -4087,7 +4067,7 @@ class main:
                     self.check_given_input() #check ve druhem prostredi
                     self.make_project_cells(no_read=True)
                 self.button_remove_main.configure(command = lambda: self.switch_fav_status("with_refresh"))
-                Tools.save_setting_parameter(parameter="change_def_ip_window",status=window_status,excel_path=self.excel_file_path)
+                Tools.save_to_json_config("favorite_ip_window_status",window_status,self.config_filename_path)
                 self.button_switch_favourite_ip. configure(fg_color="#212121")
                 self.button_switch_all_ip.       configure(fg_color="black")
                 self.button_remove_main.         configure(text="Odebrat")
@@ -4118,22 +4098,22 @@ class main:
                 nonlocal checkbox
                 if int(checkbox.get()) == 0:
                     self.default_note_behav = 0
-                    Tools.save_setting_parameter(parameter="change_def_notes_behav",status=0,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("editable_notes",0,self.config_filename_path)
                     self.make_project_cells()
 
                 elif int(checkbox.get()) == 1:
                     self.default_note_behav = 1      
-                    Tools.save_setting_parameter(parameter="change_def_notes_behav",status=1,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("editable_notes",1,self.config_filename_path)
                     self.make_project_cells()
 
             def change_make_first_behav():
                 nonlocal checkbox4
                 if int(checkbox4.get()) == 0:
                     self.make_edited_project_first = False
-                    Tools.save_setting_parameter(parameter="change_make_first_behav",status=0,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("auto_order_when_edit",0,self.config_filename_path)
                 elif int(checkbox4.get()) == 1:
                     self.make_edited_project_first = True
-                    Tools.save_setting_parameter(parameter="change_make_first_behav",status=1,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("auto_order_when_edit",1,self.config_filename_path)
             def delete_behav():
                 if int(checkbox5.get()) == 0 and int(checkbox6.get()) == 0:
                     self.deletion_behav = 100
@@ -4145,7 +4125,7 @@ class main:
                     self.deletion_behav = 111
                 else:
                     return
-                Tools.save_setting_parameter(parameter="delete_behav",status=self.deletion_behav,excel_path=self.excel_file_path)
+                Tools.save_to_json_config("ask_to_delete",self.deletion_behav,self.config_filename_path)
 
             child_root = customtkinter.CTkToplevel()
             self.opened_window = child_root
@@ -4346,16 +4326,16 @@ class main:
             if not excel_load_error:
                 if init:
                     if self.window_mode == "max":
-                        Tools.save_setting_parameter(parameter="change_def_window_size",status=1,excel_path=self.excel_file_path)
+                        Tools.save_to_json_config("default_window_size",1,self.config_filename_path)
                     else:
-                        Tools.save_setting_parameter(parameter="change_def_window_size",status=0,excel_path=self.excel_file_path)
+                        Tools.save_to_json_config("default_window_size",0,self.config_filename_path)
                 if fav_status:
                     self.show_favourite = True
-                    Tools.save_setting_parameter(parameter="change_def_ip_window",status=1,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("favorite_ip_window_status",1,self.config_filename_path)
                 if fav_status == False:
                     self.show_favourite = False
-                    Tools.save_setting_parameter(parameter="change_def_ip_window",status=0,excel_path=self.excel_file_path)
-                Tools.save_setting_parameter(parameter="change_def_main_window",status=0,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("favorite_ip_window_status",0,self.config_filename_path)
+                Tools.save_to_json_config("disk_or_ip_window",0,self.config_filename_path)
             
             Tools.clear_frame(self.root)
             self.control_pressed = False
@@ -4464,7 +4444,7 @@ class main:
                 self.interface_drop_options.set(self.connection_option_list[self.default_connection_option])# nastavení naposledy zvoleného interfacu
             else:
                 self.default_connection_option = 0             
-                Tools.save_setting_parameter(parameter="change_def_conn_option",status=0,excel_path=self.excel_file_path)
+                Tools.save_to_json_config("default_ip_interface",0,self.config_filename_path)
 
                 self.interface_drop_options.set(self.connection_option_list[self.default_connection_option])
 
@@ -4487,13 +4467,13 @@ class main:
                 if int(current_width) > 1200:
                     self.root.state('normal')
                     self.root.geometry(f"260x1000+{0}+{0}")
-                    Tools.save_setting_parameter(parameter="change_def_window_size",status=2,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("default_window_size",2,self.config_filename_path)
                 elif int(current_width) ==260:
                     self.root.geometry("1200x900")
-                    Tools.save_setting_parameter(parameter="change_def_window_size",status=0,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("default_window_size",0,self.config_filename_path)
                 else:
                     self.root.state('zoomed')
-                    Tools.save_setting_parameter(parameter="change_def_window_size",status=1,excel_path=self.excel_file_path)
+                    Tools.save_to_json_config("default_window_size",1,self.config_filename_path)
 
             self.root.bind("<f>",lambda e: maximalize_window(e))
 
@@ -4535,5 +4515,5 @@ class main:
 if testing_mode:
     # IP_assignment(root,"","max",str(os.getcwd())+"\\",100)
     print(str(os.getcwd())+"\\")
-    main(root,"","max",str(os.getcwd())+"\\",100)
+    main(root,"","max",str(os.getcwd())+"\\",100,"TRIMAZKON.json")
     root.mainloop()

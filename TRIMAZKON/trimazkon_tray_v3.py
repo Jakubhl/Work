@@ -44,33 +44,70 @@ class Tools:
 
         data jsou v pořadí:
 
-        0 default_path\n
-        1 supported_formats_deleting\n
-        2 default_files_to_keep\n
-        3 default_cutoff_date\n
-        4 default_deleting_dir_name\n
-        5 maximalized\n
-        6 sorting_safe_mode\n
-        7 app_zoom\n
-        8 app_zoom_checkbox\n
-        9 tray_icon_startup\n
-        10 path_history_list\n
-        11 default_language\n
+                Funkce vrací data z konfiguračního souboru
+
+        data jsou v pořadí:
+
+        APP SETTINGS\n
+        - default_path
+        - maximalized
+        - show_changelog
+        - app_zoom
+        - app_zoom_checkbox
+        - tray_icon_startup
+        - default_language
+        \nSORT AND CONV SETTINGS\n
+        - supported_formats_sorting
+        - prefix_function
+        - prefix_camera
+        - max_pallets
+        - temp_dir_name
+        - pairs_dir_name
+        - convert_bmp_dir_name
+        - convert_jpg_dir_name
+        - sorting_safe_mode
+        - path_history_list
+        \nDELETING SETTINGS\n
+        - supported_formats_deleting
+        - default_files_to_keep
+        - default_cutoff_date
+        - to_delete_dir_name
+        - path_history_list
+        \nIMAGE BROWSER SETTINGS\n
+        - selected_option
+        - zoom_step
+        - movement_step
+        - show_image_film
+        - image_film_count
+        - copyed_dir_name
+        - moved_dir_name
+        - path_history_list
+        \nCATALOGUE SETTINGS\n
+        - database_filename
+        - catalogue_filename
+        - metadata_filename
+        - subwindow_behav
+        - default_export_suffix
+        - default_path
+        - render_mode
+        \nIP SETTINGS\n
+        - default_ip_interface
+        - favorite_ip_window_status
+        - disk_or_ip_window
+        - default_window_size
+        - init_disk_refresh
+        - editable_notes
+        - disk_persistent
+        - auto_order_when_edit
+        - ask_to_delete
         """
 
         if os.path.exists(initial_path+config_json_filename):
             try:
-                output_data = []
                 with open(initial_path+config_json_filename, "r") as file:
-                    data = json.load(file)
+                    config_data = json.load(file)
 
-                settings = data["settings"]
-
-                # print("config raw data: ", settings)
-                for item in settings:
-                    output_data.append(item['value'])
-                # print("config data: ", output_data, len(output_data))
-                return output_data
+                return config_data
 
             except Exception as e:
                 print(f"Nejdřív zavřete soubor {config_json_filename} Chyba: {e}")
@@ -88,7 +125,7 @@ class tray_app_service:
         self.main_app_exe_name = exe_name
         config_data = Tools.read_json_config(self.initial_path,self.config_filename)
         try:
-            self.selected_language = config_data[11]
+            self.selected_language = config_data["app_settings"]["default_language"]
         except Exception as e:
             print(config_data,e)
             self.selected_language = "cz"
@@ -171,12 +208,13 @@ class tray_app_service:
         
     def save_task_to_config(self,new_tasks):
         with open(self.initial_path + self.config_filename, "r") as file:
-            data = json.load(file)
+            config_data = json.load(file)
 
-        settings = data["settings"]
+        # settings = data["settings"]
+        config_data["task_list"] = new_tasks
 
         with open(self.initial_path + self.config_filename, "w") as file:
-            json.dump({"settings": settings, "task_list": new_tasks}, file, indent=4)
+            json.dump(config_data, file, indent=4)
 
     def delete_task(self,task,root):
         def delete_from_scheduler(name_of_task):
@@ -296,7 +334,7 @@ class tray_app_service:
 
     def show_all_tasks(self,toplevel=False,root_given = False,maximalized=False):
         try:
-            self.selected_language = Tools.read_json_config(self.initial_path,self.config_filename)[11]
+            self.selected_language = Tools.read_json_config(self.initial_path,self.config_filename)["app_settings"]["default_language"]
         except Exception as e:
             print(e)
         if root_given != False:
@@ -477,7 +515,7 @@ class tray_app_service:
 
     def show_task_log(self,specify_task=False,task_given = None,root_given = False,maximalized=False):
         try:
-            self.selected_language = Tools.read_json_config(self.initial_path,self.config_filename)[11]
+            self.selected_language = Tools.read_json_config(self.initial_path,self.config_filename)["app_settings"]["default_language"]
         except Exception as e:
             print(e)
         
@@ -724,6 +762,6 @@ class tray_app_service:
         self.icon.run() # Run the tray icon
 
 
-# inst = tray_app_service(r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON/",Tools.resource_path('images/logo_TRIMAZKON.ico'),"jhv_MAZ.exe","config_MAZ.json")
+# inst = tray_app_service(r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON/",Tools.resource_path('images/logo_TRIMAZKON.ico'),"TRIMAZKON.exe","TRIMAZKON.json")
 # inst.main()
 

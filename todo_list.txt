@@ -835,41 +835,52 @@ TRIMAZKON - licencovat aplikaci - hotovo
 TRIMAZKON - vlozeni licence znovu overi a nacte pokud je spravna - hotovo
 jhv_MAZ - vlozeni licence znovu overi a nacte pokud je spravna - hotovo
 
+8:56 AM 3/4/2025
+TRIMAZKON - kouknout na directories z configu u advanced option v initu - hotovo
+TRIMAZKON - nastavení opravit načítání parametrů mezi okny - hotovo
+TRIMAZKON - přidat automatické vytvoření configu - hotovo
+TRIMAZKON - predelat config na json - rozdelane - hotovo
+TRIMAZKON - katalog - prohodit tlačítko zavřít a uložit - hotovo
+ip setting - opravit duplicity - manage bin - hotovo
+ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip... - hotovo
+TRIMAZKON - ip_setting - vytvořit nový excel, pokud chybí - hotovo
+TRIMAZKON - catalogue - seznam materiálu, KUSOVNÍK - xlsx - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 TRIMAZKON - katalog - když prohodím kontroler u editu kamery - smažou se okolní kontrolery
-TRIMAZKON - katalog - prohodit tlačítko zavřít a uložit
+
 TRIMAZKON - katalog - ukladani souboru - vytvaret lepsi nazev
 TRIMAZKON - catalogue - nabízet vsechny soubory xml v ceste + ukladat historii cest
-TRIMAZKON - catalogue - seznam materiálu
 
-TRIMAZKON - predelat config na json - rozdelane
-TRIMAZKON - upravit v nastavení historii cest
 
-TRIMAZKON - prohlížeč nejde otevírat ifz v novém okně...
-TRIMAZKON - prohlížeč - když vyberu neco z histoie cest z nabídky, rovnou otevřít...
+TRIMAZKON - catalogue - seznam materiálu, KUSOVNÍK - xlsm
+
+TRIMAZKON - catalogue - přímo ukldádat do configu a nemuset přitom do menu
+trimazkon - catalogue - neukládají se některé parametry
+
+
+TRIMAZKON - upravit v advanced option historii cest pro kazdy zvlast (i mazani historie) - stejne tak i defaultni cestu kazde moznosti
+
+
 
 
 TRIMAZKON - když aplikaci otevřu přes tray, tak mi to skočí do prohlížeče obrázků
 
-TRIMAZKON - kouknout na directories z configu u advanced option v initu
-
-
 TRIMAZKON - u konzoli, kde se dynamicky pise text - pouzit console.see(tk.END) + zkontrolovat threads jako u mazani
 
-TRIMAZKON - udelat specialni launcher na obrazky - aby se nenacitaly vsechny knihovny - aby to bylo rychlé
 
 TRIMAZKON - na ukládání nastavení použít .json config... xls používat jen na ip setting
 	TRIMAZKON - nastavení folderu nebo filu v exploreru - neulozi se
-	TRIMAZKON - přidat automatické vytvoření configu
 	TRIMAZKON - prohlížeč - pamatovat si historii cest - otevíráním přes obrázky... mít třeba 10 uložených cest
 	TRIMAZKON - prohlížeč - zkontrolovat historii cest, používat insert(0,...
+TRIMAZKON - prohlížeč nejde otevírat ifz v novém okně...
+TRIMAZKON - prohlížeč - když vyberu neco z histoie cest z nabídky, rovnou otevřít...
+TRIMAZKON - prohlížeč - udelat specialni launcher na obrazky - aby se nenacitaly vsechny knihovny - aby to bylo rychlé
 
 
 
-
-ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u ip...
-ip setting - opravit duplicity - manage bin
+TRIMAZKON - TRAY - předělat logy na verikální logiku
 
 
 

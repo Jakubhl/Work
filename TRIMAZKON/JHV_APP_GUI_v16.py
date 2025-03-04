@@ -300,8 +300,6 @@ class Tools:
         BASE_DIR = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.abspath(".")
         return os.path.join(BASE_DIR, relative_path)
     
-
-
     @classmethod
     def create_new_json_config(cls,default_value_list,load_values_only = False):
         new_app_settings = {"default_path": default_value_list[2],
@@ -372,7 +370,6 @@ class Tools:
             json.dump(output_object, file, indent=4)
         
         return output_object
-
 
     @classmethod
     def read_json_config(cls): # Funkce vraci data z configu
@@ -474,7 +471,7 @@ class Tools:
         - ip_settings
 
         \nwhich_parameter je bud:
-        \nAPP SETTINGS\n
+        \nAPP_SETTINGS\n
         - default_path
         - maximalized
         - show_changelog
@@ -482,7 +479,7 @@ class Tools:
         - app_zoom_checkbox
         - tray_icon_startup
         - default_language
-        \nSORT AND CONV SETTINGS\n
+        \nSORT_CONV_SETTINGS\n
         - supported_formats_sorting
         - prefix_function
         - prefix_camera
@@ -493,13 +490,13 @@ class Tools:
         - convert_jpg_dir_name
         - sorting_safe_mode
         - path_history_list
-        \nDELETING SETTINGS\n
+        \nDEL_SETTINGS\n
         - supported_formats_deleting
         - default_files_to_keep
         - default_cutoff_date
         - to_delete_dir_name
         - path_history_list
-        \nIMAGE BROWSER SETTINGS\n
+        \nIMAGE_BROWSER_SETTINGS\n
         - selected_option
         - zoom_step
         - movement_step
@@ -508,7 +505,7 @@ class Tools:
         - copyed_dir_name
         - moved_dir_name
         - path_history_list
-        \nCATALOGUE SETTINGS\n
+        \nCATALOGUE_SETTINGS\n
         - database_filename
         - catalogue_filename
         - metadata_filename
@@ -516,7 +513,7 @@ class Tools:
         - default_export_suffix
         - default_path
         - render_mode
-        \nIP SETTINGS\n
+        \nIP_SETTINGS\n
         - default_ip_interface
         - favorite_ip_window_status
         - disk_or_ip_window
@@ -557,12 +554,49 @@ class Tools:
             if which_settings == "app_settings":
                 if which_parameter == "default_path":
                     report = (f"Základní cesta přenastavena na: {str(input_data)}")
-                    config_data[which_settings][which_parameter] = get_input_data_format()
-                else:
-                    config_data[which_settings][which_parameter] = get_input_data_format()
+                config_data[which_settings][which_parameter] = get_input_data_format()
 
             elif which_settings == "sort_conv_settings":
-                config_data[which_settings][which_parameter] = get_input_data_format()
+                supported_formats_sorting = config_data[which_settings]["supported_formats_sorting"]
+                print("found formats: ", supported_formats_sorting)
+
+                if which_parameter == "add_supported_sorting_formats":
+                    corrected_input = filter_unwanted_chars(str(input_data),formats=True)
+                    if str(corrected_input) not in supported_formats_sorting:
+                        supported_formats_sorting.append(str(corrected_input))
+                        report =  (f"Byl přidán formát: \"{corrected_input}\" do podporovaných formátů pro možnosti třídění")
+                        if language_force == "en":
+                            report =  (f"Added format: \"{corrected_input}\" to supported formats for sorting options")
+                        # rewrite_value("supported_formats_sorting",supported_formats_sorting)
+                        config_data[which_settings]["supported_formats_sorting"] = supported_formats_sorting
+                    else:
+                        report =  (f"Formát: \"{corrected_input}\" je již součástí podporovaných formátů možností třídění")
+                        if language_force == "en":
+                            report =  (f"Format: \"{corrected_input}\" is already part of the supported sorting option formats")
+                    
+                elif which_parameter == "pop_supported_sorting_formats":
+                    # poped = 0
+                    found = False
+                    range_to = len(supported_formats_sorting)
+                    for i in range(0,range_to):
+                        if i < range_to:
+                            if str(input_data) == supported_formats_sorting[i] and len(str(input_data)) == len(supported_formats_sorting[i]):
+                                supported_formats_sorting.pop(i)
+                                report =  (f"Z podporovaných formátů možností třídění byl odstraněn formát: \".{input_data}\"")
+                                if language_force == "en":
+                                    report =  (f"The format \".{input_data}\" has been removed from the supported sorting option formats")
+                                found = True
+                                # rewrite_value("supported_formats_sorting",supported_formats_sorting)
+                                config_data[which_settings]["supported_formats_sorting"] = supported_formats_sorting
+                                break
+
+                    if found == False:
+                        report =  (f"Formát: \"{input_data}\" nebyl nalezen v podporovaných formátech možností třídění, nemůže tedy být odstraněn")
+                        if language_force == "en":
+                            report =  (f"The format \".{input_data}\" was not found in the supported sorting option formats, so it cannot be deleted")
+
+                else:
+                    config_data[which_settings][which_parameter] = get_input_data_format()
 
             elif which_settings == "del_settings":
                 supported_formats_deleting = config_data[which_settings]["supported_formats_deleting"]
@@ -606,7 +640,6 @@ class Tools:
                 else:
                     config_data[which_settings][which_parameter] = get_input_data_format()
 
-
             elif which_settings == "image_browser_settings":
                 config_data[which_settings][which_parameter] = get_input_data_format()
 
@@ -615,7 +648,6 @@ class Tools:
 
             elif which_settings == "ip_settings":
                 config_data[which_settings][which_parameter] = get_input_data_format()
-
                               
             with open(initial_path+cls.config_json_filename, "w") as file:
                 json.dump(config_data, file, indent=4)
@@ -626,595 +658,591 @@ class Tools:
             print("Chybí konfigurační soubor (nelze ukládat změny)")
             return "Chybí konfigurační soubor (nelze ukládat změny)"
    
+    # @classmethod
+    # def read_config_data(cls): # Funkce vraci data z config_TRIMAZKON.
+    #     """
+    #     Funkce vrací data z konfiguračního souboru config_TRIMAZKON.xlsx
 
+    #     data jsou v pořadí:
 
-    @classmethod
-    def read_config_data(cls): # Funkce vraci data z config_TRIMAZKON.
-        """
-        Funkce vrací data z konfiguračního souboru config_TRIMAZKON.xlsx
+    #     0 supported_formats_sorting\n
+    #     1 supported_formats_deleting\n
+    #     2 path_repaired\n
+    #     3 files_to_keep\n
+    #     4 cutoff_date\n
+    #     5 prefix_function\n
+    #     6 prefix_camera\n
+    #     7 maximalized\n
+    #     8 max_pallets\n
+    #     9 static_dirs_names\n
+    #     10 sorting_safe_mode\n
+    #     11 image_browser_setting [checkbox, increment, movement]\n
+    #     12 show_changelog\n
+    #     13 image_film\n
+    #     14 num_of_IB_film_images\n
 
-        data jsou v pořadí:
+    #     15 default sharepoint database filename\n
+    #     16 default excel filnename prefix for catalogue output\n
+    #     17 default xml filename for catalogue output \n
+    #     18 default subwindow behavior status in catalogue menu\n
+    #     19 default format of catalogue export\n
+    #     20 default path catalogue\n
 
-        0 supported_formats_sorting\n
-        1 supported_formats_deleting\n
-        2 path_repaired\n
-        3 files_to_keep\n
-        4 cutoff_date\n
-        5 prefix_function\n
-        6 prefix_camera\n
-        7 maximalized\n
-        8 max_pallets\n
-        9 static_dirs_names\n
-        10 sorting_safe_mode\n
-        11 image_browser_setting [checkbox, increment, movement]\n
-        12 show_changelog\n
-        13 image_film\n
-        14 num_of_IB_film_images\n
+    #     21 app zoom\n
+    #     22 app zoom checkbox\n
+    #     23 render mode\n - catalogue params
+    #     24 establish tray icon in startup\n
+    #     """
+    #     def filter_unwanted_chars(to_filter_data, directory = False,even_space=False):
+    #         unwanted_chars = ["\n","\"","\'","[","]"]
+    #         if directory:
+    #             unwanted_chars = ["\n","\"","\'","[","]","\\","/"]
+    #         if even_space:
+    #             unwanted_chars.append(" ")
+    #         filtered_data = ""
+    #         for letters in to_filter_data:
+    #             if letters not in unwanted_chars:
+    #                 filtered_data += letters
+    #         return filtered_data
 
-        15 default sharepoint database filename\n
-        16 default excel filnename prefix for catalogue output\n
-        17 default xml filename for catalogue output \n
-        18 default subwindow behavior status in catalogue menu\n
-        19 default format of catalogue export\n
-        20 default path catalogue\n
-
-        21 app zoom\n
-        22 app zoom checkbox\n
-        23 render mode\n - catalogue params
-        24 establish tray icon in startup\n
-        """
-        def filter_unwanted_chars(to_filter_data, directory = False,even_space=False):
-            unwanted_chars = ["\n","\"","\'","[","]"]
-            if directory:
-                unwanted_chars = ["\n","\"","\'","[","]","\\","/"]
-            if even_space:
-                unwanted_chars.append(" ")
-            filtered_data = ""
-            for letters in to_filter_data:
-                if letters not in unwanted_chars:
-                    filtered_data += letters
-            return filtered_data
-
-        def load_default_values():
-            dir_names = default_setting_parameters[9:16]
-            image_browser_param = default_setting_parameters[17:20]
-            output_array = [default_setting_parameters[0],
-                            default_setting_parameters[1],
-                            default_setting_parameters[2],
-                            default_setting_parameters[3],
-                            default_setting_parameters[4],
-                            default_setting_parameters[5],
-                            default_setting_parameters[6],
-                            default_setting_parameters[7],
-                            default_setting_parameters[8],
-                            dir_names,
-                            default_setting_parameters[16],
-                            image_browser_param,
-                            default_setting_parameters[20],
-                            default_setting_parameters[21],
-                            default_setting_parameters[22],
-                            default_setting_parameters[23],
-                            default_setting_parameters[24],
-                            default_setting_parameters[25],
-                            default_setting_parameters[26],
-                            default_setting_parameters[27],
-                            default_setting_parameters[28],
-                            default_setting_parameters[29],
-                            default_setting_parameters[30],
-                            default_setting_parameters[31],
-                            default_setting_parameters[32],
-                            ]
+    #     def load_default_values():
+    #         dir_names = default_setting_parameters[9:16]
+    #         image_browser_param = default_setting_parameters[17:20]
+    #         output_array = [default_setting_parameters[0],
+    #                         default_setting_parameters[1],
+    #                         default_setting_parameters[2],
+    #                         default_setting_parameters[3],
+    #                         default_setting_parameters[4],
+    #                         default_setting_parameters[5],
+    #                         default_setting_parameters[6],
+    #                         default_setting_parameters[7],
+    #                         default_setting_parameters[8],
+    #                         dir_names,
+    #                         default_setting_parameters[16],
+    #                         image_browser_param,
+    #                         default_setting_parameters[20],
+    #                         default_setting_parameters[21],
+    #                         default_setting_parameters[22],
+    #                         default_setting_parameters[23],
+    #                         default_setting_parameters[24],
+    #                         default_setting_parameters[25],
+    #                         default_setting_parameters[26],
+    #                         default_setting_parameters[27],
+    #                         default_setting_parameters[28],
+    #                         default_setting_parameters[29],
+    #                         default_setting_parameters[30],
+    #                         default_setting_parameters[31],
+    #                         default_setting_parameters[32],
+    #                         ]
             
-            print("read intern database (default values)",output_array,len(output_array))
-            return output_array
+    #         print("read intern database (default values)",output_array,len(output_array))
+    #         return output_array
 
-        def insert_new_excel_param(wb,ws,row,param,text):
-            """
-            Zakládá nové, chybějící parametry
-            """
-            ws['A' + str(row)] = text
-            ws['B' + str(row)] = param
-            print(f'inserting new parameter to excel: {text}: {param}')
-            wb.save(initial_path+config_filename)
+    #     def insert_new_excel_param(wb,ws,row,param,text):
+    #         """
+    #         Zakládá nové, chybějící parametry
+    #         """
+    #         ws['A' + str(row)] = text
+    #         ws['B' + str(row)] = param
+    #         print(f'inserting new parameter to excel: {text}: {param}')
+    #         wb.save(initial_path+config_filename)
 
-        global global_recources_load_error
-        config_filename = "config_TRIMAZKON.xlsx"
-        setting_list_name = "Settings_recources"
-        default_setting_parameters = string_database.default_setting_database_param
-        # default_labels = string_database.default_setting_database
+    #     global global_recources_load_error
+    #     config_filename = "config_TRIMAZKON.xlsx"
+    #     setting_list_name = "Settings_recources"
+    #     default_setting_parameters = string_database.default_setting_database_param
+    #     # default_labels = string_database.default_setting_database
 
-        if os.path.exists(initial_path+config_filename):
-            try:
-                cutoff_date = ["","",""]
-                supported_formats_sorting = []
-                supported_formats_deleting = []
-                wb = load_workbook(initial_path+config_filename)
-                ws = wb[setting_list_name]
+    #     if os.path.exists(initial_path+config_filename):
+    #         try:
+    #             cutoff_date = ["","",""]
+    #             supported_formats_sorting = []
+    #             supported_formats_deleting = []
+    #             wb = load_workbook(initial_path+config_filename)
+    #             ws = wb[setting_list_name]
 
-                # checking possibly missing parameters
-                value_check = ws['B' + str(30)].value
-                if value_check is None or str(value_check) == "":
-                    insert_new_excel_param(wb,ws,row=30,param=default_setting_parameters[29],text=default_labels[29])
-                value_check = ws['B' + str(31)].value
-                if value_check is None or str(value_check) == "":
-                    insert_new_excel_param(wb,ws,row=31,param=default_setting_parameters[30],text=default_labels[30])
-                value_check = ws['B' + str(32)].value
-                if value_check is None or str(value_check) == "":
-                    insert_new_excel_param(wb,ws,row=32,param=default_setting_parameters[31],text=default_labels[31])
-                value_check = ws['B' + str(33)].value
-                if value_check is None or str(value_check) == "":
-                    insert_new_excel_param(wb,ws,row=33,param=default_setting_parameters[32],text=default_labels[32])
+    #             # checking possibly missing parameters
+    #             value_check = ws['B' + str(30)].value
+    #             if value_check is None or str(value_check) == "":
+    #                 insert_new_excel_param(wb,ws,row=30,param=default_setting_parameters[29],text=default_labels[29])
+    #             value_check = ws['B' + str(31)].value
+    #             if value_check is None or str(value_check) == "":
+    #                 insert_new_excel_param(wb,ws,row=31,param=default_setting_parameters[30],text=default_labels[30])
+    #             value_check = ws['B' + str(32)].value
+    #             if value_check is None or str(value_check) == "":
+    #                 insert_new_excel_param(wb,ws,row=32,param=default_setting_parameters[31],text=default_labels[31])
+    #             value_check = ws['B' + str(33)].value
+    #             if value_check is None or str(value_check) == "":
+    #                 insert_new_excel_param(wb,ws,row=33,param=default_setting_parameters[32],text=default_labels[32])
 
-                read_formats1 = str(ws['B' + str(1)].value)
-                read_formats1 = filter_unwanted_chars(read_formats1,even_space=True)
-                found_formats = read_formats1.split(",") 
-                for items in found_formats:
-                    supported_formats_sorting.append(str(items))
+    #             read_formats1 = str(ws['B' + str(1)].value)
+    #             read_formats1 = filter_unwanted_chars(read_formats1,even_space=True)
+    #             found_formats = read_formats1.split(",") 
+    #             for items in found_formats:
+    #                 supported_formats_sorting.append(str(items))
 
-                read_formats2 = str(ws['B' + str(2)].value)
-                read_formats2 = filter_unwanted_chars(read_formats2,even_space=True)
-                found_formats = read_formats2.split(",")
-                for items in found_formats:
-                    supported_formats_deleting.append(str(items))
+    #             read_formats2 = str(ws['B' + str(2)].value)
+    #             read_formats2 = filter_unwanted_chars(read_formats2,even_space=True)
+    #             found_formats = read_formats2.split(",")
+    #             for items in found_formats:
+    #                 supported_formats_deleting.append(str(items))
                 
-                inserted_path = str(ws['B' + str(3)].value)
-                path_repaired = Tools.path_check(inserted_path)
-                if path_repaired == False:
-                    path_repaired = default_setting_parameters[2]
+    #             inserted_path = str(ws['B' + str(3)].value)
+    #             path_repaired = Tools.path_check(inserted_path)
+    #             if path_repaired == False:
+    #                 path_repaired = default_setting_parameters[2]
 
-                files_to_keep = int(default_setting_parameters[3])
-                files_to_keep_raw = str(ws['B' + str(4)].value)
-                if files_to_keep_raw.isdigit():
-                    files_to_keep = int(files_to_keep_raw)
+    #             files_to_keep = int(default_setting_parameters[3])
+    #             files_to_keep_raw = str(ws['B' + str(4)].value)
+    #             if files_to_keep_raw.isdigit():
+    #                 files_to_keep = int(files_to_keep_raw)
 
-                cutoff_date_raw = str(ws['B' + str(5)].value)
-                cutoff_date_filtered = filter_unwanted_chars(cutoff_date_raw,even_space=True)
-                if "." in cutoff_date_filtered:
-                    cutoff_date = cutoff_date_filtered.split(".")
-                elif "," in cutoff_date_filtered:
-                    cutoff_date = cutoff_date_filtered.split(",")
+    #             cutoff_date_raw = str(ws['B' + str(5)].value)
+    #             cutoff_date_filtered = filter_unwanted_chars(cutoff_date_raw,even_space=True)
+    #             if "." in cutoff_date_filtered:
+    #                 cutoff_date = cutoff_date_filtered.split(".")
+    #             elif "," in cutoff_date_filtered:
+    #                 cutoff_date = cutoff_date_filtered.split(",")
                 
-                prefix_function_raw = str(ws['B' + str(6)].value)
-                prefix_function_filtered = filter_unwanted_chars(prefix_function_raw,directory=True)
-                if prefix_function_filtered != "":
-                    prefix_function = prefix_function_filtered
-                else:
-                    prefix_function = default_setting_parameters[5]
+    #             prefix_function_raw = str(ws['B' + str(6)].value)
+    #             prefix_function_filtered = filter_unwanted_chars(prefix_function_raw,directory=True)
+    #             if prefix_function_filtered != "":
+    #                 prefix_function = prefix_function_filtered
+    #             else:
+    #                 prefix_function = default_setting_parameters[5]
 
-                prefix_camera_raw = str(ws['B' + str(7)].value)
-                prefix_camera_filtered = filter_unwanted_chars(prefix_camera_raw,directory=True)
-                if prefix_camera_filtered != "":
-                    prefix_camera = prefix_camera_filtered
-                else:
-                    prefix_camera = default_setting_parameters[6]
+    #             prefix_camera_raw = str(ws['B' + str(7)].value)
+    #             prefix_camera_filtered = filter_unwanted_chars(prefix_camera_raw,directory=True)
+    #             if prefix_camera_filtered != "":
+    #                 prefix_camera = prefix_camera_filtered
+    #             else:
+    #                 prefix_camera = default_setting_parameters[6]
 
-                maximalized = str(ws['B' + str(8)].value)
-                if maximalized != "ano":
-                    maximalized = "ne"
+    #             maximalized = str(ws['B' + str(8)].value)
+    #             if maximalized != "ano":
+    #                 maximalized = "ne"
 
-                max_pallets = int(default_setting_parameters[8])
-                max_pallets_raw = str(ws['B' + str(9)].value)
-                if max_pallets_raw.isdigit():
-                    max_pallets = int(max_pallets_raw)
+    #             max_pallets = int(default_setting_parameters[8])
+    #             max_pallets_raw = str(ws['B' + str(9)].value)
+    #             if max_pallets_raw.isdigit():
+    #                 max_pallets = int(max_pallets_raw)
 
-                static_dirs_names = []
-                for i in range(10,17):
-                    dir_name_raw = str(ws['B' + str(i)].value)
-                    dir_name_filtered = filter_unwanted_chars(dir_name_raw,directory=True)
-                    if dir_name_filtered == "":
-                        dir_name_filtered = default_setting_parameters[i-1]
-                    static_dirs_names.append(dir_name_filtered)
+    #             static_dirs_names = []
+    #             for i in range(10,17):
+    #                 dir_name_raw = str(ws['B' + str(i)].value)
+    #                 dir_name_filtered = filter_unwanted_chars(dir_name_raw,directory=True)
+    #                 if dir_name_filtered == "":
+    #                     dir_name_filtered = default_setting_parameters[i-1]
+    #                 static_dirs_names.append(dir_name_filtered)
 
-                safe_mode = str(ws['B' + str(17)].value)
-                if safe_mode != "ne":
-                    safe_mode = "ano"
+    #             safe_mode = str(ws['B' + str(17)].value)
+    #             if safe_mode != "ne":
+    #                 safe_mode = "ano"
 
-                image_browser_param = [default_setting_parameters[17],default_setting_parameters[18],default_setting_parameters[19]] #default
-                chosen_option = str(ws['B' + str(18)].value)
-                if chosen_option.isdigit():
-                    image_browser_param[0] = int(chosen_option)
-                zoom_step = str(ws['B' + str(19)].value)
-                if zoom_step.isdigit():
-                    image_browser_param[1] = int(zoom_step)
-                drag_step = str(ws['B' + str(20)].value)
-                if drag_step.isdigit():
-                    image_browser_param[2] = int(drag_step)
+    #             image_browser_param = [default_setting_parameters[17],default_setting_parameters[18],default_setting_parameters[19]] #default
+    #             chosen_option = str(ws['B' + str(18)].value)
+    #             if chosen_option.isdigit():
+    #                 image_browser_param[0] = int(chosen_option)
+    #             zoom_step = str(ws['B' + str(19)].value)
+    #             if zoom_step.isdigit():
+    #                 image_browser_param[1] = int(zoom_step)
+    #             drag_step = str(ws['B' + str(20)].value)
+    #             if drag_step.isdigit():
+    #                 image_browser_param[2] = int(drag_step)
                 
-                show_changelog = str(ws['B' + str(21)].value)
-                if show_changelog != "ano":
-                    show_changelog = "ne"
+    #             show_changelog = str(ws['B' + str(21)].value)
+    #             if show_changelog != "ano":
+    #                 show_changelog = "ne"
 
-                image_film = str(ws['B' + str(22)].value)
-                if image_film != "ano":
-                    image_film = "ne"
+    #             image_film = str(ws['B' + str(22)].value)
+    #             if image_film != "ano":
+    #                 image_film = "ne"
 
-                num_of_IB_film_images = int(default_setting_parameters[22])
-                num_of_IB_film_images_raw = str(ws['B' + str(23)].value)
-                if num_of_IB_film_images_raw.isdigit():
-                    num_of_IB_film_images = int(num_of_IB_film_images_raw)
+    #             num_of_IB_film_images = int(default_setting_parameters[22])
+    #             num_of_IB_film_images_raw = str(ws['B' + str(23)].value)
+    #             if num_of_IB_film_images_raw.isdigit():
+    #                 num_of_IB_film_images = int(num_of_IB_film_images_raw)
 
-                default_sharepoint_database_filename = str(ws['B' + str(24)].value)
-                default_sharepoint_database_filename = filter_unwanted_chars(default_sharepoint_database_filename,directory=True)
-                default_catalogue_excel_filename = str(ws['B' + str(25)].value)
-                default_catalogue_excel_filename = filter_unwanted_chars(default_catalogue_excel_filename,directory=True)
-                default_catalogue_xml_filename = str(ws['B' + str(26)].value)
-                default_catalogue_xml_filename = filter_unwanted_chars(default_catalogue_xml_filename,directory=True)
+    #             default_sharepoint_database_filename = str(ws['B' + str(24)].value)
+    #             default_sharepoint_database_filename = filter_unwanted_chars(default_sharepoint_database_filename,directory=True)
+    #             default_catalogue_excel_filename = str(ws['B' + str(25)].value)
+    #             default_catalogue_excel_filename = filter_unwanted_chars(default_catalogue_excel_filename,directory=True)
+    #             default_catalogue_xml_filename = str(ws['B' + str(26)].value)
+    #             default_catalogue_xml_filename = filter_unwanted_chars(default_catalogue_xml_filename,directory=True)
 
-                default_catalogue_subwindow_behavior_status = int(default_setting_parameters[26])
-                default_catalogue_subwindow_behavior_status_raw = str(ws['B' + str(27)].value)
-                if default_catalogue_subwindow_behavior_status_raw.isdigit():
-                    default_catalogue_subwindow_behavior_status = int(default_catalogue_subwindow_behavior_status_raw)
+    #             default_catalogue_subwindow_behavior_status = int(default_setting_parameters[26])
+    #             default_catalogue_subwindow_behavior_status_raw = str(ws['B' + str(27)].value)
+    #             if default_catalogue_subwindow_behavior_status_raw.isdigit():
+    #                 default_catalogue_subwindow_behavior_status = int(default_catalogue_subwindow_behavior_status_raw)
 
-                default_catalogue_export_extension = str(ws['B' + str(28)].value)
-                default_catalogue_export_extension = filter_unwanted_chars(default_catalogue_export_extension,directory=True,even_space=True)
+    #             default_catalogue_export_extension = str(ws['B' + str(28)].value)
+    #             default_catalogue_export_extension = filter_unwanted_chars(default_catalogue_export_extension,directory=True,even_space=True)
 
-                default_path_catalogue = str(ws['B' + str(29)].value)
-                default_path_catalogue = Tools.path_check(default_path_catalogue)
-                if default_path_catalogue == False:
-                    default_path_catalogue = default_setting_parameters[28]
-                catalogue_save_data = [default_sharepoint_database_filename,default_catalogue_excel_filename,default_catalogue_xml_filename,default_catalogue_subwindow_behavior_status,default_catalogue_export_extension,default_path_catalogue]
+    #             default_path_catalogue = str(ws['B' + str(29)].value)
+    #             default_path_catalogue = Tools.path_check(default_path_catalogue)
+    #             if default_path_catalogue == False:
+    #                 default_path_catalogue = default_setting_parameters[28]
+    #             catalogue_save_data = [default_sharepoint_database_filename,default_catalogue_excel_filename,default_catalogue_xml_filename,default_catalogue_subwindow_behavior_status,default_catalogue_export_extension,default_path_catalogue]
 
-                for i in range(0,len(catalogue_save_data)):
-                    if catalogue_save_data[i] == "":
-                        catalogue_save_data[i] = default_setting_parameters[23+i]
+    #             for i in range(0,len(catalogue_save_data)):
+    #                 if catalogue_save_data[i] == "":
+    #                     catalogue_save_data[i] = default_setting_parameters[23+i]
 
-                app_zoom = int(default_setting_parameters[29])
-                app_zoom_raw = str(ws['B' + str(30)].value)
-                if app_zoom_raw.isdigit():
-                    app_zoom = int(app_zoom_raw)
+    #             app_zoom = int(default_setting_parameters[29])
+    #             app_zoom_raw = str(ws['B' + str(30)].value)
+    #             if app_zoom_raw.isdigit():
+    #                 app_zoom = int(app_zoom_raw)
 
-                app_zoom_checkbox = str(ws['B' + str(31)].value)
-                if app_zoom_checkbox != "ano":
-                    app_zoom_checkbox = "ne"
+    #             app_zoom_checkbox = str(ws['B' + str(31)].value)
+    #             if app_zoom_checkbox != "ano":
+    #                 app_zoom_checkbox = "ne"
 
-                render_mode = str(ws['B' + str(32)].value)
-                if render_mode != "precise":
-                    render_mode = "fast"
+    #             render_mode = str(ws['B' + str(32)].value)
+    #             if render_mode != "precise":
+    #                 render_mode = "fast"
 
-                tray_startup_status = str(ws['B' + str(33)].value)
-                if tray_startup_status != "ano":
-                    tray_startup_status = "ne"
+    #             tray_startup_status = str(ws['B' + str(33)].value)
+    #             if tray_startup_status != "ano":
+    #                 tray_startup_status = "ne"
 
-                global_recources_load_error = False
-                output_array = [supported_formats_sorting,
-                                supported_formats_deleting,
-                                path_repaired,
-                                files_to_keep,
-                                cutoff_date,
-                                prefix_function,
-                                prefix_camera,
-                                maximalized,
-                                max_pallets,
-                                static_dirs_names,
-                                safe_mode,
-                                image_browser_param,
-                                show_changelog,
-                                image_film,
-                                num_of_IB_film_images,
-                                catalogue_save_data[0],
-                                catalogue_save_data[1],
-                                catalogue_save_data[2],
-                                catalogue_save_data[3],
-                                catalogue_save_data[4],
-                                catalogue_save_data[5],
-                                app_zoom,
-                                app_zoom_checkbox,
-                                render_mode,
-                                tray_startup_status,
-                                ]
+    #             global_recources_load_error = False
+    #             output_array = [supported_formats_sorting,
+    #                             supported_formats_deleting,
+    #                             path_repaired,
+    #                             files_to_keep,
+    #                             cutoff_date,
+    #                             prefix_function,
+    #                             prefix_camera,
+    #                             maximalized,
+    #                             max_pallets,
+    #                             static_dirs_names,
+    #                             safe_mode,
+    #                             image_browser_param,
+    #                             show_changelog,
+    #                             image_film,
+    #                             num_of_IB_film_images,
+    #                             catalogue_save_data[0],
+    #                             catalogue_save_data[1],
+    #                             catalogue_save_data[2],
+    #                             catalogue_save_data[3],
+    #                             catalogue_save_data[4],
+    #                             catalogue_save_data[5],
+    #                             app_zoom,
+    #                             app_zoom_checkbox,
+    #                             render_mode,
+    #                             tray_startup_status,
+    #                             ]
                 
-                print("read config",output_array,len(output_array))
-                wb.close()
-                return output_array
+    #             print("read config",output_array,len(output_array))
+    #             wb.close()
+    #             return output_array
 
-            except Exception as e:
-                print(f"Nejdřív zavřete soubor {config_filename} Chyba: {e}")   
-                print("Budou načteny defaultní hodnoty")
-                global_recources_load_error = True
-                output_array = load_default_values()
-                return output_array
-        else:
-            print(f"Chybí konfigurační soubor {config_filename}")
-            print("Budou načteny defaultní hodnoty")
-            global_recources_load_error = True
-            output_array = load_default_values()
-            return output_array
+    #         except Exception as e:
+    #             print(f"Nejdřív zavřete soubor {config_filename} Chyba: {e}")   
+    #             print("Budou načteny defaultní hodnoty")
+    #             global_recources_load_error = True
+    #             output_array = load_default_values()
+    #             return output_array
+    #     else:
+    #         print(f"Chybí konfigurační soubor {config_filename}")
+    #         print("Budou načteny defaultní hodnoty")
+    #         global_recources_load_error = True
+    #         output_array = load_default_values()
+    #         return output_array
             
-    @classmethod
-    def save_to_config(cls,input_data,which_parameter): # Funkce zapisuje data do souboru config_TRIMAZKON.xlsx
-        """
-        Funkce zapisuje data do textoveho souboru Recources.txt
+    # @classmethod
+    # def save_to_config(cls,input_data,which_parameter): # Funkce zapisuje data do souboru config_TRIMAZKON.xlsx
+    #     """
+    #     Funkce zapisuje data do textoveho souboru Recources.txt
 
-        vraci vystupni zpravu: report
+    #     vraci vystupni zpravu: report
 
-        which_parameter je bud: 
+    #     which_parameter je bud: 
         
-        1 add_supported_sorting_formats\n
-        2 add_supported_deleting_formats\n
-        3 pop_supported_sorting_formats\n
-        4 pop_supported_deleting_formats\n
-        5 default_path\n
-        6 default_files_to_keep\n
-        7 default_cutoff_date\n
-        8 new_default_prefix_func\n
-        9 new_default_prefix_cam\n
-        10 maximalized\n
-        11 pallets_set\n
-        12 new_default_static_dir_name\n
-        13 sorting_safe_mode\n
-        14 image_browser_param_set\n
-        15 show_change_log\n
-        16 image_film\n
-        17 num_of_IB_film_images\n
-        18 catalogue_data\n
-        19 app_zoom\n
-        20 app_zoom_checkbox\n
-        21 render_mode\n
-        22 tray_icon_startup\n
-        """
+    #     1 add_supported_sorting_formats\n
+    #     2 add_supported_deleting_formats\n
+    #     3 pop_supported_sorting_formats\n
+    #     4 pop_supported_deleting_formats\n
+    #     5 default_path\n
+    #     6 default_files_to_keep\n
+    #     7 default_cutoff_date\n
+    #     8 new_default_prefix_func\n
+    #     9 new_default_prefix_cam\n
+    #     10 maximalized\n
+    #     11 pallets_set\n
+    #     12 new_default_static_dir_name\n
+    #     13 sorting_safe_mode\n
+    #     14 image_browser_param_set\n
+    #     15 show_change_log\n
+    #     16 image_film\n
+    #     17 num_of_IB_film_images\n
+    #     18 catalogue_data\n
+    #     19 app_zoom\n
+    #     20 app_zoom_checkbox\n
+    #     21 render_mode\n
+    #     22 tray_icon_startup\n
+    #     """
 
-        def filter_unwanted_chars(to_filter_data, directory = False,formats = False):
-            unwanted_chars = ["\n","\"","\'","[","]"]
-            if directory:
-                unwanted_chars = ["\n","\"","\'","[","]","\\","/"]
-            if formats:
-                unwanted_chars = ["\n","\"","\'","[","]"," ","."]
+    #     def filter_unwanted_chars(to_filter_data, directory = False,formats = False):
+    #         unwanted_chars = ["\n","\"","\'","[","]"]
+    #         if directory:
+    #             unwanted_chars = ["\n","\"","\'","[","]","\\","/"]
+    #         if formats:
+    #             unwanted_chars = ["\n","\"","\'","[","]"," ","."]
 
-            filtered_data = ""
-            for letters in to_filter_data:
-                if letters not in unwanted_chars:
-                    filtered_data += letters
-            return filtered_data
+    #         filtered_data = ""
+    #         for letters in to_filter_data:
+    #             if letters not in unwanted_chars:
+    #                 filtered_data += letters
+    #         return filtered_data
         
-        config_filename = "config_TRIMAZKON.xlsx"
-        setting_list_name = "Settings_recources"
-        parameter_row_mapping = {
-            "add_supported_sorting_formats": 1,
-            "add_supported_deleting_formats": 2,
-            "pop_supported_sorting_formats": 1,
-            "pop_supported_deleting_formats": 2,
-            "default_path": 3,
-            "default_files_to_keep": 4,
-            "default_cutoff_date": 5,
-            "new_default_prefix_func": 6,
-            "new_default_prefix_cam": 7,
-            "maximalized": 8,
-            "pallets_set": 9,
-            "new_default_static_dir_name": [10,11,12,13,14,15,16],
-            "sorting_safe_mode": 17,
-            "image_browser_param_set": [18,19,20],
-            "show_change_log": 21,
-            "image_film": 22,
-            "num_of_IB_film_images": 23,
-            "catalogue_data": [24,25,26,27,28,29],
-            "app_zoom": 30,
-            "app_zoom_checkbox": 31,
-            "render_mode": 32,
-            "tray_icon_startup": 33,
-            }
+    #     config_filename = "config_TRIMAZKON.xlsx"
+    #     setting_list_name = "Settings_recources"
+    #     parameter_row_mapping = {
+    #         "add_supported_sorting_formats": 1,
+    #         "add_supported_deleting_formats": 2,
+    #         "pop_supported_sorting_formats": 1,
+    #         "pop_supported_deleting_formats": 2,
+    #         "default_path": 3,
+    #         "default_files_to_keep": 4,
+    #         "default_cutoff_date": 5,
+    #         "new_default_prefix_func": 6,
+    #         "new_default_prefix_cam": 7,
+    #         "maximalized": 8,
+    #         "pallets_set": 9,
+    #         "new_default_static_dir_name": [10,11,12,13,14,15,16],
+    #         "sorting_safe_mode": 17,
+    #         "image_browser_param_set": [18,19,20],
+    #         "show_change_log": 21,
+    #         "image_film": 22,
+    #         "num_of_IB_film_images": 23,
+    #         "catalogue_data": [24,25,26,27,28,29],
+    #         "app_zoom": 30,
+    #         "app_zoom_checkbox": 31,
+    #         "render_mode": 32,
+    #         "tray_icon_startup": 33,
+    #         }
         
-        if os.path.exists(initial_path + config_filename):
-            wb = load_workbook(initial_path+config_filename)
-            ws = wb[setting_list_name]
-            formats_changes = False
-            report = ""
-            supported_formats_sorting = []
-            found_formats = str(ws['B' + str(1)].value)
-            found_formats = filter_unwanted_chars(found_formats,formats=True)
-            found_formats = found_formats.split(",")
-            supported_formats_sorting = found_formats
-            supported_formats_deleting = []
-            found_formats = str(ws['B' + str(2)].value)
-            found_formats = filter_unwanted_chars(found_formats,formats=True)
-            found_formats = found_formats.split(",")
-            supported_formats_deleting = found_formats
+    #     if os.path.exists(initial_path + config_filename):
+    #         wb = load_workbook(initial_path+config_filename)
+    #         ws = wb[setting_list_name]
+    #         formats_changes = False
+    #         report = ""
+    #         supported_formats_sorting = []
+    #         found_formats = str(ws['B' + str(1)].value)
+    #         found_formats = filter_unwanted_chars(found_formats,formats=True)
+    #         found_formats = found_formats.split(",")
+    #         supported_formats_sorting = found_formats
+    #         supported_formats_deleting = []
+    #         found_formats = str(ws['B' + str(2)].value)
+    #         found_formats = filter_unwanted_chars(found_formats,formats=True)
+    #         found_formats = found_formats.split(",")
+    #         supported_formats_deleting = found_formats
 
-            if which_parameter == "add_supported_sorting_formats":
-                corrected_input = filter_unwanted_chars(str(input_data),formats=True)
-                if str(corrected_input) not in supported_formats_sorting:
-                    supported_formats_sorting.append(str(corrected_input))
-                    report = (f"Byl přidán formát: \"{corrected_input}\" do podporovaných formátů pro možnosti třídění")
-                    formats_changes = True
-                else:
-                    report =  (f"Formát: \"{corrected_input}\" je již součástí podporovaných formátů možností třídění")
+    #         if which_parameter == "add_supported_sorting_formats":
+    #             corrected_input = filter_unwanted_chars(str(input_data),formats=True)
+    #             if str(corrected_input) not in supported_formats_sorting:
+    #                 supported_formats_sorting.append(str(corrected_input))
+    #                 report = (f"Byl přidán formát: \"{corrected_input}\" do podporovaných formátů pro možnosti třídění")
+    #                 formats_changes = True
+    #             else:
+    #                 report =  (f"Formát: \"{corrected_input}\" je již součástí podporovaných formátů možností třídění")
             
-            elif which_parameter == "add_supported_deleting_formats":
-                corrected_input = filter_unwanted_chars(str(input_data),formats=True)
-                if str(corrected_input) not in supported_formats_deleting:
-                    supported_formats_deleting.append(str(corrected_input))
-                    report =  (f"Byl přidán formát: \"{corrected_input}\" do podporovaných formátů pro možnosti mazání")
-                    formats_changes = True
-                else:
-                    report =  (f"Formát: \"{corrected_input}\" je již součástí podporovaných formátů možností mazání")
+    #         elif which_parameter == "add_supported_deleting_formats":
+    #             corrected_input = filter_unwanted_chars(str(input_data),formats=True)
+    #             if str(corrected_input) not in supported_formats_deleting:
+    #                 supported_formats_deleting.append(str(corrected_input))
+    #                 report =  (f"Byl přidán formát: \"{corrected_input}\" do podporovaných formátů pro možnosti mazání")
+    #                 formats_changes = True
+    #             else:
+    #                 report =  (f"Formát: \"{corrected_input}\" je již součástí podporovaných formátů možností mazání")
                 
-            elif which_parameter == "pop_supported_sorting_formats":
-                poped = 0
-                found = False
-                range_to = len(supported_formats_sorting)
-                for i in range(0,range_to):
-                    if i < range_to:
-                        if str(input_data) == supported_formats_sorting[i] and len(str(input_data)) == len(supported_formats_sorting[i]):
-                            supported_formats_sorting.pop(i)
-                            poped+=1
-                            range_to = range_to - poped
-                            report =  (f"Z podporovaných formátů možností třídění byl odstraněn formát: \"{input_data}\"")
-                            formats_changes = True
-                            found = True
-                if found == False:
-                    report =  (f"Formát: \"{input_data}\" nebyl nalezen v podporovaných formátech možností třídění, nemůže tedy být odstraněn")
+    #         elif which_parameter == "pop_supported_sorting_formats":
+    #             poped = 0
+    #             found = False
+    #             range_to = len(supported_formats_sorting)
+    #             for i in range(0,range_to):
+    #                 if i < range_to:
+    #                     if str(input_data) == supported_formats_sorting[i] and len(str(input_data)) == len(supported_formats_sorting[i]):
+    #                         supported_formats_sorting.pop(i)
+    #                         poped+=1
+    #                         range_to = range_to - poped
+    #                         report =  (f"Z podporovaných formátů možností třídění byl odstraněn formát: \"{input_data}\"")
+    #                         formats_changes = True
+    #                         found = True
+    #             if found == False:
+    #                 report =  (f"Formát: \"{input_data}\" nebyl nalezen v podporovaných formátech možností třídění, nemůže tedy být odstraněn")
                 
-            elif which_parameter == "pop_supported_deleting_formats":
-                poped = 0
-                found = False
-                range_to = len(supported_formats_deleting)
-                for i in range(0,range_to):
-                    if i < range_to:
-                        if str(input_data) == supported_formats_deleting[i] and len(str(input_data)) == len(supported_formats_deleting[i]):
-                            supported_formats_deleting.pop(i)
-                            poped+=1
-                            range_to = range_to - poped
-                            report =  (f"Z podporovaných formátů možností mazání byl odstraněn formát: \".{input_data}\"")
-                            formats_changes = True
-                            found = True
-                if found == False:
-                    report =  (f"Formát: \"{input_data}\" nebyl nalezen v podporovaných formátech možností mazání, nemůže tedy být odstraněn")
+    #         elif which_parameter == "pop_supported_deleting_formats":
+    #             poped = 0
+    #             found = False
+    #             range_to = len(supported_formats_deleting)
+    #             for i in range(0,range_to):
+    #                 if i < range_to:
+    #                     if str(input_data) == supported_formats_deleting[i] and len(str(input_data)) == len(supported_formats_deleting[i]):
+    #                         supported_formats_deleting.pop(i)
+    #                         poped+=1
+    #                         range_to = range_to - poped
+    #                         report =  (f"Z podporovaných formátů možností mazání byl odstraněn formát: \".{input_data}\"")
+    #                         formats_changes = True
+    #                         found = True
+    #             if found == False:
+    #                 report =  (f"Formát: \"{input_data}\" nebyl nalezen v podporovaných formátech možností mazání, nemůže tedy být odstraněn")
             
-            elif which_parameter == "default_path":
-                ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
-                report = (f"Základní cesta přenastavena na: {str(input_data)}")
+    #         elif which_parameter == "default_path":
+    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
+    #             report = (f"Základní cesta přenastavena na: {str(input_data)}")
             
-            elif which_parameter == "default_files_to_keep":
-                ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
+    #         elif which_parameter == "default_files_to_keep":
+    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
             
-            elif which_parameter == "default_cutoff_date":
-                ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data[0])+"."+str(input_data[1])+"."+str(input_data[2])
+    #         elif which_parameter == "default_cutoff_date":
+    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data[0])+"."+str(input_data[1])+"."+str(input_data[2])
 
-            elif which_parameter == "new_default_prefix_func":
-                input_filtered = filter_unwanted_chars(str(input_data),directory=True)
-                ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_filtered)
-                report = (f"Základní prefix názvu složek pro třídění podle funkce přenastaven na: {str(input_filtered)}")
+    #         elif which_parameter == "new_default_prefix_func":
+    #             input_filtered = filter_unwanted_chars(str(input_data),directory=True)
+    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_filtered)
+    #             report = (f"Základní prefix názvu složek pro třídění podle funkce přenastaven na: {str(input_filtered)}")
 
-            elif which_parameter == "new_default_prefix_cam":
-                input_filtered = filter_unwanted_chars(str(input_data),directory=True)
-                ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_filtered)
-                report = (f"Základní prefix názvu složek pro třídění podle kamery přenastaven na: {str(input_filtered)}")
+    #         elif which_parameter == "new_default_prefix_cam":
+    #             input_filtered = filter_unwanted_chars(str(input_data),directory=True)
+    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_filtered)
+    #             report = (f"Základní prefix názvu složek pro třídění podle kamery přenastaven na: {str(input_filtered)}")
 
-            elif which_parameter == "maximalized":
-                ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
+    #         elif which_parameter == "maximalized":
+    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
 
-            elif which_parameter == "pallets_set":
-                ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
+    #         elif which_parameter == "pallets_set":
+    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
 
-            elif which_parameter == "new_default_static_dir_name":
-                input_data_splitted = str(input_data).split(" | ")
-                input_data = input_data_splitted[0]
-                increment = int(input_data_splitted[1])
-                cells_with_names = parameter_row_mapping.get(which_parameter)
-                excel_row = cells_with_names[increment]
-                input_filtered = filter_unwanted_chars(str(input_data),directory=True)
-                ws['B' + str(excel_row)] = str(input_filtered)
+    #         elif which_parameter == "new_default_static_dir_name":
+    #             input_data_splitted = str(input_data).split(" | ")
+    #             input_data = input_data_splitted[0]
+    #             increment = int(input_data_splitted[1])
+    #             cells_with_names = parameter_row_mapping.get(which_parameter)
+    #             excel_row = cells_with_names[increment]
+    #             input_filtered = filter_unwanted_chars(str(input_data),directory=True)
+    #             ws['B' + str(excel_row)] = str(input_filtered)
             
-            elif which_parameter == "sorting_safe_mode":
-                ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
+    #         elif which_parameter == "sorting_safe_mode":
+    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
 
-            elif which_parameter == "image_browser_param_set":
-                cells_with_params = parameter_row_mapping.get(which_parameter)
-                for i in range(0,len(cells_with_params)):
-                    if input_data[i] != None:
-                        ws['B' + str(cells_with_params[i])] = str(input_data[i])
+    #         elif which_parameter == "image_browser_param_set":
+    #             cells_with_params = parameter_row_mapping.get(which_parameter)
+    #             for i in range(0,len(cells_with_params)):
+    #                 if input_data[i] != None:
+    #                     ws['B' + str(cells_with_params[i])] = str(input_data[i])
 
-            elif which_parameter == "show_change_log":
-                ws['B' + str(parameter_row_mapping.get(which_parameter))] = "ne"
+    #         elif which_parameter == "show_change_log":
+    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = "ne"
 
-            elif which_parameter == "image_film":
-                ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
+    #         elif which_parameter == "image_film":
+    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
             
-            elif which_parameter == "num_of_IB_film_images":
-                ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
+    #         elif which_parameter == "num_of_IB_film_images":
+    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
 
-            elif which_parameter == "catalogue_data":
-                cells_with_params = parameter_row_mapping.get(which_parameter)
-                for i in range(0,len(cells_with_params)):
-                    if input_data[i] != None:
-                        ws['B' + str(cells_with_params[i])] = str(input_data[i])
+    #         elif which_parameter == "catalogue_data":
+    #             cells_with_params = parameter_row_mapping.get(which_parameter)
+    #             for i in range(0,len(cells_with_params)):
+    #                 if input_data[i] != None:
+    #                     ws['B' + str(cells_with_params[i])] = str(input_data[i])
 
-            elif which_parameter == "app_zoom":
-                ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
+    #         elif which_parameter == "app_zoom":
+    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
             
-            elif which_parameter == "app_zoom_checkbox":
-                ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
+    #         elif which_parameter == "app_zoom_checkbox":
+    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
 
-            elif which_parameter == "render_mode":
-                ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
+    #         elif which_parameter == "render_mode":
+    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
 
-            elif which_parameter == "tray_icon_startup":
-                ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
+    #         elif which_parameter == "tray_icon_startup":
+    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
 
-            if formats_changes:
-                #navraceni poli zpet do stringu radku:
-                sorting_formats_string = ""
-                for items in supported_formats_sorting:
-                    if sorting_formats_string  == "":
-                        sorting_formats_string += str(items)
-                    else:
-                        sorting_formats_string += ("," + str(items))
+    #         if formats_changes:
+    #             #navraceni poli zpet do stringu radku:
+    #             sorting_formats_string = ""
+    #             for items in supported_formats_sorting:
+    #                 if sorting_formats_string  == "":
+    #                     sorting_formats_string += str(items)
+    #                 else:
+    #                     sorting_formats_string += ("," + str(items))
                 
-                deleting_formats_string = ""  
-                for items in supported_formats_deleting:
-                    if deleting_formats_string == "":
-                        deleting_formats_string += str(items)
-                    else:
-                        deleting_formats_string += ("," + str(items))
+    #             deleting_formats_string = ""  
+    #             for items in supported_formats_deleting:
+    #                 if deleting_formats_string == "":
+    #                     deleting_formats_string += str(items)
+    #                 else:
+    #                     deleting_formats_string += ("," + str(items))
 
-                ws['B' + str(1)] = str(sorting_formats_string)
-                ws['B' + str(2)] = str(deleting_formats_string)
+    #             ws['B' + str(1)] = str(sorting_formats_string)
+    #             ws['B' + str(2)] = str(deleting_formats_string)
 
-            wb.save(initial_path+config_filename)
-            wb.close()
-            return report
+    #         wb.save(initial_path+config_filename)
+    #         wb.close()
+    #         return report
         
-        else:
-            print("Chybí konfigurační soubor config_TRIMAZKON.xlsx (nelze ukládat změny)")
-            return "Chybí konfigurační soubor config_TRIMAZKON.xlsx (nelze ukládat změny)"
+    #     else:
+    #         print("Chybí konfigurační soubor config_TRIMAZKON.xlsx (nelze ukládat změny)")
+    #         return "Chybí konfigurační soubor config_TRIMAZKON.xlsx (nelze ukládat změny)"
    
-    @classmethod
-    def check_config_file(cls,config_filename,setting_list_name):
-        """
-        TEMPORARY - kdyby někdo měl starou verzi
-        - kontroluje zda chybi excel s novym nazvem, pak kontroluje jesli excel obsahuje novy list Settings_recources
-        - přejmenuje si to config excel
-        - pretahne si to data z recources.txt do spolecneho excelu pod novy list
-        """
-        def move_to_temp_dir(filename:str):
-            if not os.path.exists(initial_path + "TRIMAZKON_uz_nechce_vzal_si_data"):
-                os.mkdir(initial_path + "TRIMAZKON_uz_nechce_vzal_si_data" + "/")
-            print(f"moving old config file {filename}")
-            shutil.move(initial_path +filename, initial_path + "TRIMAZKON_uz_nechce_vzal_si_data" + "/"+filename)
+    # @classmethod
+    # def check_config_file(cls,config_filename,setting_list_name):
+    #     """
+    #     TEMPORARY - kdyby někdo měl starou verzi
+    #     - kontroluje zda chybi excel s novym nazvem, pak kontroluje jesli excel obsahuje novy list Settings_recources
+    #     - přejmenuje si to config excel
+    #     - pretahne si to data z recources.txt do spolecneho excelu pod novy list
+    #     """
+    #     def move_to_temp_dir(filename:str):
+    #         if not os.path.exists(initial_path + "TRIMAZKON_uz_nechce_vzal_si_data"):
+    #             os.mkdir(initial_path + "TRIMAZKON_uz_nechce_vzal_si_data" + "/")
+    #         print(f"moving old config file {filename}")
+    #         shutil.move(initial_path +filename, initial_path + "TRIMAZKON_uz_nechce_vzal_si_data" + "/"+filename)
         
-        if os.path.exists(initial_path+'saved_addresses_2.xlsx'):
-            if not os.path.exists(initial_path+config_filename):
-                shutil.copy(initial_path+'saved_addresses_2.xlsx',initial_path+config_filename)
-                print("copying old excel config file")
-            move_to_temp_dir('saved_addresses_2.xlsx')
+    #     if os.path.exists(initial_path+'saved_addresses_2.xlsx'):
+    #         if not os.path.exists(initial_path+config_filename):
+    #             shutil.copy(initial_path+'saved_addresses_2.xlsx',initial_path+config_filename)
+    #             print("copying old excel config file")
+    #         move_to_temp_dir('saved_addresses_2.xlsx')
 
-        try:
-            wb = load_workbook(initial_path+config_filename)
-            if not setting_list_name in wb.sheetnames:
-                user_config_file_data = []
-                ws = wb.create_sheet(title=setting_list_name)
-                wb.save(initial_path+config_filename)
-                if os.path.exists(initial_path+'Recources.txt'):
-                    # copy user settings
-                    recources_data = Tools.read_text_file_data_temp()
-                    for i in range(0,len(recources_data)):
-                        if i == 9 or i == 11:
-                            for subdata in recources_data[i]:
-                                user_config_file_data.append(subdata)
-                        else:
-                            user_config_file_data.append(recources_data[i])
-                    print("using user settings from Recources.txt")
-                    move_to_temp_dir('Recources.txt')        
-                else:
-                    user_config_file_data = string_database.default_setting_database_param
+    #     try:
+    #         wb = load_workbook(initial_path+config_filename)
+    #         if not setting_list_name in wb.sheetnames:
+    #             user_config_file_data = []
+    #             ws = wb.create_sheet(title=setting_list_name)
+    #             wb.save(initial_path+config_filename)
+    #             if os.path.exists(initial_path+'Recources.txt'):
+    #                 # copy user settings
+    #                 recources_data = Tools.read_text_file_data_temp()
+    #                 for i in range(0,len(recources_data)):
+    #                     if i == 9 or i == 11:
+    #                         for subdata in recources_data[i]:
+    #                             user_config_file_data.append(subdata)
+    #                     else:
+    #                         user_config_file_data.append(recources_data[i])
+    #                 print("using user settings from Recources.txt")
+    #                 move_to_temp_dir('Recources.txt')        
+    #             else:
+    #                 user_config_file_data = string_database.default_setting_database_param
                         
-                print(user_config_file_data,len(user_config_file_data))
-                user_config_file_data_labels = string_database.default_setting_database
+    #             print(user_config_file_data,len(user_config_file_data))
+    #             user_config_file_data_labels = string_database.default_setting_database
                 
-                for i in range(1,len(user_config_file_data)+1):
-                    ws['A' + str(i)] = str(user_config_file_data_labels[i-1])
-                    ws['B' + str(i)] = str(user_config_file_data[i-1])
-                wb.save(initial_path+config_filename)
+    #             for i in range(1,len(user_config_file_data)+1):
+    #                 ws['A' + str(i)] = str(user_config_file_data_labels[i-1])
+    #                 ws['B' + str(i)] = str(user_config_file_data[i-1])
+    #             wb.save(initial_path+config_filename)
 
-            # renaming sheet with a typo in name:
-            if "ip_adress_fav_list" in wb.sheetnames:
-                ws = wb["ip_adress_fav_list"]
-                ws.title = "ip_address_fav_list"
-                wb.save(initial_path+config_filename)
-            wb.close()
-        except Exception as e:
-            print(f"Nejdřív zavřete soubor {config_filename} Chyba: {e}")
-
-
+    #         # renaming sheet with a typo in name:
+    #         if "ip_adress_fav_list" in wb.sheetnames:
+    #             ws = wb["ip_adress_fav_list"]
+    #             ws.title = "ip_address_fav_list"
+    #             wb.save(initial_path+config_filename)
+    #         wb.close()
+    #     except Exception as e:
+    #         print(f"Nejdřív zavřete soubor {config_filename} Chyba: {e}")
 
     @classmethod
     def browseDirectories(cls,visible_files,start_path=None): # Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
@@ -1235,14 +1263,14 @@ class Tools:
         corrected_path = ""
         output= ""
         name_of_selected_file = ""
-        text_file_data = Tools.read_config_data()
+
         if start_path == None:
-            start_path = str(text_file_data[2]) #defaultni cesta
+            start_path = Tools.read_json_config()["app_settings"]["default_path"] #defaultni cesta
         else: # byla zadana docasna cesta pro explorer
             checked_path = Tools.path_check(start_path)
             if checked_path == False:
                 output = "Změněná dočasná základní cesta pro explorer již neexistuje"
-                start_path = str(text_file_data[2]) #defaultni cesta
+                start_path = Tools.read_json_config()["app_settings"]["default_path"] #defaultni cesta
             else:
                 start_path = checked_path
 
@@ -1344,7 +1372,7 @@ class Tools:
         path_given = path_entered
         path_checked = Tools.path_check(path_given)
         if path_checked != False and path_checked != "/":
-            console_input = Tools.save_to_config(path_checked,"default_path")
+            console_input = Tools.save_to_json_config(path_checked,"app_settings","default_path")
             Tools.add_colored_line(console,console_input,"green",None,True)
         elif path_checked != "/":
             Tools.add_colored_line(console,f"Zadaná cesta: {path_given} nebyla nalezena, nebude tedy uložena","red",None,True)
@@ -1569,9 +1597,9 @@ class Tools:
             by_creation_date = int(param_given[6])
 
         cutoff_date = Deleting.get_cutoff_date(days=max_days)
-        text_file_data = Tools.read_json_config()
-        supported_formats_deleting = text_file_data[1]
-        to_delete_folder_name = text_file_data[4]
+        config_data = Tools.read_json_config()
+        supported_formats_deleting = config_data["del_settings"]["supported_formats_deleting"]
+        to_delete_folder_name = config_data["del_settings"]["to_delete_dir_name"]
 
         if more_dirs == 0:
             more_dirs = False
@@ -1677,7 +1705,21 @@ class Tools:
             print(f"Permission denied to terminate PID {pid}.")
         except psutil.TimeoutExpired:
             print(f"Process with PID {pid} did not terminate in time.")
-        
+    
+    @classmethod
+    def add_new_path_to_history(cls,new_path,which_settings):
+        if new_path == "delete_history":
+            Tools.save_to_json_config([],which_settings,"path_history_list")
+            return
+
+        current_paths = Tools.read_json_config()[which_settings]["path_history_list"]
+        if new_path not in current_paths:
+            if len(current_paths) > 9:
+                current_paths.pop()
+            # current_paths.append(str(new_path))
+            current_paths.insert(0,str(new_path))
+            Tools.save_to_json_config(current_paths,which_settings,"path_history_list")
+
 class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
     """
     aby bylo možné posílat běžící aplikaci parametry:
@@ -1942,16 +1984,16 @@ class main_menu:
     def __init__(self,root):
         self.root = root
         pipeline_duplex.root = self.root # předání rootu do pipeline_duplex až ve chvílí, kdy je jasné, že aplikace není vícekrát spuštěná:
-        config_filename = "config_TRIMAZKON.xlsx"
-        setting_list_name = "Settings_recources"
-        Tools.check_config_file(config_filename,setting_list_name)
-        self.data_read_in_txt = Tools.read_config_data()
+        # config_filename = "config_TRIMAZKON.xlsx"
+        # setting_list_name = "Settings_recources"
+        # Tools.check_config_file(config_filename,setting_list_name)
+        self.config_data = Tools.read_json_config()
         self.database_downloaded = False
         self.ib_running = False
         self.run_as_admin = False
         self.TS_tray_taskname = "TRIMAZKON_startup_tray_setup"
         #init spínání tray podle nastavení
-        if self.data_read_in_txt[24] == "ano":
+        if self.config_data["app_settings"]["tray_icon_startup"] == "ano":
             task_success = Tools.establish_startup_tray()
             if str(task_success) == "need_access":
                 self.run_as_admin = True
@@ -2053,12 +2095,12 @@ class main_menu:
             self.clear_frames()
 
         self.ib_running = False
-        if self.data_read_in_txt[7] == "ano":
+        if self.config_data["app_settings"]["maximalized"]  == "ano":
             self.root.after(0, lambda:self.root.state('zoomed')) # max zoom, porad v okne
             
-        if self.data_read_in_txt[22] == "ne" and initial: # pokud není využito nastavení windows
+        if self.config_data["app_settings"]["app_zoom_checkbox"]  == "ne" and initial: # pokud není využito nastavení windows
             try:
-                root.after(0, lambda: Tools.set_zoom(int(self.data_read_in_txt[21]),root))
+                root.after(0, lambda: Tools.set_zoom(int(self.config_data["app_settings"]["app_zoom"]),root))
             except Exception as e:
                 print("error with menu scaling")
 
@@ -2177,15 +2219,14 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.increment_of_image = 0
         self.state = "stop"
         self.rotation_angle = 0.0
-        text_file_data = Tools.read_config_data()
-        self.config_path = text_file_data[2]
-        list_of_dir_names = text_file_data[9]
-        self.copy_dir = list_of_dir_names[5]
-        self.move_dir = list_of_dir_names[6]
-        self.chosen_option = text_file_data[11][0]
-        self.zoom_increment = text_file_data[11][1]
-        self.drag_increment = text_file_data[11][2]
-        self.number_of_film_images = text_file_data[14]
+        config_data = Tools.read_json_config()
+        self.config_path = config_data["app_settings"]["default_path"]
+        self.copy_dir = config_data["image_browser_settings"]["copyed_dir_name"]
+        self.move_dir = config_data["image_browser_settings"]["moved_dir_name"]
+        self.chosen_option = config_data["image_browser_settings"]["selected_option"]
+        self.zoom_increment = config_data["image_browser_settings"]["zoom_step"]
+        self.drag_increment = config_data["image_browser_settings"]["movement_step"]
+        self.number_of_film_images = config_data["image_browser_settings"]["image_film_count"]
         self.image_browser_path = ""
         self.unbind_list = []
         self.image_extensions = ['.jpg', '.jpeg', '.jpe', '.jif', '.jfif', '.jfi',
@@ -2201,7 +2242,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.default_path = ""
         self.previous_height = 0
         self.previous_width = 0
-        if text_file_data[13] == "ne":
+        if config_data["image_browser_settings"]["show_image_film"] == "ne":
             self.image_film = False
         else:
             self.image_film = True
@@ -2223,9 +2264,8 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.zoom_given = 100
         self.settings_applied = False
         self.loaded_image_status = True
-        self.inserted_path_history = []
+        self.inserted_path_history = config_data["image_browser_settings"]["path_history_list"]
         self.last_frame_dim = [0,0]
-        self.last_resize_time = 0
 
         if params_given != None:
             print("params given",params_given)
@@ -2482,6 +2522,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                         self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
                     if path_to_add_to_history not in self.inserted_path_history:
                         self.inserted_path_history.append(path_to_add_to_history)
+                        Tools.add_new_path_to_history(path_to_add_to_history,"image_browser_settings")
                 else:
                     Tools.add_colored_line(self.console,"- V zadané cestě nebyly nalezeny obrázky","red",None,True)
             else:
@@ -3877,26 +3918,18 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         self.default_displayed_prefix_dir = "cam"
         self.default_displayed_static_dir = 0
         self.submenu_option = "default_path"
-        self.text_file_data = Tools.read_config_data()
+        self.config_data = Tools.read_json_config()
+        self.selected_language = self.config_data["app_settings"]["default_language"]
         default_dir_names = string_database.default_setting_database_param
-        self.default_dir_names = [" (default: "+ default_dir_names[9] + ")",
-                                  " (default: "+ default_dir_names[10] + ")",
-                                  " (default: "+ default_dir_names[11] + ")",
-                                  " (default: "+ default_dir_names[12] + ")",
-                                  " (default: "+ default_dir_names[13] + ")",
-                                  " (default: "+ default_dir_names[14] + ")",
-                                  " (default: "+ default_dir_names[15] + ")"
+        self.default_dir_names = [" (default: "+ default_dir_names[9][0] + ")",
+                                  " (default: "+ default_dir_names[9][1] + ")",
+                                  " (default: "+ default_dir_names[9][2] + ")",
+                                  " (default: "+ default_dir_names[9][3] + ")",
+                                  " (default: "+ default_dir_names[9][4] + ")",
+                                  " (default: "+ default_dir_names[9][5] + ")",
+                                  " (default: "+ default_dir_names[9][6] + ")"
                                   ]
-        
         self.creating_advanced_option_widgets()
-    
-    # def set_zoom(self,zoom_factor):
-    #     try:
-    #         root.after(0,customtkinter.set_widget_scaling(zoom_factor / 100))
-    #     except Exception as e:
-    #         print(f"error with zoom scaling: {e}")
-        
-    #     root.tk.call('tk', 'scaling', zoom_factor / 100)
 
     def call_menu(self): # Tlačítko menu (konec, návrat do menu)
         """
@@ -3928,14 +3961,14 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
     def maximalized(self): # Nastavení základního spouštění (v okně/ maximalizované)
         option = self.checkbox_maximalized.get()
         if option == 1:
-            Tools.save_to_config("ano","maximalized")
+            Tools.save_to_json_config("ano","app_settings","maximalized")
         else:
-            Tools.save_to_config("ne","maximalized")
+            Tools.save_to_json_config("ne","app_settings","maximalized")
     
     def tray_startup_setup(self,main_console): # Nastavení základního spouštění (v okně/ maximalizované)
         option = self.tray_checkbox.get()
         if option == 1:
-            Tools.save_to_config("ano","tray_icon_startup")
+            Tools.save_to_json_config("ano","app_settings","tray_icon_startup")
             new_task_success = Tools.establish_startup_tray()
             if str(new_task_success) == "need_access":
                 menu.run_as_admin = True
@@ -3947,7 +3980,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 main_console.configure(text = "Automatické spouštění úspěšně nastaveno",text_color="green")
 
         else:
-            Tools.save_to_config("ne","tray_icon_startup")
+            Tools.save_to_json_config("ne","app_settings","tray_icon_startup")
             remove_task_success = Tools.remove_task_from_TS("TRIMAZKON_startup_tray_setup")
             if str(remove_task_success) == "need_access":
                 menu.run_as_admin = True
@@ -3960,9 +3993,9 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
     def set_safe_mode(self): # Nastavení základního spouštění (v okně/ maximalizované)
         option = self.checkbox_safe_mode.get()
         if option == 1:
-            Tools.save_to_config("ano","sorting_safe_mode")
+            Tools.save_to_json_config("ano","sort_conv_settings","sorting_safe_mode")
         else:
-            Tools.save_to_config("ne","sorting_safe_mode")
+            Tools.save_to_json_config("ne","sort_conv_settings","sorting_safe_mode")
 
     def refresh_main_window(self):
         self.clear_frame(self.root)
@@ -3994,18 +4027,26 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             main_console_text_color = "green"
 
         self.clear_frame(self.bottom_frame_default_path)
-        text_file_data = Tools.read_config_data()
+        config_data = Tools.read_json_config()
         if exception == False:
-            cutoff_date = text_file_data[4]
+            cutoff_date = config_data["del_settings"]["default_cutoff_date"]
         else:
             cutoff_date = exception
         
-        files_to_keep = text_file_data[3]
-        default_prefix_func=text_file_data[5]
-        default_prefix_cam =text_file_data[6]
+        files_to_keep = config_data["del_settings"]["default_files_to_keep"]
+        default_prefix_func=config_data["sort_conv_settings"]["prefix_function"]
+        default_prefix_cam =config_data["sort_conv_settings"]["prefix_camera"]
         self.drop_down_prefix_dir_names_list = [(str(default_prefix_cam)+" (pro třídění podle č. kamery)"),(str(default_prefix_func)+" (pro třídění podle č. funkce)")]
-        default_max_num_of_pallets=text_file_data[8]
-        self.drop_down_static_dir_names_list = text_file_data[9]
+        default_max_num_of_pallets=config_data["sort_conv_settings"]["max_pallets"]
+        self.drop_down_static_dir_names_list = [
+            config_data["sort_conv_settings"]["temp_dir_name"],
+            config_data["sort_conv_settings"]["pairs_dir_name"],
+            config_data["del_settings"]["to_delete_dir_name"],
+            config_data["sort_conv_settings"]["convert_bmp_dir_name"],
+            config_data["sort_conv_settings"]["convert_jpg_dir_name"],
+            config_data["image_browser_settings"]["copyed_dir_name"],
+            config_data["image_browser_settings"]["moved_dir_name"],
+        ]
         # pridani defaultniho nazvu pred zmenami do drop down menu
         for i in range(0,len(self.drop_down_static_dir_names_list)):
             self.drop_down_static_dir_names_list[i] += self.default_dir_names[i]
@@ -4026,7 +4067,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             if str(output[1]) != "/":
                 self.path_set.delete("0","200")
                 self.path_set.insert("0", output[1])
-                console_input = Tools.save_to_config(output[1],"default_path") # hlaska o nove vlozene ceste
+                console_input = Tools.save_to_json_config(output[1],"app_settings","default_path") # hlaska o nove vlozene ceste
                 default_path_insert_console.configure(text="")
                 default_path_insert_console.configure(text = "Aktuálně nastavená základní cesta k souborům: " + str(output[1]),text_color="white")
                 main_console.configure(text="")
@@ -4038,7 +4079,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             path_given = str(self.path_set.get())
             path_checked = Tools.path_check(path_given)
             if path_checked != False and path_checked != "/":
-                console_input = Tools.save_to_config(path_checked,"default_path")
+                console_input = Tools.save_to_json_config(path_checked,"app_settings","default_path")
                 default_path_insert_console.configure(text="")
                 default_path_insert_console.configure(text = "Aktuálně nastavená základní cesta k souborům: " + str(path_checked),text_color="white")
                 main_console.configure(text="")
@@ -4110,7 +4151,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                     main_console.configure(text="")
                     main_console.configure(text="U nastavení roku jste nezadali číslo",text_color="red")
 
-            Tools.save_to_config(cutoff_date,"default_cutoff_date")
+            Tools.save_to_json_config(cutoff_date,"del_settings","default_cutoff_date")
             self.setting_widgets(False, main_console._text,main_console._text_color,submenu_option="set_default_parametres")
 
         def set_files_to_keep():
@@ -4119,7 +4160,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             if input_files_to_keep.isdigit():
                 if int(input_files_to_keep) >= 0:
                     files_to_keep = int(input_files_to_keep)
-                    Tools.save_to_config(files_to_keep,"default_files_to_keep")
+                    Tools.save_to_json_config(files_to_keep,"del_settings","default_files_to_keep")
                     main_console.configure(text="")
                     main_console.configure(text="Základní počet ponechaných starších souborů nastaven na: " + str(files_to_keep),text_color="green")
                     console_files_to_keep.configure(text = "Aktuálně nastavené minimum: "+str(files_to_keep),text_color="white")
@@ -4149,10 +4190,10 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             if len(inserted_prefix) != 0:
                 if inserted_prefix != str(default_prefix_cam) and inserted_prefix != str(default_prefix_func):
                     if which_folder == "cam":
-                        report = Tools.save_to_config(inserted_prefix,"new_default_prefix_cam")
+                        report = Tools.save_to_json_config(inserted_prefix,"sort_conv_settings","prefix_camera")
                         self.default_displayed_prefix_dir = "cam"
                     if which_folder == "func":
-                        report = Tools.save_to_config(inserted_prefix,"new_default_prefix_func")
+                        report = Tools.save_to_json_config(inserted_prefix,"sort_conv_settings","prefix_function")
                         self.default_displayed_prefix_dir = "func"
                     main_console.configure(text="")
                     main_console.configure(text=report,text_color="green")
@@ -4198,7 +4239,21 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                         
                         if str(drop_down_static_dir_names.get()) == str(self.drop_down_static_dir_names_list[i]):
                             # zasilame k zapsani informaci o nastavenem vstupu a soucasne i pozici v poli
-                            Tools.save_to_config(inserted_new_name+" | "+str(i),"new_default_static_dir_name")
+                            if i == 0:
+                                Tools.save_to_json_config(inserted_new_name,"sort_conv_settings","temp_dir_name")
+                            elif i == 1:
+                                Tools.save_to_json_config(inserted_new_name,"sort_conv_settings","pairs_dir_name")
+                            elif i == 2:
+                                Tools.save_to_json_config(inserted_new_name,"del_settings","to_delete_dir_name")
+                            elif i == 3:
+                                Tools.save_to_json_config(inserted_new_name,"sort_conv_settings","convert_bmp_dir_name")
+                            elif i == 4:
+                                Tools.save_to_json_config(inserted_new_name,"sort_conv_settings","convert_jpg_dir_name")
+                            elif i == 5:
+                                Tools.save_to_json_config(inserted_new_name,"image_browser_settings","copyed_dir_name")
+                            elif i == 6:
+                                Tools.save_to_json_config(inserted_new_name,"image_browser_settings","moved_dir_name")
+
                             self.default_displayed_static_dir = i
                             neme_list_without_suffix = inserted_new_name.replace(str(self.default_dir_names[i]),"")
                             main_console.configure(text="")
@@ -4223,14 +4278,14 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             if which_operation == 0:
                 new_format = str(formats_set.get())
                 if new_format !="":
-                    main_console_text_add = Tools.save_to_config(new_format,"add_supported_sorting_formats")
+                    main_console_text_add = Tools.save_to_json_config(new_format,"sort_conv_settings","add_supported_sorting_formats")
                     main_console.configure(text="")
                     main_console.configure(text=main_console_text_add,text_color="white")
                     
             if which_operation == 1:
                 new_format = str(formats_deleting_input.get())
                 if new_format !="":
-                    main_console_text_add = Tools.save_to_config(new_format,"add_supported_deleting_formats")
+                    main_console_text_add = Tools.save_to_json_config(new_format,"del_settings","add_supported_deleting_formats")
                     main_console.configure(text="")
                     main_console.configure(text=main_console_text_add,text_color="white")
             self.setting_widgets(False,main_console._text,main_console._text_color,submenu_option="set_supported_formats")
@@ -4239,13 +4294,13 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             if which_operation == 0:
                 format_to_delete = str(formats_set.get())
                 if format_to_delete !="":
-                    main_console_text_pop = Tools.save_to_config(format_to_delete,"pop_supported_sorting_formats")
+                    main_console_text_pop = Tools.save_to_json_config(format_to_delete,"sort_conv_settings","pop_supported_sorting_formats")
                     main_console.configure(text="")
                     main_console.configure(text=main_console_text_pop,text_color="white")
             if which_operation == 1:
                 format_to_delete = str(formats_deleting_input.get())
                 if format_to_delete !="":
-                    main_console_text_pop = Tools.save_to_config(format_to_delete,"pop_supported_deleting_formats")
+                    main_console_text_pop = Tools.save_to_json_config(format_to_delete,"del_settings","pop_supported_deleting_formats")
                     main_console.configure(text="")
                     main_console.configure(text=main_console_text_pop,text_color="white")
 
@@ -4263,23 +4318,25 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             else:
                 main_console.configure(text="")
                 main_console.configure(text = f"Počet palet nastaven na: {input_1}",text_color="green")
-                Tools.save_to_config(input_1,"pallets_set")
+                Tools.save_to_json_config(input_1,"sort_conv_settings","max_pallets")
         
         def update_zoom_increment_slider(*args):
-            if self.text_file_data[11][1] != int(*args):
+            if config_data["image_browser_settings"]["zoom_step"] != int(*args):
                 label_IB4.configure(text = str(int(*args)) + " %")
-                self.text_file_data[11][1] = int(*args)
+                config_data["image_browser_settings"]["zoom_step"] = int(*args)
 
         def update_drag_movement_slider(*args):
-            if self.text_file_data[11][2] != int(*args):
+            if config_data["image_browser_settings"]["movement_step"] != int(*args):
                 label_IB6.configure(text = str(int(*args)) + " px")
-                self.text_file_data[11][2] = int(*args)
+                config_data["image_browser_settings"]["movement_step"] = int(*args)
 
         def on_off_image_film():
             if switch_image_film.get() == 1:
-                Tools.save_to_config("ano","image_film")
+                Tools.save_to_json_config("ano","image_browser_settings","show_image_film")
+                config_data["image_browser_settings"]["show_image_film"] = "ano"
             else:
-                Tools.save_to_config("ne","image_film")
+                Tools.save_to_json_config("ne","image_browser_settings","show_image_film")
+                config_data["image_browser_settings"]["show_image_film"] = "ne"
 
         def change_image_film_number(*args):
             input_number = int(*args)
@@ -4297,7 +4354,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 return dpi
 
             if checkbox_app_zoom.get() == 1:
-                Tools.save_to_config("ano","app_zoom_checkbox")
+                Tools.save_to_json_config("ano","app_settings","app_zoom_checkbox")
                 current_dpi = get_screen_dpi()
                 if current_dpi == 96:
                     Tools.set_zoom(100,root)
@@ -4308,8 +4365,35 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 app_zoom_slider.configure(state = "disabled",button_color = "gray50",button_hover_color = "gray50")
             else:
                 app_zoom_slider.configure(state = "normal",button_color = "#3a7ebf",button_hover_color = "#3a7ebf")
-                Tools.save_to_config("ne","app_zoom_checkbox")
+                Tools.save_to_json_config("ne","app_settings","app_zoom_checkbox")
                 Tools.set_zoom(int(app_zoom_slider.get()),root)
+
+        def call_delete_path_history():
+            confirm_window_label1 = "Opravdu si přejete odstranit historii vložených cest?"
+            confirm_window_label2 = "Upozornění"
+            if self.selected_language == "en":
+                confirm_window_label1 = "Are you sure you want to delete the history of embedded paths?"
+                confirm_window_label2 = "Notice"
+            confirm = Subwindows.confirm_window(confirm_window_label1,confirm_window_label2,self.selected_language)
+            if confirm == True:
+                Tools.add_new_path_to_history("delete_history","del_settings")
+                main_console.configure(text="Historie vložených cest byla vymazána",text_color="orange")
+                if self.selected_language == "en":
+                    main_console.configure(text="The history of inserted paths has been deleted",text_color="orange")
+
+        def call_path_context_menu(event):
+            path_history = Tools.read_json_config()["del_settings"]["path_history_list"]
+            def insert_path(path):
+                self.path_set.delete("0","200")
+                self.path_set.insert("0", path)
+            if len(path_history) > 0:
+                path_context_menu = tk.Menu(self.root, tearoff=0,fg="white",bg="black")
+                for i in range(0,len(path_history)):
+                    path_context_menu.add_command(label=path_history[i], command=lambda row_path = path_history[i]: insert_path(row_path),font=("Arial",22,"bold"))
+                    if i < len(path_history)-1:
+                        path_context_menu.add_separator()
+                        
+                path_context_menu.tk_popup(context_menu_button.winfo_rootx(),context_menu_button.winfo_rooty()+50)
 
         if submenu_option == "default_path":
             self.option_buttons[0].configure(fg_color="#212121")
@@ -4322,7 +4406,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             self.tray_checkbox =        customtkinter.CTkCheckBox(master = tray_option_frame,height=40,text = "Spouštět TRIMAZKON na pozadí (v systémové nabídce \"tray_icons\") při zapnutí systému Windows?",command = lambda: self.tray_startup_setup(main_console),font=("Arial",22,"bold"))
             tray_option_frame.          pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
 
-            current_zoom = self.text_file_data[21]
+            current_zoom = config_data["app_settings"]["app_zoom"]
             new_option_frame =          customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
             new_option_frame.           pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             zomm_app_label =            customtkinter.CTkLabel(master = new_option_frame,height=20,text = "Nastavte celkové přiblížení aplikace:",justify = "left",font=("Arial",22,"bold"))
@@ -4335,21 +4419,20 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             checkbox_app_zoom.          grid(column =0,row=1,sticky = tk.W,pady =(10,20),padx=400)
 
             second_option_frame =        customtkinter.CTkFrame(    master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
-            second_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             label5 =                    customtkinter.CTkLabel(     master = second_option_frame,height=40,text = "Nastavte základní cestu k souborům při spuštění:",justify = "left",font=("Arial",22,"bold"))
             explorer_settings_label =   customtkinter.CTkLabel(     master = second_option_frame,height=40,text = "Nastavení EXPLORERU: ",justify = "left",font=("Arial",20,"bold"))
             select_by_dir =             customtkinter.CTkCheckBox(  master = second_option_frame,height=40,text = "Vybrat cestu zvolením složky",font=("Arial",20),command = lambda: select_path_by_dir())
             select_by_file =            customtkinter.CTkCheckBox(  master = second_option_frame,height=40,text = "Vybrat cestu zvolením souboru (jsou viditelné při vyhledávání)",font=("Arial",20),command = lambda: select_path_by_file())
-            self.path_set =             customtkinter.CTkEntry(     master = second_option_frame,width=800,height=40,font=("Arial",20),placeholder_text="")
+            context_menu_button  =  customtkinter.CTkButton(master = second_option_frame, width = 40,height=40, text = "V",font=("Arial",20,"bold"),corner_radius=0,fg_color="#505050")
+            self.path_set =             customtkinter.CTkEntry(     master = second_option_frame,width=805,height=40,font=("Arial",20),placeholder_text="")
             button_save5 =              customtkinter.CTkButton(    master = second_option_frame,width=100,height=40, text = "Uložit", command = lambda: save_path(),font=("Arial",22,"bold"))
-            button_explorer =           customtkinter.CTkButton(    master = second_option_frame,width=100,height=40, text = "EXPLORER", command = lambda: call_browseDirectories(),font=("Arial",22,"bold"))
+            button_explorer =           customtkinter.CTkButton(    master = second_option_frame,width=40,height=40, text = "...", command = lambda: call_browseDirectories(),font=("Arial",22,"bold"))
+            del_path_history =           customtkinter.CTkButton(    master = second_option_frame,height=40, text = "Smazat historii", command = lambda: call_delete_path_history(),font=("Arial",22,"bold"))
             default_path_insert_console=customtkinter.CTkLabel(     master = second_option_frame,height=40,text ="",justify = "left",font=("Arial",22),text_color="white")
             console_frame =             customtkinter.CTkFrame(     master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1,fg_color="black")
-            console_frame.              pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             main_console =              customtkinter.CTkLabel(master = console_frame,height=20,text = str(main_console_text),text_color=str(main_console_text_color),justify = "left",font=("Arial",22))
             if self.windowed:
                 save_frame =            customtkinter.CTkFrame(     master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
-                save_frame.             pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top",anchor = "e")
                 save_changes_button =   customtkinter.CTkButton(master = save_frame,width=150,height=40, text = "Aplikovat/ načíst změny", command = lambda: self.refresh_main_window(),font=("Arial",22,"bold"))
             self.checkbox_maximalized.  grid(column =0,row=row_index-1,sticky = tk.W,pady =20,padx=10)
             self.tray_checkbox.         grid(column =0,row=row_index-1,sticky = tk.W,pady =20,padx=10)
@@ -4357,22 +4440,30 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             explorer_settings_label.    grid(column =0,row=row_index+1,sticky = tk.W,pady =10,padx=10)
             select_by_dir .             grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=250)
             select_by_file.             grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=550)
-            self.path_set.              grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
-            button_save5.               grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=815)
-            button_explorer.            grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=920)
+            context_menu_button.        grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
+            self.path_set.              grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=50)
+            button_explorer.            grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=855)
+            button_save5.               grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=900)
+            del_path_history.           grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=1005)
             default_path_insert_console.grid(column =0,row=row_index+3,sticky = tk.W,pady =10,padx=10)
             main_console.               grid(column =0,row=row_index+4,sticky = tk.W,pady =10,padx=10)
+            second_option_frame.        pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
+            console_frame.              pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
+            
             if self.windowed:
                 save_changes_button.    pack(pady =5,padx=10,anchor = "e")
+                save_frame.             pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top",anchor = "e")
             select_by_dir.select()
+            context_menu_button.bind("<Button-1>", call_path_context_menu)
 
             def save_path_enter_btn(e):
                 save_path()
                 self.current_root.focus_set()
             self.path_set.bind("<Return>",save_path_enter_btn)
 
-            app_zoom_slider.set(self.text_file_data[21])
-            if self.text_file_data[22] == "ano":
+            app_zoom_slider.set(config_data["app_settings"]["app_zoom"])
+            app_zoom_slider.update_idletasks()
+            if config_data["app_settings"]["app_zoom_checkbox"] == "ano":
                 checkbox_app_zoom.select()
                 windows_zoom_setting()
 
@@ -4382,26 +4473,26 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 """
                 if not checkbox_app_zoom.get() == 1:
                     current_zoom = int(app_zoom_slider.get())
-                    Tools.save_to_config(current_zoom,"app_zoom")
+                    Tools.save_to_json_config(current_zoom,"app_settings","app_zoom")
                     Tools.set_zoom(current_zoom,root)
 
             app_zoom_slider.bind("<ButtonRelease-1>",lambda e: slider_released(e))
 
-            if text_file_data[2] != False and text_file_data[2] != "/":
-                default_path_insert_console.configure(text="Aktuálně nastavená základní cesta k souborům: " + str(text_file_data[2]),text_color="white")
-                self.path_set.configure(placeholder_text=str(text_file_data[2]))
+            if config_data["app_settings"]["default_path"] != False and config_data["app_settings"]["default_path"] != "/":
+                default_path_insert_console.configure(text="Aktuálně nastavená základní cesta k souborům: " + str(config_data["app_settings"]["default_path"]),text_color="white")
+                self.path_set.configure(placeholder_text=str(config_data["app_settings"]["default_path"]))
                 self.path_set.delete("0","200")
-                self.path_set.insert("0", str(text_file_data[2]))
+                self.path_set.insert("0", str(config_data["app_settings"]["default_path"]))
             else:
                 default_path_insert_console.configure(text="Aktuálně nastavená základní cesta k souborům v konfiguračním souboru je neplatná",text_color="red")
                 self.path_set.configure(placeholder_text="Není nastavena žádná základní cesta")
             
-            if text_file_data[7] == "ano":
+            if config_data["app_settings"]["maximalized"] == "ano":
                 self.checkbox_maximalized.select()
             else:
                 self.checkbox_maximalized.deselect()
 
-            if text_file_data[24] == "ano":
+            if config_data["app_settings"]["tray_icon_startup"]  == "ano":
                 self.tray_checkbox.select()
             else:
                 self.tray_checkbox.deselect()
@@ -4541,7 +4632,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         if submenu_option == "set_supported_formats":
             self.option_buttons[3].configure(fg_color="#212121")
             #widgets pro nastavovani podporovanych formatu
-            supported_formats_deleting = "Aktuálně nastavené podporované formáty pro možnosti mazání: " + str(text_file_data[1])
+            supported_formats_deleting = "Aktuálně nastavené podporované formáty pro možnosti mazání: " + str(config_data["del_settings"]["supported_formats_deleting"])
             first_option_frame =                customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
             first_option_frame.                 pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             label_supported_formats_deleting =  customtkinter.CTkLabel(master = first_option_frame,height=50,text = "1. Nastavte podporované formáty pro možnosti: MAZÁNÍ:",justify = "left",font=("Arial",22,"bold"))
@@ -4555,7 +4646,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             button_pop2.                        grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=290)
             console_bottom_frame_4.             grid(column =0,row=row_index+3,sticky = tk.W,pady =0,padx=10)
 
-            supported_formats_sorting = "Aktuálně nastavené podporované formáty pro možnosti třídění: " + str(text_file_data[0])
+            supported_formats_sorting = "Aktuálně nastavené podporované formáty pro možnosti třídění: " + str(config_data["sort_conv_settings"]["supported_formats_sorting"])
             second_option_frame =               customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
             second_option_frame.                pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             label3 =                            customtkinter.CTkLabel(master = second_option_frame,height=50,text = "2. Nastavte podporované formáty pro možnosti: TŘÍDĚNÍ:",justify = "left",font=("Arial",22,"bold"))
@@ -4586,9 +4677,9 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
 
         if submenu_option == "set_image_browser_setting":
             self.option_buttons[4].configure(fg_color="#212121")
-            text_increment = str(self.text_file_data[11][1]) + " %"
-            text_movement = str(self.text_file_data[11][2]) + " px"
-            text_image_film = str(self.text_file_data[14]) + " obrázků na každé straně"
+            text_increment = str(config_data["image_browser_settings"]["zoom_step"]) + " %"
+            text_movement = str(config_data["image_browser_settings"]["movement_step"]) + " px"
+            text_image_film = str(config_data["image_browser_settings"]["image_film_count"]) + " obrázků na každé straně"
             second_option_frame =       customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
             second_option_frame.        pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             label_IB3 =                 customtkinter.CTkLabel(master = second_option_frame,height=20,text = "1. Nastavte o kolik procent se navýší přiblížení jedním krokem kolečka myši:",justify = "left",font=("Arial",22,"bold"))
@@ -4626,26 +4717,26 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             if self.windowed:
                 save_changes_button.    pack(pady =5,padx=10,anchor = "e")
 
-            zoom_increment_set.set(self.text_file_data[11][1])
-            zoom_movement_set.set(self.text_file_data[11][2])
-            num_of_image_film_images_slider.set(self.text_file_data[14])
+            zoom_increment_set.set(config_data["image_browser_settings"]["zoom_step"])
+            zoom_movement_set.set(config_data["image_browser_settings"]["movement_step"])
+            num_of_image_film_images_slider.set(config_data["image_browser_settings"]["image_film_count"])
 
             def slider_released(e,parameter):
                 """
                 save after the slider is released - it still opening and closing excel otherwise
                 """
                 if parameter == "zoom_increment":
-                    Tools.save_to_config([None,int(zoom_increment_set.get()),None],"image_browser_param_set")
+                    Tools.save_to_json_config(int(zoom_increment_set.get()),"image_browser_settings","zoom_step")
                 elif parameter == "zoom_move":
-                    Tools.save_to_config([None,None,int(zoom_movement_set.get())],"image_browser_param_set")
+                    Tools.save_to_json_config(int(zoom_movement_set.get()),"image_browser_settings","movement_step")
                 elif parameter == "IB_image_num":
-                    Tools.save_to_config(int(num_of_image_film_images_slider.get()),"num_of_IB_film_images")
+                    Tools.save_to_json_config(int(num_of_image_film_images_slider.get()),"image_browser_settings","image_film_count")
 
             zoom_increment_set.bind("<ButtonRelease-1>",lambda e: slider_released(e,"zoom_increment"))
             zoom_movement_set.bind("<ButtonRelease-1>",lambda e: slider_released(e,"zoom_move"))
             num_of_image_film_images_slider.bind("<ButtonRelease-1>",lambda e: slider_released(e,"IB_image_num"))
-            if self.text_file_data[13] == "ano":
-                switch_image_film.select()  
+            if config_data["image_browser_settings"]["show_image_film"] == "ano":
+                switch_image_film.select()
 
     def creating_advanced_option_widgets(self): # Vytváří veškeré widgets (advance option MAIN)
         if self.windowed:
@@ -4734,10 +4825,9 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
     """
     def __init__(self,root):
         self.root = root
-        self.text_file_data = Tools.read_config_data()
-        list_of_folder_names = self.text_file_data[9]
-        self.bmp_folder_name = list_of_folder_names[3]
-        self.jpg_folder_name = list_of_folder_names[4]
+        self.config_data = Tools.read_json_config()
+        self.bmp_folder_name = self.config_data["sort_conv_settings"]["convert_bmp_dir_name"]
+        self.jpg_folder_name = self.config_data["sort_conv_settings"]["convert_jpg_dir_name"]
         self.temp_path_for_explorer = None
         self.create_convert_option_widgets()
     
@@ -4917,7 +5007,7 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         self.loading_bar.       set(value = 0)
         self.console.           pack(pady =10,padx=10)
         self.checkbox_bmp.select()
-        recources_path = self.text_file_data[2]
+        recources_path = self.config_data["app_settings"]["default_path"]
         if recources_path != False and recources_path != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", str(recources_path))
@@ -4952,12 +5042,12 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
     def __init__(self,root):
         self.root = root
         self.unbind_list = []
-        self.text_file_data = Tools.read_json_config()
-        self.supported_formats_deleting = self.text_file_data[1]
-        self.files_to_keep = self.text_file_data[2]
-        self.cutoff_date = self.text_file_data[3]
-        self.to_delete_folder_name = self.text_file_data[4]
-        self.selected_language = self.text_file_data[11]
+        self.config_data = Tools.read_json_config()
+        self.supported_formats_deleting = self.config_data["del_settings"]["supported_formats_deleting"]
+        self.files_to_keep = self.config_data["del_settings"]["default_files_to_keep"]
+        self.cutoff_date = self.config_data["del_settings"]["default_cutoff_date"]
+        self.to_delete_folder_name = self.config_data["del_settings"]["to_delete_dir_name"]
+        self.selected_language = self.config_data["app_settings"]["default_language"]
         self.temp_path_for_explorer = None
         self.selected_option = 1
         self.more_dirs = False
@@ -4972,7 +5062,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         function:
         - menu
         - sorting
-        - (deleting)
+        - deleting
         - converting
         """
         
@@ -4988,6 +5078,10 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
 
         if function == "menu":
             menu.menu()
+        elif function == "sorting":
+            Sorting_option(self.root)
+        elif function == "converting":
+            Converting_option(self.root)
 
     def start(self,only_analyze=False):# Ověřování cesty, init, spuštění
         """
@@ -5131,7 +5225,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])
-            Tools.add_new_path_to_history(str(output[1]))
+            Tools.add_new_path_to_history(str(output[1]),which_settings="del_settings")
             if self.selected_language == "en":
                 Tools.add_colored_line(self.console,f"The path has been added: {output[1]}","green")
             else:
@@ -5867,7 +5961,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             if str(output[1]) != "/":
                 operating_path.delete(0,300)
                 operating_path.insert(0, str(output[1]))
-                Tools.add_new_path_to_history(str(output[1]))
+                Tools.add_new_path_to_history(str(output[1]),which_settings="del_settings")
                 if self.selected_language == "en":
                     Tools.add_colored_line(console,"The path where the task will be executed has been inserted.","green",None,True)
                 else:
@@ -6197,7 +6291,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
 
     def create_deleting_option_widgets(self):  # Vytváří veškeré widgets (delete option MAIN)
         def call_path_context_menu(event):
-            path_history = Tools.read_json_config()[10]
+            path_history = Tools.read_json_config()["del_settings"]["path_history_list"]
             def insert_path(path):
                 self.path_set.delete("0","200")
                 self.path_set.insert("0", path)
@@ -6213,16 +6307,31 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         header_frame =          customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#212121")
         top_frame =             customtkinter.CTkFrame(master=header_frame,corner_radius=0,fg_color="#212121")
         frame_with_cards =      customtkinter.CTkFrame(master=top_frame,corner_radius=0,fg_color="#636363",height=100)
-        menu_button =           customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "MENU", command =  lambda: self.call_extern_function(function="menu"),font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
-        deleting_button =       customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Mazání souborů",font=("Arial",20,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
-        menu_button.            pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
-        deleting_button.        pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
+
+        # menu_button =           customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "MENU", command =  lambda: self.call_extern_function(function="menu"),font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        # deleting_button =       customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Mazání souborů",font=("Arial",20,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
+        # menu_button.            pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
+        # deleting_button.        pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
+
+        menu_button =       customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "MENU",           command = lambda: self.call_extern_function(function="menu"),
+                                                    font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        sorting_button =    customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Třídění souborů",command = lambda: self.call_extern_function(function="sorting"),
+                                                    font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        deleting_button =   customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Mazání souborů",
+                                                    font=("Arial",20,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
+        converting_button = customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Konvertování souborů",command = lambda: self.call_extern_function(function="converting"),
+                                                    font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
+        menu_button.        pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
+        sorting_button.     pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
+        deleting_button.    pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
+        converting_button.  pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
+
         frame_with_cards.       pack(pady=0,padx=0,fill="both",expand=True,side = "left",anchor="w")
         frame_with_logo =       customtkinter.CTkFrame(master=top_frame,corner_radius=0)
         logo =                  customtkinter.CTkImage(Image.open(Tools.resource_path("images/jhv_logo.png")),size=(300, 100))
         image_logo =            customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
         frame_with_logo.        pack(pady=0,padx=0,expand=False,side = "left",anchor="e")
-        image_logo.             pack(pady = 0,padx =(15,0),ipadx = 20,ipady = 10,expand=False)
+        image_logo.             pack(pady = 0,padx =(15,0),ipadx = 20,ipady = 30,expand=False)
         top_frame.              pack(pady=0,padx=0,fill="x",side = "top")
 
         frame_path_input =      customtkinter.CTkFrame(master=header_frame,corner_radius=0)
@@ -6296,7 +6405,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         if global_recources_load_error:
             create_task_btn.configure(state = "disabled")
 
-        recources_path = self.text_file_data[0]
+        recources_path = self.config_data["app_settings"]["default_path"]
         if recources_path != False and recources_path != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", str(recources_path))
@@ -6342,15 +6451,14 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.by_which_ID_num = ""   
         self.more_dirs = False
         self.unbind_list = []
-        self.text_file_data = Tools.read_config_data()
-        self.supported_formats_sorting = self.text_file_data[0]
-        self.prefix_func = self.text_file_data[5]
-        self.prefix_Cam = self.text_file_data[6]
-        self.max_num_of_pallets = self.text_file_data[8]
-        self.safe_mode = self.text_file_data[10]
-        list_of_folder_names = self.text_file_data[9]
-        self.nok_folder_name = list_of_folder_names[0]
-        self.pairs_folder_name = list_of_folder_names[1]
+        self.config_data = Tools.read_json_config()
+        self.supported_formats_sorting = self.config_data["sort_conv_settings"]["supported_formats_sorting"]
+        self.prefix_func = self.config_data["sort_conv_settings"]["prefix_function"]
+        self.prefix_Cam = self.config_data["sort_conv_settings"]["prefix_camera"]
+        self.max_num_of_pallets = self.config_data["sort_conv_settings"]["max_pallets"]
+        self.safe_mode = self.config_data["sort_conv_settings"]["sorting_safe_mode"]
+        self.nok_folder_name = self.config_data["sort_conv_settings"]["temp_dir_name"]
+        self.pairs_folder_name = self.config_data["sort_conv_settings"]["pairs_dir_name"]
         self.sort_inside_pair_folder = True
         self.temp_path_for_explorer = None
         self.original_image = Image.open(Tools.resource_path("images/loading3.png"))
@@ -6942,7 +7050,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.view_image(1)
         self.two_subfolders_checked()
         #predvyplneni cesty pokud je platna v configu
-        recources_path = self.text_file_data[2]
+        recources_path = self.config_data["app_settings"]["default_path"]
         if recources_path != False and recources_path != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", str(recources_path))
@@ -6994,11 +7102,11 @@ class IP_manager: # Umožňuje nastavit možnosti třídění souborů
         else:
             current_window_size = "min"
 
-        app_data = Tools.read_config_data()
-        zoom_factor = app_data[21] 
+        app_data = Tools.read_json_config()
+        zoom_factor = app_data["app_settings"]["app_zoom"]
 
         # IP_setting.IP_assignment(self.root,self.callback,current_window_size,initial_path,zoom_factor)
-        IP_setting.main(self.root,self.callback,current_window_size,initial_path,zoom_factor)
+        IP_setting.main(self.root,self.callback,current_window_size,initial_path,zoom_factor,config_filename)
 
 class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
     """
@@ -7013,22 +7121,25 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
         # automatic download bypass:
         if testing:
             self.database_downloaded = True 
-        text_file_data = Tools.read_config_data()
-        self.database_filename = text_file_data[15]
-        self.default_excel_filename = text_file_data[16]
-        self.default_xml_file_name = text_file_data[17]
-        self.default_subwindow_status = text_file_data[18]
-        self.default_export_extension = text_file_data[19]
-        self.default_path = text_file_data[20]
-        self.default_render_mode = text_file_data[23]
+        config_data = Tools.read_json_config()
+        self.database_filename = config_data["catalogue_settings"]["database_filename"]
+        self.default_excel_filename = config_data["catalogue_settings"]["catalogue_filename"]
+        self.default_xml_file_name = config_data["catalogue_settings"]["metadata_filename"]
+        self.default_subwindow_status = config_data["catalogue_settings"]["subwindow_behav"]
+        self.default_export_extension = config_data["catalogue_settings"]["default_export_suffix"]
+        self.default_path = config_data["catalogue_settings"]["default_path"]
+        self.default_render_mode = config_data["catalogue_settings"]["render_mode"]
         self.create_catalogue_maker_widgets()
 
     def callback(self,data_to_save):
         print("received data: ",data_to_save)
-        render_mode = data_to_save[6]
-        Tools.save_to_config(render_mode,"render_mode")
-        data_to_save.pop(6)
-        Tools.save_to_config(data_to_save,"catalogue_data")
+        Tools.save_to_json_config(data_to_save[0],"catalogue_settings","database_filename")
+        Tools.save_to_json_config(data_to_save[1],"catalogue_settings","catalogue_filename")
+        Tools.save_to_json_config(data_to_save[2],"catalogue_settings","metadata_filename")
+        Tools.save_to_json_config(data_to_save[3],"catalogue_settings","subwindow_behav")
+        Tools.save_to_json_config(data_to_save[4],"catalogue_settings","default_export_suffix")
+        Tools.save_to_json_config(data_to_save[5],"catalogue_settings","default_path")
+        Tools.save_to_json_config(data_to_save[6],"catalogue_settings","render_mode")
         menu.menu()
 
     def create_catalogue_maker_widgets(self):

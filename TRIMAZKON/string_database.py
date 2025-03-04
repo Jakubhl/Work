@@ -338,8 +338,8 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
 #                             "statusy odvolby dotazování při mazání",
 #                             ]
 
-default_setting_database_param = ["bmp,png",
-                                "jpg,bmp,png,ifz",
+default_setting_database_param = [["bmp","png"],
+                                ["jpg","bmp","png","ifz"],
                                 "C:/Users/",
                                 1000,
                                 [28,2,2024],

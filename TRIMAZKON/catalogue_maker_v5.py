@@ -18,7 +18,7 @@ import sys
 import pyperclip
 import copy
 
-testing = False
+testing = True
 if testing:
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")
@@ -31,7 +31,7 @@ if testing:
     def set_zoom(zoom_factor):
         root.tk.call('tk', 'scaling', zoom_factor / 100)
         customtkinter.set_widget_scaling(zoom_factor / 100) 
-    set_zoom(60)
+    set_zoom(80)
 
 class Tools:
     @classmethod
@@ -176,6 +176,8 @@ class Tools:
 
     @classmethod
     def path_check(cls,path_raw,only_repair = None):
+        if path_raw == None:
+            return
         path=path_raw
         backslash = "\\"
         if backslash[0] in path:
@@ -539,9 +541,9 @@ class ToplevelWindow:
         export_label2           .pack(pady=(10,5),padx=10,anchor="w",expand=False,side="top")
         export_path_frame       .pack(expand=True,side="top",anchor="n",fill="x")
         console                 .pack(expand=True,side="top",anchor="n",fill="x")
-        button_load             .pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
-        button_save             .pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
-        button_exit             .pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
+        button_exit             .pack(pady = 10, padx = (5,10),expand=False,side="right",anchor = "e")
+        button_load             .pack(pady = 10, padx = 5,expand=False,side="right",anchor = "e")
+        button_save             .pack(pady = 10, padx = 5,expand=False,side="right",anchor = "e")
 
         if exit_status:
             button_load.configure(state = "disabled")
@@ -579,7 +581,7 @@ class ToplevelWindow:
         x = root.winfo_rootx()
         y = root.winfo_rooty()
         window.geometry(f"{window.winfo_width()}x{window.winfo_height()}+{x+250}+{y+150}")
-        window.focus_force()
+        window.after(100,window.focus_force())
         window.focus()
 
     @classmethod
@@ -680,8 +682,8 @@ class ToplevelWindow:
         option4_frame.              pack(pady = 0, padx = 0,fill="x",anchor="n",expand=False,side="top")
         option5_frame.              pack(pady = 0, padx = 0,fill="x",anchor="n",expand=False,side="top")
         option6_frame.              pack(pady = 0, padx = 0,fill="x",anchor="n",expand=False,side="top",ipadx=5,ipady=5)
-        button_save.                pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
-        button_exit.                pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
+        button_exit.                pack(pady = 10, padx = (5,10),expand=False,side="right",anchor = "e")
+        button_save.                pack(pady = 10, padx = 5,expand=False,side="right",anchor = "e")
 
         excel_name_label_entry.insert(0,str(default_excel_name))
         xml_name_label_entry.insert(0,str(default_xml_name))
@@ -815,8 +817,8 @@ class ToplevelWindow:
         export_label2       .pack(pady=(10,5),padx=10,anchor="w",expand=False,side="top")
         export_path_frame   .pack(expand=True,side="top",anchor="n",fill="x")
         console             .pack(expand=True,side="top",anchor="n",fill="x")
-        button_save         .pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
-        button_exit         .pack(pady = 10, padx = 10,expand=True,side="right",anchor = "e")
+        button_exit         .pack(pady = 10, padx = (5,10),expand=False,side="right",anchor = "e")
+        button_save         .pack(pady = 10, padx = 5,expand=False,side="right",anchor = "e")
 
         excel_filename = default_excel_filename
         if str(project_name.replace(" ","")) != "":
@@ -1198,8 +1200,8 @@ class ToplevelWindow:
         bottom_frame                .pack(pady = 0, padx = 0,fill="x",anchor="s",expand=True,side="bottom")
         button_save =               customtkinter.CTkButton(master = bottom_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: save_contoller())
         button_exit =               customtkinter.CTkButton(master = bottom_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
-        button_save                 .pack(pady=10,padx=(0,10),expand=False,side = "right",anchor="e")
-        button_exit                 .pack(pady=10,padx=(0,10),expand=False,side = "right",anchor="e")
+        button_exit                 .pack(pady=10,padx=(5,10),expand=False,side = "right",anchor="e")
+        button_save                 .pack(pady=10,padx=5,expand=False,side = "right",anchor="e")
 
         notes_input3.bind("<Key>",remaping_characters)
 
@@ -2915,8 +2917,8 @@ class Catalogue_gui:
 
         button_save =   customtkinter.CTkButton(master = button_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: save_changes())
         button_exit =   customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(child_root))
-        button_save     .pack(pady = 10, padx = 10,anchor="e",expand=False,side="right")
-        button_exit     .pack(pady = 10, padx = 10,anchor="e",expand=True,side="right")
+        button_exit     .pack(pady = 10, padx = (5,10),anchor="e",expand=False,side="right")
+        button_save     .pack(pady = 10, padx = 5,anchor="e",expand=False,side="right")
 
         if self.default_subwindow_status == 1:
             child_root.state('zoomed')
@@ -3356,21 +3358,16 @@ class Catalogue_gui:
             str(self.project_name_input.get()))
 
         self.clear_frame(self.root)
-        main_header =                   customtkinter.CTkFrame(master=self.root,corner_radius=0,height=100)
-        console_frame=                  customtkinter.CTkFrame(master=self.root,corner_radius=0,height=50)
-        main_header_row0 =              customtkinter.CTkFrame(master=main_header,corner_radius=0,height=100,fg_color="#636363")
-        main_header                     .pack(pady=0,padx=5,expand=False,fill="x",side = "top",ipady = 10,ipadx = 10,anchor="w")
-        main_header_row0                .pack(pady=0,padx=0,expand=True,fill="x",side = "top",anchor="w")
-        image_frame =                   customtkinter.CTkFrame(master=main_header,corner_radius=0,height=100,fg_color="#212121")
-        image_frame                     .pack(pady=0,padx=0,expand=False,side = "right",anchor="e",ipady = 10,ipadx = 10)
+        main_header =                   customtkinter.CTkFrame(master=self.root,corner_radius=0)
+        console_frame=                  customtkinter.CTkFrame(master=self.root,corner_radius=0)
+        main_header_row0 =              customtkinter.CTkFrame(master=main_header,corner_radius=0,fg_color="#636363")
+        image_frame =                   customtkinter.CTkFrame(master=main_header,corner_radius=0,fg_color="#212121")
         logo =                          customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/jhv_logo.png")),size=(300, 100))
         image_logo =                    customtkinter.CTkLabel(master = image_frame,text = "",image =logo,bg_color="#212121")
-        image_logo                      .pack(pady=0,padx=0,expand=True)
-        main_header_row1 =              customtkinter.CTkFrame(master=main_header,corner_radius=0,height=100,fg_color="#212121")
-        main_header_row2 =              customtkinter.CTkFrame(master=main_header,corner_radius=0,height=100,fg_color="#212121")
-        main_header_row1                .pack(pady=0,padx=0,expand=True,fill="x",side = "top",anchor="w")
-        main_header_row2                .pack(pady=(5,0),padx=0,expand=True,fill="x",side = "top",anchor="w")
-        console_frame                   .pack(pady=0,padx=0,fill="x",expand=False,side = "top")
+        image_logo                      .pack(pady=0,padx=0,expand=False)
+        buttons_frame =                 customtkinter.CTkFrame(master=main_header,corner_radius=0,fg_color="#212121")
+        main_header_row1 =              customtkinter.CTkFrame(master=buttons_frame,corner_radius=0,fg_color="#212121")
+        main_header_row2 =              customtkinter.CTkFrame(master=buttons_frame,corner_radius=0,fg_color="#212121")
 
         main_menu_button =              customtkinter.CTkButton(master = main_header_row0, width = 200,height=50,text = "MENU",command = lambda: call_menu_routine(),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
         main_menu_button                .pack(pady = (10,0),padx =(20,0),anchor = "s",side = "left")
@@ -3404,11 +3401,9 @@ class Catalogue_gui:
         self.button_copy                .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         button_settings                 .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         self.main_console =             tk.Text(console_frame, wrap="none", height=0, width=180,background="black",font=("Arial",22),state=tk.DISABLED)
-        self.main_console               .pack(pady = 10, padx = (10,0),anchor="w",expand=True,side="bottom")
+        self.main_console               .pack(pady = 10, padx = (10,0),anchor="w",expand=False,fill="x",side="bottom")
         column_labels =                 customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=50)
         self.project_tree =             customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
-        column_labels                   .pack(pady=0,padx=5,fill="x",expand=False,side = "top")
-        self.project_tree               .pack(pady=5,padx=5,fill="both",expand=True,side = "top")
         stations_column_header =        customtkinter.CTkLabel(master = column_labels,text = "Stanice",font=("Arial",25,"bold"),bg_color="#212121",width=self.default_block_width-35,height=50)
         camera_column_header =          customtkinter.CTkLabel(master = column_labels,text = "Kamera",font=("Arial",25,"bold"),bg_color="#212121",width=self.default_block_width-35,height=50)
         optics_column_header =          customtkinter.CTkLabel(master = column_labels,text = "Objektiv/ světla",font=("Arial",25,"bold"),bg_color="#212121",width=self.default_block_width-35,height=50)
@@ -3419,6 +3414,15 @@ class Catalogue_gui:
         optics_column_header            .pack(pady=(15,0),padx=15,expand=False,side = "left")
         controller_column_header        .pack(pady=(15,0),padx=15,expand=False,side = "left")
         accessory_column_header         .pack(pady=(15,0),padx=15,expand=False,side = "left")
+        main_header_row0                .pack(pady=0,padx=0,expand=False,fill="x",side = "top",anchor="w")
+        main_header_row1                .pack(pady=(10,0),padx=0,expand=False,fill="x",side = "top",anchor="w")
+        main_header_row2                .pack(pady=(10,0),padx=0,expand=False,fill="x",side = "top",anchor="w")
+        buttons_frame                   .pack(pady=0,padx=0,expand=False,fill="x",side = "left",anchor="w")
+        image_frame                     .pack(pady=0,padx=0,expand=False,side = "right",anchor="e",ipadx = 15)
+        main_header                     .pack(pady=0,padx=5,expand=False,fill="x",side = "top",ipady = 10,ipadx = 10,anchor="w")
+        console_frame                   .pack(pady=0,padx=0,fill="x",expand=False,side = "top")
+        column_labels                   .pack(pady=0,padx=5,fill="x",expand=False,side = "top")
+        self.project_tree               .pack(pady=5,padx=5,fill="both",expand=True,side = "top")
         self.make_project_widgets(initial = initial)
         Tools.add_colored_line(self.main_console,self.download_database_console_input[0],self.download_database_console_input[1],None,True)
 
@@ -3729,6 +3733,11 @@ class Save_excel:
         self.excel_column_width=50
         self.between_station_rows = []
         self.xlsx_format = False
+        self.inventory_list = {"camera_list":[],
+                               "optics_list":[],
+                               "lights_list":[],
+                               "controller_list":[],
+                               "accessory_list":[],}
 
     def make_header(self,wb):
         ws = wb["Sheet"]
@@ -3876,7 +3885,8 @@ class Save_excel:
                             try:
                                 if not str(columns[3]+str(row_before_addition)) in self.controller_list[controller_index]["excel_position"]:
                                     self.controller_list[controller_index]["excel_position"].append(str(columns[3]+str(row_before_addition)))
-                            except Exception:
+
+                            except Exception as e:
                                 self.controller_list[controller_index]["excel_position"] = [(columns[3]+str(row_before_addition))]
 
                             acc_count = len(controllers["accessory_list"])
@@ -3903,8 +3913,9 @@ class Save_excel:
                             if acc_dummy_count>0:
                                 rows_to_merge.append(columns[4] + str(dummy_start_row-1) + ":"+columns[4] + str(dummy_start_row-1 + acc_dummy_count))
                             break
+                        
                         ii += 1
-
+                        
                 if len(cameras["optics_list"]) == 0:
                     last_row_optics = last_row_optics + 1
                 optics_count_no_dummy = len(cameras["optics_list"])
@@ -4196,6 +4207,20 @@ class Save_excel:
         - xlsx první sloupec - v gui prvně viditelné informace
         - xlsm první informace
         """
+        
+        def write_to_inventory(device_list,device):
+            if device == "" or device == None:
+                return
+            item_found = False
+            for items in self.inventory_list[str(device_list)]:
+                if items["name"] == device:
+                    items["count"] +=1
+                    item_found = True
+                    break
+
+            if not item_found:
+                self.inventory_list[str(device_list)].append({"name": device,"count":1})
+        
         light_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
 
         ws = wb.active
@@ -4211,6 +4236,7 @@ class Save_excel:
                 excel_cell = columns[0] + stations["excel_position"][1:]
                 ws[excel_cell] = ""
             for cameras in stations["camera_list"]:
+                write_to_inventory("camera_list",cameras["type"])
                 excel_cell = cameras["excel_position"]
                 ws[excel_cell] = cameras["type"]
                 if str(cameras["controller_color"]) != "":
@@ -4231,10 +4257,17 @@ class Save_excel:
                         ws[excel_cell] = optics["type"]
                         if "light_status" in optics:
                             ws[excel_cell].fill = light_fill
+                            write_to_inventory("lights_list",optics["type"])
+                        else:
+                            write_to_inventory("optics_list",optics["type"])
+
                     except AttributeError:
                         pass
 
         for controllers in self.controller_list:
+            write_to_inventory("controller_list",controllers["type"])
+            for acc in controllers["accessory_list"]:
+                write_to_inventory("accessory_list",acc["type"])
             try:
                 for position in controllers["excel_position"]:
                     excel_cell = str(position)
@@ -4458,6 +4491,25 @@ class Save_excel:
                     except Exception as e:
                         print(f"Obrázek {image_paths} se nepodařilo exportovat. {e}")
 
+    def create_inventory(self,wb):
+        ws = wb.create_sheet("Kusovník")
+        ws["A"+str(1)] = "Kamery"
+        ws["C"+str(1)] = "Objektivy"
+        ws["E"+str(1)] = "Světla"
+        ws["G"+str(1)] = "Kontrolery"
+        ws["I"+str(1)] = "Příslušenství"
+        device_columns = ["A","C","E","G","I"]
+        count_columns = ["B","D","F","H","J"]
+        column_increment = 0
+        list_names = ["camera_list","optics_list","lights_list","controller_list","accessory_list"]
+        for items in list_names:
+            row_increment = 2
+            for subitems in self.inventory_list[items]:
+                ws[str(device_columns[column_increment])+str(row_increment)] = subitems["name"]
+                ws[str(count_columns[column_increment])+str(row_increment)] = subitems["count"]
+                row_increment+=1
+            column_increment+=1
+
     def main(self):
         wb = Workbook() #vytvorit novy excel, prepsat...
         if ".xlsm" in self.excel_file_name:
@@ -4505,6 +4557,7 @@ class Save_excel:
             self.merge_cells(wb,merge_list=rows_to_merge)
             try:
                 self.fill_values(wb)
+                self.create_inventory(wb)
                 self.fill_xlsx_column(wb)
                 self.fill_images(wb)
                 wb.save(self.excel_file_name)
@@ -4522,5 +4575,5 @@ class Save_excel:
 # download = download_database.database(database_filename)
 # Catalogue_gui(root,download.output)
 if testing:
-    Catalogue_gui(root,"testing - stahování vypnuto","","max",database_filename,"excel_testing","xml_testing",0,"xlsm","","fast")
+    Catalogue_gui(root,"testing - stahování vypnuto","","max",database_filename,"excel_testing","xml_testing",0,"xlsx","","fast")
     root.mainloop()
