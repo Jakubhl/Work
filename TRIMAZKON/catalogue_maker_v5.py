@@ -2230,9 +2230,10 @@ class Catalogue_gui:
                 controller_index = None
                 if str(current_controller).replace(" ","") != "":
                     for controllers in self.controller_object_list:
-                        if (controllers["name"]+"("+controllers["type"]+")").replace(" ","") == str(current_controller).replace(" ",""):
+                        if str(str(controllers["name"])+"("+controllers["type"]+")").replace(" ","") == str(current_controller).replace(" ",""):
                             controller_index = self.controller_object_list.index(controllers)
                             self.last_controller_index = controller_index+1 #musíme počítat s možností nemít žádný kontroler
+                            break
                 self.temp_station_list[station_index]["camera_list"][camera_index]["controller_index"] = controller_index
                 self.temp_station_list[station_index]["camera_list"][camera_index]["cable"] = cam_cable_menu.get()
                 filtered_description = Tools.make_wrapping(str(notes_input.get("1.0", tk.END)))
@@ -2796,7 +2797,8 @@ class Catalogue_gui:
                 notes_input.delete("1.0",tk.END)
                 # notes_input.insert("1.0",filter_text_input(str(self.temp_station_list[station_index]["camera_list"][camera_index]["description"])))
                 notes_input.insert("1.0",str(self.temp_station_list[station_index]["camera_list"][camera_index]["description"]))
-            except TypeError:
+            except TypeError as typeerr_msg:
+                print("ERROR: ",typeerr_msg)
                 camera_index = 0
                 if len(self.temp_station_list[station_index]["camera_list"]) > 0:
                     if str(self.temp_station_list[station_index]["camera_list"][camera_index]["type"]) in self.whole_camera_type_database:
@@ -2805,6 +2807,13 @@ class Catalogue_gui:
                     #     controller_entry.set(str(self.temp_station_list[station_index]["camera_list"][camera_index]["controller"]))
                     if self.last_controller_index < len(self.custom_controller_drop_list)-1:
                         controller_entry.set(self.custom_controller_drop_list[self.last_controller_index])
+                    
+                    try:
+                        assigned_controller_index = int(self.temp_station_list[station_index]["camera_list"][camera_index]["controller_index"])
+                        controller_entry.set(self.custom_controller_drop_list[assigned_controller_index])
+                    except Exception:
+                        pass
+                    
                     if str(self.temp_station_list[station_index]["camera_list"][camera_index]["cable"]) in self.whole_camera_cable_database:
                         cam_cable_menu.set(str(self.temp_station_list[station_index]["camera_list"][camera_index]["cable"]))
 
@@ -2935,6 +2944,12 @@ class Catalogue_gui:
 
         def callback_edited_controller(new_controller_data):
             nonlocal controller_index
+            old_controller = f"{self.controller_object_list[controller_index]['name']} ({self.controller_object_list[controller_index]['type']})"
+            for stations in self.station_list:
+                for cameras in stations["camera_list"]:
+                    if cameras["controller"] == old_controller:
+                        cameras["controller"] = f"{new_controller_data[1]} ({new_controller_data[0]})"
+
             self.controller_object_list[controller_index]["type"] = new_controller_data[0]
             self.controller_object_list[controller_index]["name"] = new_controller_data[1]
             self.controller_object_list[controller_index]["color"] = new_controller_data[2]
