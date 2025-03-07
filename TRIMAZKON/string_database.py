@@ -359,5 +359,6 @@ default_setting_database_param = [["bmp","png"],
                                 [], #sorting and converting path history
                                 [], #deleting path history
                                 [], #image browser path history
+                                [], #catalogue path history
                                 [2,1,0,1,1,1,1,0,100] #ip setting
                                 ]

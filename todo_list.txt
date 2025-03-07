@@ -846,18 +846,18 @@ ip setting - manage bin - když přepínám mezi disk-ip nelze vrátit změny u 
 TRIMAZKON - ip_setting - vytvořit nový excel, pokud chybí - hotovo
 TRIMAZKON - catalogue - seznam materiálu, KUSOVNÍK - xlsx - hotovo
 
+7:26 AM 3/7/2025
+TRIMAZKON - katalog - když prohodím kontroler u editu kamery - smažou se okolní kontrolery - hotovo
+TRIMAZKON - dodělat garafiku kusovniku - hotovo
+TRIMAZKON - catalogue - seznam materiálu, KUSOVNÍK - xlsm - hotovo
+TRIMAZKON - catalogue - chybne editovani kontroleru vytvori prazdny accessory - hotovo
+TRIMAZKON - catalogue - přímo ukldádat do configu a nemuset přitom do menu - hotovo
+TRIMAZKON - catalogue - ukladat historii cest - hotovo
+TRIMAZKON - mít možnost převzít si data z excelu (možná to celé předělat na import a export) - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-TRIMAZKON - katalog - když prohodím kontroler u editu kamery - smažou se okolní kontrolery
 
-TRIMAZKON - katalog - ukladani souboru - vytvaret lepsi nazev
-TRIMAZKON - catalogue - nabízet vsechny soubory xml v ceste + ukladat historii cest
-
-
-TRIMAZKON - catalogue - seznam materiálu, KUSOVNÍK - xlsm
-
-TRIMAZKON - catalogue - přímo ukldádat do configu a nemuset přitom do menu
-trimazkon - catalogue - neukládají se některé parametry
 
 
 TRIMAZKON - upravit v advanced option historii cest pro kazdy zvlast (i mazani historie) - stejne tak i defaultni cestu kazde moznosti
@@ -865,7 +865,7 @@ TRIMAZKON - upravit v advanced option historii cest pro kazdy zvlast (i mazani h
 
 
 
-TRIMAZKON - když aplikaci otevřu přes tray, tak mi to skočí do prohlížeče obrázků
+
 
 TRIMAZKON - u konzoli, kde se dynamicky pise text - pouzit console.see(tk.END) + zkontrolovat threads jako u mazani
 
@@ -879,7 +879,7 @@ TRIMAZKON - prohlížeč - když vyberu neco z histoie cest z nabídky, rovnou o
 TRIMAZKON - prohlížeč - udelat specialni launcher na obrazky - aby se nenacitaly vsechny knihovny - aby to bylo rychlé
 
 
-
+TRIMAZKON - TRAY, když aplikaci otevřu přes tray, tak mi to skočí do prohlížeče obrázků
 TRIMAZKON - TRAY - předělat logy na verikální logiku
 
 

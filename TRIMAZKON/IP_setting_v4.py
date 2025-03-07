@@ -150,8 +150,6 @@ class Tools:
                 widget.unbind("<Button-3>")
                 widget.unbind("<Double-1>")
                 widget.unbind("<MouseWheel>")
-                widget.pack_forget()
-                widget.grid_forget()
                 widget.destroy()
     
     @classmethod
@@ -185,6 +183,202 @@ class Tools:
             if items == None:
                 none_count += 1
         return none_count
+
+    @classmethod
+    def path_check(cls,path_raw,only_repair = None):
+        path=path_raw
+        backslash = "\\"
+        if backslash[0] in path:
+            newPath = path.replace(backslash[0], '/')
+            path = newPath
+        if path.endswith('/') == False:
+            newPath = path + "/"
+            path = newPath
+        #oprava mezery v nazvu
+        path = r"{}".format(path)
+        if not os.path.exists(path) and only_repair == None:
+            return False
+        else:
+            return path
+
+    @classmethod
+    def browseDirectories(cls,visible_files,start_path=None,file_type = [("All files", "*.*")]): # Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
+        """
+        Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
+
+        Vstupní data:
+
+        0: visible_files = "all" / "only_dirs"\n
+        1: start_path = None -optimalni, docasne se ulozi posledni nastavena cesta v exploreru
+
+        Výstupní data:
+
+        0: výstupní chybová hlášení
+        1: opravená cesta
+        2: nazev vybraneho souboru (option: all)
+        """
+        corrected_path = ""
+        output= ""
+        name_of_selected_file = ""
+
+        # if start_path == None:
+        #     start_path = Tools.read_json_config()["app_settings"]["default_path"] #defaultni cesta
+        # else: # byla zadana docasna cesta pro explorer
+        start_path = Tools.path_check(start_path)
+            # if checked_path == False:
+            #     output = "Změněná dočasná základní cesta pro explorer již neexistuje"
+            #     start_path = Tools.read_json_config()["app_settings"]["default_path"] #defaultni cesta
+            # else:
+            #     start_path = checked_path
+
+        if start_path != False:
+            if not os.path.exists(start_path):
+                start_path = ""
+                output="Konfigurační soubor obsahuje neplatnou cestu"
+
+        else:
+            output="Chybí konfigurační soubor config_TRIMAZKON.xlsx s počáteční cestou...\n"
+            start_path=""
+
+        # pripad vyberu files, aby byly viditelne
+        if visible_files == "all":
+            if(start_path != ""):
+                foldername_path = tk.filedialog.askopenfile(initialdir = start_path,
+                                                            title = "Klikněte na soubor v požadované cestě",
+                                                            filetypes=file_type)
+                path_to_directory= ""
+                if foldername_path != None:
+                    path_to_file = str(foldername_path.name)
+                    path_to_file_split = path_to_file.split("/")
+                    i=0
+                    for parts in path_to_file_split:
+                        i+=1
+                        if i<len(path_to_file_split):
+                            if i == 1:
+                                path_to_directory = path_to_directory + parts
+                            else:
+                                path_to_directory = path_to_directory +"/"+ parts
+                        else:
+                            name_of_selected_file = parts
+                else:
+                    output = "Přes explorer nebyla vložena žádná cesta"
+            else:           
+                foldername_path = tk.filedialog.askopenfile(initialdir = "/",
+                                                            title = "Klikněte na soubor v požadované cestě",
+                                                            filetypes=file_type)
+                path_to_directory= ""
+                if foldername_path != None:
+                    path_to_file = str(foldername_path.name)
+                    path_to_file_split = path_to_file.split("/")
+                    i=0
+                    for parts in path_to_file_split:
+                        i+=1
+                        if i<len(path_to_file_split):
+                            if i == 1:
+                                path_to_directory = path_to_directory + parts
+                            else:
+                                path_to_directory = path_to_directory +"/"+ parts
+                        else:
+                            name_of_selected_file = parts
+                else:
+                    output = "Přes explorer nebyla vložena žádná cesta"
+
+        # pripad vyberu slozek
+        if visible_files == "only_dirs":
+            if(start_path != ""):
+                path_to_directory = tk.filedialog.askdirectory(initialdir = start_path, title = "Vyberte adresář")
+                if path_to_directory == None or path_to_directory == "":
+                    output = "Přes explorer nebyla vložena žádná cesta"
+            else:
+                path_to_directory = tk.filedialog.askdirectory(initialdir = "/", title = "Vyberte adresář")
+                if path_to_directory == None or path_to_directory == "":
+                    output = "Přes explorer nebyla vložena žádná cesta"
+
+        check = Tools.path_check(path_to_directory)
+        corrected_path = check
+        return [output,corrected_path,name_of_selected_file]
+
+    @classmethod
+    def import_option_window(cls,root,app_icon_path,default_path,callback,ip_env = False):
+        child_root = customtkinter.CTkToplevel(fg_color="#212121")
+        child_root.after(200, lambda: child_root.iconbitmap(app_icon_path))
+        child_root.title("Možnosti exportování souboru")
+
+        def get_excel_path():
+            path_inserted = import_path.get()
+            path_inserted = Tools.resource_path(path_inserted)
+            if path_inserted.replace(" ","") == "":
+                return None
+            else:
+                if path_inserted.endswith(".xlsx"):
+                    return path_inserted
+                else:
+                    return path_inserted + ".xlsx"
+
+        def close_window(child_root):
+            try:
+                root.unbind("<Button-1>")
+            except Exception:
+                pass
+            child_root.destroy()
+
+        def call_browse_directories():
+            """
+            Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
+            """
+            output = Tools.browseDirectories("all",str(import_path.get()),file_type=[("xlsx files", "*.xlsx"),("All files", "*.*")])
+            if str(output[1]) != "/":
+                import_path.delete(0,300)
+                import_path.insert(0, str(output[1])+str(output[2]))
+                Tools.add_colored_line(console,"Byla vložena cesta pro uložení","green",None,True)
+            print(output[0])
+            child_root.focus()
+            child_root.focus_force()
+
+        def load_data():
+            path_to_send = get_excel_path()
+            if os.path.exists(path_to_send) and path_to_send.endswith(".xlsx"):
+                if ip_env:
+                    callback(path_to_send,all_data_checkbox.get())
+                else:
+                    callback(path_to_send)
+                child_root.destroy()
+            else:
+                Tools.add_colored_line(console,"Neplatná cesta k souboru (hledaný je .xlsx soubor)","red",None,True)
+
+        import_frame =      customtkinter.CTkFrame(master = child_root,corner_radius=0,fg_color="#212121")
+        import_label =      customtkinter.CTkLabel(master = import_frame,text = "Zadejte cestu, kam soubor uložit:",font=("Arial",22,"bold"))
+        import_path_frame = customtkinter.CTkFrame(master = import_frame,corner_radius=0,fg_color="#212121")
+        import_path =       customtkinter.CTkEntry(master = import_path_frame,font=("Arial",20),width=780,height=50,corner_radius=0)
+        explorer_btn =      customtkinter.CTkButton(master = import_path_frame,text = "...",font=("Arial",22,"bold"),width = 50,height=50,corner_radius=0,command=lambda: call_browse_directories())
+        import_path         .pack(pady = 5, padx = (10,0),anchor="w",fill="x",expand=True,side="left")
+        explorer_btn        .pack(pady = 5, padx = (0,10),anchor="e",expand=False,side="right")
+        all_data_checkbox = customtkinter.CTkCheckBox(master= import_frame,text = "Načíst rovnou i adresy disků?",font=("Arial",22,"bold"))
+        console =           tk.Text(import_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED)
+        button_save =       customtkinter.CTkButton(master = import_frame,text = "Načíst",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: load_data())
+        button_exit =       customtkinter.CTkButton(master = import_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(child_root))
+
+        import_frame        .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left")
+        import_label       .pack(pady=(10,5),padx=10,anchor="w",expand=False,side="top")
+        import_path_frame   .pack(expand=True,side="top",anchor="n",fill="x")
+        if ip_env:
+            all_data_checkbox.pack(pady = 5, padx = (10),anchor="w",side="top")
+        console             .pack(padx = 5,expand=True,side="top",anchor="n",fill="x")
+        button_exit         .pack(pady = 10, padx = (5,10),expand=False,side="right",anchor = "e")
+        button_save         .pack(pady = 10, padx = 5,expand=False,side="right",anchor = "e")
+
+        if os.path.exists(default_path):
+            import_path.insert("0",str(default_path))
+            Tools.add_colored_line(console,"Byla vložena uložená cesta z konfiguračního souboru","green",None,True)
+
+        root.bind("<Button-1>",lambda e: close_window(child_root))
+        child_root.update()
+        child_root.update_idletasks()
+        x = root.winfo_rootx()
+        y = root.winfo_rooty()
+        child_root.geometry(f"{child_root.winfo_width()}x{child_root.winfo_height()}+{x+200}+{y+100}")
+        child_root.focus()
+        child_root.focus_force()
 
 class main:
     class DM_tools:  
@@ -638,6 +832,7 @@ class main:
             self.excel_file_path = parent.excel_file_path
             self.app_icon = parent.app_icon
             self.config_filename_path = parent.config_filename_path
+            self.initial_path = parent.initial_path
             self.disk_all_rows = []
             self.disk_project_list = []
             self.bin_projects = [[None],[None]]
@@ -1831,7 +2026,11 @@ class main:
             column4.pack(fill="both",expand=True, side = "left")
             self.project_tree.update()
             self.project_tree.update_idletasks()
-            self.notes_frame_height = int(notes_frame._current_height)
+            if len(self.disk_all_rows) > 0:
+                try:
+                    self.notes_frame_height = int(notes_frame._current_height)
+                except Exception:
+                    pass
             try:
                 self.project_tree._parent_canvas.yview_moveto(0.0)
             except Exception:
@@ -1897,11 +2096,35 @@ class main:
                     self.deletion_behav = 111
                     Tools.save_to_json_config("ask_to_delete",self.deletion_behav,self.config_filename_path)
 
+            def load_old_config():
+                def callback_with_path(path_given):
+                    try:
+                        disk_rows = main.DM_tools.read_excel_data(path_given)[0]
+                        for i in range(0,len(disk_rows)):
+                            row = (len(disk_rows)-1)-i
+                            main.DM_tools.save_excel_data_disk(self.excel_file_path,
+                                                                0,
+                                                                "",
+                                                                disk_rows[i][0],
+                                                                disk_rows[i][1],
+                                                                disk_rows[i][2],
+                                                                disk_rows[i][3],
+                                                                disk_rows[i][4],
+                                                                disk_rows[i][5],
+                                                                force_row_to_print=row+1)
+                            
+                        self.make_project_cells_disk()
+                        Tools.add_colored_line(self.main_console,"Seznam adres disků ze souboru úspěšně nahrán a uložen","green",None,True)
+                            
+                    except Exception as e:
+                        Tools.add_colored_line(self.main_console,f"Nepodařilo se načíst data z externího souboru: {e}","red",None,True)
+
+                Tools.import_option_window(self.root,self.app_icon,self.initial_path,callback_with_path)
+
             child_root = customtkinter.CTkToplevel()
             self.opened_window = child_root
             x = self.root.winfo_rootx()
             y = self.root.winfo_rooty()
-            # child_root.geometry(f"620x580+{x+350}+{y+180}")
 
             child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(self.app_icon)))
             child_root.title("Nastavení")
@@ -1949,6 +2172,12 @@ class main:
             checkbox5.      pack(pady = 0,padx=10,side="top",anchor = "w")
             checkbox6.      pack(pady = (5,5),padx=10,side="top",anchor = "w")
 
+            load_config_frame = customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#707070",border_width=2)
+            load_config_label = customtkinter.CTkLabel(master = load_config_frame, width = 100,height=40,text = "Načíst seznam adres disků (z jiného konfiguračního souboru)",font=("Arial",20,"bold"))
+            button_load =       customtkinter.CTkButton(master = load_config_frame, width = 150,height=40,text = "Zvolit soubor",command = lambda:load_old_config(),font=("Arial",20,"bold"),corner_radius=0)
+            load_config_label.  pack(pady = (10,0),padx=10,side="top",anchor = "w")
+            button_load.        pack(pady = (5,10),padx=10,side="top",anchor = "w")
+
             close_frame =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
             button_close =  customtkinter.CTkButton(master = close_frame, width = 150,height=40,text = "Zavřít",command = child_root.destroy,font=("Arial",20,"bold"),corner_radius=0)
             button_close.   pack(pady = 10,padx=10,side="bottom",anchor = "e")
@@ -1958,6 +2187,7 @@ class main:
             main_frame3.    pack(expand=False,fill="x",side="top")
             main_frame4.    pack(expand=False,fill="x",side="top")
             main_frame5.    pack(expand=False,fill="x",side="top")
+            load_config_frame.    pack(expand=False,fill="x",side="top")
             close_frame.    pack(expand=True,fill="both",side="top")
 
             if self.default_note_behav == 1:
@@ -2178,7 +2408,7 @@ class main:
     class IP_assignment: # Umožňuje měnit statickou IP
         """
         Umožňuje měnit nastavení statických IP adres
-        """
+        """  
         def __init__(self,parent,fav_w_called=None):
             self.parent_instance = parent
             self.root = parent.root
@@ -4114,6 +4344,7 @@ class main:
                 elif int(checkbox4.get()) == 1:
                     self.make_edited_project_first = True
                     Tools.save_to_json_config("auto_order_when_edit",1,self.config_filename_path)
+            
             def delete_behav():
                 if int(checkbox5.get()) == 0 and int(checkbox6.get()) == 0:
                     self.deletion_behav = 100
@@ -4127,11 +4358,62 @@ class main:
                     return
                 Tools.save_to_json_config("ask_to_delete",self.deletion_behav,self.config_filename_path)
 
+            def load_old_config():
+                def callback_with_path(path_given,load_all_data_status):
+                    try:
+                        all_rows,project_list,favourite_list = main.IP_tools.read_excel_data(path_given,False) # read from another file
+                        last_fav_row = 1
+                        for i in range(0,len(all_rows)):
+                            row = (len(all_rows)-1)-i
+                                
+                            main.IP_tools.save_excel_data(self.excel_file_path,
+                                                                0,
+                                                                "",
+                                                                False,
+                                                                all_rows[i][0],
+                                                                all_rows[i][1],
+                                                                all_rows[i][2],
+                                                                all_rows[i][3],
+                                                                force_row_to_print=row+1,
+                                                                fav_status=favourite_list[i])# save to current file
+                            if favourite_list[i] == 1:
+                                main.IP_tools.save_excel_data(self.excel_file_path,
+                                                                0,
+                                                                "",
+                                                                True,
+                                                                all_rows[i][0],
+                                                                all_rows[i][1],
+                                                                all_rows[i][2],
+                                                                all_rows[i][3],
+                                                                force_row_to_print=last_fav_row,
+                                                                fav_status=favourite_list[i])# save to current file
+                                last_fav_row +=1
+                        self.make_project_cells() # make project cells with loaded data (it reads again...)
+                        Tools.add_colored_line(self.main_console,"Seznam id adres ze souboru úspěšně nahrán a uložen","green",None,True)
+
+                        if int(load_all_data_status) == 1:
+                            disk_rows = main.DM_tools.read_excel_data(path_given)[0]
+                            for i in range(0,len(disk_rows)):
+                                row = (len(disk_rows)-1)-i
+                                main.DM_tools.save_excel_data_disk(self.excel_file_path,
+                                                                    0,
+                                                                    "",
+                                                                    disk_rows[i][0],
+                                                                    disk_rows[i][1],
+                                                                    disk_rows[i][2],
+                                                                    disk_rows[i][3],
+                                                                    disk_rows[i][4],
+                                                                    disk_rows[i][5],
+                                                                    force_row_to_print=row+1)
+                            Tools.add_colored_line(self.main_console,"Seznam ip adres a disků ze souboru úspěšně nahrán a uložen","green",None,True)
+                            
+                    except Exception as e:
+                        Tools.add_colored_line(self.main_console,f"Nepodařilo se načíst data z externího souboru: {e}","red",None,True)
+
+                Tools.import_option_window(self.root,self.app_icon,self.initial_path,callback_with_path,ip_env = True)
+                
             child_root = customtkinter.CTkToplevel()
             self.opened_window = child_root
-            # x = self.root.winfo_rootx()
-            # y = self.root.winfo_rooty()
-            # child_root.geometry(f"580x400+{x+350}+{y+180}")
             child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(self.app_icon)))
             child_root.title("Nastavení")
             main_frame =    customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#707070",border_width=2)
@@ -4154,6 +4436,12 @@ class main:
             checkbox5.      pack(pady = 0,padx=10,side="top",anchor = "w")
             checkbox6.      pack(pady = (5,5),padx=10,side="top",anchor = "w")
 
+            load_config_frame = customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#707070",border_width=2)
+            load_config_label = customtkinter.CTkLabel(master = load_config_frame, width = 100,height=40,text = "Načíst seznam adres (z jiného konfiguračního souboru)",font=("Arial",20,"bold"))
+            button_load =       customtkinter.CTkButton(master = load_config_frame, width = 150,height=40,text = "Zvolit soubor",command = lambda:load_old_config(),font=("Arial",20,"bold"),corner_radius=0)
+            load_config_label.  pack(pady = (10,0),padx=10,side="top",anchor = "w")
+            button_load.        pack(pady = (5,10),padx=10,side="top",anchor = "w")
+
             close_frame =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
             button_close =  customtkinter.CTkButton(master = close_frame, width = 150,height=40,text = "Zavřít",command = child_root.destroy,font=("Arial",20,"bold"),corner_radius=0)
             button_close.   pack(pady = 10,padx=10,side="bottom",anchor = "e")
@@ -4161,6 +4449,7 @@ class main:
             main_frame.     pack(expand=False,fill="x",side="top")
             main_frame4.    pack(expand=False,fill="x",side="top")
             main_frame5.    pack(expand=False,fill="x",side="top")
+            load_config_frame.    pack(expand=False,fill="x",side="top")
             close_frame.    pack(expand=True,fill="both",side="top")
 
             if self.default_note_behav == 1:

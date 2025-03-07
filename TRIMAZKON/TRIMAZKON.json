@@ -1,10 +1,10 @@
 {
     "app_settings": {
-        "default_path": "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/New folder/",
+        "default_path": "C:/Users/",
         "maximalized": "ano",
         "show_changelog": "ne",
         "app_zoom": 80,
-        "app_zoom_checkbox": "ne",
+        "app_zoom_checkbox": "ano",
         "tray_icon_startup": "ne",
         "default_language": "cz"
     },
@@ -37,10 +37,7 @@
             2024
         ],
         "to_delete_dir_name": "Ke_smazani",
-        "path_history_list": [
-            "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/",
-            "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/New folder/"
-        ]
+        "path_history_list": []
     },
     "image_browser_settings": {
         "selected_option": 2,
@@ -50,28 +47,30 @@
         "image_film_count": 6,
         "copyed_dir_name": "Kop\u00edrovan\u00e9_obr\u00e1zky",
         "moved_dir_name": "P\u0159esunut\u00e9_obr\u00e1zky",
-        "path_history_list": [
-            "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/New folder/"
-        ]
+        "path_history_list": []
     },
     "catalogue_settings": {
         "database_filename": "Sharepoint_databaze.xlsx",
-        "catalogue_filename": "Katalog_kamerov\u00e9ho_vybaven\u00eddf",
-        "metadata_filename": "_metadata_cataloguedg",
+        "catalogue_filename": "Katalog_kamerov\u00e9ho_vybaven\u00ed",
+        "metadata_filename": "_metadata_catalogue",
         "subwindow_behav": 0,
         "default_export_suffix": "xlsx",
-        "default_path": null,
-        "render_mode": "precise"
+        "default_path": "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/",
+        "render_mode": "fast",
+        "path_history_list": [
+            "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/jhv_MAZ/",
+            "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/"
+        ]
     },
     "ip_settings": {
-        "default_ip_interface": 6,
+        "default_ip_interface": 2,
         "favorite_ip_window_status": 0,
         "disk_or_ip_window": 0,
         "default_window_size": 1,
         "init_disk_refresh": 1,
         "editable_notes": 1,
-        "disk_persistent": 0,
-        "auto_order_when_edit": 1,
+        "disk_persistent": 1,
+        "auto_order_when_edit": 0,
         "ask_to_delete": 100
     }
 }

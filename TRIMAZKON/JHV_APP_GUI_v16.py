@@ -1,7 +1,7 @@
 import customtkinter
 import os
 import time
-from openpyxl import load_workbook
+# from openpyxl import load_workbook
 from PIL import Image, ImageTk
 import Sorting_option_v5 as Trideni
 import Deleting_option_v2 as Deleting
@@ -343,18 +343,18 @@ class Tools:
                                 "subwindow_behav": default_value_list[13][3],
                                 "default_export_suffix": default_value_list[13][4],
                                 "default_path": default_value_list[13][5],
-                                "render_mode": default_value_list[13][6],}
-                                # "path_history_list": default_value_list[19]},
+                                "render_mode": default_value_list[13][6],
+                                "path_history_list": default_value_list[21],}
         
-        new_ip_settings = {"default_ip_interface": default_value_list[21][0],
-                            "favorite_ip_window_status": default_value_list[21][1],
-                            "disk_or_ip_window": default_value_list[21][2],
-                            "default_window_size": default_value_list[21][3],
-                            "init_disk_refresh": default_value_list[21][4],
-                            "editable_notes": default_value_list[21][5],
-                            "disk_persistent": default_value_list[21][6],
-                            "auto_order_when_edit": default_value_list[21][7],
-                            "ask_to_delete": default_value_list[21][8],}
+        new_ip_settings = {"default_ip_interface": default_value_list[22][0],
+                            "favorite_ip_window_status": default_value_list[22][1],
+                            "disk_or_ip_window": default_value_list[22][2],
+                            "default_window_size": default_value_list[22][3],
+                            "init_disk_refresh": default_value_list[22][4],
+                            "editable_notes": default_value_list[22][5],
+                            "disk_persistent": default_value_list[22][6],
+                            "auto_order_when_edit": default_value_list[22][7],
+                            "ask_to_delete": default_value_list[22][8],}
         
         output_object = {"app_settings": new_app_settings,
                        "sort_conv_settings": new_sort_conv_settings,
@@ -397,7 +397,7 @@ class Tools:
         - convert_jpg_dir_name
         - sorting_safe_mode
         - path_history_list
-        \nDELETING SETTINGS\n
+        \nDEL SETTINGS\n
         - supported_formats_deleting
         - default_files_to_keep
         - default_cutoff_date
@@ -1368,12 +1368,15 @@ class Tools:
             print(f"Error při psaní do konzole: {e}")
 
     @classmethod
-    def save_path(cls,console,path_entered):
+    def save_path(cls,console,path_entered,which_settings = ""):
         path_given = path_entered
         path_checked = Tools.path_check(path_given)
         if path_checked != False and path_checked != "/":
             console_input = Tools.save_to_json_config(path_checked,"app_settings","default_path")
             Tools.add_colored_line(console,console_input,"green",None,True)
+            if which_settings != "":
+                Tools.add_new_path_to_history(path_checked,which_settings)
+
         elif path_checked != "/":
             Tools.add_colored_line(console,f"Zadaná cesta: {path_given} nebyla nalezena, nebude tedy uložena","red",None,True)
         elif path_checked == "/":
@@ -3525,7 +3528,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.path_set =                 customtkinter.CTkEntry(master = self.frame_with_path,width = 680,height=30,placeholder_text="Zadejte cestu k souborům (kde se soubory přímo nacházejí)",corner_radius=0)
         manual_path  =                  customtkinter.CTkButton(master = self.frame_with_path, width = 90,height=30,text = "Otevřít", command = lambda: call_start(),font=("Arial",16,"bold"))
         tree         =                  customtkinter.CTkButton(master = self.frame_with_path, width = 120,height=30,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",16,"bold"))
-        button_save_path =              customtkinter.CTkButton(master = self.frame_with_path,width=100,height=30, text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get()),font=("Arial",16,"bold"))        
+        button_save_path =              customtkinter.CTkButton(master = self.frame_with_path,width=100,height=30, text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get(),"image_browser_settings"),font=("Arial",16,"bold"))        
         button_open_setting =           customtkinter.CTkButton(master = self.frame_with_path,width=30,height=30, text = "⚙️", command = lambda: call_setting_window(),font=("",16))
         button_drawing =                customtkinter.CTkButton(master = self.frame_with_path,width=30,height=30, text = "Malování", command = lambda: self.switch_drawing_mode(),font=("Arial",16,"bold"))
         menu_button.                    pack(pady = (5,0),padx =(5,0),side="left",anchor = "w")
@@ -6120,7 +6123,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                     return False
             
         def call_path_context_menu(event):
-            path_history = Tools.read_json_config()[10]
+            path_history = Tools.read_json_config()["del_settings"]["path_history_list"]
             def insert_path(path):
                 operating_path.delete("0","200")
                 operating_path.insert("0", path)
@@ -6338,7 +6341,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         context_menu_button  =  customtkinter.CTkButton(master =frame_path_input, width = 50,height=50, text = "V",font=("Arial",20,"bold"),corner_radius=0,fg_color="#505050")
         self.path_set    =      customtkinter.CTkEntry(master =frame_path_input,height=50,font=("Arial",20),corner_radius=0)
         tree        =           customtkinter.CTkButton(master =frame_path_input,height=50,width = 180,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"))
-        button_save_path =      customtkinter.CTkButton(master =frame_path_input,height=50,text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get()),font=("Arial",20,"bold"))
+        button_save_path =      customtkinter.CTkButton(master =frame_path_input,height=50,text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get(),"del_settings"),font=("Arial",20,"bold"))
         button_open_setting =   customtkinter.CTkButton(master =frame_path_input,height=50,width=50, text = "⚙️", command = lambda: Advanced_option(self.root,windowed=True,spec_location="deleting_option"),font=(None,20))
         context_menu_button.    pack(pady = 10,padx =(10,0),anchor ="w",side = "left")
         self.path_set.          pack(pady = 10,padx =(0,0),anchor ="w",side = "left",fill="both",expand=True)
@@ -7003,7 +7006,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
 
         self.path_set = customtkinter.CTkEntry(master = frame2,font=("Arial",18),placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)")
         tree =          customtkinter.CTkButton(master = frame2, width = 180,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"))
-        button_save_path = customtkinter.CTkButton(master = frame2,width=50,text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get()),font=("Arial",20,"bold"))
+        button_save_path = customtkinter.CTkButton(master = frame2,width=50,text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get(),"sort_conv_settings"),font=("Arial",20,"bold"))
         button_open_setting = customtkinter.CTkButton(master = frame2,width=30,height=30, text = "⚙️", command = lambda: Advanced_option(self.root,windowed=True,spec_location="sorting_option"),font=("Arial",16))
         self.path_set.  pack(pady = 12,padx =(10,0),anchor ="w",side="left",fill="both",expand=True)
         tree.           pack(pady = 12,padx =10,anchor ="w",side="left")
@@ -7123,23 +7126,23 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
             self.database_downloaded = True 
         config_data = Tools.read_json_config()
         self.database_filename = config_data["catalogue_settings"]["database_filename"]
-        self.default_excel_filename = config_data["catalogue_settings"]["catalogue_filename"]
-        self.default_xml_file_name = config_data["catalogue_settings"]["metadata_filename"]
-        self.default_subwindow_status = config_data["catalogue_settings"]["subwindow_behav"]
-        self.default_export_extension = config_data["catalogue_settings"]["default_export_suffix"]
-        self.default_path = config_data["catalogue_settings"]["default_path"]
-        self.default_render_mode = config_data["catalogue_settings"]["render_mode"]
+        # self.default_excel_filename = config_data["catalogue_settings"]["catalogue_filename"]
+        # self.default_xml_file_name = config_data["catalogue_settings"]["metadata_filename"]
+        # self.default_subwindow_status = config_data["catalogue_settings"]["subwindow_behav"]
+        # self.default_export_extension = config_data["catalogue_settings"]["default_export_suffix"]
+        # self.default_path = config_data["catalogue_settings"]["default_path"]
+        # self.default_render_mode = config_data["catalogue_settings"]["render_mode"]
         self.create_catalogue_maker_widgets()
 
-    def callback(self,data_to_save):
-        print("received data: ",data_to_save)
-        Tools.save_to_json_config(data_to_save[0],"catalogue_settings","database_filename")
-        Tools.save_to_json_config(data_to_save[1],"catalogue_settings","catalogue_filename")
-        Tools.save_to_json_config(data_to_save[2],"catalogue_settings","metadata_filename")
-        Tools.save_to_json_config(data_to_save[3],"catalogue_settings","subwindow_behav")
-        Tools.save_to_json_config(data_to_save[4],"catalogue_settings","default_export_suffix")
-        Tools.save_to_json_config(data_to_save[5],"catalogue_settings","default_path")
-        Tools.save_to_json_config(data_to_save[6],"catalogue_settings","render_mode")
+    def callback(self):
+        # print("received data: ",data_to_save)
+        # Tools.save_to_json_config(data_to_save[0],"catalogue_settings","database_filename")
+        # Tools.save_to_json_config(data_to_save[1],"catalogue_settings","catalogue_filename")
+        # Tools.save_to_json_config(data_to_save[2],"catalogue_settings","metadata_filename")
+        # Tools.save_to_json_config(data_to_save[3],"catalogue_settings","subwindow_behav")
+        # Tools.save_to_json_config(data_to_save[4],"catalogue_settings","default_export_suffix")
+        # Tools.save_to_json_config(data_to_save[5],"catalogue_settings","default_path")
+        # Tools.save_to_json_config(data_to_save[6],"catalogue_settings","render_mode")
         menu.menu()
 
     def create_catalogue_maker_widgets(self):
@@ -7159,13 +7162,7 @@ class Catalogue_maker: # Umožňuje nastavit možnosti třídění souborů
                                 input_message,
                                 self.callback,
                                 current_window_size,
-                                self.database_filename,
-                                self.default_excel_filename,
-                                self.default_xml_file_name,
-                                self.default_subwindow_status,
-                                self.default_export_extension,
-                                self.default_path,
-                                self.default_render_mode)
+                                initial_path)
 
 if load_gui:
     if not app_running_status:
