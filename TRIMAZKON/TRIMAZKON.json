@@ -21,7 +21,10 @@
         "convert_bmp_dir_name": "Konvertovane_BMP",
         "convert_jpg_dir_name": "Konvertovane_JPG",
         "sorting_safe_mode": "ano",
-        "path_history_list": []
+        "path_history_list": [],
+        "path_history_list_conv": [
+            "C:/Users/jakub.hlavacek.local/Desktop/JHV/test_images/Omron/Sn\u00edmkySC01_MS500SA/"
+        ]
     },
     "del_settings": {
         "supported_formats_deleting": [
@@ -37,7 +40,9 @@
             2024
         ],
         "to_delete_dir_name": "Ke_smazani",
-        "path_history_list": []
+        "path_history_list": [
+            "C:/Users/jakub.hlavacek.local/Pictures/Feedback/{1EBCA6A2-566F-44C1-BBBB-1B4A38263C71}/"
+        ]
     },
     "image_browser_settings": {
         "selected_option": 2,
@@ -55,16 +60,13 @@
         "metadata_filename": "_metadata_catalogue",
         "subwindow_behav": 0,
         "default_export_suffix": "xlsx",
-        "default_path": "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/",
+        "default_path": "C:/Users/",
         "render_mode": "fast",
-        "path_history_list": [
-            "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/jhv_MAZ/",
-            "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/"
-        ]
+        "path_history_list": []
     },
     "ip_settings": {
         "default_ip_interface": 2,
-        "favorite_ip_window_status": 0,
+        "favorite_ip_window_status": 1,
         "disk_or_ip_window": 0,
         "default_window_size": 1,
         "init_disk_refresh": 1,

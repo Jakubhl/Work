@@ -5,6 +5,7 @@ import os
 # Include additional data files like images and the public.pem file
 include_files = [
     ("images", "images"),  # Include entire 'images' folder
+    ("convert_application", "convert_application"),
     ("public.pem", "public.pem"),  # Include public.pem file
     # ("Rights_maker.bat", "Rights_maker.bat"),  
 ]

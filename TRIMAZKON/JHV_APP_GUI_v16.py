@@ -320,7 +320,8 @@ class Tools:
                                 "convert_bmp_dir_name": default_value_list[9][3],
                                 "convert_jpg_dir_name": default_value_list[9][4],
                                 "sorting_safe_mode": default_value_list[10],
-                                "path_history_list": default_value_list[18],}
+                                "path_history_list": default_value_list[18],
+                                "path_history_list_conv": default_value_list[18],}
         
         new_del_settings = {"supported_formats_deleting": default_value_list[1],
                             "default_files_to_keep": default_value_list[3],
@@ -420,6 +421,7 @@ class Tools:
         - default_export_suffix
         - default_path
         - render_mode
+        - path_history_list
         \nIP SETTINGS\n
         - default_ip_interface
         - favorite_ip_window_status
@@ -1375,7 +1377,10 @@ class Tools:
             console_input = Tools.save_to_json_config(path_checked,"app_settings","default_path")
             Tools.add_colored_line(console,console_input,"green",None,True)
             if which_settings != "":
-                Tools.add_new_path_to_history(path_checked,which_settings)
+                if which_settings == "convert_option":
+                    Tools.add_new_path_to_history(path_checked,"path_history_list_conv")
+                else:
+                    Tools.add_new_path_to_history(path_checked,which_settings)
 
         elif path_checked != "/":
             Tools.add_colored_line(console,f"Zadaná cesta: {path_given} nebyla nalezena, nebude tedy uložena","red",None,True)
@@ -1714,14 +1719,23 @@ class Tools:
         if new_path == "delete_history":
             Tools.save_to_json_config([],which_settings,"path_history_list")
             return
+        elif new_path == "delete_history_conv":
+            Tools.save_to_json_config([],which_settings,"path_history_list_conv")
+            return
 
-        current_paths = Tools.read_json_config()[which_settings]["path_history_list"]
+        if which_settings == "convert_settings":
+            which_settings = "sort_conv_settings"
+            parameter_name = "path_history_list_conv"
+        else:
+            parameter_name = "path_history_list"
+
+        current_paths = Tools.read_json_config()[which_settings][parameter_name]
         if new_path not in current_paths:
             if len(current_paths) > 9:
                 current_paths.pop()
             # current_paths.append(str(new_path))
             current_paths.insert(0,str(new_path))
-            Tools.save_to_json_config(current_paths,which_settings,"path_history_list")
+            Tools.save_to_json_config(current_paths,which_settings,parameter_name)
 
 class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
     """
@@ -3501,8 +3515,12 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         
         def call_path_context_menu(event):
             def insert_path(path):
+                if self.path_set.get() == path:
+                    return
                 self.path_set.delete("0","200")
                 self.path_set.insert("0", path)
+                self.start(path)
+
             if len(self.inserted_path_history) > 0:
                 path_context_menu = tk.Menu(self.root, tearoff=0,fg="white",bg="black")
                 for i in range(0,len(self.inserted_path_history)):
@@ -3894,7 +3912,16 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             self.start(self.path_given)
         else:
             path = self.config_path
-            if path != "/" and path != False:
+            config_data = Tools.read_json_config()
+            if len(config_data["image_browser_settings"]["path_history_list"]) != 0:
+                path_from_history = config_data["image_browser_settings"]["path_history_list"][0]
+                self.path_set.delete("0","200")
+                self.path_set.insert("0", path_from_history)
+                Tools.add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white",None,True)
+                self.root.update_idletasks()
+                self.image_browser_path = path_from_history
+                self.start(path_from_history)
+            elif path != "/" and path != False:
                 self.path_set.delete("0","200")
                 self.path_set.insert("0", path)
                 Tools.add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white",None,True)
@@ -4372,20 +4399,30 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 Tools.set_zoom(int(app_zoom_slider.get()),root)
 
         def call_delete_path_history():
-            confirm_window_label1 = "Opravdu si přejete odstranit historii vložených cest?"
+            confirm_window_label1 = f"Opravdu si přejete odstranit historii vložených cest pro: {drop_down_options.get()}?"
             confirm_window_label2 = "Upozornění"
             if self.selected_language == "en":
                 confirm_window_label1 = "Are you sure you want to delete the history of embedded paths?"
                 confirm_window_label2 = "Notice"
             confirm = Subwindows.confirm_window(confirm_window_label1,confirm_window_label2,self.selected_language)
             if confirm == True:
-                Tools.add_new_path_to_history("delete_history","del_settings")
-                main_console.configure(text="Historie vložených cest byla vymazána",text_color="orange")
+                which_settings = mapping_logic[drop_down_options.get()]
+                if drop_down_options.get() == path_history_options[1]:
+                    Tools.add_new_path_to_history("delete_history_conv",which_settings)
+                else:
+                    Tools.add_new_path_to_history("delete_history",which_settings)
+
+                main_console.configure(text=f"Historie vložených cest pro: {drop_down_options.get()} byla vymazána",text_color="orange")
                 if self.selected_language == "en":
                     main_console.configure(text="The history of inserted paths has been deleted",text_color="orange")
 
         def call_path_context_menu(event):
-            path_history = Tools.read_json_config()["del_settings"]["path_history_list"]
+            chosen_option = mapping_logic[drop_down_options.get()]
+            if drop_down_options.get() == path_history_options[1]:
+                path_history = Tools.read_json_config()[chosen_option]["path_history_list_conv"]
+            else:
+                path_history = Tools.read_json_config()[chosen_option]["path_history_list"]
+
             def insert_path(path):
                 self.path_set.delete("0","200")
                 self.path_set.insert("0", path)
@@ -4396,9 +4433,19 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                     if i < len(path_history)-1:
                         path_context_menu.add_separator()
                         
-                path_context_menu.tk_popup(context_menu_button.winfo_rootx(),context_menu_button.winfo_rooty()+50)
+                path_context_menu.tk_popup(context_menu_button2.winfo_rootx(),context_menu_button2.winfo_rooty()+40)
+            else:
+                main_console.configure(text=f"V historii cest: {drop_down_options.get()} nebylo nic nalezeno",text_color="orange")
 
         if submenu_option == "default_path":
+            path_history_options = ["Třídění souborů","Konvertování souborů","Mazání souborů","Vytváření katalogu","Prohlížeč obrázků"]
+            mapping_logic = {
+                path_history_options[0]: "sort_conv_settings",
+                path_history_options[1]: "sort_conv_settings",
+                path_history_options[2]: "del_settings",
+                path_history_options[3]: "catalogue_settings",
+                path_history_options[4]: "image_browser_settings"
+            }
             self.option_buttons[0].configure(fg_color="#212121")
             row_index = 1
             first_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
@@ -4426,11 +4473,16 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             explorer_settings_label =   customtkinter.CTkLabel(     master = second_option_frame,height=40,text = "Nastavení EXPLORERU: ",justify = "left",font=("Arial",20,"bold"))
             select_by_dir =             customtkinter.CTkCheckBox(  master = second_option_frame,height=40,text = "Vybrat cestu zvolením složky",font=("Arial",20),command = lambda: select_path_by_dir())
             select_by_file =            customtkinter.CTkCheckBox(  master = second_option_frame,height=40,text = "Vybrat cestu zvolením souboru (jsou viditelné při vyhledávání)",font=("Arial",20),command = lambda: select_path_by_file())
-            context_menu_button  =  customtkinter.CTkButton(master = second_option_frame, width = 40,height=40, text = "V",font=("Arial",20,"bold"),corner_radius=0,fg_color="#505050")
-            self.path_set =             customtkinter.CTkEntry(     master = second_option_frame,width=805,height=40,font=("Arial",20),placeholder_text="")
+            # context_menu_button  =  customtkinter.CTkButton(master = second_option_frame, width = 40,height=40, text = "V",font=("Arial",20,"bold"),corner_radius=0,fg_color="#505050")
+            self.path_set =             customtkinter.CTkEntry(     master = second_option_frame,width=845,height=40,font=("Arial",20),placeholder_text="")
             button_save5 =              customtkinter.CTkButton(    master = second_option_frame,width=100,height=40, text = "Uložit", command = lambda: save_path(),font=("Arial",22,"bold"))
             button_explorer =           customtkinter.CTkButton(    master = second_option_frame,width=40,height=40, text = "...", command = lambda: call_browseDirectories(),font=("Arial",22,"bold"))
-            del_path_history =           customtkinter.CTkButton(    master = second_option_frame,height=40, text = "Smazat historii", command = lambda: call_delete_path_history(),font=("Arial",22,"bold"))
+
+            del_history_label =         customtkinter.CTkLabel(master = second_option_frame,height=40,text = "Mazání historie cest pro jednotlivé možnosti:",justify = "left",font=("Arial",22,"bold"))
+            context_menu_button2  =     customtkinter.CTkButton(master = second_option_frame, width = 100,height=40, text = "Náhled",font=("Arial",20,"bold"),corner_radius=0)
+            drop_down_options =         customtkinter.CTkOptionMenu(master = second_option_frame,width=350,height=40,values=path_history_options,font=("Arial",20),corner_radius=0)
+            del_path_history =          customtkinter.CTkButton(master = second_option_frame,height=40, text = "Smazat historii", command = lambda: call_delete_path_history(),font=("Arial",22,"bold"),corner_radius=0)
+
             default_path_insert_console=customtkinter.CTkLabel(     master = second_option_frame,height=40,text ="",justify = "left",font=("Arial",22),text_color="white")
             console_frame =             customtkinter.CTkFrame(     master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1,fg_color="black")
             main_console =              customtkinter.CTkLabel(master = console_frame,height=20,text = str(main_console_text),text_color=str(main_console_text_color),justify = "left",font=("Arial",22))
@@ -4443,13 +4495,16 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             explorer_settings_label.    grid(column =0,row=row_index+1,sticky = tk.W,pady =10,padx=10)
             select_by_dir .             grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=250)
             select_by_file.             grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=550)
-            context_menu_button.        grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
-            self.path_set.              grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=50)
+            # context_menu_button.        grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
+            self.path_set.              grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=10)
             button_explorer.            grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=855)
             button_save5.               grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=900)
-            del_path_history.           grid(column =0,row=row_index+2,sticky = tk.W,pady =0,padx=1005)
-            default_path_insert_console.grid(column =0,row=row_index+3,sticky = tk.W,pady =10,padx=10)
-            main_console.               grid(column =0,row=row_index+4,sticky = tk.W,pady =10,padx=10)
+            del_history_label.          grid(column =0,row=row_index+3,sticky = tk.W,pady =0,padx=10)
+            context_menu_button2.       grid(column =0,row=row_index+4,sticky = tk.W,pady =0,padx=10)
+            drop_down_options.          grid(column =0,row=row_index+4,sticky = tk.W,pady =0,padx=120)
+            del_path_history.           grid(column =0,row=row_index+4,sticky = tk.W,pady =0,padx=480)
+            default_path_insert_console.grid(column =0,row=row_index+5,sticky = tk.W,pady =10,padx=10)
+            main_console.               grid(column =0,row=row_index+6,sticky = tk.W,pady =10,padx=10)
             second_option_frame.        pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             console_frame.              pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             
@@ -4457,7 +4512,8 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 save_changes_button.    pack(pady =5,padx=10,anchor = "e")
                 save_frame.             pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top",anchor = "e")
             select_by_dir.select()
-            context_menu_button.bind("<Button-1>", call_path_context_menu)
+            # context_menu_button.bind("<Button-1>", call_path_context_menu)
+            context_menu_button2.bind("<Button-1>", call_path_context_menu)
 
             def save_path_enter_btn(e):
                 save_path()
@@ -4946,6 +5002,7 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])
+            Tools.add_new_path_to_history(str(output[1]),which_settings="convert_settings")
             Tools.add_colored_line(self.console,f"Byla vložena cesta: {output[1]}","green")
             self.temp_path_for_explorer = output[1]
         else:
@@ -4960,6 +5017,20 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         self.label.configure(text=f"Konvertované soubory budou vytvořeny uvnitř separátní složky: \"{self.jpg_folder_name}\"\nPodporované formáty: .ifz\nObsahuje-li .ifz soubor více obrázků, budou uloženy v následující syntaxi:\nxxx_0.bmp, xxx_1.bmp ...")
 
     def create_convert_option_widgets(self):  # Vytváří veškeré widgets (convert option MAIN)
+        def call_path_context_menu(event):
+            path_history = Tools.read_json_config()["sort_conv_settings"]["path_history_list_conv"]
+            def insert_path(path):
+                self.path_set.delete("0","200")
+                self.path_set.insert("0", path)
+            if len(path_history) > 0:
+                path_context_menu = tk.Menu(self.root, tearoff=0,fg="white",bg="black")
+                for i in range(0,len(path_history)):
+                    path_context_menu.add_command(label=path_history[i], command=lambda row_path = path_history[i]: insert_path(row_path),font=("Arial",22,"bold"))
+                    if i < len(path_history)-1:
+                        path_context_menu.add_separator()
+                        
+                path_context_menu.tk_popup(context_menu_button.winfo_rootx(),context_menu_button.winfo_rooty()+50)
+
         frame_with_logo =       customtkinter.CTkFrame(master=self.root,corner_radius=0)
         logo =                  customtkinter.CTkImage(Image.open(Tools.resource_path("images/logo.png")),size=(1200, 100))
         image_logo =            customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
@@ -4967,12 +5038,10 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         image_logo.pack()
         frame_with_cards =      customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=100)
         self.frame_path_input = customtkinter.CTkFrame(master=self.root,corner_radius=0)
-        self.bottom_frame2 =    customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
+        self.bottom_frame2 =    customtkinter.CTkFrame(master=self.root,corner_radius=0)
         self.bottom_frame1 =    customtkinter.CTkFrame(master=self.root,height = 80,corner_radius=0)
         frame_with_cards.       pack(pady=0,padx=0,fill="both",expand=False,side = "top")
-        self.frame_path_input.  pack(pady=5,padx=5,fill="both",expand=False,side = "top")
-        self.bottom_frame2.     pack(pady=5,padx=5,fill="both",expand=True,side = "bottom")
-        self.bottom_frame1.     pack(pady=0,padx=5,fill="x",expand=False,side = "bottom")
+        self.frame_path_input.  pack(pady=(0,5),padx=5,fill="both",expand=False,side = "top")
 
         list_of_frames = [self.frame_path_input,self.bottom_frame1,self.bottom_frame2,frame_with_cards,frame_with_logo]
         shift_const = 250
@@ -4993,30 +5062,50 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         self.checkbox_jpg =     customtkinter.CTkCheckBox(master = self.bottom_frame1, text = "Konvertovat do formátu .jpg",command=self.selected_jpg,font=("Arial",16,"bold"))
         self.checkbox_bmp.      pack(pady =10,padx=10,anchor ="w")
         self.checkbox_jpg.      pack(pady =10,padx=10,anchor ="w")
-        self.path_set =         customtkinter.CTkEntry(master = self.frame_path_input,font=("Arial",18),placeholder_text="Zadejte cestu k souborům určeným ke konvertování (kde se soubory přímo nacházejí)")
-        tree         =          customtkinter.CTkButton(master = self.frame_path_input, width = 180,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"))
-        button_open_setting =   customtkinter.CTkButton(master = self.frame_path_input,width=30,height=30, text = "⚙️", command = lambda: Advanced_option(self.root,windowed=True,spec_location="converting_option"),font=("Arial",16))
-        self.path_set.          pack(pady = 12,padx = (10,0), anchor ="w",side="left",fill="both",expand=True)
-        tree.                   pack(pady = 12,padx = 10,anchor ="w",side="left")
-        button_open_setting.    pack(pady = 12,padx = (0,10),anchor ="w",side="left")
+        self.bottom_frame1.     pack(pady=0,padx=5,fill="x",expand=False,side = "top")
+        context_menu_button  =  customtkinter.CTkButton(master =self.frame_path_input, width = 50,height=50, text = "V",font=("Arial",20,"bold"),corner_radius=0,fg_color="#505050")
+        self.path_set =         customtkinter.CTkEntry(master = self.frame_path_input,font=("Arial",18),height=50,placeholder_text="Zadejte cestu k souborům určeným ke konvertování (kde se soubory přímo nacházejí)",corner_radius=0)
+        tree         =          customtkinter.CTkButton(master = self.frame_path_input,height=50,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"),corner_radius=0)
+        button_save_path =      customtkinter.CTkButton(master = self.frame_path_input,height=50,text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get(),"convert_option"),font=("Arial",20,"bold"),corner_radius=0)
+        button_open_setting =   customtkinter.CTkButton(master = self.frame_path_input,width=50,height=50,text = "⚙️", command = lambda: Advanced_option(self.root,windowed=True,spec_location="converting_option"),font=(None,20),corner_radius=0)
+        context_menu_button.    pack(pady = 10,padx = (10,0), anchor ="w",side="left")
+        self.path_set.          pack(pady = 10,padx = (0,0), anchor ="w",side="left",fill="x",expand=True)
+        tree.                   pack(pady = 10,padx = 5,anchor ="w",side="left")
+        button_save_path.       pack(pady = 10,padx = (0,0),anchor ="w",side="left")
+        button_open_setting.    pack(pady = 10,padx = (5,10),anchor ="w",side="left")
         self.label   =          customtkinter.CTkLabel(master = self.bottom_frame2,text = f"Konvertované soubory budou vytvořeny uvnitř separátní složky: \"{self.bmp_folder_name}\"\nPodporované formáty: .ifz\nObsahuje-li .ifz soubor více obrázků, budou uloženy v následující syntaxi:\nxxx_0.bmp, xxx_1.bmp ...",justify = "left",font=("Arial",18,"bold"))
         button  =               customtkinter.CTkButton(master = self.bottom_frame2, text = "KONVERTOVAT", command = self.start,font=("Arial",20,"bold"))
         self.loading_bar =      customtkinter.CTkProgressBar(master = self.bottom_frame2, mode='determinate',width = 800,height =20,progress_color="green",corner_radius=0)
-        self.console =          tk.Text(self.bottom_frame2, wrap="word", height=20, width=1200,background="black",font=("Arial",16),state=tk.DISABLED)
+        self.console =          tk.Text(self.bottom_frame2, wrap="word",background="black",font=("Arial",16))
         self.label.             pack(pady =10,padx=10)
         button.                 pack(pady =20,padx=10)
         button.                 _set_dimensions(300,60)
         self.loading_bar.       pack(pady = 5,padx = 5)
         self.loading_bar.       set(value = 0)
-        self.console.           pack(pady =10,padx=10)
+        self.console.           pack(pady =10,padx=(10,0),side = "left",fill="both",expand=True)
+        self.bottom_frame2.     pack(pady=5,padx=5,fill="both",expand=True,side = "top")
+        context_menu_button.bind("<Button-1>", call_path_context_menu)
         self.checkbox_bmp.select()
+        scrollbar = tk.Scrollbar(self.bottom_frame2, command=self.console.yview)
+        scrollbar.pack(pady =10,side="right", fill="y")
+        self.console.config(yscrollcommand=scrollbar.set)
+        self.console.configure(state=tk.DISABLED)
+
         recources_path = self.config_data["app_settings"]["default_path"]
-        if recources_path != False and recources_path != "/":
+        config_data = Tools.read_json_config()
+        if len(config_data["sort_conv_settings"]["path_history_list_conv"]) != 0:
+            path_from_history = config_data["sort_conv_settings"]["path_history_list_conv"][0]
+            self.path_set.delete("0","200")
+            self.path_set.insert("0", path_from_history)
+            Tools.add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white",None,True)
+            self.root.update_idletasks()
+        elif recources_path != False and recources_path != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", str(recources_path))
             Tools.add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white")
         else:
             Tools.add_colored_line(self.console,"Konfigurační soubor obsahuje neplatnou cestu k souborům (můžete vložit v pokročilém nastavení)","orange")
+
         def maximalize_window(e):
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
             currently_focused = str(self.root.focus_get())
@@ -6311,11 +6400,6 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         top_frame =             customtkinter.CTkFrame(master=header_frame,corner_radius=0,fg_color="#212121")
         frame_with_cards =      customtkinter.CTkFrame(master=top_frame,corner_radius=0,fg_color="#636363",height=100)
 
-        # menu_button =           customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "MENU", command =  lambda: self.call_extern_function(function="menu"),font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
-        # deleting_button =       customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Mazání souborů",font=("Arial",20,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
-        # menu_button.            pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
-        # deleting_button.        pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
-
         menu_button =       customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "MENU",           command = lambda: self.call_extern_function(function="menu"),
                                                     font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
         sorting_button =    customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Třídění souborů",command = lambda: self.call_extern_function(function="sorting"),
@@ -6384,8 +6468,8 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         self.console =          tk.Text(bottom_frame, wrap="word",background="black",font=("Arial",16),state=tk.DISABLED)
         execution_btn_frame.    pack(pady =3,padx=3,side = "top",anchor="n")
         self.console.           pack(pady =0,padx=(10,0),side = "left",fill="both",expand=True)
-        bottom_frame .          pack(pady =0,padx=0,side = "top",fill="both",expand=False)
-        header_frame.           pack(pady=0,padx=0,fill="x",side = "top")
+        bottom_frame .          pack(pady =0,padx=0,side = "top",fill="both",expand=True)
+        header_frame.           pack(pady=0,padx=0,fill="both",side = "top",expand=True)
         self.selected(option=1)
         self.options1.select()
 
@@ -6409,7 +6493,13 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             create_task_btn.configure(state = "disabled")
 
         recources_path = self.config_data["app_settings"]["default_path"]
-        if recources_path != False and recources_path != "/":
+        if len(self.config_data["del_settings"]["path_history_list"]) != 0:
+            path_from_history = self.config_data["del_settings"]["path_history_list"][0]
+            self.path_set.delete("0","200")
+            self.path_set.insert("0", path_from_history)
+            Tools.add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white",None,True)
+            self.root.update_idletasks()
+        elif recources_path != False and recources_path != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", str(recources_path))
             if self.selected_language == "en":
@@ -6490,6 +6580,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
                 else:
                     path = check
                     Tools.add_colored_line(self.console,"- Provádím nastavenou možnost třídění v cestě: "+str(path)+"\n","orange")
+                    Tools.add_new_path_to_history(path,which_settings="sort_conv_settings")
 
                     self.console.update_idletasks()
                     self.root.update_idletasks()
@@ -6938,7 +7029,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         """
         for frames in list_of_frames:
             frames.pack_forget()
-            frames.grid_forget()
+            # frames.grid_forget()
             frames.destroy()
         
         for binds in self.unbind_list:
@@ -6963,12 +7054,27 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         if str(output[1]) != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", output[1])
+            Tools.add_new_path_to_history(str(output[1]),which_settings="sort_conv_settings")
             Tools.add_colored_line(self.console,f"Byla vložena cesta: {output[1]}","green")
             self.temp_path_for_explorer = output[1]
         else:
             Tools.add_colored_line(self.console,str(output[0]),"red")
 
     def create_sorting_option_widgets(self):  # Vytváří veškeré widgets (sorting option MAIN)
+        def call_path_context_menu(event):
+            path_history = Tools.read_json_config()["sort_conv_settings"]["path_history_list"]
+            def insert_path(path):
+                self.path_set.delete("0","200")
+                self.path_set.insert("0", path)
+            if len(path_history) > 0:
+                path_context_menu = tk.Menu(self.root, tearoff=0,fg="white",bg="black")
+                for i in range(0,len(path_history)):
+                    path_context_menu.add_command(label=path_history[i], command=lambda row_path = path_history[i]: insert_path(row_path),font=("Arial",22,"bold"))
+                    if i < len(path_history)-1:
+                        path_context_menu.add_separator()
+                        
+                path_context_menu.tk_popup(context_menu_button.winfo_rootx(),context_menu_button.winfo_rooty()+50)
+
         frame_with_logo =       customtkinter.CTkFrame(master=self.root,corner_radius=0)
         logo =                  customtkinter.CTkImage(Image.open(Tools.resource_path("images/logo.png")),size=(1200, 100))
         image_logo =            customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
@@ -6976,20 +7082,16 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         image_logo.pack()
         frame_with_cards = customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=100)
         frame2 =        customtkinter.CTkFrame(master=self.root,corner_radius=0)
-        self.frame5 =   customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
-        self.frame3 =   customtkinter.CTkFrame(master=self.root,corner_radius=0,width=400,height = 290)
-        self.frame4 =   customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
-        frame_with_cards.pack(pady=0,padx=0,fill="x",expand=False,side = "top")
-        frame2.         pack(pady=5,padx=5,fill="both",expand=False,side = "top")
-        self.frame5.    pack(pady=0,padx=5,fill="both",expand=True,side = "bottom")
-        self.frame3.    pack(pady=5,padx=5,fill="both",expand=False,side="left")
-        self.frame4.    pack(pady=5,padx=5,fill="both",expand=True,side="right")
+        upper_frame =   customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363")
+        self.frame3 =   customtkinter.CTkFrame(master=upper_frame,corner_radius=0,width=400,height = 290,fg_color="#212121")
+        self.frame4 =   customtkinter.CTkScrollableFrame(master=upper_frame,corner_radius=0,fg_color="#212121")
+        self.frame5 =   customtkinter.CTkFrame(master=self.root,corner_radius=0)
+        self.frame6 =   customtkinter.CTkFrame(master=upper_frame,corner_radius=0,fg_color="#212121")
+
 
         self.height_of_frame6 = 290
         self.width_of_frame6 = 370
-        self.frame6 =   customtkinter.CTkFrame(master=self.root,corner_radius=0,width=self.width_of_frame6 ,height=self.height_of_frame6)
-        self.frame6.    pack(pady=5,padx=0,fill="both",expand=False,side = "bottom")
-        list_of_frames = [frame2,self.frame3,self.frame4,self.frame5,self.frame6,frame_with_cards,frame_with_logo]
+        list_of_frames = [upper_frame,frame2,self.frame3,self.frame4,self.frame5,self.frame6,frame_with_cards,frame_with_logo]
         shift_const = 250
         menu_button =       customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "MENU",                  command =  lambda: self.call_extern_function(list_of_frames,function="menu"),
                                                     font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
@@ -7004,14 +7106,17 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         deleting_button.    grid(column = 0,row=0,pady = (10,0),padx =780-shift_const,sticky = tk.W)
         converting_button.  grid(column = 0,row=0,pady = (10,0),padx =1040-shift_const,sticky = tk.W)
 
-        self.path_set = customtkinter.CTkEntry(master = frame2,font=("Arial",18),placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)")
-        tree =          customtkinter.CTkButton(master = frame2, width = 180,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"))
-        button_save_path = customtkinter.CTkButton(master = frame2,width=50,text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get(),"sort_conv_settings"),font=("Arial",20,"bold"))
-        button_open_setting = customtkinter.CTkButton(master = frame2,width=30,height=30, text = "⚙️", command = lambda: Advanced_option(self.root,windowed=True,spec_location="sorting_option"),font=("Arial",16))
-        self.path_set.  pack(pady = 12,padx =(10,0),anchor ="w",side="left",fill="both",expand=True)
-        tree.           pack(pady = 12,padx =10,anchor ="w",side="left")
-        button_save_path.pack(pady = 12,padx =0,anchor ="w",side="left")
-        button_open_setting.pack(pady = 12,padx =10,anchor ="w",side="left")
+        context_menu_button  =  customtkinter.CTkButton(master =frame2, width = 50,height=50, text = "V",font=("Arial",20,"bold"),corner_radius=0,fg_color="#505050")
+        self.path_set = customtkinter.CTkEntry(master = frame2,height=50,font=("Arial",18),placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)",corner_radius=0)
+        tree =          customtkinter.CTkButton(master = frame2,height=50,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"),corner_radius=0)
+        button_save_path = customtkinter.CTkButton(master = frame2,height=50,text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get(),"sort_conv_settings"),font=("Arial",20,"bold"),corner_radius=0)
+        button_open_setting = customtkinter.CTkButton(master = frame2,height=50,width=50, text = "⚙️", command = lambda: Advanced_option(self.root,windowed=True,spec_location="sorting_option"),font=(None,20),corner_radius=0)
+        context_menu_button.pack(pady = 10,padx =(10,0),anchor ="w",side="left")
+        self.path_set.  pack(pady = 10,padx =(0,0),anchor ="w",side="left",fill="x",expand = True)
+        tree.           pack(pady = 10,padx =5,anchor ="w",side="left")
+        button_save_path.pack(pady = 10,padx =0,anchor ="w",side="left")
+        button_open_setting.pack(pady = 10,padx =(5,10),anchor ="w",side="left")
+        context_menu_button.bind("<Button-1>", call_path_context_menu)
 
         self.checkbox =  customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Třídit podle typů souborů",command = self.selected)
         self.checkbox2 = customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Třídit podle čísla funkce (ID)",command = self.selected2)
@@ -7023,29 +7128,48 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.checkbox3. pack(pady =12,padx=10,anchor ="w")
         self.checkbox4. pack(pady =12,padx=10,anchor ="w")
         self.checkbox5. pack(pady =12,padx=10,anchor ="w")
-        self.one_subfolder = customtkinter.CTkCheckBox(master = self.frame4,font=("Arial",16), text = "Projít 1 subsložku?",command = self.one_subfolder_checked)
-        self.checkbox6   = customtkinter.CTkCheckBox(master = self.frame4,font=("Arial",16), text = "Projít 2 subsložky?",command = self.two_subfolders_checked)
-        self.checkbox_safe_mode = customtkinter.CTkCheckBox(master = self.frame4,font=("Arial",16), text = "Rozbalit poslední složky?",command = self.safe_mode_checked)
-        self.images2     = customtkinter.CTkLabel(master = self.frame4,text = "")
+        checkboxes =   customtkinter.CTkFrame(master=self.frame4,corner_radius=0,fg_color="#212121")
+        self.one_subfolder = customtkinter.CTkCheckBox(master = checkboxes,font=("Arial",16), text = "Projít 1 subsložku?",command = self.one_subfolder_checked)
+        self.checkbox6   = customtkinter.CTkCheckBox(master = checkboxes,font=("Arial",16), text = "Projít 2 subsložky?",command = self.two_subfolders_checked)
+        self.checkbox_safe_mode = customtkinter.CTkCheckBox(master = checkboxes,font=("Arial",16), text = "Rozbalit poslední složky?",command = self.safe_mode_checked)
+        self.images2     = customtkinter.CTkLabel(master = self.frame4,text = "",height=180)
         self.console2    = customtkinter.CTkLabel(master = self.frame4,text = " ",font=("Arial",18,"bold"))
-        self.console2.  pack(pady =5,padx=10,side=tk.BOTTOM)
-        self.images2.   pack(side=tk.BOTTOM)
         self.one_subfolder.pack(pady =10,padx=10,anchor="w",side=tk.LEFT)
         self.checkbox6. pack(pady =10,padx=10,anchor="w",side=tk.LEFT)
         self.checkbox_safe_mode.pack(pady =10,padx=10,anchor="w",side=tk.LEFT)
+        checkboxes.   pack(side="top",anchor = "w",padx=(10,0))
+        self.images2.   pack(side="top",anchor = "w",padx=(10,0),pady = 10)
+        self.console2.  pack(pady =5,padx=10,side="top",anchor = "w")
+        self.images2.propagate(0)
         self.checkbox_safe_mode.select()
-        self.images =       customtkinter.CTkLabel(master = self.frame5,text = "")
-        self.name_example = customtkinter.CTkLabel(master = self.frame5,text = "",font=("Arial",18,"bold"))
+        info_frame =        customtkinter.CTkFrame(master=self.frame5,corner_radius=0,fg_color="#212121",height=150)
+        self.name_example = customtkinter.CTkLabel(master = info_frame,width=200,height=100,text = "",font=("Arial",18,"bold"),justify = "left",anchor="w")
+        self.images =       customtkinter.CTkLabel(master = info_frame,text = "")
+        self.name_example.  pack(pady = 12,padx =10,side="left",anchor="n")
+        self.name_example.propagate(0)
+        self.images.        pack(side="left",anchor="w",fill="both",expand=True)
+        info_frame.         pack(pady=0,padx=5,fill="x",expand=True,side = "top",anchor = "w")
+        # info_frame.propagate(0)
         button =            customtkinter.CTkButton(master = self.frame5, text = "SPUSTIT", command = self.start,font=("Arial",20,"bold"))
         self.loading_bar =  customtkinter.CTkProgressBar(master = self.frame5, mode='determinate',width = 800,height =20,progress_color="green",corner_radius=0)
-        self.console =      tk.Text(self.frame5, wrap="word", height=20, width=1200,background="black",font=("Arial",16),state=tk.DISABLED)
-        self.images.        pack()
-        self.name_example.  pack(pady = 12,padx =10)
+        self.console =      tk.Text(self.frame5, wrap="word",background="black",font=("Arial",16),state=tk.DISABLED)
+
         button.             pack(pady =12,padx=10)
         button.             _set_dimensions(300,60)
         self.loading_bar.   pack(pady = 5,padx = 5)
         self.loading_bar.   set(value = 0)
-        self.console.       pack(pady =10,padx=10)
+        self.console.       pack(pady =10,padx=(10,0),side="left",fill="both",expand=True)
+        frame_with_cards.pack(pady=0,padx=0,fill="x",expand=False,side = "top")
+        frame2.         pack(pady=0,padx=5,fill="both",expand=False,side = "top")
+        self.frame3.    pack(pady=5,padx=5,fill="y",expand=False,side="left")
+        self.frame6.    pack(pady=5,padx=0,fill="y",expand=False,side="left")
+        self.frame4.    pack(pady=5,padx=5,fill="both",expand=True,side="left")
+        upper_frame.    pack(pady=5,padx=5,fill="both",expand=True,side="top")
+
+        self.frame5.    pack(pady=0,padx=5,fill="both",expand=True,side = "top")
+        scrollbar = tk.Scrollbar(self.frame5, command=self.console.yview)
+        scrollbar.pack(pady =10,side="right", fill="y")
+        self.console.config(yscrollcommand=scrollbar.set)
 
         #default nastaveni:
         self.checkbox.select()
@@ -7054,7 +7178,13 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.two_subfolders_checked()
         #predvyplneni cesty pokud je platna v configu
         recources_path = self.config_data["app_settings"]["default_path"]
-        if recources_path != False and recources_path != "/":
+        if len(self.config_data["sort_conv_settings"]["path_history_list"]) != 0:
+            path_from_history = self.config_data["sort_conv_settings"]["path_history_list"][0]
+            self.path_set.delete("0","200")
+            self.path_set.insert("0", path_from_history)
+            Tools.add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white",None,True)
+            self.root.update_idletasks()
+        elif recources_path != False and recources_path != "/":
             self.path_set.delete("0","200")
             self.path_set.insert("0", str(recources_path))
             Tools.add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white")

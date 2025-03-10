@@ -854,28 +854,26 @@ TRIMAZKON - catalogue - chybne editovani kontroleru vytvori prazdny accessory - 
 TRIMAZKON - catalogue - přímo ukldádat do configu a nemuset přitom do menu - hotovo
 TRIMAZKON - catalogue - ukladat historii cest - hotovo
 TRIMAZKON - mít možnost převzít si data z excelu (možná to celé předělat na import a export) - hotovo
+TRIMAZKON - na ukládání nastavení použít .json config... xls používat jen na ip setting - hotovo
+
+8:47 AM 3/10/2025
+TRIMAZKON - prohlížeč - když vyberu neco z histoie cest z nabídky, rovnou otevřít... - hotovo
+TRIMAZKON - prohlížeč - zkontrolovat historii cest, používat insert(0,... - hotovo
+TRIMAZKON - upravit v advanced option historii cest pro kazdy zvlast (i mazani historie) - stejne tak i defaultni cestu kazde moznosti - hotovo
+TRIMAZKON -dodelat historie vlozenych cest u trideni, konvertovani - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 
-
-TRIMAZKON - upravit v advanced option historii cest pro kazdy zvlast (i mazani historie) - stejne tak i defaultni cestu kazde moznosti
-
-
-
-
-
-
+TRIMAZKON - dodelat grafiku u sorting
 TRIMAZKON - u konzoli, kde se dynamicky pise text - pouzit console.see(tk.END) + zkontrolovat threads jako u mazani
 
 
-TRIMAZKON - na ukládání nastavení použít .json config... xls používat jen na ip setting
-	TRIMAZKON - nastavení folderu nebo filu v exploreru - neulozi se
-	TRIMAZKON - prohlížeč - pamatovat si historii cest - otevíráním přes obrázky... mít třeba 10 uložených cest
-	TRIMAZKON - prohlížeč - zkontrolovat historii cest, používat insert(0,...
+TRIMAZKON - prohlížeč - pamatovat si historii cest - otevíráním přes obrázky... mít třeba 10 uložených cest
+
 TRIMAZKON - prohlížeč nejde otevírat ifz v novém okně...
-TRIMAZKON - prohlížeč - když vyberu neco z histoie cest z nabídky, rovnou otevřít...
+
 TRIMAZKON - prohlížeč - udelat specialni launcher na obrazky - aby se nenacitaly vsechny knihovny - aby to bylo rychlé
 
 
