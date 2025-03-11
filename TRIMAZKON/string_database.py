@@ -274,7 +274,7 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - nově možnost otevřít obrázek v novém okně"""
         ,"\nVerze 4.2.1 (21.01.2025)"
         ,
-    """ 
+  """ 
   IP setting:
     - refresh disků se vykonává na pozadí
     - možnost posouvat projekty o řádek (disk i ip)
@@ -290,6 +290,39 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     obrázky) se nezakládá další pipeline server = rychlejší
   Prohlížeč obrázků
     - opravena počítadla (tlačítko \"Otevřít\")
+    """
+        ,"\nVerze 4.3.0 (11.03.2025)"
+        ,
+  """ 
+  IP setting:
+    - opraveno vracení změn (UNDO)
+    - možnost nahrát data z jiného excelu, v nastavení
+
+  TRIMAZKON
+    - aplikace licencována na HWID
+    - nový konfigurační soubor .json místo .xlsx
+    - nezávislá historie vložených cest u třídění
+    a konvertování
+
+  TRIMAZKON - mazání
+    - implementace nového mazání z jhv_MAZ.exe
+    - nezávislá historie vložených cest
+    - nový vzhled logu mazání
+
+  TRIMAZKON - tray
+    - již není potřebná separátní exe aplikace
+
+  Katalog:
+    - přidán kusovník (xlsx, xlsm)
+    - oprava editování typu a jména kontroleru 
+    a propis změn do všech kamer
+    - oprava prázdného příslušenství ke kontroleru
+    - přímo se ukládá do configu a ne při vstupu do menu
+    - nezávislá historie vložených cest
+    
+  Prohlížeč obrázků:
+    - nezávislá historie vložených cest
+    - cesta z kontextové nabídky se rovnou otevře
     """
 ]
 

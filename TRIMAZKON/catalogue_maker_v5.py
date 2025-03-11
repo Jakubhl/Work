@@ -117,7 +117,8 @@ class Tools:
         output= ""
         name_of_selected_file = ""
         if start_path == None:
-            start_path = Tools.resource_path(os.getcwd())
+            # start_path = Tools.resource_path(os.getcwd())
+            start_path = initial_path
         start_path = Tools.path_check(start_path)
         # pripad vyberu files, aby byly viditelne
         if visible_files == "all":
@@ -688,7 +689,7 @@ class ToplevelWindow:
             export_path.insert("0",Tools.resource_path(str(default_path)))
             Tools.add_colored_line(console,"Byla vložena uložená cesta z konfiguračního souboru","green",None,True)
         else:
-            initial_path = Tools.path_check(os.getcwd())
+            # initial_path = Tools.path_check(os.getcwd())
             export_path.insert("0",Tools.resource_path(str(initial_path)))
 
         found_xmls = search_for_xmls(initial_path)
@@ -990,8 +991,9 @@ class ToplevelWindow:
         elif default_path != False and default_path != None and default_path.replace(" ","") != "" and default_path.replace(" ","") != "/":
             initial_path = Tools.resource_path(default_path)
             Tools.add_colored_line(console,"Byla vložena uložená cesta z konfiguračního souboru","green",None,True)
-        else:
-            initial_path = Tools.resource_path(Tools.path_check(os.getcwd()))
+        # else:
+        #     # initial_path = Tools.resource_path(Tools.path_check(os.getcwd()))
+        #     initial_path = initial_path
 
         export_path.insert("0",str(initial_path))
         format_entry.set(favourite_excel_format)
@@ -1901,7 +1903,8 @@ class Catalogue_gui:
         self.download_database_console_input.append(self.download_status)
         self.download_database_console_input.append(text_color)
 
-        sharepoint_database_path = Tools.resource_path(Tools.path_check(os.getcwd()) + self.default_database_filename)
+        # sharepoint_database_path = Tools.resource_path(Tools.path_check(os.getcwd()) + self.default_database_filename)
+        sharepoint_database_path = initial_path + self.default_database_filename
 
         self.camera_database_pointer = 0
         self.optics_database_pointer = 0

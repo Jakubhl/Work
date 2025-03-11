@@ -862,25 +862,31 @@ TRIMAZKON - prohlížeč - zkontrolovat historii cest, používat insert(0,... -
 TRIMAZKON - upravit v advanced option historii cest pro kazdy zvlast (i mazani historie) - stejne tak i defaultni cestu kazde moznosti - hotovo
 TRIMAZKON -dodelat historie vlozenych cest u trideni, konvertovani - hotovo
 
+9:14 AM 3/11/2025
+TRIMAZKON - dodelat grafiku u sorting - hotovo
+TRIMAZKON - u konzoli, kde se dynamicky pise text - pouzit console.see(tk.END) + zkontrolovat threads jako u mazani - hotovo
+TRIMAZKON - prohlížeč - pamatovat si historii cest - otevíráním přes obrázky... mít třeba 10 uložených cest - hotovo
+TRIMAZKON - TRAY, když aplikaci otevřu přes tray, tak mi to skočí do prohlížeče obrázků - hotovo
+TRIMAZKON - deleting ts - oprava mezery v cestě
+ip setting - možnost otevřít excel přes settings - hotovo
+TRIMAZKON - prohlížeč nejde otevírat ifz v novém okně... - hotovo
+TRIMAZKON - TRAY - předělat logy na verikální logiku - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
+jhv-MAZ - opravit mezeru v ceste i pri volani z kontext menu
+	operating_path_TS = str(new_task["operating_path"])
+        full_path = r"{}".format(operating_path_TS)
 
+jhv-MAZ - toplevely
+jhv_MAZ - dodělat možnosti přímého editování tasku
+jhv_MAZ - převzít nový vzhled logů
 
-TRIMAZKON - dodelat grafiku u sorting
-TRIMAZKON - u konzoli, kde se dynamicky pise text - pouzit console.see(tk.END) + zkontrolovat threads jako u mazani
-
-
-TRIMAZKON - prohlížeč - pamatovat si historii cest - otevíráním přes obrázky... mít třeba 10 uložených cest
-
-TRIMAZKON - prohlížeč nejde otevírat ifz v novém okně...
+TRIMAZKON - dodělat možnosti přímého editování tasku
 
 TRIMAZKON - prohlížeč - udelat specialni launcher na obrazky - aby se nenacitaly vsechny knihovny - aby to bylo rychlé
-
-
-TRIMAZKON - TRAY, když aplikaci otevřu přes tray, tak mi to skočí do prohlížeče obrázků
-TRIMAZKON - TRAY - předělat logy na verikální logiku
-
-
+TRIMAZKON - msi instalačky se dotazovat zda s konzolí či bez
+TRIMAZKON - msi možnost vytvořit ikonu na ploše
 
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
 ??? Koumu: admin práva, online auto aktualizace nové verze

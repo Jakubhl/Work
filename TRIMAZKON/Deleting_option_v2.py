@@ -118,6 +118,7 @@ class whole_deleting_function:
         self.older_files_checked = 0
         self.directories_checked = 0
         self.directories_deleted = 0
+        self.directories_older= 0
         self.finish = False
 
     def make_dir(self,name,path):
@@ -457,7 +458,7 @@ class whole_deleting_function:
                             print(f"Mazání: {self.path + folder_list[i]}")
                     elif self.testing_mode == False:
                         shutil.rmtree(self.path + folder_list[i])
-        
+        self.directories_older += older_directories
         self.directories_deleted += deleted_directores
         self.directories_checked += directories_checked
 
@@ -735,7 +736,7 @@ class whole_deleting_function:
         # print(self.output)
         
         if self.del_option == 3 or self.del_option == 4:
-            return [self.directories_checked,0,self.directories_deleted,get_current_date()[2],0,1] # pro případ spouštění přes cmd prompt, jinak sem nedojde přes finish
+            return [self.directories_checked,self.directories_older,self.directories_deleted,get_current_date()[2],0,1] # pro případ spouštění přes cmd prompt, jinak sem nedojde přes finish
         else:
             return [self.files_checked,self.older_files_checked,self.files_deleted,get_current_date()[2],self.newer_files_checked,len(self.subfolders_check())] # pro případ spouštění přes cmd prompt, jinak sem nedojde přes finish
         

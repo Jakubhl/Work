@@ -58,6 +58,7 @@ class whole_sorting_function:
 
     def make_dir(self,name):
         if not os.path.exists(self.path + name): #pokud uz neni vytvorena, vytvor...
+            print("making dir: ",name)
             os.mkdir(self.path + name + "/")
 
     def sync_folders(self,path):
@@ -316,7 +317,7 @@ class whole_sorting_function:
                                 self.files_type_arr.append(files_type[self.num_of_dots])
         #if len(self.file_list) == 0:
             #self.output.append("Chyba: v zadané cestě nebyly nalezeny žádné soubory (nebo chybí rozhodovací symbol: &) Nebo je vložená cestak souborům ob více, jak jednu složku")
-
+        # print(self.file_list)
         if silent == None:
             if self.files_type_arr != []: #pokud byl nalezen
                 self.output.append(f"- Nalezené typy souborů: {self.files_type_arr}")

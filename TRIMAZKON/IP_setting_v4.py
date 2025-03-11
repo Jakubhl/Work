@@ -32,10 +32,11 @@ class Tools:
     @classmethod
     def resource_path(cls,relative_path):
         """ Get the absolute path to a resource, works for dev and for PyInstaller """
-        if hasattr(sys, '_MEIPASS'):
-            return os.path.join(sys._MEIPASS, relative_path)
-        return os.path.join(os.path.abspath("."), relative_path)
-    
+        # if hasattr(sys, '_MEIPASS'):
+        #     return os.path.join(sys._MEIPASS, relative_path)
+        # return os.path.join(os.path.abspath("."), relative_path)
+        BASE_DIR = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.abspath(".")
+        return os.path.join(BASE_DIR, relative_path)
     @classmethod
     def add_colored_line(cls,text_widget, text, color,font=None,delete_line = None):
         """
@@ -2174,9 +2175,13 @@ class main:
 
             load_config_frame = customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#707070",border_width=2)
             load_config_label = customtkinter.CTkLabel(master = load_config_frame, width = 100,height=40,text = "Načíst seznam adres disků (z jiného konfiguračního souboru)",font=("Arial",20,"bold"))
-            button_load =       customtkinter.CTkButton(master = load_config_frame, width = 150,height=40,text = "Zvolit soubor",command = lambda:load_old_config(),font=("Arial",20,"bold"),corner_radius=0)
+            config_btn_frame = customtkinter.CTkFrame(master=load_config_frame,corner_radius=0,fg_color="#212121")
+            button_load =       customtkinter.CTkButton(master = config_btn_frame, width = 150,height=40,text = "Zvolit soubor",command = lambda:load_old_config(),font=("Arial",20,"bold"),corner_radius=0)
+            button_open =       customtkinter.CTkButton(master = config_btn_frame, width = 150,height=40,text = "Otevřít aktuální",command = lambda: os.startfile(self.excel_file_path),font=("Arial",20,"bold"),corner_radius=0)
             load_config_label.  pack(pady = (10,0),padx=10,side="top",anchor = "w")
-            button_load.        pack(pady = (5,10),padx=10,side="top",anchor = "w")
+            button_load.        pack(pady = (5,10),padx=(10,0),side="left",anchor = "w")
+            button_open.        pack(pady = (5,10),padx=(10,0),side="left",anchor = "w")
+            config_btn_frame.   pack(pady = 2,padx=2,side="top",fill="x",anchor = "w")
 
             close_frame =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
             button_close =  customtkinter.CTkButton(master = close_frame, width = 150,height=40,text = "Zavřít",command = child_root.destroy,font=("Arial",20,"bold"),corner_radius=0)
@@ -4438,9 +4443,13 @@ class main:
 
             load_config_frame = customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#707070",border_width=2)
             load_config_label = customtkinter.CTkLabel(master = load_config_frame, width = 100,height=40,text = "Načíst seznam adres (z jiného konfiguračního souboru)",font=("Arial",20,"bold"))
-            button_load =       customtkinter.CTkButton(master = load_config_frame, width = 150,height=40,text = "Zvolit soubor",command = lambda:load_old_config(),font=("Arial",20,"bold"),corner_radius=0)
+            config_btn_frame = customtkinter.CTkFrame(master=load_config_frame,corner_radius=0,fg_color="#212121")
+            button_load =       customtkinter.CTkButton(master = config_btn_frame, width = 150,height=40,text = "Zvolit soubor",command = lambda:load_old_config(),font=("Arial",20,"bold"),corner_radius=0)
+            button_open =       customtkinter.CTkButton(master = config_btn_frame, width = 150,height=40,text = "Otevřít aktuální",command = lambda: os.startfile(self.excel_file_path),font=("Arial",20,"bold"),corner_radius=0)
             load_config_label.  pack(pady = (10,0),padx=10,side="top",anchor = "w")
-            button_load.        pack(pady = (5,10),padx=10,side="top",anchor = "w")
+            button_load.        pack(pady = (5,10),padx=(10,0),side="left",anchor = "w")
+            button_open.        pack(pady = (5,10),padx=(10,0),side="left",anchor = "w")
+            config_btn_frame.   pack(pady = 2,padx=2,side="top",fill="x",anchor = "w")
 
             close_frame =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
             button_close =  customtkinter.CTkButton(master = close_frame, width = 150,height=40,text = "Zavřít",command = child_root.destroy,font=("Arial",20,"bold"),corner_radius=0)

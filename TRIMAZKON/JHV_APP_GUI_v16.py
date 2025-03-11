@@ -9,7 +9,7 @@ import Converting_option_v3 as Converting
 import catalogue_maker_v5 as Catalogue
 import sharepoint_download as download_database
 import IP_setting_v4 as IP_setting
-import trimazkon_tray_v3 as trimazkon_tray
+import trimazkon_tray_v4 as trimazkon_tray
 import string_database
 from tkinter import filedialog
 import tkinter as tk
@@ -29,7 +29,7 @@ import wmi
 import json
 # import struct
 
-testing = True
+testing = False
 
 global_recources_load_error = False
 global_licence_load_error = False
@@ -1654,7 +1654,7 @@ class Tools:
             output_message = f"Provedeno: {output_data[3]}\nZkontrolováno: {output_data[0]} souborů\nStarších: {output_data[1]} souborů, novějších: {output_data[4]} souborů\nSmazáno: {output_data[2]} souborů"
             output_message_eng = f"Date of execution: {output_data[3]}\nTotal checked: {output_data[0]} files\nTotal older: {output_data[1]} files, newer: {output_data[4]} files\nTotal deleted: {output_data[2]} files"
 
-        elif selected_option == 3 or selected_option == 4:
+        elif selected_option == 3:
             new_log = {"del_date": output_data[3],
                     "files_checked": output_data[0],
                     "files_older": "",
@@ -1662,8 +1662,20 @@ class Tools:
                     "files_deleted": output_data[2],
                     "path_count": "",
                     }
+            
             output_message = f"Provedeno: {output_data[3]}\nZkontrolováno: {output_data[0]} adresářů\nSmazáno: {output_data[2]} adresářů"
             output_message_eng = f"Date of execution: {output_data[3]}\nTotal checked: {output_data[0]} directories\nTotal deleted: {output_data[2]} directories"
+
+        elif selected_option == 4:
+            new_log = {"del_date": output_data[3],
+                    "files_checked": output_data[0],
+                    "files_older": output_data[1],
+                    "files_newer": "",
+                    "files_deleted": output_data[2],
+                    "path_count": "",
+                    }
+            output_message = f"Provedeno: {output_data[3]}\nZkontrolováno: {output_data[0]} adresářů\nStarších: {output_data[1]} adresářů\nSmazáno: {output_data[2]} adresářů"
+            output_message_eng = f"Date of execution: {output_data[3]}\nTotal checked: {output_data[0]} directories\nTotal older: {output_data[1]} directories\nTotal deleted: {output_data[2]} directories"
 
         if more_dirs:
             output_message += f", prohledáno: {output_data[5]} subsložek"
@@ -1787,10 +1799,20 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
                     hr, data = win32file.ReadFile(pipe, 64 * 1024)
                     received_data = data.decode()
                     print(f"Received: {received_data}")
-                    if "Establish main menu gui" in received_data:
+                    try:
                         global root
+                    except Exception as e:
+                        print(e)
+
+                    try:
+                        global menu
+                    except Exception as e:
+                        print(e)
+
+                    if "Establish main menu gui" in received_data:
                         root_existance = self.check_root_existence(root)
                         print("root_status: ",root_existance)
+                        # global root
 
                         if root_existance == True:
                             try:
@@ -1798,7 +1820,7 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
                                 root.update_idletasks()
                             except Exception as e:
                                 print(e)
-                            global menu
+                            # global menu
                             menu = main_menu(root)
                             root.after(100,lambda: menu.menu(clear_root=True))
                             # menu.menu(clear_root=True)
@@ -1820,7 +1842,27 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
 
                     elif "Open list with del logs" in received_data:
                         trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
-                        trimazkon_tray_instance.show_task_log()
+                        trimazkon_tray_instance.show_task_log(toplevel=True)
+
+                    elif "Open image browser starting with image" in received_data:
+                        received_params = received_data.split("|||")
+                        # global root
+                        root_existance = self.check_root_existence(root)
+                        print("root_status: ",root_existance)
+
+                        if root_existance == True:
+                            try:
+                                root.deiconify()
+                                root.update_idletasks()
+                            except Exception as e:
+                                print(e)
+                            # global menu
+                            menu = main_menu(root)
+                            root.after(100,lambda: menu.menu(clear_root=True))
+                            root.after(200,menu.command_landed,received_params)
+                            # menu.menu(clear_root=True)
+                        else:
+                            start_new_root() # spousteni pres admina, bylo potreba shodit cely processID
 
                     elif "Shutdown application" in received_data:
                         # global root
@@ -1870,6 +1912,13 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
 
         elif "Open list with del logs" in str(command):
             message = "Open list with del logs"
+            print("Message sent.",message)
+            win32file.WriteFile(handle, message.encode())
+
+        elif "Open image browser starting with image:" in str(command):
+            message = str(command) + "|||"
+            for params in parameters:
+                message = message + str(params) + "|||"
             print("Message sent.",message)
             win32file.WriteFile(handle, message.encode())
 
@@ -2054,35 +2103,34 @@ class main_menu:
             change_log.insert("current lineend",string_element + "\n")
         change_log.see(tk.END)
 
-    def command_landed(self,command):
+    def command_landed(self,params):
         """
         tato funkce přijímá příkazy z pipeline serveru
         """
-        print("received in menu: ",command)
-        params = command.split(",,")
+        print("received in menu: ",params)
         print("Image browser running status: ",self.ib_running)
         if self.ib_running == False:
             for widget in self.root.winfo_children():
                 widget.destroy()
             self.root.unbind("<Button-1>")
-            self.call_view_option(params[0],params[1])
+            self.call_view_option(params[1],params[2])
         else:
             print("previous path: ",self.IB_class.image_browser_path)
             print("previous path: ",self.IB_class.IB_as_def_browser_path)
             print("previous image: ",self.IB_class.selected_image)
-            print("new path: ",params[0])
-            print("new image: ",params[1])
+            print("new path: ",params[1])
+            print("new image: ",params[2])
 
             for widget in self.root.winfo_children():
                 widget.destroy()
             self.root.unbind("<Button-1>")
-            self.call_view_option(params[0],params[1])
+            self.call_view_option(params[1],params[2])
 
     def on_closing(self):
         global root
         if Tools.is_admin(): # pokud se vypíná admin app - vypnout i admin tray a zapnout bez práv
             data_read_in_config = Tools.read_json_config()
-            if data_read_in_config[9] == "ano":
+            if data_read_in_config["app_settings"]["tray_icon_startup"] == "ano":
                 task_name = self.TS_tray_taskname #musím přes task scheduler, když to spustím tady bude pořát s adminem... -> duplicita
                 try:
                     run_task_command = f'schtasks /Run /TN "{task_name}"'
@@ -2405,7 +2453,10 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             #6) mazani nepotrebnych
             for files in os.listdir(self.default_path + self.temp_bmp_folder):
                 if (str(files[:(-6+self.name_hide_index)])+".ifz") not in names_of_files_to_be_converted:
-                    os.remove(self.default_path + self.temp_bmp_folder + "/" + files)
+                    try:
+                        os.remove(self.default_path + self.temp_bmp_folder + "/" + files)
+                    except Exception:
+                        pass
                     # print("deleting",files)
 
             #8) plneni pole s kompletni cestou ve spravnem poradi...
@@ -2516,6 +2567,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                             self.increment_of_image = self.all_images.index(path+self.selected_image)
 
                         self.view_image(self.increment_of_image)
+                        if path not in self.inserted_path_history:
+                            self.inserted_path_history.insert(0,path)
+                            Tools.add_new_path_to_history(path,"image_browser_settings")
                         self.current_image_num.configure(text ="/" + str(len(self.all_images)))
                         self.changable_image_num.delete("0","100")
                         self.changable_image_num.insert("0", str(self.increment_of_image+1))
@@ -2538,7 +2592,7 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                         self.changable_image_num_ifz.delete("0","100")
                         self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
                     if path_to_add_to_history not in self.inserted_path_history:
-                        self.inserted_path_history.append(path_to_add_to_history)
+                        self.inserted_path_history.insert(0,path_to_add_to_history)
                         Tools.add_new_path_to_history(path_to_add_to_history,"image_browser_settings")
                 else:
                     Tools.add_colored_line(self.console,"- V zadané cestě nebyly nalezeny obrázky","red",None,True)
@@ -2825,8 +2879,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
             except Exception as e:
                 error_message = f"Obrázek: {image_to_show} je poškozen"
                 print(error_message)
-                corrupted_image_handling()
-                return error_message
+                if not in_new_window:
+                    corrupted_image_handling()
+                    return error_message
 
 
             if in_new_window:
@@ -2851,6 +2906,11 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
                 
                 child_root = customtkinter.CTkToplevel()
                 child_root.after(200, lambda: child_root.iconbitmap(app_icon))
+                if self.ifz_located:
+                    # self.convert_files()
+                    center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
+                    image_to_show = self.converted_images[center_image_index + self.increment_of_ifz_image]
+                   
                 child_root.title(image_to_show)
                 with Image.open(image_to_show) as opened_image:
                     rotated_image = opened_image.rotate(self.rotation_angle,expand=True)
@@ -3560,9 +3620,9 @@ class Image_browser: # Umožňuje procházet obrázky a přitom například vybr
         self.frame_with_path.           pack(pady=0,padx=0,fill="x",expand=False,side = "top")
         self.frame_with_console =       customtkinter.CTkFrame(master=self.root,height = 200,corner_radius=0)
         self.name_or_path =             customtkinter.CTkCheckBox(master = self.frame_with_console,font=("Arial",16), text = "Název/cesta",command= lambda: self.refresh_console_setting())
-        self.console =                  tk.Text(self.frame_with_console, wrap="none", height=0, width=180,background="black",font=("Arial",14),state=tk.DISABLED)
+        self.console =                  tk.Text(self.frame_with_console, wrap="none", height=0,background="black",font=("Arial",14),state=tk.DISABLED)
         self.name_or_path.              pack(pady = (5,0),padx =10,anchor = "w",side="left")
-        self.console.                   pack(pady = (5,0),padx =10,anchor = "w",side="left")
+        self.console.                   pack(pady = (5,0),padx =10,anchor = "w",side="left",fill="x",expand=True)
         self.frame_with_console.        pack(pady=0,padx=0,fill="x",expand=False,side = "top")
         self.frame_with_buttons =       customtkinter.CTkFrame(master=self.root,height = 200,corner_radius=0)
         button_back  =                  customtkinter.CTkButton(master = self.frame_with_buttons, width = 20,height=30,text = "<", command = self.previous_image,font=("Arial",16,"bold"))
@@ -4960,6 +5020,8 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
                 self.console.update_idletasks()
                 self.root.update_idletasks()
                 previous_len +=1
+                
+            self.console.see(tk.END)
 
             if running_program.finish and (int(len(running_program.output)) == previous_len):
                 completed = True
@@ -5031,6 +5093,12 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
                         
                 path_context_menu.tk_popup(context_menu_button.winfo_rootx(),context_menu_button.winfo_rooty()+50)
 
+        def call_start():
+            self.start()# musí se čekat, jinak crash kvůli loading baru
+            # run_conv_background = threading.Thread(target=self.start,)
+            # run_conv_background.start()
+            # run_conv_background.join()
+
         frame_with_logo =       customtkinter.CTkFrame(master=self.root,corner_radius=0)
         logo =                  customtkinter.CTkImage(Image.open(Tools.resource_path("images/logo.png")),size=(1200, 100))
         image_logo =            customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
@@ -5074,7 +5142,7 @@ class Converting_option: # Spouští možnosti konvertování typu souborů
         button_save_path.       pack(pady = 10,padx = (0,0),anchor ="w",side="left")
         button_open_setting.    pack(pady = 10,padx = (5,10),anchor ="w",side="left")
         self.label   =          customtkinter.CTkLabel(master = self.bottom_frame2,text = f"Konvertované soubory budou vytvořeny uvnitř separátní složky: \"{self.bmp_folder_name}\"\nPodporované formáty: .ifz\nObsahuje-li .ifz soubor více obrázků, budou uloženy v následující syntaxi:\nxxx_0.bmp, xxx_1.bmp ...",justify = "left",font=("Arial",18,"bold"))
-        button  =               customtkinter.CTkButton(master = self.bottom_frame2, text = "KONVERTOVAT", command = self.start,font=("Arial",20,"bold"))
+        button  =               customtkinter.CTkButton(master = self.bottom_frame2, text = "KONVERTOVAT", command = lambda: call_start(),font=("Arial",20,"bold"))
         self.loading_bar =      customtkinter.CTkProgressBar(master = self.bottom_frame2, mode='determinate',width = 800,height =20,progress_color="green",corner_radius=0)
         self.console =          tk.Text(self.bottom_frame2, wrap="word",background="black",font=("Arial",16))
         self.label.             pack(pady =10,padx=10)
@@ -6069,11 +6137,11 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             
             def get_task_name(current_tasks):
                 names_taken = []
-                new_task_name = "jhv_MAZ_task_xx"
+                new_task_name = "TRIMAZKON_del_task_xx"
                 for tasks in current_tasks:
                     names_taken.append(tasks["name"])
                 for i in range(1,100):
-                    name_suggestion = "jhv_MAZ_task_" + str(i)
+                    name_suggestion = "TRIMAZKON_del_task_" + str(i)
                     if name_suggestion in names_taken:
                         continue
                     if Tools.check_task_existence_in_TS(name_suggestion):
@@ -6093,9 +6161,12 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                         
                 task_name = str(new_task["name"])
                 repaired_freq_param = check_freq_format(str(new_task["frequency"]))
-                path_app_location = str(initial_path+"/"+exe_name) 
+                path_app_location = str(initial_path+"/"+exe_name)
+                operating_path_TS = str(new_task["operating_path"]).rstrip("/")
+                full_path = r"{}".format(operating_path_TS)
                 # task_command = "\""+ path_app_location+ " deleting " + task_name + " " + str(new_task["operating_path"]) + " " + str(new_task["max_days"]) + " " + str(new_task["files_to_keep"]) + "\" /SC DAILY /ST " + repaired_freq_param
-                task_command = "\""+ path_app_location+ " deleting " + task_name + " " + str(new_task["operating_path"]) + " " + str(new_task["max_days"]) + " " + str(new_task["files_to_keep"]) + " " + str(new_task["more_dirs"]) + " " + str(new_task["selected_option"]) + " " + str(new_task["creation_date"]) + "\" /SC DAILY /ST " + repaired_freq_param
+                task_command = "\""+ path_app_location+ " deleting " + task_name + " " + full_path + " " + str(new_task["max_days"]) + " " + str(new_task["files_to_keep"]) + " " + str(new_task["more_dirs"]) + " " + str(new_task["selected_option"]) + " " + str(new_task["creation_date"]) + "\" /SC DAILY /ST " + repaired_freq_param
+                print(task_command)
                 process = subprocess.Popen(f"schtasks /Create /TN {task_name} /TR {task_command}",
                                             stdout=subprocess.PIPE,
                                             stderr=subprocess.PIPE,
@@ -6122,7 +6193,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             print("current tasks: ",current_tasks)
 
             new_task = {'name': get_task_name(current_tasks),
-                        'operating_path': operating_path.get(),
+                        'operating_path': Tools.path_check(operating_path.get()),
                         'max_days': self.older_then_entry.get(),
                         'files_to_keep': minimum_file_entry.get(),
                         'frequency': frequency_entry.get(),
@@ -7016,7 +7087,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
                 PAIRS = customtkinter.CTkImage(Image.open(Tools.resource_path("images/25basic.png")),size=(265, 85))
                 self.images.configure(image =PAIRS)
                 self.name_example.configure(
-                    text = f"Nakopíruje nalezené dvojice souborů do složky s názvem PAIRS\n(např. obsluha vloží dvakrát stejnou paletu po sobě před kameru)\n2023_04_13-07_11_09_xxxx_=> 0020 <=_&Cam2Img.Height.bmp\n(funkce postupuje podle časové známky v názvu souboru, kdy byly soubory pořízeny)\n(Podporované formáty:{self.supported_formats_sorting})")
+                    text = f"Nakopíruje nalezené dvojice souborů do složky s názvem PAIRS (např. obsluha vloží dvakrát stejnou paletu po sobě před kameru)\n2023_04_13-07_11_09_xxxx_=> 0020 <=_&Cam2Img.Height.bmp\nFunkce postupuje podle časové známky v názvu souboru, kdy byly soubory pořízeny (podporované formáty:{self.supported_formats_sorting})")
     
     def call_extern_function(self,list_of_frames,function:str): # Tlačítko menu (konec, návrat do menu)
         """
@@ -7046,7 +7117,9 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         """
         Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
         """
-        if self.checkbox6.get() == 1 or self.one_subfolder.get() == 1: # pokud je zvoleno more_dirs v exploreru pouze slozky...
+        if os.path.exists(self.path_set.get()):
+            self.temp_path_for_explorer = self.path_set.get()
+        if self.checkbox6.get() == 1 or self.one_subfolder.get() == 1 or self.checkbox_safe_mode.get() == 1: # pokud je zvoleno more_dirs v exploreru pouze slozky...
             output = Tools.browseDirectories("only_dirs",self.temp_path_for_explorer)
         else:
             output = Tools.browseDirectories("all",self.temp_path_for_explorer)
@@ -7085,7 +7158,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         upper_frame =   customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363")
         self.frame3 =   customtkinter.CTkFrame(master=upper_frame,corner_radius=0,width=400,height = 290,fg_color="#212121")
         self.frame4 =   customtkinter.CTkScrollableFrame(master=upper_frame,corner_radius=0,fg_color="#212121")
-        self.frame5 =   customtkinter.CTkFrame(master=self.root,corner_radius=0)
+        self.frame5 =   customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
         self.frame6 =   customtkinter.CTkFrame(master=upper_frame,corner_radius=0,fg_color="#212121")
 
 
@@ -7142,14 +7215,14 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.console2.  pack(pady =5,padx=10,side="top",anchor = "w")
         self.images2.propagate(0)
         self.checkbox_safe_mode.select()
-        info_frame =        customtkinter.CTkFrame(master=self.frame5,corner_radius=0,fg_color="#212121",height=150)
-        self.name_example = customtkinter.CTkLabel(master = info_frame,width=200,height=100,text = "",font=("Arial",18,"bold"),justify = "left",anchor="w")
+        info_frame =        customtkinter.CTkFrame(master=self.frame5,height=250,corner_radius=0,fg_color="#212121")
+        self.name_example = customtkinter.CTkLabel(master = info_frame,height=60,text = "",font=("Arial",18,"bold"))
         self.images =       customtkinter.CTkLabel(master = info_frame,text = "")
-        self.name_example.  pack(pady = 12,padx =10,side="left",anchor="n")
+        self.name_example.  pack(pady = 12,padx =10,side="top",anchor="n")
         self.name_example.propagate(0)
-        self.images.        pack(side="left",anchor="w",fill="both",expand=True)
-        info_frame.         pack(pady=0,padx=5,fill="x",expand=True,side = "top",anchor = "w")
-        # info_frame.propagate(0)
+        self.images.        pack(padx=(30,0),side="top",anchor="n")
+        info_frame.         pack(pady=0,padx=5,side = "top",anchor = "n",fill="x",expand=True)
+        info_frame.propagate(0)
         button =            customtkinter.CTkButton(master = self.frame5, text = "SPUSTIT", command = self.start,font=("Arial",20,"bold"))
         self.loading_bar =  customtkinter.CTkProgressBar(master = self.frame5, mode='determinate',width = 800,height =20,progress_color="green",corner_radius=0)
         self.console =      tk.Text(self.frame5, wrap="word",background="black",font=("Arial",16),state=tk.DISABLED)
@@ -7164,7 +7237,7 @@ class Sorting_option: # Umožňuje nastavit možnosti třídění souborů
         self.frame3.    pack(pady=5,padx=5,fill="y",expand=False,side="left")
         self.frame6.    pack(pady=5,padx=0,fill="y",expand=False,side="left")
         self.frame4.    pack(pady=5,padx=5,fill="both",expand=True,side="left")
-        upper_frame.    pack(pady=5,padx=5,fill="both",expand=True,side="top")
+        upper_frame.    pack(pady=0,padx=5,fill="x",expand=False,side="top")
 
         self.frame5.    pack(pady=0,padx=5,fill="both",expand=True,side = "top")
         scrollbar = tk.Scrollbar(self.frame5, command=self.console.yview)
