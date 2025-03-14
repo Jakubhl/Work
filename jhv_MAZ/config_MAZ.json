@@ -53,6 +53,7 @@
         {
             "key": "path_history_list",
             "value": [
+                "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/New folder/",
                 "D:/515/St_40/Archive_Old/001_34035982F/",
                 "D:/515/St_40/"
             ]
@@ -72,6 +73,30 @@
             "more_dirs": 0,
             "selected_option": 4,
             "date_added": "04.02.2025 12:15:46",
+            "del_log": [],
+            "creation_date": 0
+        },
+        {
+            "name": "jhv_MAZ_task_4",
+            "operating_path": false,
+            "max_days": "379",
+            "files_to_keep": "1000",
+            "frequency": "12:00",
+            "more_dirs": 0,
+            "selected_option": 1,
+            "date_added": "14.03.2025 15:15:05",
+            "del_log": [],
+            "creation_date": 0
+        },
+        {
+            "name": "jhv_MAZ_task_5",
+            "operating_path": "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/New folder/",
+            "max_days": "379",
+            "files_to_keep": "1000",
+            "frequency": "12:00",
+            "more_dirs": 0,
+            "selected_option": 1,
+            "date_added": "14.03.2025 15:15:08",
             "del_log": [],
             "creation_date": 0
         }

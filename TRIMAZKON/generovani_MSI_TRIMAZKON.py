@@ -26,8 +26,8 @@ exe = Executable(
 # Setup configuration
 setup(
     name="TRIMAZKON",
-    version="4.3.0",
-    description="TRIMAZKON v_4.3.0",
+    version="4.3.1",
+    description="TRIMAZKON v_4.3.1",
     executables=[exe],
     options={
         "build_exe": {

@@ -884,6 +884,8 @@ jhv_MAZ - převzít nový vzhled logů
 
 TRIMAZKON - dodělat možnosti přímého editování tasku
 
+TRIMAZKON - katalog - nove kontextove nabidky
+
 TRIMAZKON - prohlížeč - udelat specialni launcher na obrazky - aby se nenacitaly vsechny knihovny - aby to bylo rychlé
 TRIMAZKON - msi instalačky se dotazovat zda s konzolí či bez
 TRIMAZKON - msi možnost vytvořit ikonu na ploše

@@ -37,7 +37,8 @@ def make_licence(hwid):
         private_key = serialization.load_pem_private_key(f.read(), password=None)
 
     # Licence
-    licence_data = hwid+"|EXPIRES:31.12.2040"
+    # licence_data = hwid+"|EXPIRES:31.12.2040"
+    licence_data = hwid+"|EXPIRES:31.12.9999"
 
     # Podepsání licence soukromým klíčem
     signature = private_key.sign(

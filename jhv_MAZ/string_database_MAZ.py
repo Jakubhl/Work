@@ -1,4 +1,4 @@
-change_log_list = [" Verze 1.0.0 (21.01.2025)",
+change_log_list = ["Verze 1.0.0 (21.01.2025)",
     """ 
     - možnosti přímého mazání
     - možnost nastavit pravidelné mazání v TS
@@ -6,7 +6,13 @@ change_log_list = [" Verze 1.0.0 (21.01.2025)",
     - běží na pozadí v nabídce system tray
     - logování provedených mazání
     - aplikace je licencována\n"""
+    "\nVerze 1.0.5 (14.03.2025)",
+    """ 
+    - nový layout logů
+    - oprava duplicity při vypnutí přes sys tray
+    - oprava otevírání suboken přes tray\n"""
 ]
+
 
 
 default_setting_database = ["Základní cesta k souborům:",

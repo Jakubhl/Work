@@ -3,7 +3,7 @@ import os
 import time
 from PIL import Image
 import Deleting_option_v2 as Deleting
-import trimazkon_tray_MAZ_v2 as trimazkon_tray
+import trimazkon_tray_MAZ_v3 as trimazkon_tray
 import string_database_MAZ
 import json
 from tkinter import filedialog
@@ -22,8 +22,7 @@ import datetime
 import wmi
 import struct
 
-testing = False
-
+testing = True
 
 
 global_recources_load_error = False
@@ -36,7 +35,7 @@ loop_request = False
 root = None
 print("exe name: ",exe_name)
 if testing:
-    exe_name = "trimazkon_test.exe"
+    exe_name = "jhv_MAZ.exe"
 
 class Subwindows:
     @classmethod
@@ -1082,7 +1081,7 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
 
                     elif "Open list with del logs" in received_data:
                         trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
-                        trimazkon_tray_instance.show_task_log()
+                        trimazkon_tray_instance.show_task_log(toplevel = True)
 
                     elif "Shutdown application" in received_data:
                         # global root
@@ -1364,7 +1363,7 @@ class main_menu:
         trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
         new_deleting =         customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Nastavit nové mazání", command = lambda: self.call_deleting_option(),font=("Arial",25,"bold"))
         task_manager =         customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Zobrazit nastavené mazání", command = lambda: trimazkon_tray_instance.show_all_tasks(toplevel=True,maximalized=self.is_root_zoomed()),font=("Arial",25,"bold"))
-        deleting_history =      customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Zobrazit záznamy o mazání", command = lambda: trimazkon_tray_instance.show_task_log(maximalized=self.is_root_zoomed()),font=("Arial",25,"bold"))
+        deleting_history =      customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Zobrazit záznamy o mazání", command = lambda: trimazkon_tray_instance.show_task_log(toplevel=True,maximalized=self.is_root_zoomed()),font=("Arial",25,"bold"))
         advanced_button =       customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Nastavení", command = lambda: self.call_advanced_option(),font=("Arial",25,"bold"))
         change_log_label =      customtkinter.CTkLabel(master=frame_with_buttons_right, width= 600,height=50,font=("Arial",24,"bold"),text="Seznam posledně provedených změn: ")
         change_log =            customtkinter.CTkTextbox(master=frame_with_buttons_right, width= 600,height=450,fg_color="#212121",font=("Arial",20),border_color="#636363",border_width=3,corner_radius=0)
@@ -3106,9 +3105,15 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
                         
                 task_name = str(new_task["name"])
                 repaired_freq_param = check_freq_format(str(new_task["frequency"]))
-                path_app_location = str(initial_path+"/"+exe_name) 
+                path_app_location = str(initial_path+"/"+exe_name)
+                # operating_path_TS = str(new_task["operating_path"]).rstrip("/") # task scheduler bere mezeru v nazvu adresare jen podu nekonci zavorkou... volání z context menu to dava i se zavorkou - uz nacita z configu (kam se pres path check ulozi se zavorkou na konci)
+                operating_path_TS = str(new_task["operating_path"])# task scheduler bere mezeru v nazvu adresare jen podu nekonci zavorkou... volání z context menu to dava i se zavorkou - uz nacita z configu (kam se pres path check ulozi se zavorkou na konci)
+                full_path = r"{}".format(operating_path_TS)
+                
+                # full_path = full_path.replace("/","\\")
+                # full_path = r"{}".format("\""+operating_path_TS+"\"")
                 # task_command = "\""+ path_app_location+ " deleting " + task_name + " " + str(new_task["operating_path"]) + " " + str(new_task["max_days"]) + " " + str(new_task["files_to_keep"]) + "\" /SC DAILY /ST " + repaired_freq_param
-                task_command = "\""+ path_app_location+ " deleting " + task_name + " " + str(new_task["operating_path"]) + " " + str(new_task["max_days"]) + " " + str(new_task["files_to_keep"]) + " " + str(new_task["more_dirs"]) + " " + str(new_task["selected_option"]) + " " + str(new_task["creation_date"]) + "\" /SC DAILY /ST " + repaired_freq_param
+                task_command = "\""+ path_app_location+ " deleting " + task_name + " " + full_path + " " + str(new_task["max_days"]) + " " + str(new_task["files_to_keep"]) + " " + str(new_task["more_dirs"]) + " " + str(new_task["selected_option"]) + " " + str(new_task["creation_date"]) + "\" /SC DAILY /ST " + repaired_freq_param
                 process = subprocess.Popen(f"schtasks /Create /TN {task_name} /TR {task_command}",
                                             stdout=subprocess.PIPE,
                                             stderr=subprocess.PIPE,
@@ -3135,7 +3140,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             print("current tasks: ",current_tasks)
 
             new_task = {'name': get_task_name(current_tasks),
-                        'operating_path': operating_path.get(),
+                        'operating_path': Tools.path_check(operating_path.get()),
                         'max_days': self.older_then_entry.get(),
                         'files_to_keep': minimum_file_entry.get(),
                         'frequency': frequency_entry.get(),

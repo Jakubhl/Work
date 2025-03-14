@@ -37,7 +37,7 @@ exe_path = sys.executable
 exe_name = os.path.basename(exe_path)
 config_filename = "TRIMAZKON.json"
 app_name = "TRIMAZKON"
-app_version = "4.3.0"
+app_version = "4.3.1"
 loop_request = False
 root = None
 print("exe name: ",exe_name)
