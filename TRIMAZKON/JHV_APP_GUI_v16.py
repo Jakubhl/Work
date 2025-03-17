@@ -176,6 +176,420 @@ class Subwindows:
         child_root.focus_force()
         child_root.grab_set()
 
+    @classmethod
+    def save_new_task(cls, selected_option_given, by_creation_date, path_given, cutoff_date_given, files_to_keep_given, dirs_to_keep_given, more_dirs, task_name_given = None, edit_status = False,root_given = None,frequency_given = None, selected_language="cz",wait_request=False,main_root = None):  
+        selected_option_given = int(selected_option_given)
+        if int(more_dirs) == 0:
+            more_dirs = False
+        elif int(more_dirs) == 1:
+            more_dirs = True
+        
+        if int(by_creation_date) == 0:
+            by_creation_date = False
+        elif int(by_creation_date) == 1:
+            by_creation_date = True
+        
+        def call_browse_directories():
+            """
+            Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
+            """
+            path_from_history = None
+            try:
+                path_from_history = Tools.read_json_config()["del_settings"]["path_history_list"][0]
+            except Exception:
+                pass
+            if os.path.exists(str(operating_path.get())):
+                output = Tools.browseDirectories("only_dirs",start_path=str(operating_path.get()))
+            elif os.path.exists(path_from_history):
+                output = Tools.browseDirectories("only_dirs",start_path=path_from_history)
+            else:
+                output = Tools.browseDirectories("only_dirs")
+            if str(output[1]) != "/":
+                operating_path.delete(0,300)
+                operating_path.insert(0, str(output[1]))
+                Tools.add_new_path_to_history(str(output[1]),"del_settings")
+                if selected_language == "en":
+                    Tools.add_colored_line(console,"The path where the task will be executed has been inserted.","green",None,True)
+                else:
+                    Tools.add_colored_line(console,"Byla vložena cesta pro vykonávání úkolu","green",None,True)
+
+            print(output[0])
+            window.focus()
+            window.focus_force()
+
+        def save_task_to_config():
+            if check_entry("",hour_format=True,input_char=str(frequency_entry.get())) == False:
+                return
+            
+            if Tools.path_check(operating_path.get()) == False:
+                if selected_language == "en":
+                    Tools.add_colored_line(console,"Inserted path does not exist or is corrupted","red",None,True)
+                else:
+                    Tools.add_colored_line(console,"Vložená cesta neexistuje nebo je chybná","red",None,True)
+                return
+                
+            def get_task_name(current_tasks):
+                if edit_status:
+                    return task_name_given
+                names_taken = []
+                new_task_name = "TRIMAZKON_del_task_xx"
+                for tasks in current_tasks:
+                    names_taken.append(tasks["name"])
+                for i in range(1,100):
+                    name_suggestion = "TRIMAZKON_del_task_" + str(i)
+                    if name_suggestion in names_taken:
+                        continue
+                    if Tools.check_task_existence_in_TS(name_suggestion):
+                        continue
+                    new_task_name = name_suggestion
+                    break
+                return new_task_name
+
+            def set_up_task_in_ts():
+                def check_freq_format(freq_input):
+                    input_splitted = freq_input.split(":")
+                    if len(str(input_splitted[0])) == 1:
+                        corrected = "0"+str(input_splitted[0]) +":"+ str(input_splitted[1])
+                        return corrected
+                    else:
+                        return freq_input
+                        
+                task_name = str(new_task["name"])
+                repaired_freq_param = check_freq_format(str(new_task["frequency"]))
+                path_app_location = str(initial_path+"/"+exe_name)
+                operating_path_TS = str(new_task["operating_path"])
+                full_path = r"{}".format(operating_path_TS)
+                full_path = full_path.replace(" ","-|-") # mezery zakodovat na specialni znak
+                # task_command = "\""+ path_app_location+ " deleting " + task_name + " " + str(new_task["operating_path"]) + " " + str(new_task["max_days"]) + " " + str(new_task["files_to_keep"]) + "\" /SC DAILY /ST " + repaired_freq_param
+                task_command = "\""+ path_app_location+ " deleting " + task_name + " " + full_path + " " + str(new_task["max_days"]) + " " + str(new_task["files_to_keep"]) + " " + str(new_task["more_dirs"]) + " " + str(new_task["selected_option"]) + " " + str(new_task["creation_date"]) + "\" /SC DAILY /ST " + repaired_freq_param
+                process = subprocess.Popen(f"schtasks /Create /TN {task_name} /TR {task_command}",
+                                            stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE,
+                                            creationflags=subprocess.CREATE_NO_WINDOW)
+                stdout, stderr = process.communicate()
+                try:
+                    stdout_str = stdout.decode('utf-8')
+                    data = str(stdout_str)
+                except UnicodeDecodeError:
+                    try:
+                        stdout_str = stdout.decode('cp1250')
+                        data = str(stdout_str)
+                    except UnicodeDecodeError:
+                        data = str(stdout)
+                output_message = "out"+str(stdout) +"err"+str(stderr)
+                print(output_message)
+                if "SUCCESS" in stdout_str:
+                    # os.startfile("taskschd.msc")
+                    return True
+                else:
+                    return False
+
+            current_tasks = trimazkon_tray_instance.read_config()
+            print("current tasks: ",current_tasks)
+
+            new_task = {'name': get_task_name(current_tasks),
+                        'operating_path': Tools.path_check(operating_path.get()),
+                        'max_days': older_then_entry.get(),
+                        'files_to_keep': minimum_file_entry.get(),
+                        'frequency': frequency_entry.get(),
+                        'more_dirs': subfolder_checkbox.get(),
+                        'selected_option': selected_option_given,
+                        'date_added': str(Deleting.get_current_date()[2]),
+                        'del_log': [],
+                        'creation_date': checkbox_creation_date.get(),
+                        }
+
+            try:
+                if edit_status: # delete the task before changes
+                    for i in range(0,len(current_tasks)):
+                        if current_tasks[i]["name"] == task_name_given:
+                            print("popped: ",current_tasks[i]["name"])
+                            current_tasks.pop(i)
+                            break
+                    trimazkon_tray_instance.delete_task(task_name_given,only_scheduler=True)
+                    print("deleted from scheduler",task_name_given)
+
+                success_status = set_up_task_in_ts()
+                if success_status:
+                    if selected_language == "en":
+                        Tools.add_colored_line(console,"The new task has been saved and entered into the task scheduler","green",None,True)
+                        if edit_status:
+                            Tools.add_colored_line(console,"The task changes has been saved and updated in task scheduler","green",None,True)
+                    else:
+                        Tools.add_colored_line(console,"Nový úkol byl uložen a zaveden do task scheduleru","green",None,True)
+                        if edit_status:
+                            Tools.add_colored_line(console,"Změny úkolu byly uloženy a aktualizovány v task scheduleru","green",None,True)
+
+                    current_tasks.append(new_task)
+                    trimazkon_tray_instance.save_task_to_config(current_tasks)
+                    if edit_status:
+                        try:
+                            root_given_obj = root.nametowidget(root_given)
+                            trimazkon_tray_instance.show_all_tasks(root_given=root_given_obj) # refresh s novým nastavením
+                            window.after(10,window.focus_force())
+                            
+                        except Exception as e:
+                            print("chyba pri aktualizovani okna u editu tasku",e)
+                else:
+                    if selected_language == "en":
+                        Tools.add_colored_line(console,"Unexpected error, failed to set a new task","red",None,True)
+                        if edit_status:
+                            Tools.add_colored_line(console,"Unexpected error, failed to save edited task","red",None,True)
+                    else:
+                        Tools.add_colored_line(console,"Neočekávaná chyba, nepovedlo se nastavit nový úkol","red",None,True)
+                        if edit_status:
+                            Tools.add_colored_line(console,"Neočekávaná chyba, nepovedlo se uložit editovaný úkol","red",None,True)
+            except Exception as e:
+                if selected_language == "en":
+                    Tools.add_colored_line(console,f"Please close the configuration file ({e})","red",None,True)
+                else:
+                    Tools.add_colored_line(console,f"Prosím zavřete konfigurační soubor ({e})","red",None,True)
+
+        def refresh_cutoff_date():
+            older_then_entry.update()
+            older_then_entry.update_idletasks()
+            try:
+                cutoffdate_list = Deleting.get_cutoff_date(int(older_then_entry.get()))
+                new_date = "(starší než: "+str(cutoffdate_list[0])+"."+str(cutoffdate_list[1])+"."+str(cutoffdate_list[2])+")"
+                if selected_language == "en":
+                    new_date = "(older then: "+str(cutoffdate_list[0])+"."+str(cutoffdate_list[1])+"."+str(cutoffdate_list[2])+")"
+                if older_then_label3.cget("text") != new_date:
+                    older_then_label3.configure(text = new_date)
+            except Exception:
+                pass
+
+        def check_entry(event,number=False,hour_format=False,input_char=None,flag=""):
+            if flag == "cutoff":
+                window.after(100, lambda: refresh_cutoff_date())
+            if event != "":
+                if event.keysym == "BackSpace" or event.keysym == "Return":
+                    return
+
+            if number:
+                if not event.char.isdigit():
+                    if selected_language == "en":
+                        Tools.add_colored_line(console,"Enter only numbers","red",None,True)
+                    else:
+                        Tools.add_colored_line(console,"Vkládejte pouze čísla","red",None,True)
+                    event.widget.insert(tk.INSERT,"")
+                    return "break"  # Stop the event from inserting the original character
+                
+            elif hour_format:
+                separator_err_msg = "Neplatný formát času, chybí separátor (vkládejte ve formátu: 00:00)"
+                time_format_err_msg = "Neplatný formát času (vkládejte ve formátu: 00:00)"
+                bad_chars_err_msg = "Neplatné znaky u času (vkládejte ve formátu: 00:00)"
+                out_of_range_err_msg = "Neplatný formát času, mimo rozsah (vkládejte ve formátu: 00:00)"
+                if selected_language == "en":
+                    separator_err_msg = "Invalid time format, missing separator (insert in format: 00:00)"
+                    time_format_err_msg = "Invalid time format (enter in format: 00:00)"
+                    bad_chars_err_msg = "Invalid characters for time (enter in format: 00:00)"
+                    out_of_range_err_msg = "Invalid time format, out of range (insert in format: 00:00)"
+
+                if not ":" in input_char:
+                    Tools.add_colored_line(console,separator_err_msg,"red",None,True)
+                    return False
+                elif len(input_char.split(":")) != 2:
+                    Tools.add_colored_line(console,time_format_err_msg,"red",None,True)
+                    return False
+                elif len(str(input_char.split(":")[1])) != 2:
+                    Tools.add_colored_line(console,time_format_err_msg,"red",None,True)
+                    return False
+                elif not input_char.split(":")[0].isdigit() or not input_char.split(":")[1].isdigit():
+                    Tools.add_colored_line(console,bad_chars_err_msg,"red",None,True)
+                    return False
+                elif int(input_char.split(":")[0]) > 23 or int(input_char.split(":")[0]) < 0 or int(input_char.split(":")[1]) > 59 or int(input_char.split(":")[1]) < 0:
+                    Tools.add_colored_line(console,out_of_range_err_msg,"red",None,True)
+                    return False
+            
+        def call_path_context_menu(event):
+            path_history = Tools.read_json_config()["del_settings"]["path_history_list"]
+            def insert_path(path):
+                operating_path.delete("0","200")
+                operating_path.insert("0", path)
+            if len(path_history) > 0:
+                path_context_menu = tk.Menu(window, tearoff=0,fg="white",bg="black")
+                for i in range(0,len(path_history)):
+                    path_context_menu.add_command(label=path_history[i], command=lambda row_path = path_history[i]: insert_path(row_path),font=("Arial",22,"bold"))
+                    if i < len(path_history)-1:
+                        path_context_menu.add_separator()
+                        
+                path_context_menu.tk_popup(context_menu_button.winfo_rootx(),context_menu_button.winfo_rooty()+50)
+
+        def set_decision_date(input_arg):
+            """
+            input_arg:
+            - creation
+            - modification
+            """
+            nonlocal by_creation_date
+            if input_arg == "creation":
+                by_creation_date = True
+                checkbox_modification_date.deselect()
+
+            elif input_arg == "modification":
+                by_creation_date = False
+                checkbox_creation_date.deselect()
+
+        window = customtkinter.CTkToplevel()
+        window.after(200, lambda: window.iconbitmap(app_icon))
+        window.title("Nastavení nového úkolu")
+        if edit_status:
+            window.title("Editování úkolu: "+str(task_name_given))
+
+        if selected_language == "en":
+            window.title("Setting up a new task")
+            if edit_status:
+                window.title("Editing task: "+str(task_name_given))
+        trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
+        parameter_frame = customtkinter.CTkFrame(master = window,corner_radius=0)
+        selected_option = customtkinter.CTkLabel(master = parameter_frame,text = "Zvolená možnost mazání: ",font=("Arial",25,"bold"))
+        path_label_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0,fg_color="#212121")
+        path_label = customtkinter.CTkLabel(master = path_label_frame,text = "Zadejte cestu, kde bude úkol spouštěn:",font=("Arial",22))
+        path_label.pack(pady = (10,0),padx = (10,0),side="left",anchor="w")
+        subfolder_checkbox = customtkinter.CTkCheckBox(master = path_label_frame, text = "Procházet subsložky? (max: 6)",font=("Arial",20,"bold"))
+        if selected_option_given != 3 and selected_option_given != 4:
+            subfolder_checkbox.pack(pady = (10,0),padx = (0,10),side="right",anchor="e")
+            if more_dirs:
+                subfolder_checkbox.select()
+
+        path_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0,fg_color="#212121")
+        context_menu_button  =  customtkinter.CTkButton(master = path_frame, width = 50,height=50, text = "V",font=("Arial",20,"bold"),corner_radius=0,fg_color="#505050")
+        operating_path = customtkinter.CTkEntry(master = path_frame,font=("Arial",20),height=50,corner_radius=0)
+        explorer_btn = customtkinter.CTkButton(master = path_frame,text = "...",font=("Arial",22,"bold"),width = 50,height=50,corner_radius=0,command=lambda: call_browse_directories())
+        selected_option.pack(pady = (10,0),padx = (10,0),side="top",anchor="w")
+        path_label_frame.pack(side="top",anchor="w",fill="x",expand = True)
+        context_menu_button.pack(pady = (10,0),padx = (10,0),side="left",anchor="w")
+        operating_path.pack(pady = (10,0),padx = (0,0),side="left",anchor="w",expand = True,fill="x")
+        explorer_btn.pack(pady = (10,0),padx = (0,10),side="left",anchor="w")
+        path_frame.pack(side="top",anchor="w",fill="x",expand = True)
+        context_menu_button.bind("<Button-1>", call_path_context_menu)
+
+        decision_date_frame = customtkinter.CTkFrame(master=parameter_frame,corner_radius=0,fg_color="#212121")
+        decision_date_label = customtkinter.CTkLabel(master = decision_date_frame,text = "Řídit se podle: ",justify = "left",font=("Arial",20,"bold"))
+        checkbox_creation_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data vytvoření",font=("Arial",18),command=lambda:set_decision_date("creation"))
+        checkbox_modification_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data poslední změny (doporučeno)",font=("Arial",18),command=lambda:set_decision_date("modification"))
+        decision_date_label.pack(pady = (10,10),padx =(10,0),side="left",anchor="w")
+        checkbox_creation_date.pack(pady = (10,10),padx =(10,0),side="left",anchor="w")
+        checkbox_modification_date.pack(pady = (10,10),padx =(10,0),side="left",anchor="w")
+        decision_date_frame.pack(pady = (0,0),padx =0,side="top",anchor="w",fill="x")
+        if by_creation_date:
+            checkbox_creation_date.select()
+        else:
+            checkbox_modification_date.select()
+
+        older_then_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
+        older_then_label = customtkinter.CTkLabel(master = older_then_frame,text = "Odstanit soubory starší než:",font=("Arial",22,"bold"))
+        older_then_entry = customtkinter.CTkEntry(master = older_then_frame,font=("Arial",20),width=100,height=40,corner_radius=0)
+        older_then_label2 = customtkinter.CTkLabel(master = older_then_frame,text = "dní",font=("Arial",22,"bold"))
+        older_then_label3 = customtkinter.CTkLabel(master = older_then_frame,text = "",font=("Arial",22,"bold"))
+        older_then_label.pack(pady = (10,0),padx = (10,10),side="left")
+        older_then_entry.pack(pady = (10,0),padx = (0,0),side="left")
+        older_then_label2.pack(pady = (10,0),padx = (10,0),side="left")
+        older_then_label3.pack(pady = (10,0),padx = (10,10),side="left")
+        older_then_frame.pack(side="top",fill="x",anchor="w")
+        older_then_entry.bind("<Key>",lambda e: check_entry(e,number=True,flag="cutoff"))
+
+        minimum_file_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
+        minimum_file_label = customtkinter.CTkLabel(master = minimum_file_frame,text = "Ponechat souborů:",font=("Arial",22,"bold"))
+        minimum_file_entry = customtkinter.CTkEntry(master = minimum_file_frame,font=("Arial",20),width=100,height=40,corner_radius=0)
+        minimum_file_label.pack(pady = (10,0),padx = (10,10),side="left")
+        minimum_file_entry.pack(pady = (10,0),padx = (0,10),side="left")
+        if selected_option_given != 3:
+            minimum_file_frame.pack(side="top",fill="x",anchor="w")
+        minimum_file_entry.bind("<Key>",lambda e: check_entry(e,number=True))
+
+        frequency_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
+        frequency_label = customtkinter.CTkLabel(master = frequency_frame,text = "Frekvence: denně, ",font=("Arial",22,"bold"))
+        frequency_entry = customtkinter.CTkEntry(master = frequency_frame,font=("Arial",20),width=100,height=40,corner_radius=0)
+        frequency_label2 = customtkinter.CTkLabel(master = frequency_frame,text = "hodin (př.: 0:00, 6:00, 14:30)",font=("Arial",22,"bold"))
+        frequency_label.pack(pady = (10,0),padx = (10,10),side="left",anchor="w")
+        frequency_entry.pack(pady = (10,0),padx = (0,0),side="left",anchor="w")
+        frequency_label2.pack(pady = (10,0),padx = (10,10),side="left",anchor="w")
+        frequency_frame.pack(side="top",fill="x",anchor="w")
+        console = tk.Text(parameter_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED)
+        console.pack(pady = 10,padx =10,side="top",anchor="w",fill="x")
+
+        button_frame =   customtkinter.CTkFrame(master = window,corner_radius=0)
+        show_tasks_btn = customtkinter.CTkButton(master = button_frame, width = 300,height=50,text = "Zobrazit nastavené úkoly", command =  lambda: trimazkon_tray_instance.show_all_tasks(toplevel=True),font=("Arial",20,"bold"),corner_radius=0)
+        save_task_btn =  customtkinter.CTkButton(master = button_frame, width = 300,height=50,text = "Uložit nový úkol", command =  lambda: save_task_to_config(),font=("Arial",20,"bold"),corner_radius=0)
+        cancel_btn =  customtkinter.CTkButton(master = button_frame, width = 300,height=50,text = "Zavřít", command =  lambda: window.destroy(),font=("Arial",20,"bold"),corner_radius=0)
+        cancel_btn.   pack(pady=10,padx=(10,10),side="right",anchor="e")
+        save_task_btn.   pack(pady=10,padx=(10,0),side="right",anchor="e")
+        if not edit_status:
+            show_tasks_btn.  pack(pady=10,padx=(10,0),side="right",anchor="e")
+        parameter_frame.pack(side="top",fill="both")
+        button_frame.pack(side="top",fill="x")
+        operating_path.insert("0",path_given)
+        if edit_status:
+            max_days = cutoff_date_given
+            frequency_entry.insert("0",frequency_given)
+            save_task_btn.configure(text = "Uložit změny")
+        else:
+            max_days = Deleting.get_max_days(cutoff_date_given)
+            frequency_entry.insert("0","12:00")
+        older_then_entry.insert("0",max_days)
+        minimum_file_entry.insert("0",files_to_keep_given)
+        if selected_option_given == 4:
+            minimum_file_entry.delete("0","200")
+            minimum_file_entry.insert("0",dirs_to_keep_given)
+        
+        refresh_cutoff_date()
+
+        if selected_language == "en":
+            path_label.configure(text = "Specify the path where the task will run:")
+            subfolder_checkbox.configure(text = "Browse subfolders? (max: 6)")
+            older_then_label.configure(text = "Remove files older than:")
+            older_then_label2.configure(text = "days")
+            minimum_file_label.configure(text = "Keep files:")
+            frequency_label.configure(text = "Frequency: daily, ")
+            frequency_label2.configure(text = "hours (ex.: 0:00, 6:00, 14:30)")
+            show_tasks_btn.configure(text = "Show set tasks")
+            save_task_btn.configure(text = "Save new task")
+            if edit_status:
+                save_task_btn.configure(text = "Apply changes")
+            cancel_btn.configure(text = "Close")
+            decision_date_label.configure(text = "To decide by: ")
+            checkbox_modification_date.configure(text = "date modified (recommended)")
+            checkbox_creation_date.configure(text = "date created")
+            
+        if selected_option_given == 1:
+            selected_option.configure(text = f"Zvolená možnost mazání: {selected_option_given}. (Redukce starších souborů)")
+            if selected_language == "en":
+                selected_option.configure(text = f"Selected delete option: {selected_option_given}. (Reducing older files)")
+        elif selected_option_given == 2:
+            selected_option.configure(text = f"Zvolená možnost mazání: {selected_option_given}. (Redukce novějších, mazání starších souborů)")
+            if selected_language == "en":
+                selected_option.configure(text = f"Selected delete option: {selected_option_given}. (Reducing newer, deleting older files)")
+        elif selected_option_given == 3:
+            selected_option.configure(text = f"Zvolená možnost mazání: {selected_option_given}. (Mazání adresářů podle názvu)")
+            older_then_label.configure(text = "Odstanit adresáře starší než:")
+            if selected_language == "en":
+                selected_option.configure(text = f"Selected delete option: {selected_option_given}. (Deleting directories by name)")
+                older_then_label.configure(text = "Remove directories older than:")
+        elif selected_option_given == 4:
+            selected_option.configure(text = f"Zvolená možnost mazání: {selected_option_given}. (Mazání starších adresářů)")
+            older_then_label.configure(text = "Odstanit adresáře starší než:")
+            minimum_file_label.configure(text = "Ponechat adresářů:")
+            if selected_language == "en":
+                selected_option.configure(text = f"Selected delete option: {selected_option_given}. (Deleting older directories)")
+                older_then_label.configure(text = "Remove directories older than:")
+                minimum_file_label.configure(text = "Keep directories:")
+        window.update()
+        window.update_idletasks()
+        # window_width = window.winfo_width()
+        # if window_width < 1200:
+        #     window_width = 1200
+        window.geometry(f"{1200}x{window.winfo_height()}")
+        window.after(10,window.focus_force())
+        window.focus()
+        try:
+            main_root.bind("<Button-1>",lambda e: window.destroy())
+        except Exception:
+            pass
+        if wait_request:
+            window.deiconify()
+            window.wait_window()
+    
 class WindowsBalloonTip:
     """
     Windows system notification (balloon tip).
@@ -660,592 +1074,6 @@ class Tools:
             print("Chybí konfigurační soubor (nelze ukládat změny)")
             return "Chybí konfigurační soubor (nelze ukládat změny)"
    
-    # @classmethod
-    # def read_config_data(cls): # Funkce vraci data z config_TRIMAZKON.
-    #     """
-    #     Funkce vrací data z konfiguračního souboru config_TRIMAZKON.xlsx
-
-    #     data jsou v pořadí:
-
-    #     0 supported_formats_sorting\n
-    #     1 supported_formats_deleting\n
-    #     2 path_repaired\n
-    #     3 files_to_keep\n
-    #     4 cutoff_date\n
-    #     5 prefix_function\n
-    #     6 prefix_camera\n
-    #     7 maximalized\n
-    #     8 max_pallets\n
-    #     9 static_dirs_names\n
-    #     10 sorting_safe_mode\n
-    #     11 image_browser_setting [checkbox, increment, movement]\n
-    #     12 show_changelog\n
-    #     13 image_film\n
-    #     14 num_of_IB_film_images\n
-
-    #     15 default sharepoint database filename\n
-    #     16 default excel filnename prefix for catalogue output\n
-    #     17 default xml filename for catalogue output \n
-    #     18 default subwindow behavior status in catalogue menu\n
-    #     19 default format of catalogue export\n
-    #     20 default path catalogue\n
-
-    #     21 app zoom\n
-    #     22 app zoom checkbox\n
-    #     23 render mode\n - catalogue params
-    #     24 establish tray icon in startup\n
-    #     """
-    #     def filter_unwanted_chars(to_filter_data, directory = False,even_space=False):
-    #         unwanted_chars = ["\n","\"","\'","[","]"]
-    #         if directory:
-    #             unwanted_chars = ["\n","\"","\'","[","]","\\","/"]
-    #         if even_space:
-    #             unwanted_chars.append(" ")
-    #         filtered_data = ""
-    #         for letters in to_filter_data:
-    #             if letters not in unwanted_chars:
-    #                 filtered_data += letters
-    #         return filtered_data
-
-    #     def load_default_values():
-    #         dir_names = default_setting_parameters[9:16]
-    #         image_browser_param = default_setting_parameters[17:20]
-    #         output_array = [default_setting_parameters[0],
-    #                         default_setting_parameters[1],
-    #                         default_setting_parameters[2],
-    #                         default_setting_parameters[3],
-    #                         default_setting_parameters[4],
-    #                         default_setting_parameters[5],
-    #                         default_setting_parameters[6],
-    #                         default_setting_parameters[7],
-    #                         default_setting_parameters[8],
-    #                         dir_names,
-    #                         default_setting_parameters[16],
-    #                         image_browser_param,
-    #                         default_setting_parameters[20],
-    #                         default_setting_parameters[21],
-    #                         default_setting_parameters[22],
-    #                         default_setting_parameters[23],
-    #                         default_setting_parameters[24],
-    #                         default_setting_parameters[25],
-    #                         default_setting_parameters[26],
-    #                         default_setting_parameters[27],
-    #                         default_setting_parameters[28],
-    #                         default_setting_parameters[29],
-    #                         default_setting_parameters[30],
-    #                         default_setting_parameters[31],
-    #                         default_setting_parameters[32],
-    #                         ]
-            
-    #         print("read intern database (default values)",output_array,len(output_array))
-    #         return output_array
-
-    #     def insert_new_excel_param(wb,ws,row,param,text):
-    #         """
-    #         Zakládá nové, chybějící parametry
-    #         """
-    #         ws['A' + str(row)] = text
-    #         ws['B' + str(row)] = param
-    #         print(f'inserting new parameter to excel: {text}: {param}')
-    #         wb.save(initial_path+config_filename)
-
-    #     global global_recources_load_error
-    #     config_filename = "config_TRIMAZKON.xlsx"
-    #     setting_list_name = "Settings_recources"
-    #     default_setting_parameters = string_database.default_setting_database_param
-    #     # default_labels = string_database.default_setting_database
-
-    #     if os.path.exists(initial_path+config_filename):
-    #         try:
-    #             cutoff_date = ["","",""]
-    #             supported_formats_sorting = []
-    #             supported_formats_deleting = []
-    #             wb = load_workbook(initial_path+config_filename)
-    #             ws = wb[setting_list_name]
-
-    #             # checking possibly missing parameters
-    #             value_check = ws['B' + str(30)].value
-    #             if value_check is None or str(value_check) == "":
-    #                 insert_new_excel_param(wb,ws,row=30,param=default_setting_parameters[29],text=default_labels[29])
-    #             value_check = ws['B' + str(31)].value
-    #             if value_check is None or str(value_check) == "":
-    #                 insert_new_excel_param(wb,ws,row=31,param=default_setting_parameters[30],text=default_labels[30])
-    #             value_check = ws['B' + str(32)].value
-    #             if value_check is None or str(value_check) == "":
-    #                 insert_new_excel_param(wb,ws,row=32,param=default_setting_parameters[31],text=default_labels[31])
-    #             value_check = ws['B' + str(33)].value
-    #             if value_check is None or str(value_check) == "":
-    #                 insert_new_excel_param(wb,ws,row=33,param=default_setting_parameters[32],text=default_labels[32])
-
-    #             read_formats1 = str(ws['B' + str(1)].value)
-    #             read_formats1 = filter_unwanted_chars(read_formats1,even_space=True)
-    #             found_formats = read_formats1.split(",") 
-    #             for items in found_formats:
-    #                 supported_formats_sorting.append(str(items))
-
-    #             read_formats2 = str(ws['B' + str(2)].value)
-    #             read_formats2 = filter_unwanted_chars(read_formats2,even_space=True)
-    #             found_formats = read_formats2.split(",")
-    #             for items in found_formats:
-    #                 supported_formats_deleting.append(str(items))
-                
-    #             inserted_path = str(ws['B' + str(3)].value)
-    #             path_repaired = Tools.path_check(inserted_path)
-    #             if path_repaired == False:
-    #                 path_repaired = default_setting_parameters[2]
-
-    #             files_to_keep = int(default_setting_parameters[3])
-    #             files_to_keep_raw = str(ws['B' + str(4)].value)
-    #             if files_to_keep_raw.isdigit():
-    #                 files_to_keep = int(files_to_keep_raw)
-
-    #             cutoff_date_raw = str(ws['B' + str(5)].value)
-    #             cutoff_date_filtered = filter_unwanted_chars(cutoff_date_raw,even_space=True)
-    #             if "." in cutoff_date_filtered:
-    #                 cutoff_date = cutoff_date_filtered.split(".")
-    #             elif "," in cutoff_date_filtered:
-    #                 cutoff_date = cutoff_date_filtered.split(",")
-                
-    #             prefix_function_raw = str(ws['B' + str(6)].value)
-    #             prefix_function_filtered = filter_unwanted_chars(prefix_function_raw,directory=True)
-    #             if prefix_function_filtered != "":
-    #                 prefix_function = prefix_function_filtered
-    #             else:
-    #                 prefix_function = default_setting_parameters[5]
-
-    #             prefix_camera_raw = str(ws['B' + str(7)].value)
-    #             prefix_camera_filtered = filter_unwanted_chars(prefix_camera_raw,directory=True)
-    #             if prefix_camera_filtered != "":
-    #                 prefix_camera = prefix_camera_filtered
-    #             else:
-    #                 prefix_camera = default_setting_parameters[6]
-
-    #             maximalized = str(ws['B' + str(8)].value)
-    #             if maximalized != "ano":
-    #                 maximalized = "ne"
-
-    #             max_pallets = int(default_setting_parameters[8])
-    #             max_pallets_raw = str(ws['B' + str(9)].value)
-    #             if max_pallets_raw.isdigit():
-    #                 max_pallets = int(max_pallets_raw)
-
-    #             static_dirs_names = []
-    #             for i in range(10,17):
-    #                 dir_name_raw = str(ws['B' + str(i)].value)
-    #                 dir_name_filtered = filter_unwanted_chars(dir_name_raw,directory=True)
-    #                 if dir_name_filtered == "":
-    #                     dir_name_filtered = default_setting_parameters[i-1]
-    #                 static_dirs_names.append(dir_name_filtered)
-
-    #             safe_mode = str(ws['B' + str(17)].value)
-    #             if safe_mode != "ne":
-    #                 safe_mode = "ano"
-
-    #             image_browser_param = [default_setting_parameters[17],default_setting_parameters[18],default_setting_parameters[19]] #default
-    #             chosen_option = str(ws['B' + str(18)].value)
-    #             if chosen_option.isdigit():
-    #                 image_browser_param[0] = int(chosen_option)
-    #             zoom_step = str(ws['B' + str(19)].value)
-    #             if zoom_step.isdigit():
-    #                 image_browser_param[1] = int(zoom_step)
-    #             drag_step = str(ws['B' + str(20)].value)
-    #             if drag_step.isdigit():
-    #                 image_browser_param[2] = int(drag_step)
-                
-    #             show_changelog = str(ws['B' + str(21)].value)
-    #             if show_changelog != "ano":
-    #                 show_changelog = "ne"
-
-    #             image_film = str(ws['B' + str(22)].value)
-    #             if image_film != "ano":
-    #                 image_film = "ne"
-
-    #             num_of_IB_film_images = int(default_setting_parameters[22])
-    #             num_of_IB_film_images_raw = str(ws['B' + str(23)].value)
-    #             if num_of_IB_film_images_raw.isdigit():
-    #                 num_of_IB_film_images = int(num_of_IB_film_images_raw)
-
-    #             default_sharepoint_database_filename = str(ws['B' + str(24)].value)
-    #             default_sharepoint_database_filename = filter_unwanted_chars(default_sharepoint_database_filename,directory=True)
-    #             default_catalogue_excel_filename = str(ws['B' + str(25)].value)
-    #             default_catalogue_excel_filename = filter_unwanted_chars(default_catalogue_excel_filename,directory=True)
-    #             default_catalogue_xml_filename = str(ws['B' + str(26)].value)
-    #             default_catalogue_xml_filename = filter_unwanted_chars(default_catalogue_xml_filename,directory=True)
-
-    #             default_catalogue_subwindow_behavior_status = int(default_setting_parameters[26])
-    #             default_catalogue_subwindow_behavior_status_raw = str(ws['B' + str(27)].value)
-    #             if default_catalogue_subwindow_behavior_status_raw.isdigit():
-    #                 default_catalogue_subwindow_behavior_status = int(default_catalogue_subwindow_behavior_status_raw)
-
-    #             default_catalogue_export_extension = str(ws['B' + str(28)].value)
-    #             default_catalogue_export_extension = filter_unwanted_chars(default_catalogue_export_extension,directory=True,even_space=True)
-
-    #             default_path_catalogue = str(ws['B' + str(29)].value)
-    #             default_path_catalogue = Tools.path_check(default_path_catalogue)
-    #             if default_path_catalogue == False:
-    #                 default_path_catalogue = default_setting_parameters[28]
-    #             catalogue_save_data = [default_sharepoint_database_filename,default_catalogue_excel_filename,default_catalogue_xml_filename,default_catalogue_subwindow_behavior_status,default_catalogue_export_extension,default_path_catalogue]
-
-    #             for i in range(0,len(catalogue_save_data)):
-    #                 if catalogue_save_data[i] == "":
-    #                     catalogue_save_data[i] = default_setting_parameters[23+i]
-
-    #             app_zoom = int(default_setting_parameters[29])
-    #             app_zoom_raw = str(ws['B' + str(30)].value)
-    #             if app_zoom_raw.isdigit():
-    #                 app_zoom = int(app_zoom_raw)
-
-    #             app_zoom_checkbox = str(ws['B' + str(31)].value)
-    #             if app_zoom_checkbox != "ano":
-    #                 app_zoom_checkbox = "ne"
-
-    #             render_mode = str(ws['B' + str(32)].value)
-    #             if render_mode != "precise":
-    #                 render_mode = "fast"
-
-    #             tray_startup_status = str(ws['B' + str(33)].value)
-    #             if tray_startup_status != "ano":
-    #                 tray_startup_status = "ne"
-
-    #             global_recources_load_error = False
-    #             output_array = [supported_formats_sorting,
-    #                             supported_formats_deleting,
-    #                             path_repaired,
-    #                             files_to_keep,
-    #                             cutoff_date,
-    #                             prefix_function,
-    #                             prefix_camera,
-    #                             maximalized,
-    #                             max_pallets,
-    #                             static_dirs_names,
-    #                             safe_mode,
-    #                             image_browser_param,
-    #                             show_changelog,
-    #                             image_film,
-    #                             num_of_IB_film_images,
-    #                             catalogue_save_data[0],
-    #                             catalogue_save_data[1],
-    #                             catalogue_save_data[2],
-    #                             catalogue_save_data[3],
-    #                             catalogue_save_data[4],
-    #                             catalogue_save_data[5],
-    #                             app_zoom,
-    #                             app_zoom_checkbox,
-    #                             render_mode,
-    #                             tray_startup_status,
-    #                             ]
-                
-    #             print("read config",output_array,len(output_array))
-    #             wb.close()
-    #             return output_array
-
-    #         except Exception as e:
-    #             print(f"Nejdřív zavřete soubor {config_filename} Chyba: {e}")   
-    #             print("Budou načteny defaultní hodnoty")
-    #             global_recources_load_error = True
-    #             output_array = load_default_values()
-    #             return output_array
-    #     else:
-    #         print(f"Chybí konfigurační soubor {config_filename}")
-    #         print("Budou načteny defaultní hodnoty")
-    #         global_recources_load_error = True
-    #         output_array = load_default_values()
-    #         return output_array
-            
-    # @classmethod
-    # def save_to_config(cls,input_data,which_parameter): # Funkce zapisuje data do souboru config_TRIMAZKON.xlsx
-    #     """
-    #     Funkce zapisuje data do textoveho souboru Recources.txt
-
-    #     vraci vystupni zpravu: report
-
-    #     which_parameter je bud: 
-        
-    #     1 add_supported_sorting_formats\n
-    #     2 add_supported_deleting_formats\n
-    #     3 pop_supported_sorting_formats\n
-    #     4 pop_supported_deleting_formats\n
-    #     5 default_path\n
-    #     6 default_files_to_keep\n
-    #     7 default_cutoff_date\n
-    #     8 new_default_prefix_func\n
-    #     9 new_default_prefix_cam\n
-    #     10 maximalized\n
-    #     11 pallets_set\n
-    #     12 new_default_static_dir_name\n
-    #     13 sorting_safe_mode\n
-    #     14 image_browser_param_set\n
-    #     15 show_change_log\n
-    #     16 image_film\n
-    #     17 num_of_IB_film_images\n
-    #     18 catalogue_data\n
-    #     19 app_zoom\n
-    #     20 app_zoom_checkbox\n
-    #     21 render_mode\n
-    #     22 tray_icon_startup\n
-    #     """
-
-    #     def filter_unwanted_chars(to_filter_data, directory = False,formats = False):
-    #         unwanted_chars = ["\n","\"","\'","[","]"]
-    #         if directory:
-    #             unwanted_chars = ["\n","\"","\'","[","]","\\","/"]
-    #         if formats:
-    #             unwanted_chars = ["\n","\"","\'","[","]"," ","."]
-
-    #         filtered_data = ""
-    #         for letters in to_filter_data:
-    #             if letters not in unwanted_chars:
-    #                 filtered_data += letters
-    #         return filtered_data
-        
-    #     config_filename = "config_TRIMAZKON.xlsx"
-    #     setting_list_name = "Settings_recources"
-    #     parameter_row_mapping = {
-    #         "add_supported_sorting_formats": 1,
-    #         "add_supported_deleting_formats": 2,
-    #         "pop_supported_sorting_formats": 1,
-    #         "pop_supported_deleting_formats": 2,
-    #         "default_path": 3,
-    #         "default_files_to_keep": 4,
-    #         "default_cutoff_date": 5,
-    #         "new_default_prefix_func": 6,
-    #         "new_default_prefix_cam": 7,
-    #         "maximalized": 8,
-    #         "pallets_set": 9,
-    #         "new_default_static_dir_name": [10,11,12,13,14,15,16],
-    #         "sorting_safe_mode": 17,
-    #         "image_browser_param_set": [18,19,20],
-    #         "show_change_log": 21,
-    #         "image_film": 22,
-    #         "num_of_IB_film_images": 23,
-    #         "catalogue_data": [24,25,26,27,28,29],
-    #         "app_zoom": 30,
-    #         "app_zoom_checkbox": 31,
-    #         "render_mode": 32,
-    #         "tray_icon_startup": 33,
-    #         }
-        
-    #     if os.path.exists(initial_path + config_filename):
-    #         wb = load_workbook(initial_path+config_filename)
-    #         ws = wb[setting_list_name]
-    #         formats_changes = False
-    #         report = ""
-    #         supported_formats_sorting = []
-    #         found_formats = str(ws['B' + str(1)].value)
-    #         found_formats = filter_unwanted_chars(found_formats,formats=True)
-    #         found_formats = found_formats.split(",")
-    #         supported_formats_sorting = found_formats
-    #         supported_formats_deleting = []
-    #         found_formats = str(ws['B' + str(2)].value)
-    #         found_formats = filter_unwanted_chars(found_formats,formats=True)
-    #         found_formats = found_formats.split(",")
-    #         supported_formats_deleting = found_formats
-
-    #         if which_parameter == "add_supported_sorting_formats":
-    #             corrected_input = filter_unwanted_chars(str(input_data),formats=True)
-    #             if str(corrected_input) not in supported_formats_sorting:
-    #                 supported_formats_sorting.append(str(corrected_input))
-    #                 report = (f"Byl přidán formát: \"{corrected_input}\" do podporovaných formátů pro možnosti třídění")
-    #                 formats_changes = True
-    #             else:
-    #                 report =  (f"Formát: \"{corrected_input}\" je již součástí podporovaných formátů možností třídění")
-            
-    #         elif which_parameter == "add_supported_deleting_formats":
-    #             corrected_input = filter_unwanted_chars(str(input_data),formats=True)
-    #             if str(corrected_input) not in supported_formats_deleting:
-    #                 supported_formats_deleting.append(str(corrected_input))
-    #                 report =  (f"Byl přidán formát: \"{corrected_input}\" do podporovaných formátů pro možnosti mazání")
-    #                 formats_changes = True
-    #             else:
-    #                 report =  (f"Formát: \"{corrected_input}\" je již součástí podporovaných formátů možností mazání")
-                
-    #         elif which_parameter == "pop_supported_sorting_formats":
-    #             poped = 0
-    #             found = False
-    #             range_to = len(supported_formats_sorting)
-    #             for i in range(0,range_to):
-    #                 if i < range_to:
-    #                     if str(input_data) == supported_formats_sorting[i] and len(str(input_data)) == len(supported_formats_sorting[i]):
-    #                         supported_formats_sorting.pop(i)
-    #                         poped+=1
-    #                         range_to = range_to - poped
-    #                         report =  (f"Z podporovaných formátů možností třídění byl odstraněn formát: \"{input_data}\"")
-    #                         formats_changes = True
-    #                         found = True
-    #             if found == False:
-    #                 report =  (f"Formát: \"{input_data}\" nebyl nalezen v podporovaných formátech možností třídění, nemůže tedy být odstraněn")
-                
-    #         elif which_parameter == "pop_supported_deleting_formats":
-    #             poped = 0
-    #             found = False
-    #             range_to = len(supported_formats_deleting)
-    #             for i in range(0,range_to):
-    #                 if i < range_to:
-    #                     if str(input_data) == supported_formats_deleting[i] and len(str(input_data)) == len(supported_formats_deleting[i]):
-    #                         supported_formats_deleting.pop(i)
-    #                         poped+=1
-    #                         range_to = range_to - poped
-    #                         report =  (f"Z podporovaných formátů možností mazání byl odstraněn formát: \".{input_data}\"")
-    #                         formats_changes = True
-    #                         found = True
-    #             if found == False:
-    #                 report =  (f"Formát: \"{input_data}\" nebyl nalezen v podporovaných formátech možností mazání, nemůže tedy být odstraněn")
-            
-    #         elif which_parameter == "default_path":
-    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
-    #             report = (f"Základní cesta přenastavena na: {str(input_data)}")
-            
-    #         elif which_parameter == "default_files_to_keep":
-    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
-            
-    #         elif which_parameter == "default_cutoff_date":
-    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data[0])+"."+str(input_data[1])+"."+str(input_data[2])
-
-    #         elif which_parameter == "new_default_prefix_func":
-    #             input_filtered = filter_unwanted_chars(str(input_data),directory=True)
-    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_filtered)
-    #             report = (f"Základní prefix názvu složek pro třídění podle funkce přenastaven na: {str(input_filtered)}")
-
-    #         elif which_parameter == "new_default_prefix_cam":
-    #             input_filtered = filter_unwanted_chars(str(input_data),directory=True)
-    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_filtered)
-    #             report = (f"Základní prefix názvu složek pro třídění podle kamery přenastaven na: {str(input_filtered)}")
-
-    #         elif which_parameter == "maximalized":
-    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
-
-    #         elif which_parameter == "pallets_set":
-    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
-
-    #         elif which_parameter == "new_default_static_dir_name":
-    #             input_data_splitted = str(input_data).split(" | ")
-    #             input_data = input_data_splitted[0]
-    #             increment = int(input_data_splitted[1])
-    #             cells_with_names = parameter_row_mapping.get(which_parameter)
-    #             excel_row = cells_with_names[increment]
-    #             input_filtered = filter_unwanted_chars(str(input_data),directory=True)
-    #             ws['B' + str(excel_row)] = str(input_filtered)
-            
-    #         elif which_parameter == "sorting_safe_mode":
-    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
-
-    #         elif which_parameter == "image_browser_param_set":
-    #             cells_with_params = parameter_row_mapping.get(which_parameter)
-    #             for i in range(0,len(cells_with_params)):
-    #                 if input_data[i] != None:
-    #                     ws['B' + str(cells_with_params[i])] = str(input_data[i])
-
-    #         elif which_parameter == "show_change_log":
-    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = "ne"
-
-    #         elif which_parameter == "image_film":
-    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
-            
-    #         elif which_parameter == "num_of_IB_film_images":
-    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
-
-    #         elif which_parameter == "catalogue_data":
-    #             cells_with_params = parameter_row_mapping.get(which_parameter)
-    #             for i in range(0,len(cells_with_params)):
-    #                 if input_data[i] != None:
-    #                     ws['B' + str(cells_with_params[i])] = str(input_data[i])
-
-    #         elif which_parameter == "app_zoom":
-    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
-            
-    #         elif which_parameter == "app_zoom_checkbox":
-    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
-
-    #         elif which_parameter == "render_mode":
-    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
-
-    #         elif which_parameter == "tray_icon_startup":
-    #             ws['B' + str(parameter_row_mapping.get(which_parameter))] = str(input_data)
-
-    #         if formats_changes:
-    #             #navraceni poli zpet do stringu radku:
-    #             sorting_formats_string = ""
-    #             for items in supported_formats_sorting:
-    #                 if sorting_formats_string  == "":
-    #                     sorting_formats_string += str(items)
-    #                 else:
-    #                     sorting_formats_string += ("," + str(items))
-                
-    #             deleting_formats_string = ""  
-    #             for items in supported_formats_deleting:
-    #                 if deleting_formats_string == "":
-    #                     deleting_formats_string += str(items)
-    #                 else:
-    #                     deleting_formats_string += ("," + str(items))
-
-    #             ws['B' + str(1)] = str(sorting_formats_string)
-    #             ws['B' + str(2)] = str(deleting_formats_string)
-
-    #         wb.save(initial_path+config_filename)
-    #         wb.close()
-    #         return report
-        
-    #     else:
-    #         print("Chybí konfigurační soubor config_TRIMAZKON.xlsx (nelze ukládat změny)")
-    #         return "Chybí konfigurační soubor config_TRIMAZKON.xlsx (nelze ukládat změny)"
-   
-    # @classmethod
-    # def check_config_file(cls,config_filename,setting_list_name):
-    #     """
-    #     TEMPORARY - kdyby někdo měl starou verzi
-    #     - kontroluje zda chybi excel s novym nazvem, pak kontroluje jesli excel obsahuje novy list Settings_recources
-    #     - přejmenuje si to config excel
-    #     - pretahne si to data z recources.txt do spolecneho excelu pod novy list
-    #     """
-    #     def move_to_temp_dir(filename:str):
-    #         if not os.path.exists(initial_path + "TRIMAZKON_uz_nechce_vzal_si_data"):
-    #             os.mkdir(initial_path + "TRIMAZKON_uz_nechce_vzal_si_data" + "/")
-    #         print(f"moving old config file {filename}")
-    #         shutil.move(initial_path +filename, initial_path + "TRIMAZKON_uz_nechce_vzal_si_data" + "/"+filename)
-        
-    #     if os.path.exists(initial_path+'saved_addresses_2.xlsx'):
-    #         if not os.path.exists(initial_path+config_filename):
-    #             shutil.copy(initial_path+'saved_addresses_2.xlsx',initial_path+config_filename)
-    #             print("copying old excel config file")
-    #         move_to_temp_dir('saved_addresses_2.xlsx')
-
-    #     try:
-    #         wb = load_workbook(initial_path+config_filename)
-    #         if not setting_list_name in wb.sheetnames:
-    #             user_config_file_data = []
-    #             ws = wb.create_sheet(title=setting_list_name)
-    #             wb.save(initial_path+config_filename)
-    #             if os.path.exists(initial_path+'Recources.txt'):
-    #                 # copy user settings
-    #                 recources_data = Tools.read_text_file_data_temp()
-    #                 for i in range(0,len(recources_data)):
-    #                     if i == 9 or i == 11:
-    #                         for subdata in recources_data[i]:
-    #                             user_config_file_data.append(subdata)
-    #                     else:
-    #                         user_config_file_data.append(recources_data[i])
-    #                 print("using user settings from Recources.txt")
-    #                 move_to_temp_dir('Recources.txt')        
-    #             else:
-    #                 user_config_file_data = string_database.default_setting_database_param
-                        
-    #             print(user_config_file_data,len(user_config_file_data))
-    #             user_config_file_data_labels = string_database.default_setting_database
-                
-    #             for i in range(1,len(user_config_file_data)+1):
-    #                 ws['A' + str(i)] = str(user_config_file_data_labels[i-1])
-    #                 ws['B' + str(i)] = str(user_config_file_data[i-1])
-    #             wb.save(initial_path+config_filename)
-
-    #         # renaming sheet with a typo in name:
-    #         if "ip_adress_fav_list" in wb.sheetnames:
-    #             ws = wb["ip_adress_fav_list"]
-    #             ws.title = "ip_address_fav_list"
-    #             wb.save(initial_path+config_filename)
-    #         wb.close()
-    #     except Exception as e:
-    #         print(f"Nejdřív zavřete soubor {config_filename} Chyba: {e}")
-
     @classmethod
     def browseDirectories(cls,visible_files,start_path=None): # Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
         """
@@ -1604,6 +1432,7 @@ class Tools:
             selected_option = int(param_given[5])
             by_creation_date = int(param_given[6])
 
+        deleting_path = deleting_path.replace("-|-"," ") # dekodovat mezery
         cutoff_date = Deleting.get_cutoff_date(days=max_days)
         config_data = Tools.read_json_config()
         supported_formats_deleting = config_data["del_settings"]["supported_formats_deleting"]
@@ -1817,6 +1646,8 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
                         if root_existance == True:
                             try:
                                 root.deiconify()
+                                if Tools.read_json_config()["app_settings"]["maximalized"] == "ano":
+                                    root.after(0, lambda:root.state('zoomed'))
                                 root.update_idletasks()
                             except Exception as e:
                                 print(e)
@@ -1838,11 +1669,15 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
 
                     elif "Open list with del tasks" in received_data:
                         trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
-                        trimazkon_tray_instance.show_all_tasks(toplevel=True)
+                        # trimazkon_tray_instance.show_all_tasks(toplevel=True)
+                        tasks_thread = threading.Thread(target= trimazkon_tray_instance.show_all_tasks,args=[True,False,False])
+                        tasks_thread.start()
 
                     elif "Open list with del logs" in received_data:
                         trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
-                        trimazkon_tray_instance.show_task_log(toplevel=True)
+                        # trimazkon_tray_instance.show_task_log(toplevel = True)
+                        logs_thread = threading.Thread(target= trimazkon_tray_instance.show_task_log,args=[False,None,False,False,True])
+                        logs_thread.start()
 
                     elif "Open image browser starting with image" in received_data:
                         received_params = received_data.split("|||")
@@ -1864,10 +1699,39 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
                         else:
                             start_new_root() # spousteni pres admina, bylo potreba shodit cely processID
 
+                    elif "Edit existing task" in received_data:
+                        received_params = received_data.split("|||")
+                        print("received_params: ",received_params)
+                        wait_request = False
+                        try:
+                            if root.state() == "iconic":
+                                wait_request = True
+                            print(root.state())
+                        except Exception as e:
+                            print(e)
+
+                        def call_long_task():
+                            Subwindows.save_new_task(received_params[9],
+                                                 received_params[10],
+                                                 received_params[4],
+                                                 received_params[5],
+                                                 received_params[6],
+                                                 received_params[6],
+                                                 received_params[8],
+                                                 received_params[3],
+                                                 edit_status=True,
+                                                 root_given=received_params[11],
+                                                 frequency_given=received_params[7],
+                                                 selected_language=received_params[12],
+                                                 wait_request = wait_request,
+                                                 main_root= root,
+                                                 )
+                        
+                        save_task_thread = threading.Thread(target= call_long_task)
+                        save_task_thread.start()
+
                     elif "Shutdown application" in received_data:
-                        # global root
                         root.destroy()
-                        # root.after(100,lambda: root.destroy())
 
             except pywintypes.error as e:
                 if e.args[0] == 109:  # ERROR_BROKEN_PIPE
@@ -1927,8 +1791,15 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
             print("Message sent.",message)
             win32file.WriteFile(handle, message.encode())
 
+        elif "Edit existing task" in str(command):
+            message = str(command) + "|||"
+            for params in parameters:
+                message = message + str(params) + "|||"
+            print("Message sent: ",message)
+            win32file.WriteFile(handle, message.encode())
+
     def start_server(self):
-        self.pipe_name = f"jhv_MAZ_pipe_{self.current_pid}"
+        self.pipe_name = f"TRIMAZKON_pipe_{self.current_pid}"
         running_server = threading.Thread(target=self.server, args=(self.pipe_name,),daemon=True)
         # running_server = threading.Thread(target=self.server, args=(pipe_name,))
         running_server.start()
@@ -1947,7 +1818,7 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
         for pids in pid_list:
             if pids != self.current_pid:
                 try:
-                    pipe_name = f"jhv_MAZ_pipe_{pids}"
+                    pipe_name = f"TRIMAZKON_pipe_{pids}"
                     print("calling client",pipe_name,command,parameters)
                     self.client(pipe_name,command,parameters)
                 except Exception:
@@ -2005,7 +1876,13 @@ if len(sys.argv) > 1 and not global_licence_load_error:
         loop_request = False
         pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True)
         pipeline_duplex_instance.call_checking(f"Shutdown application",[])
-    
+
+    elif sys.argv[1] == "edit_existing_task":
+        load_gui = False
+        loop_request = False
+        pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True)
+        pipeline_duplex_instance.call_checking(f"Edit existing task",sys.argv)
+
     elif sys.argv[1] == "settings_tray" or sys.argv[1] == "settings_tray_del" or sys.argv[1] == "admin_menu":
         pid = int(sys.argv[2])
         Tools.terminate_pid(pid) #vypnout thread s tray aplikací
@@ -4052,8 +3929,11 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         option = self.checkbox_maximalized.get()
         if option == 1:
             Tools.save_to_json_config("ano","app_settings","maximalized")
+            self.root.after(0, lambda:self.root.state('zoomed'))
         else:
             Tools.save_to_json_config("ne","app_settings","maximalized")
+            self.root.after(0, lambda:self.root.state('normal'))
+            self.root.after(10, lambda:self.root.geometry("1200x900"))
     
     def tray_startup_setup(self,main_console): # Nastavení základního spouštění (v okně/ maximalizované)
         option = self.tray_checkbox.get()
@@ -6109,349 +5989,6 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
 
         # self.changable_frame.bind("<Enter>",lambda e: save_before_execution()) # případ, že se nestiskne uložit - aby nedošlo ke ztrátě souborů
 
-    def save_new_task(self):
-        def call_browse_directories():
-            """
-            Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
-            """
-            if os.path.exists(str(operating_path.get())):
-                output = Tools.browseDirectories("only_dirs",start_path=str(operating_path.get()))
-            else:
-                output = Tools.browseDirectories("only_dirs")
-            if str(output[1]) != "/":
-                operating_path.delete(0,300)
-                operating_path.insert(0, str(output[1]))
-                Tools.add_new_path_to_history(str(output[1]),which_settings="del_settings")
-                if self.selected_language == "en":
-                    Tools.add_colored_line(console,"The path where the task will be executed has been inserted.","green",None,True)
-                else:
-                    Tools.add_colored_line(console,"Byla vložena cesta pro vykonávání úkolu","green",None,True)
-
-            print(output[0])
-            window.focus()
-            window.focus_force()
-
-        def save_task_to_config():
-            if check_entry("",hour_format=True,input_char=str(frequency_entry.get())) == False:
-                return
-            
-            def get_task_name(current_tasks):
-                names_taken = []
-                new_task_name = "TRIMAZKON_del_task_xx"
-                for tasks in current_tasks:
-                    names_taken.append(tasks["name"])
-                for i in range(1,100):
-                    name_suggestion = "TRIMAZKON_del_task_" + str(i)
-                    if name_suggestion in names_taken:
-                        continue
-                    if Tools.check_task_existence_in_TS(name_suggestion):
-                        continue
-                    new_task_name = name_suggestion
-                    break
-                return new_task_name
-
-            def set_up_task_in_ts():
-                def check_freq_format(freq_input):
-                    input_splitted = freq_input.split(":")
-                    if len(str(input_splitted[0])) == 1:
-                        corrected = "0"+str(input_splitted[0]) +":"+ str(input_splitted[1])
-                        return corrected
-                    else:
-                        return freq_input
-                        
-                task_name = str(new_task["name"])
-                repaired_freq_param = check_freq_format(str(new_task["frequency"]))
-                path_app_location = str(initial_path+"/"+exe_name)
-                operating_path_TS = str(new_task["operating_path"]).rstrip("/")
-                full_path = r"{}".format(operating_path_TS)
-                # task_command = "\""+ path_app_location+ " deleting " + task_name + " " + str(new_task["operating_path"]) + " " + str(new_task["max_days"]) + " " + str(new_task["files_to_keep"]) + "\" /SC DAILY /ST " + repaired_freq_param
-                task_command = "\""+ path_app_location+ " deleting " + task_name + " " + full_path + " " + str(new_task["max_days"]) + " " + str(new_task["files_to_keep"]) + " " + str(new_task["more_dirs"]) + " " + str(new_task["selected_option"]) + " " + str(new_task["creation_date"]) + "\" /SC DAILY /ST " + repaired_freq_param
-                print(task_command)
-                process = subprocess.Popen(f"schtasks /Create /TN {task_name} /TR {task_command}",
-                                            stdout=subprocess.PIPE,
-                                            stderr=subprocess.PIPE,
-                                            creationflags=subprocess.CREATE_NO_WINDOW)
-                stdout, stderr = process.communicate()
-                try:
-                    stdout_str = stdout.decode('utf-8')
-                    data = str(stdout_str)
-                except UnicodeDecodeError:
-                    try:
-                        stdout_str = stdout.decode('cp1250')
-                        data = str(stdout_str)
-                    except UnicodeDecodeError:
-                        data = str(stdout)
-                output_message = "out"+str(stdout) +"err"+str(stderr)
-                print(output_message)
-                if "SUCCESS" in stdout_str:
-                    # os.startfile("taskschd.msc")
-                    return True
-                else:
-                    return False
-
-            current_tasks = trimazkon_tray_instance.read_config()
-            print("current tasks: ",current_tasks)
-
-            new_task = {'name': get_task_name(current_tasks),
-                        'operating_path': Tools.path_check(operating_path.get()),
-                        'max_days': self.older_then_entry.get(),
-                        'files_to_keep': minimum_file_entry.get(),
-                        'frequency': frequency_entry.get(),
-                        'more_dirs': subfolder_checkbox.get(),
-                        'selected_option': self.selected_option,
-                        'date_added': str(Deleting.get_current_date()[2]),
-                        'del_log': [],
-                        'creation_date': checkbox_creation_date.get(),
-                        }
-
-            try:
-                success_status = set_up_task_in_ts()
-                if success_status:
-                    if self.selected_language == "en":
-                        Tools.add_colored_line(console,"The new task has been saved and entered into the task scheduler","green",None,True)
-                    else:
-                        Tools.add_colored_line(console,"Nový úkol byl uložen a zaveden do task scheduleru","green",None,True)
-
-                    current_tasks.append(new_task)
-                    trimazkon_tray_instance.save_task_to_config(current_tasks)
-                else:
-                    if self.selected_language == "en":
-                        Tools.add_colored_line(console,"Unexpected error, failed to set a new task","red",None,True)
-                    else:
-                        Tools.add_colored_line(console,"Neočekávaná chyba, nepovedlo se nastavit nový úkol","red",None,True)
-
-            except Exception as e:
-                if self.selected_language == "en":
-                    Tools.add_colored_line(console,f"Please close the configuration file ({e})","red",None,True)
-                else:
-                    Tools.add_colored_line(console,f"Prosím zavřete konfigurační soubor ({e})","red",None,True)
-
-        def refresh_cutoff_date():
-            self.older_then_entry.update()
-            self.older_then_entry.update_idletasks()
-            try:
-                cutoffdate_list = Deleting.get_cutoff_date(int(self.older_then_entry.get()))
-                new_date = "(starší než: "+str(cutoffdate_list[0])+"."+str(cutoffdate_list[1])+"."+str(cutoffdate_list[2])+")"
-                if self.selected_language == "en":
-                    new_date = "(older then: "+str(cutoffdate_list[0])+"."+str(cutoffdate_list[1])+"."+str(cutoffdate_list[2])+")"
-                if older_then_label3.cget("text") != new_date:
-                    older_then_label3.configure(text = new_date)
-            except Exception:
-                pass
-
-        def check_entry(event,number=False,hour_format=False,input_char=None,flag=""):
-            if flag == "cutoff":
-                window.after(100, lambda: refresh_cutoff_date())
-            if event != "":
-                if event.keysym == "BackSpace" or event.keysym == "Return":
-                    return
-
-            if number:
-                if not event.char.isdigit():
-                    if self.selected_language == "en":
-                        Tools.add_colored_line(console,"Enter only numbers","red",None,True)
-                    else:
-                        Tools.add_colored_line(console,"Vkládejte pouze čísla","red",None,True)
-                    event.widget.insert(tk.INSERT,"")
-                    return "break"  # Stop the event from inserting the original character
-                
-            elif hour_format:
-                separator_err_msg = "Neplatný formát času, chybí separátor (vkládejte ve formátu: 00:00)"
-                time_format_err_msg = "Neplatný formát času (vkládejte ve formátu: 00:00)"
-                bad_chars_err_msg = "Neplatné znaky u času (vkládejte ve formátu: 00:00)"
-                out_of_range_err_msg = "Neplatný formát času, mimo rozsah (vkládejte ve formátu: 00:00)"
-                if self.selected_language == "en":
-                    separator_err_msg = "Invalid time format, missing separator (insert in format: 00:00)"
-                    time_format_err_msg = "Invalid time format (enter in format: 00:00)"
-                    bad_chars_err_msg = "Invalid characters for time (enter in format: 00:00)"
-                    out_of_range_err_msg = "Invalid time format, out of range (insert in format: 00:00)"
-
-                if not ":" in input_char:
-                    Tools.add_colored_line(console,separator_err_msg,"red",None,True)
-                    return False
-                elif len(input_char.split(":")) != 2:
-                    Tools.add_colored_line(console,time_format_err_msg,"red",None,True)
-                    return False
-                elif len(str(input_char.split(":")[1])) != 2:
-                    Tools.add_colored_line(console,time_format_err_msg,"red",None,True)
-                    return False
-                elif not input_char.split(":")[0].isdigit() or not input_char.split(":")[1].isdigit():
-                    Tools.add_colored_line(console,bad_chars_err_msg,"red",None,True)
-                    return False
-                elif int(input_char.split(":")[0]) > 23 or int(input_char.split(":")[0]) < 0 or int(input_char.split(":")[1]) > 59 or int(input_char.split(":")[1]) < 0:
-                    Tools.add_colored_line(console,out_of_range_err_msg,"red",None,True)
-                    return False
-            
-        def call_path_context_menu(event):
-            path_history = Tools.read_json_config()["del_settings"]["path_history_list"]
-            def insert_path(path):
-                operating_path.delete("0","200")
-                operating_path.insert("0", path)
-            if len(path_history) > 0:
-                path_context_menu = tk.Menu(self.root, tearoff=0,fg="white",bg="black")
-                for i in range(0,len(path_history)):
-                    path_context_menu.add_command(label=path_history[i], command=lambda row_path = path_history[i]: insert_path(row_path),font=("Arial",22,"bold"))
-                    if i < len(path_history)-1:
-                        path_context_menu.add_separator()
-                        
-                path_context_menu.tk_popup(context_menu_button.winfo_rootx(),context_menu_button.winfo_rooty()+50)
-
-        def set_decision_date(input_arg):
-            """
-            input_arg:
-            - creation
-            - modification
-            """
-
-            if input_arg == "creation":
-                self.by_creation_date = True
-                checkbox_modification_date.deselect()
-
-            elif input_arg == "modification":
-                self.by_creation_date = False
-                checkbox_creation_date.deselect()
-
-        window = customtkinter.CTkToplevel()
-        window.after(200, lambda: window.iconbitmap(app_icon))
-        window.title("Nastavení nového úkolu")
-        if self.selected_language == "en":
-            window.title("Setting up a new task")
-
-        trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
-        parameter_frame = customtkinter.CTkFrame(master = window,corner_radius=0)
-        selected_option = customtkinter.CTkLabel(master = parameter_frame,text = "Zvolená možnost mazání: ",font=("Arial",25,"bold"))
-        path_label_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0,fg_color="#212121")
-        path_label = customtkinter.CTkLabel(master = path_label_frame,text = "Zadejte cestu, kde bude úkol spouštěn:",font=("Arial",22))
-        path_label.pack(pady = (10,0),padx = (10,0),side="left",anchor="w")
-        subfolder_checkbox = customtkinter.CTkCheckBox(master = path_label_frame, text = "Procházet subsložky? (max: 6)",font=("Arial",20,"bold"))
-        if self.selected_option != 3 and self.selected_option != 4:
-            subfolder_checkbox.pack(pady = (10,0),padx = (0,10),side="right",anchor="e")
-            if self.more_dirs:
-                subfolder_checkbox.select()
-
-        path_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0,fg_color="#212121")
-        context_menu_button  =  customtkinter.CTkButton(master = path_frame, width = 50,height=50, text = "V",font=("Arial",20,"bold"),corner_radius=0,fg_color="#505050")
-        operating_path = customtkinter.CTkEntry(master = path_frame,font=("Arial",20),height=50,corner_radius=0)
-        explorer_btn = customtkinter.CTkButton(master = path_frame,text = "...",font=("Arial",22,"bold"),width = 50,height=50,corner_radius=0,command=lambda: call_browse_directories())
-        selected_option.pack(pady = (10,0),padx = (10,0),side="top",anchor="w")
-        path_label_frame.pack(side="top",anchor="w",fill="x",expand = True)
-        context_menu_button.pack(pady = (10,0),padx = (10,0),side="left",anchor="w")
-        operating_path.pack(pady = (10,0),padx = (0,0),side="left",anchor="w",expand = True,fill="x")
-        explorer_btn.pack(pady = (10,0),padx = (0,10),side="left",anchor="w")
-        path_frame.pack(side="top",anchor="w",fill="x",expand = True)
-        context_menu_button.bind("<Button-1>", call_path_context_menu)
-
-        decision_date_frame = customtkinter.CTkFrame(master=parameter_frame,corner_radius=0,fg_color="#212121")
-        decision_date_label = customtkinter.CTkLabel(master = decision_date_frame,text = "Řídit se podle: ",justify = "left",font=("Arial",20,"bold"))
-        checkbox_creation_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data vytvoření",font=("Arial",18),command=lambda:set_decision_date("creation"))
-        checkbox_modification_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data poslední změny (doporučeno)",font=("Arial",18),command=lambda:set_decision_date("modification"))
-        decision_date_label.pack(pady = (10,10),padx =(10,0),side="left",anchor="w")
-        checkbox_creation_date.pack(pady = (10,10),padx =(10,0),side="left",anchor="w")
-        checkbox_modification_date.pack(pady = (10,10),padx =(10,0),side="left",anchor="w")
-        decision_date_frame.pack(pady = (0,0),padx =0,side="top",anchor="w",fill="x")
-        if self.by_creation_date:
-            checkbox_creation_date.select()
-        else:
-            checkbox_modification_date.select()
-
-        older_then_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
-        older_then_label = customtkinter.CTkLabel(master = older_then_frame,text = "Odstanit soubory starší než:",font=("Arial",22,"bold"))
-        self.older_then_entry = customtkinter.CTkEntry(master = older_then_frame,font=("Arial",20),width=100,height=40,corner_radius=0)
-        older_then_label2 = customtkinter.CTkLabel(master = older_then_frame,text = "dní",font=("Arial",22,"bold"))
-        older_then_label3 = customtkinter.CTkLabel(master = older_then_frame,text = "",font=("Arial",22,"bold"))
-        older_then_label.pack(pady = (10,0),padx = (10,10),side="left")
-        self.older_then_entry.pack(pady = (10,0),padx = (0,0),side="left")
-        older_then_label2.pack(pady = (10,0),padx = (10,0),side="left")
-        older_then_label3.pack(pady = (10,0),padx = (10,10),side="left")
-        older_then_frame.pack(side="top",fill="x",anchor="w")
-        self.older_then_entry.bind("<Key>",lambda e: check_entry(e,number=True,flag="cutoff"))
-
-        minimum_file_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
-        minimum_file_label = customtkinter.CTkLabel(master = minimum_file_frame,text = "Ponechat souborů:",font=("Arial",22,"bold"))
-        minimum_file_entry = customtkinter.CTkEntry(master = minimum_file_frame,font=("Arial",20),width=100,height=40,corner_radius=0)
-        minimum_file_label.pack(pady = (10,0),padx = (10,10),side="left")
-        minimum_file_entry.pack(pady = (10,0),padx = (0,10),side="left")
-        if self.selected_option != 3:
-            minimum_file_frame.pack(side="top",fill="x",anchor="w")
-        minimum_file_entry.bind("<Key>",lambda e: check_entry(e,number=True))
-
-        frequency_frame = customtkinter.CTkFrame(master = parameter_frame,corner_radius=0)
-        frequency_label = customtkinter.CTkLabel(master = frequency_frame,text = "Frekvence: denně, ",font=("Arial",22,"bold"))
-        frequency_entry = customtkinter.CTkEntry(master = frequency_frame,font=("Arial",20),width=100,height=40,corner_radius=0)
-        frequency_label2 = customtkinter.CTkLabel(master = frequency_frame,text = "hodin (př.: 0:00, 6:00, 14:30)",font=("Arial",22,"bold"))
-        frequency_label.pack(pady = (10,0),padx = (10,10),side="left",anchor="w")
-        frequency_entry.pack(pady = (10,0),padx = (0,0),side="left",anchor="w")
-        frequency_label2.pack(pady = (10,0),padx = (10,10),side="left",anchor="w")
-        frequency_frame.pack(side="top",fill="x",anchor="w")
-        console = tk.Text(parameter_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED)
-        console.pack(pady = 10,padx =10,side="top",anchor="w",fill="x")
-
-        button_frame =   customtkinter.CTkFrame(master = window,corner_radius=0)
-        show_tasks_btn = customtkinter.CTkButton(master = button_frame, width = 300,height=50,text = "Zobrazit nastavené úkoly", command =  lambda: trimazkon_tray_instance.show_all_tasks(toplevel=True),font=("Arial",20,"bold"),corner_radius=0)
-        # show_tasks_btn = customtkinter.CTkButton(master = button_frame, width = 300,height=50,text = "Zobrazit nastavené úkoly", command =  lambda: call_show_all_tasks(),font=("Arial",20,"bold"),corner_radius=0)
-        save_task_btn =  customtkinter.CTkButton(master = button_frame, width = 300,height=50,text = "Uložit nový úkol", command =  lambda: save_task_to_config(),font=("Arial",20,"bold"),corner_radius=0)
-        cancel_btn =  customtkinter.CTkButton(master = button_frame, width = 300,height=50,text = "Zavřít", command =  lambda: window.destroy(),font=("Arial",20,"bold"),corner_radius=0)
-        cancel_btn.   pack(pady=10,padx=(10,10),side="right",anchor="e")
-        save_task_btn.   pack(pady=10,padx=(10,0),side="right",anchor="e")
-        show_tasks_btn.  pack(pady=10,padx=(10,0),side="right",anchor="e")
-        parameter_frame.pack(side="top",fill="both")
-        button_frame.pack(side="top",fill="x")
-        operating_path.insert("0",self.path_set.get())
-        max_days = Deleting.get_max_days(self.cutoff_date)
-        self.older_then_entry.insert("0",max_days)
-        minimum_file_entry.insert("0",self.files_to_keep)
-        if self.selected_option == 4:
-            minimum_file_entry.delete("0","200")
-            minimum_file_entry.insert("0",self.directories_to_keep)
-        frequency_entry.insert("0","12:00")
-        refresh_cutoff_date()
-
-        if self.selected_language == "en":
-            path_label.configure(text = "Specify the path where the task will run:")
-            subfolder_checkbox.configure(text = "Browse subfolders? (max: 6)")
-            older_then_label.configure(text = "Remove files older than:")
-            older_then_label2.configure(text = "days")
-            minimum_file_label.configure(text = "Keep files:")
-            frequency_label.configure(text = "Frequency: daily, ")
-            frequency_label2.configure(text = "hours (ex.: 0:00, 6:00, 14:30)")
-            show_tasks_btn.configure(text = "Show set tasks")
-            save_task_btn.configure(text = "Save new task")
-            cancel_btn.configure(text = "Close")
-            decision_date_label.configure(text = "To decide by: ")
-            checkbox_modification_date.configure(text = "date modified (recommended)")
-            checkbox_creation_date.configure(text = "date created")
-            
-        if self.selected_option == 1:
-            selected_option.configure(text = f"Zvolená možnost mazání: {self.selected_option}. (Redukce starších souborů)")
-            if self.selected_language == "en":
-                selected_option.configure(text = f"Selected delete option: {self.selected_option}. (Reducing older files)")
-        elif self.selected_option == 2:
-            selected_option.configure(text = f"Zvolená možnost mazání: {self.selected_option}. (Redukce novějších, mazání starších souborů)")
-            if self.selected_language == "en":
-                selected_option.configure(text = f"Selected delete option: {self.selected_option}. (Reducing newer, deleting older files)")
-        elif self.selected_option == 3:
-            selected_option.configure(text = f"Zvolená možnost mazání: {self.selected_option}. (Mazání adresářů podle názvu)")
-            older_then_label.configure(text = "Odstanit adresáře starší než:")
-            if self.selected_language == "en":
-                selected_option.configure(text = f"Selected delete option: {self.selected_option}. (Deleting directories by name)")
-                older_then_label.configure(text = "Remove directories older than:")
-        elif self.selected_option == 4:
-            selected_option.configure(text = f"Zvolená možnost mazání: {self.selected_option}. (Mazání starších adresářů)")
-            older_then_label.configure(text = "Odstanit adresáře starší než:")
-            minimum_file_label.configure(text = "Ponechat adresářů:")
-            if self.selected_language == "en":
-                selected_option.configure(text = f"Selected delete option: {self.selected_option}. (Deleting older directories)")
-                older_then_label.configure(text = "Remove directories older than:")
-                minimum_file_label.configure(text = "Keep directories:")
-        window.update()
-        window.update_idletasks()
-        # window_width = window.winfo_width()
-        # if window_width < 1200:
-        #     window_width = 1200
-        window.geometry(f"{1200}x{window.winfo_height()}")
-        window.after(10,window.focus_force())
-        window.focus()
-
     def create_deleting_option_widgets(self):  # Vytváří veškeré widgets (delete option MAIN)
         def call_path_context_menu(event):
             path_history = Tools.read_json_config()["del_settings"]["path_history_list"]
@@ -6531,7 +6068,16 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         bottom_frame =          customtkinter.CTkFrame(master=header_frame,corner_radius=0,fg_color="#212121",border_width=0,border_color="#636363")
         execution_btn_frame =   customtkinter.CTkFrame(master=bottom_frame,corner_radius=0,fg_color="#212121")
         button =                customtkinter.CTkButton(master = execution_btn_frame,width = 300,height = 60,text = "SPUSTIT", command = lambda: call_start(),font=("Arial",20,"bold"))
-        create_task_btn =       customtkinter.CTkButton(master = execution_btn_frame,width = 300,height = 60,text = "Nastavit aut. spouštění",command = lambda: self.save_new_task(),font=("Arial",20,"bold"))
+        create_task_btn =       customtkinter.CTkButton(master = execution_btn_frame,width = 300,height = 60,text = "Nastavit aut. spouštění",
+                                                        command = lambda: Subwindows.save_new_task(self.selected_option,
+                                                                                                    self.by_creation_date,
+                                                                                                    self.path_set.get(),
+                                                                                                    self.cutoff_date,
+                                                                                                    self.files_to_keep,
+                                                                                                    self.directories_to_keep,
+                                                                                                    self.more_dirs,
+                                                                                                    selected_language=self.selected_language,
+                                                                                                    main_root = self.root),font=("Arial",20,"bold"))
         analyze_btn =           customtkinter.CTkButton(master = execution_btn_frame,width = 300,height = 60,text = "Analyzovat cestu",command = lambda: call_start(analyze=True),font=("Arial",20,"bold"))
         button.                 pack(pady=10,padx=(10,0),side="left",anchor="w")
         create_task_btn.        pack(pady=10,padx=(10,0),side="left",anchor="w")

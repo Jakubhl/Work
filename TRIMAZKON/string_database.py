@@ -324,6 +324,16 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - nezávislá historie vložených cest
     - cesta z kontextové nabídky se rovnou otevře
     """
+          ,"\nVerze 4.3.1 (17.03.2025)"
+        ,
+  """ 
+  TRIMAZKON - mazání:
+    - přidána možnost přímo editovat nastavený úkol
+    - oprava volání oken přes ikonu
+    - oprava mezer v cestě pro task scheduler
+
+  
+    """
 ]
 
 

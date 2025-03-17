@@ -3,7 +3,7 @@ import os
 import time
 from PIL import Image
 import Deleting_option_v2 as Deleting
-import trimazkon_tray_MAZ_v2 as trimazkon_tray
+# import trimazkon_tray_MAZ_v2 as trimazkon_tray
 import string_database_MAZ
 import json
 from tkinter import filedialog
@@ -33,7 +33,7 @@ def get_all_app_processes():
     
     return [num_of_apps,pid_list]
 
-# print(get_all_app_processes())
+print(get_all_app_processes())
 
 # string = "platnost vypršela:"
 # print(string.replace("platnost","nic"))
@@ -153,61 +153,61 @@ def check_task_existence_in_TS(taskname):
 # check_task_existence_in_TS("jhv_MAZ_startup_tray_setup")
 
 
-def establish_startup_tray():
-    """
-    Sets the startup task of switching on the tray application icon
-    - if it doesnt exist already
-    """
+# def establish_startup_tray():
+#     """
+#     Sets the startup task of switching on the tray application icon
+#     - if it doesnt exist already
+#     """
 
-    # path_app_location = str(initial_path + exe_name)
-    path_app_location = str(r"C:\Users\jakub.hlavacek.local\AppData\Local\Programs\jhv_MAZ") + str("jhv_MAZ.exe")
-    exe_args = "run_tray"
-    # task_command = "\"" + path_app_location + " run_tray" + "\" /sc onlogon"
-    # ps_command = f"schtasks /Create /TN {cls.task_name} /TR {task_command}"
-    ps_command = f"""
-    $action = New-ScheduledTaskAction -Execute "{path_app_location}" -Argument "{exe_args}";
-    $trigger = New-ScheduledTaskTrigger -AtLogon;
-    Register-ScheduledTask -TaskName "jhv_MAZ_startup_tray_setup" -Action $action -Trigger $trigger -User "SYSTEM" -RunLevel Highest
-    """
-    # powershell_command = [
-    #     'powershell.exe',
-    #     '-Command', f'Start-Process powershell -Verb RunAs -ArgumentList \'-Command "{ps_command}"\' -WindowStyle Hidden -PassThru'
-    # ]
+#     # path_app_location = str(initial_path + exe_name)
+#     path_app_location = str(r"C:\Users\jakub.hlavacek.local\AppData\Local\Programs\jhv_MAZ") + str("jhv_MAZ.exe")
+#     exe_args = "run_tray"
+#     # task_command = "\"" + path_app_location + " run_tray" + "\" /sc onlogon"
+#     # ps_command = f"schtasks /Create /TN {cls.task_name} /TR {task_command}"
+#     ps_command = f"""
+#     $action = New-ScheduledTaskAction -Execute "{path_app_location}" -Argument "{exe_args}";
+#     $trigger = New-ScheduledTaskTrigger -AtLogon;
+#     Register-ScheduledTask -TaskName "jhv_MAZ_startup_tray_setup" -Action $action -Trigger $trigger -User "SYSTEM" -RunLevel Highest
+#     """
+#     # powershell_command = [
+#     #     'powershell.exe',
+#     #     '-Command', f'Start-Process powershell -Verb RunAs -ArgumentList \'-Command "{ps_command}"\' -WindowStyle Hidden -PassThru'
+#     # ]
 
-    powershell_command = [
-        'powershell.exe',
-        '-ExecutionPolicy', 'Bypass',
-        '-NoProfile',
-        '-Command', f'Start-Process powershell -WindowStyle Hidden -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -NoProfile -Command \"{ps_command}\""'
-    ]
-    powershell_command = [
-        'powershell.exe',
-        '-Command', ps_command
-    ]
+#     powershell_command = [
+#         'powershell.exe',
+#         '-ExecutionPolicy', 'Bypass',
+#         '-NoProfile',
+#         '-Command', f'Start-Process powershell -WindowStyle Hidden -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -NoProfile -Command \"{ps_command}\""'
+#     ]
+#     powershell_command = [
+#         'powershell.exe',
+#         '-Command', ps_command
+#     ]
 
-    try:
-        # process = subprocess.Popen(['powershell.exe', '-Command', ps_command],
-        process = subprocess.Popen(powershell_command,
-        # process = subprocess.Popen(["powershell", "-ExecutionPolicy", "Bypass", "-NoProfile", "-Command", powershell_command],
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE,
-                                    creationflags=subprocess.CREATE_NO_WINDOW)
+#     try:
+#         # process = subprocess.Popen(['powershell.exe', '-Command', ps_command],
+#         process = subprocess.Popen(powershell_command,
+#         # process = subprocess.Popen(["powershell", "-ExecutionPolicy", "Bypass", "-NoProfile", "-Command", powershell_command],
+#                                     stdout=subprocess.PIPE,
+#                                     stderr=subprocess.PIPE,
+#                                     creationflags=subprocess.CREATE_NO_WINDOW)
 
-        # process = subprocess.Popen(f"schtasks /Create /TN {cls.task_name} /TR {task_command}",
-        #                             stdout=subprocess.PIPE,
-        #                             stderr=subprocess.PIPE,
-        #                             creationflags=subprocess.CREATE_NO_WINDOW)
+#         # process = subprocess.Popen(f"schtasks /Create /TN {cls.task_name} /TR {task_command}",
+#         #                             stdout=subprocess.PIPE,
+#         #                             stderr=subprocess.PIPE,
+#         #                             creationflags=subprocess.CREATE_NO_WINDOW)
         
-        stdout, stderr = process.communicate()
-        stdout_str = stdout.decode('utf-8').strip()
-        stderr_str = stderr.decode('utf-8').strip()
-        output_message = "out"+str(stdout_str) +"err"+str(stderr_str)
-        print(output_message)
+#         stdout, stderr = process.communicate()
+#         stdout_str = stdout.decode('utf-8').strip()
+#         stderr_str = stderr.decode('utf-8').strip()
+#         output_message = "out"+str(stdout_str) +"err"+str(stderr_str)
+#         print(output_message)
 
-        if "Access is denied" in output_message or "Run as administrator" in output_message:
-            return "need_access"
+#         if "Access is denied" in output_message or "Run as administrator" in output_message:
+#             return "need_access"
             
-    except Exception as e:
-        return False
+#     except Exception as e:
+#         return False
 
-establish_startup_tray()
+# establish_startup_tray()

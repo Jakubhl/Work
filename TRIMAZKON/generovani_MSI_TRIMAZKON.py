@@ -23,6 +23,16 @@ exe = Executable(
     icon="images/logo_TRIMAZKON.ico",  # Application icon
 )
 
+# msi_data = {
+#     "Directory": directory_table,
+#     "ProgId": [
+#         ("Prog.Id", None, None, "This is a description", "IconId", None),
+#     ],
+#     "Icon": [
+#         ("IconId", "icon.ico"),
+#     ],
+# }
+
 # Setup configuration
 setup(
     name="TRIMAZKON",
@@ -39,6 +49,8 @@ setup(
             "upgrade_code": "{12345678-1234-5678-1234-567812345678}",  # Unique GUID
             "add_to_path": False,  # Do not add to system PATH
             "install_icon": "images/logo_TRIMAZKON.ico",  # Installer icon
-        },
+            "all_users": True,  # This helps set the proper MSI window icon
+        
+        },            
     },
 )

@@ -871,16 +871,34 @@ TRIMAZKON - deleting ts - oprava mezery v cestě
 ip setting - možnost otevřít excel přes settings - hotovo
 TRIMAZKON - prohlížeč nejde otevírat ifz v novém okně... - hotovo
 TRIMAZKON - TRAY - předělat logy na verikální logiku - hotovo
+release verze 4.3.0
+
+2:40 PM 3/14/2025
+jhv-MAZ - opravit mezeru v ceste i pri volani z kontext menu - hotovo
+	operating_path_TS = str(new_task["operating_path"])
+        full_path = r"{}".format(operating_path_TS)
+jhv-MAZ - toplevely - hotovo
+jhv_MAZ - převzít nový vzhled logů- hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-jhv-MAZ - opravit mezeru v ceste i pri volani z kontext menu
-	operating_path_TS = str(new_task["operating_path"])
-        full_path = r"{}".format(operating_path_TS)
 
-jhv-MAZ - toplevely
+
 jhv_MAZ - dodělat možnosti přímého editování tasku
-jhv_MAZ - převzít nový vzhled logů
+TRIMAZKON - dodělat možnosti přímého editování tasku
+
+TRIMAZKON - nastavení maximalizované - upravit
+    def maximalized(self): # Nastavení základního spouštění (v okně/ maximalizované)
+        option = self.checkbox_maximalized.get()
+        if option == 1:
+            Tools.save_to_json_config("ano","maximalized")
+            self.root.after(0, lambda:self.root.state('zoomed'))
+        else:
+            Tools.save_to_json_config("ne","maximalized")
+            self.root.after(0, lambda:self.root.state('normal'))
+            self.root.after(10, lambda:self.root.geometry("1200x900"))
+
+TRIMAZKON - quit_application neshodí celou aplikaci když v ip setting
 
 TRIMAZKON - dodělat možnosti přímého editování tasku
 
@@ -888,7 +906,12 @@ TRIMAZKON - katalog - nove kontextove nabidky
 
 TRIMAZKON - prohlížeč - udelat specialni launcher na obrazky - aby se nenacitaly vsechny knihovny - aby to bylo rychlé
 TRIMAZKON - msi instalačky se dotazovat zda s konzolí či bez
-TRIMAZKON - msi možnost vytvořit ikonu na ploše
+TRIMAZKON - msi možnost vytvořit ikonu na ploše - otevřít po spuštění
+TRIMAZKON - msi - jhv logo
+
+TRIMAZKON - udělat trial verzi na 30 dní
+
+nemohu zaroven nainstalovat trimazkon a jhv_MAZ
 
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
 ??? Koumu: admin práva, online auto aktualizace nové verze

@@ -25,8 +25,8 @@ exe = Executable(
 # Setup configuration
 setup(
     name="jhv_MAZ",
-    version="1.0.5",
-    description="jhv_MAZ v1.0.5",
+    version="1.0.6",
+    description="jhv_MAZ v1.0.6",
     executables=[exe],
     options={
         "build_exe": {
@@ -35,7 +35,7 @@ setup(
             "optimize": 2,  # Optimize bytecode
         },
         "bdist_msi": {
-            "upgrade_code": "{12345678-1234-5678-1234-567812345678}",  # Unique GUID
+            "upgrade_code": "{87654321-4321-8765-4321-678543218765}",  # Unique GUID
             "add_to_path": False,  # Do not add to system PATH
             "install_icon": "images/logo_TRIMAZKON.ico",  # Installer icon
         },

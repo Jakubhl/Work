@@ -216,23 +216,46 @@ class tray_app_service:
         with open(self.initial_path + self.config_filename, "w") as file:
             json.dump(config_data, file, indent=4)
 
-    def delete_task(self,task,root):
+    def delete_task(self,task,root=None,only_scheduler = False):
+        """
+        if only_scheduler: task = task name directly
+        """
         def delete_from_scheduler(name_of_task):
             cmd_command = f"schtasks /Delete /TN {name_of_task} /F"
             subprocess.call(cmd_command,shell=True,text=True)
 
+        if only_scheduler:
+            self.check_task_existence()
+            delete_from_scheduler(task)
+            return
+            
         self.check_task_existence()
         all_tasks = self.read_config()
         delete_from_scheduler(task["name"])
         all_tasks.pop(all_tasks.index(task))
         
         self.save_task_to_config(all_tasks)
-        # if status != False:
-            # root.destroy()
         try:
             self.show_all_tasks(root_given=root)
         except Exception as e:
             print(e)
+            
+    def call_edit_task(self,command_given):
+        print("calling main app with: ",command_given)
+        process = subprocess.Popen(command_given, 
+                                    shell=True,
+                                    text=True,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    creationflags=subprocess.CREATE_NO_WINDOW)
+        stdout, stderr = process.communicate()
+        try:
+            stdout_str = stdout.decode('utf-8')
+            stderr_str = stderr.decode('utf-8')
+            print(stdout_str,stderr_str)
+        except Exception as e:
+            print(stdout,stderr)
+
             
     def show_context_menu(self,root,event,widget,task):
         self.check_task_existence()
@@ -269,9 +292,11 @@ class tray_app_service:
             operating_path_TS = str(task["operating_path"])
             cured_path = r"{}".format(operating_path_TS)
             task_command = path_app_location + " deleting " + name_of_task + " \"" + cured_path + "\" " + str(task["max_days"]) + " " + str(task["files_to_keep"])+ " " + str(task["more_dirs"])+ " " + str(task["selected_option"]) + " " + str(task["creation_date"])
+            edit_task_command = path_app_location + " edit_existing_task " + name_of_task + " \"" + cured_path + "\" " + str(task["max_days"]) + " " + str(task["files_to_keep"])+ " " + str(task["frequency"])+ " " + str(task["more_dirs"])+ " " + str(task["selected_option"]) + " " + str(task["creation_date"]) + " " + str(root) + " " + str(self.selected_language)
             context_menu.add_command(label=execute_task,font=preset_font,command=lambda: subprocess.call(task_command,shell=True,text=True))
             context_menu.add_separator()
-            context_menu.add_command(label=edit_task,font=preset_font,command=lambda: os.startfile("taskschd.msc"))
+            # context_menu.add_command(label=edit_task,font=preset_font,command=lambda: os.startfile("taskschd.msc"))
+            context_menu.add_command(label=edit_task,font=preset_font,command=lambda: self.call_edit_task(edit_task_command))
             context_menu.add_separator()
             context_menu.add_command(label=delete_task,font=preset_font,command=lambda: self.delete_task(task,root))
             context_menu.add_separator()

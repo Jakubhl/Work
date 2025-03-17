@@ -37,7 +37,7 @@ def make_licence(hwid):
         private_key = serialization.load_pem_private_key(f.read(), password=None)
 
     # Licence
-    licence_data = hwid+"|EXPIRES:31.12.2040"
+    licence_data = hwid+"|EXPIRES:31.12.9999"
 
     # Podepsání licence soukromým klíčem
     signature = private_key.sign(
@@ -93,7 +93,8 @@ def check_licence():
 # generate_rsa_keys()
 # make_licence("B841925X0SNLM7S") #kingspan když je tam zasunutej disk
 # make_licence("0025_3848_41A1_B7DF") #kingspan
-make_licence("E823_8FA6_BF53_0001_001B_444A_4876_94E7") #asus ntb
+# make_licence("E823_8FA6_BF53_0001_001B_444A_4876_94E7") #asus ntb
+make_licence("E823_8FA6_BF53_0001_001B_444A_48F0_774B") #honza ntb
 
 # make_licence("FSB5N690910705S61_00000001") #dell ntb pracovni
 # check_licence()

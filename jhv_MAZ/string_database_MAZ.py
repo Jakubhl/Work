@@ -11,6 +11,10 @@ change_log_list = ["Verze 1.0.0 (21.01.2025)",
     - nový layout logů
     - oprava duplicity při vypnutí přes sys tray
     - oprava otevírání suboken přes tray\n"""
+    "\nVerze 1.0.6 (17.03.2025)",
+    """ 
+    - oprava mezer v cestě pro task scheduler
+    - nově přímá editace zavedeného úkolu\n"""
 ]
 
 
