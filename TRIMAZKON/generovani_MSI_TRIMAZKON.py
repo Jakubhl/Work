@@ -12,26 +12,41 @@ include_files = [
 
 # Define the base
 base = "Win32GUI" if sys.platform == "win32" else None  # Hide console for GUI apps
-base = None
+# base = None
 
 
 # Define the executable
 exe = Executable(
-    script="JHV_APP_GUI_v16.py",  # Main script to convert to EXE
+    script="JHV_APP_GUI_v17.py",  # Main script to convert to EXE
     base=base,
     target_name="TRIMAZKON.exe",  # Name of the output EXE file
     icon="images/logo_TRIMAZKON.ico",  # Application icon
 )
 
-# msi_data = {
-#     "Directory": directory_table,
-#     "ProgId": [
-#         ("Prog.Id", None, None, "This is a description", "IconId", None),
-#     ],
-#     "Icon": [
-#         ("IconId", "icon.ico"),
-#     ],
-# }
+shortcut_table = [
+    (
+        "DesktopShortcut",  # Shortcut name
+        "DesktopFolder",    # Location: Desktop
+        "TRIMAZKON",       # Shortcut display name
+        "TARGETDIR",       # Installation directory
+        "[TARGETDIR]TRIMAZKON.exe",  # Executable path
+        None,               # Arguments
+        None,               # Description
+        None,               # Hotkey
+        None,               # Icon index
+        "images/logo_TRIMAZKON.ico",  # Icon path
+        "TARGETDIR",        # Working directory
+        None,               # Advertised (should be None)
+    )
+]
+
+msi_data = {"Shortcut": shortcut_table,}
+            # "CustomAction": [
+            #     ("PostInstall", None, "TARGETDIR", "cmd.exe /c start \"\" \"[TARGETDIR]/TRIMAZKON.exe\"")
+            # ],
+            # "InstallExecuteSequence": [
+            #     ("PostInstall", "NOT Installed", 3599)  # Run after installation
+            # ]}  # MSI data for shortcuts
 
 # Setup configuration
 setup(
@@ -49,8 +64,10 @@ setup(
             "upgrade_code": "{12345678-1234-5678-1234-567812345678}",  # Unique GUID
             "add_to_path": False,  # Do not add to system PATH
             "install_icon": "images/logo_TRIMAZKON.ico",  # Installer icon
-            "all_users": True,  # This helps set the proper MSI window icon
-        
+            "data": msi_data,
+
+            # "all_users": True,  # This helps set the proper MSI window icon
+            
         },            
     },
 )

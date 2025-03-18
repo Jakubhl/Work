@@ -34,6 +34,9 @@ pyinstaller --noconfirm --onefile -w --noconsole --icon=images\logo_TRIMAZKON.ic
 pyinstaller --noconfirm --onefile --icon=images\logo_TRIMAZKON.ico --add-data images\logo_TRIMAZKON.ico;images trimazkon_tray_v2.py
 pyinstaller --noconfirm --onefile --noconsole --icon=images\logo_TRIMAZKON.ico --add-data images\logo_TRIMAZKON.ico;images trimazkon_tray_v2.py
 
+pyinstaller --noconfirm --onefile --icon=images\logo_TRIMAZKON.ico --add-data images\*;images TMK_image_browser.py
+
+
 
 C:\Users\jakub.hlavacek.local\Desktop\test\trimazkon_tray_v2.exe C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/ run_tray
 

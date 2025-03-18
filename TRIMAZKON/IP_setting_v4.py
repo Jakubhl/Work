@@ -37,6 +37,7 @@ class Tools:
         # return os.path.join(os.path.abspath("."), relative_path)
         BASE_DIR = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.abspath(".")
         return os.path.join(BASE_DIR, relative_path)
+    
     @classmethod
     def add_colored_line(cls,text_widget, text, color,font=None,delete_line = None):
         """
@@ -623,9 +624,9 @@ class main:
             return [all_rows_ip,project_list,favourite_list]
 
         @classmethod
-        def get_current_ip_list(cls,connection_option_list):
+        def get_current_ip_list(cls,connection_option_list:list):
             def get_current_ip_address(interface_name):
-            # Get network interfaces and their addresses
+                # Get network interfaces and their addresses
                 addresses = psutil.net_if_addrs()
                 # Check if the specified interface exists
                 if interface_name in addresses:
@@ -756,6 +757,9 @@ class main:
                 if "DHCP enabled" in lines and "Yes" in lines:
                     print(f"{interface} DHCP: yes")
                     return True
+                elif "DHCP povoleno" in lines and "Ano" in lines:
+                    print(f"{interface} DHCP: yes")
+                    return True
             print(f"{interface} DHCP: no")
 
         @classmethod
@@ -770,7 +774,185 @@ class main:
             except Exception:
                 return False
 
-    def __init__(self,root,menu_callback_function,window_mode,initial_path,zoom_factor,config_filename):
+        @classmethod
+        def get_favourite_ips_addr(cls,excel_file_path):
+            all_rows = cls.read_excel_data(excel_file_path,True)[0]
+            fav_ip_list = []
+            for rows in all_rows:
+                fav_ip_list.append(str(rows[1])+" | "+str(rows[0]))
+
+            return fav_ip_list
+
+        @classmethod
+        def change_to_DHCP(cls,interface,interface_ip,callback_function):
+            def delay_the_refresh():
+                new_addr = cls.get_current_ip_list([interface])[0]
+                i = 0
+                while new_addr == previous_addr or new_addr == None:
+                    print(f"Čekám, až windows provede změny: {7-i} s...")
+                    time.sleep(1)
+                    new_addr = cls.get_current_ip_list([interface])[0]
+                    print("current addr: ",new_addr)
+                    if i > 6:
+                        output_message = f"Chyba, u {interface} se nepodařilo změnit ip adresu na DHCP (pro nastavování odpojených interfaců spusťtě aplikaci jako administrátor)"
+                        callback_function(output_message)
+                        return
+                    i+=1
+                    
+                output_message = f"IPv4 adresa interfacu: {interface} úspěšně přenastavena na DHCP (automatickou)"
+                callback_function(output_message)
+                return
+            
+            output_message = ""
+            if not cls.check_DHCP(interface):
+                if interface != None or interface != "":
+                    previous_addr = interface_ip
+                    try:
+                        # Construct the netsh command
+                        netsh_command = f"netsh interface ipv4 set address name=\"{interface}\" source=dhcp"
+                        print(f"calling: {netsh_command}")
+                        powershell_command = [
+                            'powershell.exe',
+                            '-Command', f'Start-Process powershell -Verb RunAs -ArgumentList \'-Command "{netsh_command}"\' -WindowStyle Hidden -PassThru'
+                        ]
+                        process = subprocess.Popen(powershell_command,
+                                                    stdout=subprocess.PIPE,
+                                                    stderr=subprocess.PIPE,
+                                                    creationflags=subprocess.CREATE_NO_WINDOW)
+                        
+                        stdout, stderr = process.communicate()
+                        stdout_str = stdout.decode('utf-8')
+                        stderr_str = stderr.decode('utf-8')
+                        if stderr_str:
+                            print(f"Error occurred: {stderr_str}")
+                        else:
+                            print(f"Command executed successfully:\n{stdout_str}")                
+                        
+                        run_background = threading.Thread(target=delay_the_refresh,)
+                        run_background.start()
+
+                    except Exception as e:
+                        output_message = f"Exception occurred: {str(e)}"
+                        callback_function(output_message)
+                else:
+                    output_message = "Nebyl zvolen žádný interface"
+                    callback_function(output_message)
+            else:
+                output_message = f"{interface} má již nastavenou DHCP"
+                callback_function(output_message)
+
+        @classmethod
+        def change_computer_ip(cls,ip_given,interface_given,interface_ip_given,online_address_list,callback_function):
+            """
+            button_row - index, kde se nachazi ip a maska v poli: self.all_rows
+            """
+            def make_sure_ip_changed():
+                def call_subprocess():
+                    nonlocal output_message
+                    try:
+                        if ip == interface_ip_given:
+                            output_message = f"Pro interface {interface_given} je již tato adresa ({ip}) nastavena"
+                            callback_function(output_message)
+                            return
+                        
+                        elif ip in online_address_list:
+                            output_message = "Chyba, adresa je již používána pro jiný interface"
+                            callback_function(output_message)
+                            return
+                        
+                        win_change_ip_time = 7
+                        for i in range(0,win_change_ip_time):
+                            print(f"Čekám, až windows provede změny: {7-i} s...")
+                            # Tools.add_colored_line(self.main_console,f"Čekám, až windows provede změny: {7-i} s...","white",None,True)
+                            current_interface_ip = cls.get_current_ip_list([interface_given])[0]
+                            print(ip,current_interface_ip)
+                            if ip == current_interface_ip: # někdy dříve než 7 sekund...
+                                break
+                            time.sleep(1)
+
+                        if ip == current_interface_ip:
+                            # Tools.add_colored_line(self.main_console,f"IPv4 adresa u {interface_given} byla přenastavena na: {ip}","green",None,True)
+                            output_message = f"IPv4 adresa u {interface_given} byla přenastavena na: {ip}"
+                            callback_function(output_message)
+                        else:
+                            output_message = "Chyba, neplatná adresa nebo daný inteface odpojen od tohoto zařízení (pro nastavování odpojených interfaců spusťtě aplikaci jako administrátor)"
+                            callback_function(output_message)
+                    except Exception:
+                        pass
+                
+                run_background = threading.Thread(target=call_subprocess,)
+                run_background.start()
+
+            def connected_interface(interface,ip,mask):
+                """
+                Když jsou vyžadována admin práva, tato funkce ověří, zda není daný interface připojen nebo součástí zařízení a zkusí znovu
+                """
+                nonlocal output_message
+                try:
+                    # Construct the netsh command
+                    netsh_command = f"netsh interface ip set address \"{interface}\" static {ip} {mask}"
+                    powershell_command = [
+                        'powershell.exe',
+                        '-Command', f'Start-Process powershell -Verb RunAs -ArgumentList \'-Command "{netsh_command}"\' -WindowStyle Hidden -PassThru'
+                    ]
+                    process = subprocess.Popen(powershell_command,
+                                                stdout=subprocess.PIPE,
+                                                stderr=subprocess.PIPE,
+                                                creationflags=subprocess.CREATE_NO_WINDOW)
+                    
+                    stdout, stderr = process.communicate()
+                    stdout_str = stdout.decode('utf-8')
+                    stderr_str = stderr.decode('utf-8')
+                    if stderr_str:
+                        print(f"Error occurred: {stderr_str}")
+                        output_message = "Chyba, nebyla poskytnuta práva (dejte ANO)"
+                        callback_function(output_message)
+                    else:
+                        print(f"Command executed successfully:\n{stdout_str}")
+                        make_sure_ip_changed()
+
+                except Exception as e:
+                    print(f"Exception occurred: {str(e)}")
+
+            ip = ip_given
+            mask = "255.255.255.0"
+            interface_name = interface_given
+            output_message = ""
+            powershell_command = f"netsh interface ip set address \"{interface_name}\" static " + ip + " " + mask
+            try:
+                process = subprocess.Popen(['powershell.exe', '-Command', powershell_command],
+                                            stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE,
+                                            creationflags=subprocess.CREATE_NO_WINDOW)
+                stdout, stderr =process.communicate()
+                stdout_str = stdout.decode('utf-8')
+                stderr_str = stderr.decode('utf-8')
+                print(f"VÝSTUP Z IP SETTING: {str(stdout_str)}")
+
+                if len(str(stdout_str)) > 7:
+                    raise subprocess.CalledProcessError(1, powershell_command, stdout_str)
+                if stderr_str:
+                    raise subprocess.CalledProcessError(1, powershell_command, stderr_str)
+                make_sure_ip_changed()
+
+            except subprocess.CalledProcessError as e:
+                if "Run as administrator" in str(stdout_str) or "pustit jako správce" in str(stdout_str):
+                    output_message = "Chyba, tato funkce musí být spuštěna s administrátorskými právy"
+                    # callback_function(output_message)
+                    connected_interface(interface_name,ip,mask)# trigger powershell potvrzení:
+                elif "Invalid address" in str(stdout_str) or "Adresa není platná" in str(stdout_str):
+                    output_message = "Chyba, neplatná IP adresa"
+                    callback_function(output_message)
+                else:
+                    output_message = "Chyba, Nemáte tuto adresu již nastavenou pro jiný interface?\n(nebo daný interface na tomto zařízení neexistuje)"
+                    callback_function(output_message)
+            except Exception as e:
+                output_message = f"Nastala neočekávaná chyba: {e}"
+                callback_function(output_message)
+            
+            return output_message
+
+    def __init__(self,root,menu_callback_function,window_mode,initial_path,zoom_factor,config_filename,without_gui =False):
         self.root = root
         self.menu_callback = menu_callback_function
         self.initial_path = initial_path
@@ -782,12 +964,13 @@ class main:
         # self.excel_file_path = initial_path + "config_TRIMAZKON.xlsx"
         self.app_icon = Tools.resource_path('images\\logo_TRIMAZKON.ico')
         self.default_environment = "ip"
-        self.check_default_env()
-        self.check_excel_presence()
-        if self.default_environment == "disk":
-            self.Disk_management_gui(self)
-        else:
-            self.IP_assignment(self)
+        if not without_gui:
+            self.check_default_env()
+            self.check_excel_presence()
+            if self.default_environment == "disk":
+                self.Disk_management_gui(self)
+            else:
+                self.IP_assignment(self)
 
     def check_default_env(self):
         try:
@@ -3544,7 +3727,6 @@ class main:
                         Tools.add_colored_line(self.main_console,f"IPv4 adresa u {interface_name} byla přenastavena na: {ip}","green",None,True)
                         self.refresh_ip_statuses()
                     else:
-                        print("temp ip troubleshooting: ------ ",ip)
                         Tools.add_colored_line(self.main_console,f"Chyba, neplatná adresa nebo daný inteface odpojen od tohoto zařízení (pro nastavování odpojených interfaců spusťtě aplikaci jako administrátor)","red",None,True)
                         open_app_as_admin_prompt()
                 except Exception:
@@ -3676,11 +3858,11 @@ class main:
                 self.make_sure_ip_changed(interface_name,ip)
 
             except subprocess.CalledProcessError as e:
-                if "Run as administrator" in str(stdout_str):
+                if "Run as administrator" in str(stdout_str) or "pustit jako správce" in str(stdout_str):
                     Tools.add_colored_line(self.main_console,f"Chyba, tato funkce musí být spuštěna s administrátorskými právy","red",None,True)
                     # trigger powershell potvrzení:
                     connected_interface(interface_name,ip,mask)
-                elif "Invalid address" in str(stdout_str):
+                elif "Invalid address" in str(stdout_str) or "Adresa není platná" in str(stdout_str):
                     Tools.add_colored_line(self.main_console,f"Chyba, neplatná IP adresa","red",None,True)
                 else:
                     Tools.add_colored_line(self.main_console,f"Chyba, Nemáte tuto adresu již nastavenou pro jiný interface? (nebo daný interface na tomto zařízení neexistuje)","red",None,True)

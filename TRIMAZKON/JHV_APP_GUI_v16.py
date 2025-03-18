@@ -9,7 +9,7 @@ import Converting_option_v3 as Converting
 import catalogue_maker_v5 as Catalogue
 import sharepoint_download as download_database
 import IP_setting_v4 as IP_setting
-import trimazkon_tray_v4 as trimazkon_tray
+import trimazkon_tray_v5 as trimazkon_tray
 import string_database
 from tkinter import filedialog
 import tkinter as tk
@@ -1269,7 +1269,6 @@ class Tools:
         if Tools.is_thread_running(cls.Tray_thread_name): # Pokud tray aplikace už běží nezapínej novou
             print("tray app is already running")
             return
-        
 
         print("tray app is not running yet")
         def call_tray_class():

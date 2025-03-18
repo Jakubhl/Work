@@ -880,38 +880,31 @@ jhv-MAZ - opravit mezeru v ceste i pri volani z kontext menu - hotovo
 jhv-MAZ - toplevely - hotovo
 jhv_MAZ - převzít nový vzhled logů- hotovo
 
+1:59 PM 3/17/2025
+nemohu zaroven nainstalovat trimazkon a jhv_MAZ - hotovo (upgradecode)
+jhv_MAZ - dodělat možnosti přímého editování tasku - hotovo
+TRIMAZKON - nastavení maximalizované - upravit - hotovo
+TRIMAZKON - dodělat možnosti přímého editování tasku - hotovo
+TRIMAZKON - quit_application neshodí celou aplikaci když v ip setting - hotovo
+
+1:58 PM 3/18/2025
+TRIMAZKON - možnsot nastavit ip adresu přes tray ikonu (i DHCP) - hotovo
+TRIMAZKON - prohlížeč - udelat specialni launcher na obrazky - aby se nenacitaly vsechny knihovny - optimalizováno
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 
-jhv_MAZ - dodělat možnosti přímého editování tasku
-TRIMAZKON - dodělat možnosti přímého editování tasku
-
-TRIMAZKON - nastavení maximalizované - upravit
-    def maximalized(self): # Nastavení základního spouštění (v okně/ maximalizované)
-        option = self.checkbox_maximalized.get()
-        if option == 1:
-            Tools.save_to_json_config("ano","maximalized")
-            self.root.after(0, lambda:self.root.state('zoomed'))
-        else:
-            Tools.save_to_json_config("ne","maximalized")
-            self.root.after(0, lambda:self.root.state('normal'))
-            self.root.after(10, lambda:self.root.geometry("1200x900"))
-
-TRIMAZKON - quit_application neshodí celou aplikaci když v ip setting
-
-TRIMAZKON - dodělat možnosti přímého editování tasku
-
 TRIMAZKON - katalog - nove kontextove nabidky
 
-TRIMAZKON - prohlížeč - udelat specialni launcher na obrazky - aby se nenacitaly vsechny knihovny - aby to bylo rychlé
+
 TRIMAZKON - msi instalačky se dotazovat zda s konzolí či bez
-TRIMAZKON - msi možnost vytvořit ikonu na ploše - otevřít po spuštění
+TRIMAZKON - msi možnost vytvořit ikonu na ploše + otevřít po spuštění
 TRIMAZKON - msi - jhv logo
+
 
 TRIMAZKON - udělat trial verzi na 30 dní
 
-nemohu zaroven nainstalovat trimazkon a jhv_MAZ
 
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
 ??? Koumu: admin práva, online auto aktualizace nové verze

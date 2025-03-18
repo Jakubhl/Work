@@ -324,7 +324,7 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - nezávislá historie vložených cest
     - cesta z kontextové nabídky se rovnou otevře
     """
-          ,"\nVerze 4.3.1 (17.03.2025)"
+          ,"\nVerze 4.3.1 (18.03.2025)"
         ,
   """ 
   TRIMAZKON - mazání:
@@ -332,6 +332,12 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - oprava volání oken přes ikonu
     - oprava mezer v cestě pro task scheduler
 
+  TRIMAZKON - tray (ip setting)
+    - nově možnost přes tray ikonu měnit ip adresy
+    
+  TRIMAZKON
+    - optimalizováno načítání obrázků přes pipeline
+    - installer nově vytváří ikonu na ploše
   
     """
 ]
