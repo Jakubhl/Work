@@ -893,12 +893,14 @@ TRIMAZKON - prohlížeč - udelat specialni launcher na obrazky - aby se nenacit
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-
+TRIMAZKON - ip_setting - nefunguje kopirovani oblibenych a posouvani o pozici... - předělat adresy na objekty
+TRIMAZKON - ip_setting - grafika oken, grafika konzole
 
 TRIMAZKON - katalog - nove kontextove nabidky
 
 
 TRIMAZKON - msi instalačky se dotazovat zda s konzolí či bez
+TRIMAZKON - msi - možnost vybrat si, co nainstalovat
 TRIMAZKON - msi možnost vytvořit ikonu na ploše + otevřít po spuštění
 TRIMAZKON - msi - jhv logo
 
