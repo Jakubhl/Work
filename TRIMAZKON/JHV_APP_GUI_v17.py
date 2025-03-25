@@ -68,7 +68,7 @@ app_running_status = initial_tools.check_runing_app_duplicity()
 print("already opened app status: ",app_running_status)
 open_image_only = False
 if len(sys.argv) > 1 and app_running_status == True:
-    used_cmd_calls = ["deleting","trigger_by_tray","run_tray","open_task_list","open_log_list","app_shutdown","edit_existing_task","settings_tray","settings_tray_del","admin_menu"]
+    used_cmd_calls = ["deleting","trigger_by_tray","run_tray","open_task_list","open_log_list","app_shutdown","edit_existing_task","settings_tray","settings_tray_del","admin_menu","installer_call"]
     if str(sys.argv[1]) not in used_cmd_calls:
         if sys.argv[0] != sys.argv[1]:
             open_image_only = True
@@ -1366,7 +1366,7 @@ if not open_image_only:
 
         @classmethod
         def get_init_path(cls):
-            initial_path = Tools.path_check(os.getcwd())
+            initial_path = Tools.path_check(Tools.resource_path(os.getcwd()))
             if len(sys.argv) > 1: #spousteni pres cmd (kliknuti na obrazek) nebo task scheduler - mazání
                 raw_path = str(sys.argv[0])
                 initial_path = Tools.path_check(raw_path,True)
@@ -2176,7 +2176,7 @@ if not open_image_only:
                 elif sys.argv[1] == "settings_tray_del":
                     self.call_advanced_option(success_message="Automatické spouštění úspěšně odstraněno")
 
-                elif sys.argv[1] != "admin_menu" and sys.argv[1] != "trigger_by_tray": # pokud se nerovnají jedná se nejspíše o volání základního prohlížeče obrázků (spuštění kliknutím na obrázek...)
+                elif sys.argv[1] != "admin_menu" and sys.argv[1] != "trigger_by_tray" and sys.argv[1] != "installer_call": # pokud se nerovnají jedná se nejspíše o volání základního prohlížeče obrázků (spuštění kliknutím na obrázek...)
                     IB_as_def_browser_path=Tools.path_check(raw_path,True)
                     IB_as_def_browser_path_splitted = IB_as_def_browser_path.split("/")
                     IB_as_def_browser_path = ""

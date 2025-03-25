@@ -1,0 +1,7 @@
+Dialog_	Control_	Event	Attribute
+s72	s50	s50	s50
+EventMapping	Dialog_	Control_	Event
+PrepareDlg	ActionData	ActionData	Text
+PrepareDlg	ActionText	ActionText	Text
+ProgressDlg	ActionText	ActionText	Text
+ProgressDlg	ProgressBar	SetProgress	Progress

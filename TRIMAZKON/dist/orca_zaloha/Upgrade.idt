@@ -1,0 +1,5 @@
+UpgradeCode	VersionMin	VersionMax	Language	Attributes	Remove	ActionProperty
+s38	S20	S20	S255	i4	S255	s72
+Upgrade	UpgradeCode	VersionMin	VersionMax	Language	Attributes
+{12345678-1234-5678-1234-567812345678}		4.3.1		513		REMOVEOLDVERSION
+{12345678-1234-5678-1234-567812345678}	4.3.1			257		REMOVENEWVERSION

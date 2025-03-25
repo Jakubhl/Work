@@ -891,6 +891,10 @@ TRIMAZKON - quit_application neshodí celou aplikaci když v ip setting - hotovo
 TRIMAZKON - možnsot nastavit ip adresu přes tray ikonu (i DHCP) - hotovo
 TRIMAZKON - prohlížeč - udelat specialni launcher na obrazky - aby se nenacitaly vsechny knihovny - optimalizováno
 
+10:36 AM 3/25/2025
+TRIMAZKON - msi - jhv logo - hotovo
+TRIMAZKON - msi možnost vytvořit ikonu na ploše + otevřít po spuštění - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 TRIMAZKON - ip_setting - nefunguje kopirovani oblibenych a posouvani o pozici... - předělat adresy na objekty
@@ -901,8 +905,6 @@ TRIMAZKON - katalog - nove kontextove nabidky
 
 TRIMAZKON - msi instalačky se dotazovat zda s konzolí či bez
 TRIMAZKON - msi - možnost vybrat si, co nainstalovat
-TRIMAZKON - msi možnost vytvořit ikonu na ploše + otevřít po spuštění
-TRIMAZKON - msi - jhv logo
 
 
 TRIMAZKON - udělat trial verzi na 30 dní

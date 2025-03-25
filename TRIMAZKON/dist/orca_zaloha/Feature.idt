@@ -1,0 +1,5 @@
+Feature	Feature_Parent	Title	Description	Display	Level	Directory_	Attributes
+s38	S38	L64	L255	I2	i2	S72	i2
+Feature	Feature
+default		Default Feature	Everything	1	1	TARGETDIR	0
+exe2	default	exe2 feature		1	1	C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\jhv_MAZ\dist	0
