@@ -1,7 +1,0 @@
-TextStyle	FaceName	Size	Color	StyleBits
-s72	s32	i2	I4	I2
-TextStyle	TextStyle
-DlgFont8	Tahoma	9		0
-DlgFontBold8	Tahoma	8		1
-VerdanaBold10	Verdana	10		1
-VerdanaRed9	Verdana	9	255	0

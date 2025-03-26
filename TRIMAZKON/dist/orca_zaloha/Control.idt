@@ -84,7 +84,7 @@ Window_with_checkboxes	BottomLine	Line	0	264	370	0	1
 Window_with_checkboxes	Cancel	PushButton	304	273	56	17	3		Cancel		
 Window_with_checkboxes	Install_all_checkbox	CheckBox	20	30	250	34	3	INSTALL_OPTION1	Install all (catalogue + ip setting + image manager + image browser)		
 Window_with_checkboxes	Install_ip_set_checkbox	CheckBox	20	67	150	17	3	INSTALL_OPTION2	Install IP setting only		
-Window_with_checkboxes	Install_jhv_MAZ_checkbox	CheckBox	20	87	150	17	3	INSTALL_OPTION3	Install sw for deleting only		
+Window_with_checkboxes	Install_jhv_MAZ_checkbox	CheckBox	20	87	200	17	3	INSTALL_OPTION3	Install software for deleting only (jhv_MAZ)		
 Window_with_checkboxes	Label1	Text	20	10	200	17	196611		{\DlgFontBold8}Select the program to install:		
 Window_with_checkboxes	Next	PushButton	236	273	56	17	3		Next >		
 Window_with_checkboxes	show_logo_image	Bitmap	280	10	75	25	3		LogoImage		

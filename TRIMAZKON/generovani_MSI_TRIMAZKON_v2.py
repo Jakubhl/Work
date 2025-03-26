@@ -24,7 +24,7 @@ whole_app_exe = Executable(
 )
 
 jhv_MAZ_exe = Executable(
-    script="C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/jhv_MAZ/JHV_MAZ_GUI_v4.py",  # Main script to convert to EXE
+    script="JHV_MAZ_GUI_v4.py",  # Main script to convert to EXE
     base=base,
     target_name="jhv_MAZ.exe",  # Name of the output EXE file
     icon="images/logo_TRIMAZKON.ico",  # Application icon

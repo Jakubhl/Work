@@ -1,3 +1,0 @@
-LockObject	Table	Domain	User	Permission
-s72	s32	S255	s255	I4
-LockPermissions	LockObject	Table	Domain	User

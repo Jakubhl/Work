@@ -1,3 +1,5 @@
 Feature_	Level	Condition
 s38	i2	S255
 Condition	Feature_	Level
+TRIMAZKON_all	1	(INSTALL_OPTION2 = 1) Or (INSTALL_OPTION3 = 1)
+jhv_MAZ	1	(INSTALL_OPTION2 = 1) Or (INSTALL_OPTION1 = 1)

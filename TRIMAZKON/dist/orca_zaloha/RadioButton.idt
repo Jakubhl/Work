@@ -1,5 +1,0 @@
-Property	Order	Value	X	Y	Width	Height	Text	Help
-s72	i2	s64	i2	i2	i2	i2	L64	L50
-RadioButton	Property	Order
-MaintenanceForm_Action	1	Repair	0	18	300	17	&Repair [ProductName]	
-MaintenanceForm_Action	2	Remove	0	36	300	17	Re&move [ProductName]	

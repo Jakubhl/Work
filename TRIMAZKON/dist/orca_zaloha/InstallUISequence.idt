@@ -19,8 +19,10 @@ MigrateFeatureStates		1200
 PrepareDlg		140
 ProgressDlg		1280
 RMCCPSearch	NOT Installed	600
+SET_checkbox2	not Installed	1201
+SET_checkbox3	not Installed	1202
 SelectDirectoryDlg	not Installed	1230
 UserExit		-2
 ValidateProductID		700
-Window_with_checkboxes	not Installed	1201
+Window_with_checkboxes	not Installed	1203
 Window_with_checkboxes2	not Installed	1231

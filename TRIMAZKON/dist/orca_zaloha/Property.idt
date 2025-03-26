@@ -6,9 +6,10 @@ ARPPRODUCTICON	InstallIcon
 CREATE_SHORTCUT	1
 DefaultUIFont	DlgFont8
 DistVersion	4.3.1
-EXE_SCRIPT	_cx_executable0__Executable_script_JHV_APP_GUI_v17.py_
 ErrorDialog	ErrorDlg
-INSTALL_OPTION2	1
+INSTALL_OPTION1	1
+INSTALL_OPTION2	0
+INSTALL_OPTION3	0
 MSIINSTALLPERUSER	1
 MaintenanceForm_Action	Repair
 Manufacturer	JHV - engineering s.r.o
