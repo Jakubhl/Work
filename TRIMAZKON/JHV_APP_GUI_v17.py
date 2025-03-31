@@ -1,8 +1,6 @@
 import sys
 import win32file
-# import psutil
 from psutil import process_iter as psutil_process_iter
-# import os
 from os.path import basename as os_path_basename
 from os.path import exists as os_path_exists
 from os import getpid as os_get_pid
@@ -57,7 +55,7 @@ exe_path = sys.executable
 exe_name = os_path_basename(exe_path)
 config_filename = "TRIMAZKON.json"
 app_name = "TRIMAZKON"
-app_version = "4.3.1"
+app_version = "4.3.2"
 loop_request = False
 root = None
 print("exe name: ",exe_name)
@@ -77,14 +75,13 @@ if not open_image_only:
     import customtkinter
     import os
     import time
-    # from openpyxl import load_workbook
     from PIL import Image, ImageTk
     import Sorting_option_v5 as Trideni
     import Deleting_option_v2 as Deleting
     import Converting_option_v3 as Converting
     import catalogue_maker_v5 as Catalogue
     import sharepoint_download as download_database
-    import IP_setting_v4 as IP_setting
+    import IP_setting_v5 as IP_setting
     import trimazkon_tray_v5 as trimazkon_tray
     import string_database
     from tkinter import filedialog
@@ -103,6 +100,7 @@ if not open_image_only:
     import wmi
     import json
     # import struct
+    import winreg
 
     class Subwindows:
         @classmethod
@@ -723,6 +721,7 @@ if not open_image_only:
         config_json_filename = config_filename
         setting_list_name = "Settings_recources"
         Tray_thread_name = "Main_app_tray_thread"
+        registry_key_path = "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\WindowsTrmzkn"
 
         @classmethod
         def path_check(cls,path_raw,only_repair = None):
@@ -1380,24 +1379,24 @@ if not open_image_only:
 
         @classmethod
         def check_licence(cls):
-            global global_licence_load_error 
-            # Načtení veřejného klíče
+            global global_licence_load_error
+
+            check_trial = Tools.check_trial_period()
+            if "Trial active" in str(check_trial):
+                global_licence_load_error = False
+                return check_trial
+
             with open(Tools.resource_path("public.pem"), "rb") as f:
                 public_key = serialization.load_pem_public_key(f.read())
 
-            # Načtení licence a podpisu
             if os.path.exists(initial_path + "/license.lic"):
                 with open(initial_path + "/license.lic", "r") as f:
                     lines = f.readlines()
             else:
                 global_licence_load_error = True
                 return "verification error"
-
-            # Ověření podpisu
             licence_data = lines[0].strip()  # První řádek je expirace
             signature = bytes.fromhex(lines[1].strip())  # Druhý řádek je podpis
-
-            # Ověření podpisu
             try:
                 public_key.verify(
                     signature,
@@ -1406,7 +1405,6 @@ if not open_image_only:
                     hashes.SHA256()
                 )
                 
-                # Ověření expirace
                 exp_date = datetime.datetime.strptime(licence_data.split(":")[1], "%d.%m.%Y")
                 hwid_lic = licence_data.split("|")[0]
                 if hwid_lic != Tools.get_volume_serial():
@@ -1612,6 +1610,44 @@ if not open_image_only:
                 # current_paths.append(str(new_path))
                 current_paths.insert(0,str(new_path))
                 Tools.save_to_json_config(current_paths,which_settings,parameter_name)
+
+        @classmethod
+        def store_installation_date(cls,refresh_callback):
+            try:
+                key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, cls.registry_key_path)
+                install_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                winreg.SetValueEx(key, "InstallDate", 0, winreg.REG_SZ, install_date)
+                winreg.CloseKey(key)
+                print("Installation date stored.")
+                refresh_callback()
+            except Exception as e:
+                print("Error storing installation date:", e)
+
+        @classmethod
+        def check_trial_period(cls):
+            try:
+                key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, cls.registry_key_path)
+                install_date_str, _ = winreg.QueryValueEx(key, "InstallDate")
+                install_date = datetime.datetime.strptime(install_date_str, "%Y-%m-%d")
+                trial_period = datetime.timedelta(days=30)
+                expiration_date = install_date + trial_period
+                current_date = datetime.datetime.now()
+                winreg.CloseKey(key)
+
+                if current_date > expiration_date:
+                    print("Trial expired. Please purchase the full version.")
+                    return False
+                else:
+                    remaining_days = (expiration_date - current_date).days
+                    print(f"Trial active. {remaining_days} days remaining.")
+                    return f"Trial active. {remaining_days} days remaining."
+
+            except FileNotFoundError:
+                print("Installation date not found. Trial might have been tampered with.")
+                return False
+            except Exception as e:
+                print("Error checking trial period:", e)
+                return False
 
 class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
     """
@@ -1865,7 +1901,7 @@ if not open_image_only:
     initial_path = Tools.get_init_path()
     print("init path: ",initial_path)
     app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
-    app_licence_validity = Tools.check_licence()    
+    app_licence_validity = Tools.check_licence()
     load_gui=True
 
     print("SYSTEM: ",sys.argv)
@@ -2100,12 +2136,12 @@ if not open_image_only:
             # logo = customtkinter.CTkImage(Image.open(initial_path+"images/logo.png"),size=(1200, 100))
             logo = customtkinter.CTkImage(Image.open(Tools.resource_path("images/logo.png")),size=(1200, 100))
             image_logo = customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
-            frame_with_buttons_right = customtkinter.CTkFrame(master=self.root,corner_radius=0)
-            frame_with_buttons = customtkinter.CTkFrame(master=self.root,corner_radius=0)
+            menu_upper_frame = customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#212121")
+            frame_with_buttons_right = customtkinter.CTkFrame(master=menu_upper_frame,corner_radius=0)
+            frame_with_buttons = customtkinter.CTkFrame(master=menu_upper_frame,corner_radius=0)
             frame_with_logo.pack(pady=0,padx=0,fill="both",expand=False,side = "top")
             image_logo.pack()
             IB_as_def_browser_path = None
-            # self.list_of_menu_frames = [frame_with_buttons,frame_with_logo,frame_with_buttons_right]
             
             manage_images =         customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Obrázky (správa)", command = lambda: self.call_sorting_option(),font=("Arial",25,"bold"))
             viewer_button =         customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Prohlížeč obrázků", command = lambda: self.call_view_option(),font=("Arial",25,"bold"))
@@ -2124,14 +2160,18 @@ if not open_image_only:
             change_log.             pack(pady =0,       padx=20,side="top",anchor="w")
             if global_recources_load_error:
                 resources_load_error.pack(pady = (5,5), padx=20,side="top",anchor="w")
+
+            frame_with_buttons.pack(pady=0,padx=0,fill="both",expand=True,side = "left")
             frame_with_buttons_right.pack(pady=0,padx=0,fill="both",expand=True,side = "right")
-            licence_info_frame = customtkinter.CTkFrame(master=frame_with_buttons,corner_radius=0,fg_color="#212121")
+            menu_upper_frame.pack(pady=0,padx=0,fill="both",expand=True,side = "top")
+            bottom_ribbon = customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#212121")
+            licence_info_frame = customtkinter.CTkFrame(master=bottom_ribbon,corner_radius=0,fg_color="#212121")
             licence_info_label = customtkinter.CTkLabel(master=licence_info_frame,font=("Arial",24,"bold"),text="Licence:")
             licence_info_status = customtkinter.CTkLabel(master=licence_info_frame,font=("Arial",24),text="")
             licence_info_label.pack(pady =5,padx=(5,0),side="left",anchor="w")
             licence_info_status.pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
             licence_info_frame.pack(pady =30,padx=20,side="left",anchor="s")
-            frame_with_buttons.pack(pady=0,padx=0,fill="both",expand=True,side = "left")
+            bottom_ribbon.pack(pady=0,padx=0,fill="both",side = "bottom",expand=True)
             self.fill_changelog(change_log)
             
             def maximalize_window(e):
@@ -2158,12 +2198,20 @@ if not open_image_only:
                 elif "EXPIRED:" in str(app_licence_validity):
                     licence_info_status.configure(text=app_licence_validity.replace("EXPIRED:","platnost vypršela:"))
                 insert_licence_btn = customtkinter.CTkButton(master = licence_info_frame, width = 200,height=40, text = "Vložit licenci", command = lambda: os.startfile(initial_path),font=("Arial",24,"bold"))
+                trial_btn = customtkinter.CTkButton(master = licence_info_frame,height=40, text = "Aktivovat trial verzi (30 dní)", command = lambda: Tools.store_installation_date(refresh_callback = self.check_licence),font=("Arial",24,"bold"))
                 refresh_licence_btn = customtkinter.CTkButton(master = licence_info_frame, width = 40,height=40, text = "🔄", command = lambda: self.check_licence(),font=(None,24))
                 insert_licence_btn.pack(pady =(7,5),padx=(15,0),side="left",anchor="w")
+                trial_btn.pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
                 refresh_licence_btn.pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
                 self.root.after(500, lambda: Subwindows.licence_window())
             else:
-                licence_info_status.configure(text=f"platná do {app_licence_validity}")
+                if "Trial active" in str(app_licence_validity):
+                    validity_string = str(app_licence_validity)
+                    validity_string = validity_string.replace("Trial active.","Trial verze platná:")
+                    validity_string = validity_string.replace("days remaining.","dní")
+                    licence_info_status.configure(text=f"{validity_string}")
+                else:
+                    licence_info_status.configure(text=f"platná do {app_licence_validity}")
 
             # initial promenna aby se to nespoustelo porad do kola pri navratu do menu (system argumenty jsou stále uložené v aplikaci)
             if len(sys.argv) > 1 and initial == True:

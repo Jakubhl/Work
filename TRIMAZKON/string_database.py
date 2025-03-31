@@ -324,7 +324,7 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - nezávislá historie vložených cest
     - cesta z kontextové nabídky se rovnou otevře
     """
-          ,"\nVerze 4.3.1 (18.03.2025)"
+        ,"\nVerze 4.3.1 (18.03.2025)"
         ,
   """ 
   TRIMAZKON - mazání:
@@ -338,6 +338,15 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
   TRIMAZKON
     - optimalizováno načítání obrázků přes pipeline
     - installer nově vytváří ikonu na ploše
+    """
+        ,"\nVerze 4.3.2 (31.03.2025)"
+        ,
+  """ 
+    - nově možnost aktivovat trial verzi na 30 dní
+    - msi: 
+      - nově možnost výběru instalace sw
+      - volba zda vytvořit ikonu
+      - volba zda spustit po instalaci
   
     """
 ]

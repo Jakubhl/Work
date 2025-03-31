@@ -7,3 +7,5 @@ RUN_AFTER_INSTALL_action	50	PATH_TO_CMD	/C start "" [PATH_TO_EXE] /installer_cal
 SET_APP_PATH	51	PATH_TO_EXE	[TARGETDIR][ProductName].exe
 SET_checkbox2	51	INSTALL_OPTION2	{}
 SET_checkbox3	51	INSTALL_OPTION3	{}
+change_app_name_2	51	ProductName	jhv_IP
+change_app_name_3	51	ProductName	jhv_MAZ

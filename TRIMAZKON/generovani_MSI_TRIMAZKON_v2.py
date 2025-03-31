@@ -30,6 +30,13 @@ jhv_MAZ_exe = Executable(
     icon="images/logo_TRIMAZKON.ico",  # Application icon
 )
 
+ip_set_exe = Executable(
+    script="IP_SET_GUI_v1.py",  # Main script to convert to EXE
+    base=base,
+    target_name="jhv_IP.exe",  # Name of the output EXE file
+    icon="images/logo_TRIMAZKON.ico",  # Application icon
+)
+
 shortcut_table = [
     (
         "DesktopShortcut",  # Shortcut name
@@ -58,9 +65,9 @@ msi_data = {"Shortcut": shortcut_table,}
 # Setup configuration
 setup(
     name="TRIMAZKON",
-    version="4.3.1",
-    description="TRIMAZKON v_4.3.1",
-    executables=[whole_app_exe,jhv_MAZ_exe],
+    version="4.3.2",
+    description="TRIMAZKON v_4.3.2",
+    executables=[whole_app_exe,jhv_MAZ_exe,ip_set_exe],
     options={
         "build_exe": {
             "packages": [],  # Add required packages if needed

@@ -9,8 +9,8 @@ import os
 import subprocess
 import sys
 import json
-import threading
-import IP_setting_v4 as IP_setting
+# import threading
+import IP_setting_v5 as IP_setting
 from functools import partial
 import win32con
 from win32api import *

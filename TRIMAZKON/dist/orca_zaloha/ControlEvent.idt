@@ -47,9 +47,10 @@ Window_with_checkboxes	Install_ip_set_checkbox	[INSTALL_OPTION3]	{}	1	2
 Window_with_checkboxes	Install_jhv_MAZ_checkbox	[INSTALL_OPTION1]	{}	1	1
 Window_with_checkboxes	Install_jhv_MAZ_checkbox	[INSTALL_OPTION2]	{}	1	2
 Window_with_checkboxes	Install_jhv_MAZ_checkbox	[INSTALL_OPTION3]	1	1	3
-Window_with_checkboxes	Next	EndDialog	Return	1	3
+Window_with_checkboxes	Next	DoAction	change_app_name_2	INSTALL_OPTION2 = "1"	3
+Window_with_checkboxes	Next	DoAction	change_app_name_3	INSTALL_OPTION3 = "1"	2
+Window_with_checkboxes	Next	EndDialog	Return	1	4
 Window_with_checkboxes	Next	SpawnDialog	SelectDirectoryDlg	1	1
-Window_with_checkboxes	Next	[ProductName]	jhv_MAZ	1	2
 Window_with_checkboxes2	Cancel	SpawnDialog	CancelDlg	1	
 Window_with_checkboxes2	Next	EndDialog	Return	1	2
 Window_with_checkboxes2	Next	SpawnWaitDialog	WaitForCostingDlg	1	1

@@ -20,9 +20,10 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization, hashes
 import datetime
 import wmi
-import struct
+# import struct
+import winreg
 
-testing = False
+testing = True
 
 
 global_recources_load_error = False
@@ -648,6 +649,7 @@ class Tools:
     config_json_filename = config_filename
     setting_list_name = "Settings_recources"
     Tray_thread_name = "Main_app_tray_thread"
+    registry_key_path = "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\WindowsTrmzkn"
 
     @classmethod
     def path_check(cls,path_raw,only_repair = None):
@@ -1330,11 +1332,14 @@ class Tools:
     @classmethod
     def check_licence(cls):
         global global_licence_load_error 
-        # Načtení veřejného klíče
+        check_trial = Tools.check_trial_period()
+        if "Trial active" in str(check_trial):
+            global_licence_load_error = False
+            return check_trial
+        
         with open(Tools.resource_path("public.pem"), "rb") as f:
             public_key = serialization.load_pem_public_key(f.read())
 
-        # Načtení licence a podpisu
         if os.path.exists(initial_path + "/license.lic"):
             with open(initial_path + "/license.lic", "r") as f:
                 lines = f.readlines()
@@ -1342,11 +1347,8 @@ class Tools:
             global_licence_load_error = True
             return "verification error"
 
-        # Ověření podpisu
         licence_data = lines[0].strip()  # První řádek je expirace
         signature = bytes.fromhex(lines[1].strip())  # Druhý řádek je podpis
-
-        # Ověření podpisu
         try:
             public_key.verify(
                 signature,
@@ -1354,8 +1356,6 @@ class Tools:
                 padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
                 hashes.SHA256()
             )
-            
-            # Ověření expirace
             exp_date = datetime.datetime.strptime(licence_data.split(":")[1], "%d.%m.%Y")
             hwid_lic = licence_data.split("|")[0]
             if hwid_lic != Tools.get_volume_serial():
@@ -1394,6 +1394,45 @@ class Tools:
                         return serial_number.rstrip(".")
 
         return None  # Return None if not found
+
+    @classmethod
+    def store_installation_date(cls,refresh_callback):
+        try:
+            key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, cls.registry_key_path)
+            install_date = datetime.datetime.now().strftime("%Y-%m-%d")
+            winreg.SetValueEx(key, "InstallDate", 0, winreg.REG_SZ, install_date)
+            winreg.CloseKey(key)
+            print("Installation date stored.")
+            refresh_callback()
+        except Exception as e:
+            print("Error storing installation date:", e)
+
+    @classmethod
+    def check_trial_period(cls):
+        try:
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, cls.registry_key_path)
+            install_date_str, _ = winreg.QueryValueEx(key, "InstallDate")
+            install_date = datetime.datetime.strptime(install_date_str, "%Y-%m-%d")
+            trial_period = datetime.timedelta(days=30)
+            expiration_date = install_date + trial_period
+            current_date = datetime.datetime.now()
+            winreg.CloseKey(key)
+
+            if current_date > expiration_date:
+                print("Trial expired. Please purchase the full version.")
+                return False
+            else:
+                remaining_days = (expiration_date - current_date).days
+                print(f"Trial active. {remaining_days} days remaining.")
+                return f"Trial active. {remaining_days} days remaining."
+
+        except FileNotFoundError:
+            print("Installation date not found. Trial might have been tampered with.")
+            return False
+        except Exception as e:
+            print("Error checking trial period:", e)
+            return False
+
 
 initial_path = Tools.get_init_path()
 print("init path: ",initial_path)
@@ -1785,7 +1824,10 @@ class main_menu:
                 pick_language_label.configure(text="Select language:")
                 licence_info_label.configure(text="License:")
                 if not global_licence_load_error:
-                    licence_info_status.configure(text=f"valid until {app_licence_validity}")
+                    if "Trial active" in str(app_licence_validity):
+                        licence_info_status.configure(text=f"{app_licence_validity}")
+                    else:
+                        licence_info_status.configure(text=f"valid until {app_licence_validity}")
             else:
                 new_deleting.configure(text="Nastavit nové mazání")
                 task_manager.configure(text="Zobrazit nastavené mazání")
@@ -1796,7 +1838,13 @@ class main_menu:
                 pick_language_label.configure(text="Vybrat jazyk:")
                 licence_info_label.configure(text="Licence:")
                 if not global_licence_load_error:
-                    licence_info_status.configure(text=f"platná do {app_licence_validity}")
+                    if "Trial active" in str(app_licence_validity):
+                        validity_string = str(app_licence_validity)
+                        validity_string = validity_string.replace("Trial active.","Trial verze platná:")
+                        validity_string = validity_string.replace("days remaining.","dní")
+                        licence_info_status.configure(text=f"{validity_string}")
+                    else:
+                        licence_info_status.configure(text=f"platná do {app_licence_validity}")
 
         if clear_root:
             self.clear_frames()
@@ -1878,13 +1926,16 @@ class main_menu:
             elif "EXPIRED:" in str(app_licence_validity):
                 licence_info_status.configure(text=app_licence_validity.replace("EXPIRED:","platnost vypršela:"))
             insert_licence_btn = customtkinter.CTkButton(master = licence_info_frame, width = 200,height=40, text = "Vložit licenci", command = lambda: os.startfile(initial_path),font=("Arial",24,"bold"))
+            trial_btn = customtkinter.CTkButton(master = licence_info_frame,height=40, text = "Aktivovat trial verzi (30 dní)", command = lambda: Tools.store_installation_date(refresh_callback = self.check_licence),font=("Arial",24,"bold"))
             refresh_licence_btn = customtkinter.CTkButton(master = licence_info_frame, width = 40,height=40, text = "🔄", command = lambda: self.check_licence(),font=(None,24))
             insert_licence_btn.pack(pady =(7,5),padx=(15,0),side="left",anchor="w")
+            trial_btn.pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
             refresh_licence_btn.pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
 
             if self.selected_language == "en":
                 licence_info_status.configure(text=app_licence_validity)
                 insert_licence_btn.configure(text="Insert license")
+                trial_btn.configure(text="Activate trial version (30 days)")
             self.root.after(500, lambda: Subwindows.licence_window(self.selected_language))
 
         # initial promenna aby se to nespoustelo porad do kola pri navratu do menu (system argumenty jsou stále uložené v aplikaci)

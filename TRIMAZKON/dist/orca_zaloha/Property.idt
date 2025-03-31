@@ -5,7 +5,7 @@ ALLUSERS	2
 ARPPRODUCTICON	InstallIcon
 CREATE_SHORTCUT	1
 DefaultUIFont	DlgFont8
-DistVersion	4.3.1
+DistVersion	4.3.2
 ErrorDialog	ErrorDlg
 INSTALL_OPTION1	1
 INSTALL_OPTION2	0
@@ -18,7 +18,7 @@ PATH_TO_EXE	UNKNOWN
 ProductCode	{DBD4F08F-86C4-4B8F-BE35-203A9E1B80E1}
 ProductLanguage	1033
 ProductName	TRIMAZKON
-ProductVersion	4.3.1
+ProductVersion	4.3.2
 Progress1	Install
 Progress2	installs
 RUN_AFTER_INSTALL	1
