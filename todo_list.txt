@@ -908,6 +908,10 @@ ________________________________________________________________________________
 TRIMAZKON - ip_setting - nefunguje kopirovani oblibenych a posouvani o pozici... - předělat adresy na objekty
 TRIMAZKON - katalog - nove kontextove nabidky
 
+TRIMAKZON - ip_setting - kontextmenu - při mazání z oblíbených upravit smazat na odstranit z oblíbených
+TRIMAKZON - ip_setting - kontextmenu - možnost přidat do oblíbených
+TRIMAKZON - ip_setting - možnost manuálně nastavit ip přes tray
+
 
 
 TRIMAZKON - msi instalačky se dotazovat zda s konzolí či bez

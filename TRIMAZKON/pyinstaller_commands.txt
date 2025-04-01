@@ -54,6 +54,9 @@ Add-MpPreference -ExclusionPath "C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\
 
 python generovani_MSI_TRIMAZKON_v2.py bdist_msi
 
+ORCA:
+- podmínky, co nainstalovat přes tabulky component
+
 
 
 

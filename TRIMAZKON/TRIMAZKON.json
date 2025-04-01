@@ -74,8 +74,20 @@
         "init_disk_refresh": 1,
         "editable_notes": 1,
         "disk_persistent": 1,
-        "auto_order_when_edit": 0,
-        "ask_to_delete": 100
+        "auto_order_when_edit": 1,
+        "ask_to_delete": 100,
+        "deleted_project_bin": [],
+        "edited_project_bin": [
+            {
+                "name": "527_Teijin (1) (1)",
+                "ip": "10.101.28.176",
+                "mask": "255.255.255.0",
+                "notes": "XG-X2900:\t\t10.101.28.17\nOP:\t\t10.101.28.117",
+                "fav_status": "1",
+                "new_name": "527_Teijin"
+            }
+        ],
+        "edited_projects_bin": []
     },
     "task_list": [
         {
