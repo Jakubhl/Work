@@ -67,7 +67,7 @@
         "path_history_list": []
     },
     "ip_settings": {
-        "default_ip_interface": 5,
+        "default_ip_interface": 0,
         "favorite_ip_window_status": 0,
         "disk_or_ip_window": 0,
         "default_window_size": 1,
@@ -77,17 +77,25 @@
         "auto_order_when_edit": 1,
         "ask_to_delete": 100,
         "deleted_project_bin": [],
-        "edited_project_bin": [
+        "edited_project_bin": [],
+        "edited_projects_bin": [
             {
-                "name": "527_Teijin (1) (1)",
+                "name": "527_Teijin (2)",
+                "ip": "10.101.28.176",
+                "mask": "255.255.255.0",
+                "notes": "XG-X2900:\t\t10.101.28.1\nOP:\t\t10.101.28.117",
+                "fav_status": "1",
+                "new_name": "527_Teijin (2)"
+            },
+            {
+                "name": "527_Teijin(1)",
                 "ip": "10.101.28.176",
                 "mask": "255.255.255.0",
                 "notes": "XG-X2900:\t\t10.101.28.17\nOP:\t\t10.101.28.117",
                 "fav_status": "1",
                 "new_name": "527_Teijin"
             }
-        ],
-        "edited_projects_bin": []
+        ]
     },
     "task_list": [
         {

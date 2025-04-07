@@ -72,6 +72,9 @@ class Tools:
         - disk_persistent
         - auto_order_when_edit
         - ask_to_delete
+
+        - edited_project_bin
+        - deleted_project_bin
         \n
         - [0] = default connection option (0/1)
         - [1] = show favourite ip as default (0/1)
@@ -117,6 +120,9 @@ class Tools:
         - disk_persistent
         - auto_order_when_edit
         - ask_to_delete
+
+        - edited_project_bin
+        - deleted_project_bin
         """
 
         def get_input_data_format():
@@ -554,7 +560,7 @@ class main:
                 notes = str(project_list[i]["notes"])
                 if notes == None or notes.replace(" ","") == "":
                     notes = ""
-                worksheet['A' + str(i+1)] = str(project_list[i]["name"]) #A = nazev projektu
+                worksheet['A' + str(i+1)] = str(project_list[i]['name']) #A = nazev projektu
                 worksheet['B' + str(i+1)] = str(project_list[i]["ip"]) #B = ip adresa
                 worksheet['C' + str(i+1)] = str(project_list[i]["mask"]) #C = maska
                 worksheet['D' + str(i+1)] = notes #D = poznamky
@@ -591,7 +597,7 @@ class main:
                     row_array.append(str(0))
 
                 project_object = {
-                    "name":row_array[0],
+                    'name':row_array[0],
                     "ip":row_array[1],
                     "mask":row_array[2],
                     "notes":row_array[3],
@@ -606,7 +612,7 @@ class main:
         @classmethod
         def found_project_name(cls,project_list,project_name):
             for projects in project_list:
-                if str(projects["name"]) == str(project_name):
+                if str(projects['name']) == str(project_name):
                     return projects
             return False
         
@@ -614,13 +620,13 @@ class main:
         def get_project_index(cls,project_list,project_name):
             name_list = []
             for projects in project_list:
-                name_list.append(str(projects["name"]))
+                name_list.append(str(projects['name']))
 
             try:
                 found_index = name_list.index(project_name)
                 return found_index
-            except Exception:
-                return False
+            except ValueError:
+                return None
 
         @classmethod
         def get_current_ip_list(cls,connection_option_list:list):
@@ -2626,7 +2632,6 @@ class main:
             # self.last_project_id = ""
 
             self.last_managed_project = None
-
             self.make_project_favourite = False
             self.favourite_list = []
             self.connection_option_list = []
@@ -2749,7 +2754,6 @@ class main:
                 self.edited_projects_bin = config_data["edited_project_bin"]
                 project["new_name"] = new_edited_name
                 self.edited_projects_bin.insert(0,project)
-
                 if len(self.edited_projects_bin) > max_stored_edits:
                     self.edited_projects_bin.pop()
                 Tools.save_to_json_config("edited_project_bin",self.edited_projects_bin,self.config_filename_path)
@@ -2761,58 +2765,56 @@ class main:
                 config_data = Tools.read_json_config(self.config_filename_path)
                 self.deleted_projects_bin = config_data["deleted_project_bin"]
                 project_to_load = self.deleted_projects_bin[0]
+                self.all_project_list = main.IP_tools.read_excel_data(self.excel_file_path)
                 
-                project_name = project_to_load["name"]
-                i=0
+                project_name_list = []
                 for projects in self.all_project_list:
-                    if project_name == projects["name"]:
-                        while project_name == projects["name"]:
-                            i+=1
-                            project_name = f"{project_name} ({i})"
-                        project_to_load["name"] = project_name
-                        break
+                    project_name_list.append(str(projects['name']))
 
-                    # Tools.add_colored_line(self.main_console,f"Jméno projektu: {project_name} je již používané, nelze ho tedy obnovit","red",None,True)
-                    # return
+                modified_project_name = str(project_to_load['name'])
+                i=0
+                while modified_project_name in project_name_list:
+                    i+=1
+                    modified_project_name = str(project_to_load['name'])+" ("+str(i)+")"
                 
+                project_to_load["name"] = modified_project_name
                 self.deleted_projects_bin.pop(0)
                 if len(self.deleted_projects_bin) ==0:
                     self.undo_button.configure(state = "disabled")
 
                 Tools.save_to_json_config("deleted_project_bin",self.deleted_projects_bin,self.config_filename_path)
-                self.all_project_list = main.IP_tools.read_excel_data(self.excel_file_path)
                 self.all_project_list.insert(0,project_to_load)
                 main.IP_tools.save_excel_data(self.excel_file_path,self.all_project_list)
-                Tools.add_colored_line(self.main_console,f"Projekt: {project_name} byl úspěšně obnoven","green",None,True)
+                Tools.add_colored_line(self.main_console,f"Projekt: {project_to_load['name']} byl úspěšně obnoven","green",None,True)
                 self.make_project_cells()
 
             def load_edited_ip():
                 config_data = Tools.read_json_config(self.config_filename_path)
                 self.edited_projects_bin = config_data["edited_project_bin"]
                 project_to_load = self.edited_projects_bin[0]
-                old_project_name = project_to_load["name"]
-                current_project_name = project_to_load["new_name"]
+                old_project_name = str(project_to_load['name'])
+                current_project_name = str(project_to_load["new_name"])
                 self.all_project_list = main.IP_tools.read_excel_data(self.excel_file_path)
                 project_index = main.IP_tools.get_project_index(self.all_project_list,current_project_name)
-                # for projects in self.all_project_list:
-                #     if current_project_name == projects["name"]:
-                #         found_status = True
-                #         found_project_id = i
-                #         break
-                #     i+=1
 
-                if not project_index:
-                    Tools.add_colored_line(self.main_console,f"Jméno projektu: {self.edited_project_name} nenalezeno, nelze ho tedy obnovit","red",None,True)
+                if project_index == None:
+                    Tools.add_colored_line(self.main_console,f"Jméno projektu: {current_project_name} nenalezeno, nelze ho tedy obnovit","red",None,True)
                     
                 self.edited_projects_bin.pop(0)
 
                 if len(self.edited_projects_bin) ==0:
                     self.undo_edit.configure(state = "disabled")
-                Tools.save_to_json_config("edited_projects_bin",self.edited_projects_bin,self.config_filename_path)
-                if not project_index: #let it to be deleted... no use, corrupted
+                Tools.save_to_json_config("edited_project_bin",self.edited_projects_bin,self.config_filename_path)
+                if project_index == None: #let it to be deleted... no use, corrupted
                     return
-                self.all_project_list[project_index] = project_to_load
-                print(project_index,project_to_load)
+                
+                print(project_to_load,"\n",self.all_project_list[project_index])
+                self.all_project_list[project_index]["name"] = str(project_to_load["name"])
+                self.all_project_list[project_index]["ip"] = str(project_to_load["ip"])
+                self.all_project_list[project_index]["mask"] = str(project_to_load["mask"])
+                self.all_project_list[project_index]["notes"] = str(project_to_load["notes"])
+                self.all_project_list[project_index]["fav_status"] = str(project_to_load["fav_status"])
+
                 # self.all_project_list.insert(0,project_to_load)
                 main.IP_tools.save_excel_data(self.excel_file_path,self.all_project_list)
                 if old_project_name != current_project_name:
@@ -2833,7 +2835,7 @@ class main:
             return output
 
         def switch_fav_status_new(self,project,wanted_status):
-            project_index = main.IP_tools.get_project_index(self.all_project_list,project["name"])
+            project_index = main.IP_tools.get_project_index(self.all_project_list,project['name'])
             project["fav_status"] = str(wanted_status)
             self.all_project_list[project_index] = project
             main.IP_tools.save_excel_data(self.excel_file_path, self.all_project_list)
@@ -2884,7 +2886,7 @@ class main:
                 if not self.show_favourite:
                     # když mažu z oblíbených, tak neukládám historii
                     self.manage_bin(flag="save_project_ip",project=project_to_delete)
-                    project_index = main.IP_tools.get_project_index(self.all_project_list,project_to_delete["name"])
+                    project_index = main.IP_tools.get_project_index(self.all_project_list,project_to_delete['name'])
                     worksheet.delete_rows(project_index+1)
                     workbook.save(self.excel_file_path)
                     workbook.close()
@@ -2932,23 +2934,24 @@ class main:
             if self.last_managed_project is None:
                 Tools.add_colored_line(self.main_console,"Nejprve vyberte projekt (nakliknout levým na parametry daného projektu nebo pravým na tlačíko projektu)","orange",None,True)
                 return
-            elif str(self.last_managed_project["name"]).replace(" ","") == "":
+            elif str(self.last_managed_project['name']).replace(" ","") == "":
                 Tools.add_colored_line(self.main_console,"Nejprve vyberte projekt (nakliknout levým na parametry daného projektu nebo pravým na tlačíko projektu)","orange",None,True)
                 return
             elif wanted_project == None:
-                wanted_project = self.last_managed_project["name"]
+                wanted_project = self.last_managed_project['name']
 
             child_root = customtkinter.CTkToplevel()
             self.opened_window = child_root
             child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(self.app_icon)))
             child_root.title("Upozornění")
-            proceed_label_text = f"Opravdu si přejete odstranit projekt {self.last_managed_project["name"]}?"
+            proceed_label_text = f"Opravdu si přejete odstranit projekt {self.last_managed_project['name']}?"
+
             # if flag == "context_menu":
             #     self.selected_list = []
             if len(self.selected_list) > 1:
                 for projects in self.selected_list:
-                    if str(projects["name"]) not in name_list:
-                        name_list.append(str(projects["name"]))
+                    if str(projects['name']) not in name_list:
+                        name_list.append(str(projects['name']))
                 proceed_label_text = f"Opravdu si přejete odstranit vybrané projekty:\n{name_list}?"
                 
             proceed_label = customtkinter.CTkLabel(master = child_root,text = proceed_label_text,font=("Arial",22,"bold"),justify = "left",anchor="w")
@@ -2974,11 +2977,11 @@ class main:
                     switch_down()
 
             def copy_previous_project():
-                if self.last_managed_project["name"] == "":
+                if self.last_managed_project['name'] == "":
                     Tools.add_colored_line(self.console,"Není vybrán žádný projekt","red",None,True)
                     return
                 self.name_input.delete("0","300")
-                self.name_input.insert("0",str(self.last_managed_project["name"]))
+                self.name_input.insert("0",str(self.last_managed_project['name']))
                 self.IP_adress_input.delete("0","300")
                 self.IP_adress_input.insert("0",str(self.last_managed_project["ip"]))
                 self.mask_input.delete("0","300")
@@ -2987,7 +2990,7 @@ class main:
                 self.notes_input.insert(tk.END,str(self.last_managed_project["notes"]))
 
             def switch_up():
-                project_index = main.IP_tools.get_project_index(self.all_project_list,self.last_managed_project["name"])
+                project_index = main.IP_tools.get_project_index(self.all_project_list,self.last_managed_project['name'])
 
                 another_project_id = project_index
                 another_project_id -= 1
@@ -3001,7 +3004,7 @@ class main:
                 refresh_title()
 
             def switch_down():
-                project_index = main.IP_tools.get_project_index(self.all_project_list,self.last_managed_project["name"])
+                project_index = main.IP_tools.get_project_index(self.all_project_list,self.last_managed_project['name'])
                 previous_project_id = project_index
                 previous_project_id += 1
                 if previous_project_id > len(self.all_project_list)-1:
@@ -3044,7 +3047,7 @@ class main:
 
             def refresh_title():
                 if edit:
-                    child_root.title("Editovat projekt: "+ str(self.last_managed_project["name"]))
+                    child_root.title("Editovat projekt: "+ str(self.last_managed_project['name']))
                 else:
                     child_root.title("Nový projekt")
 
@@ -3103,9 +3106,9 @@ class main:
 
                 if edit:
                     print("last_managed project:", self.last_managed_project)
-                    project_index = main.IP_tools.get_project_index(self.all_project_list,self.last_managed_project["name"])
+                    project_index = main.IP_tools.get_project_index(self.all_project_list,self.last_managed_project['name'])
                     currently_edited_project_id = project_index
-                    self.all_project_list[currently_edited_project_id]["name"] = project_name
+                    self.all_project_list[currently_edited_project_id]['name'] = project_name
                     self.all_project_list[currently_edited_project_id]["ip"] = IP_adress
                     self.all_project_list[currently_edited_project_id]["mask"] = mask
                     self.all_project_list[currently_edited_project_id]["notes"] = notes
@@ -3113,22 +3116,22 @@ class main:
                     main.IP_tools.save_excel_data(self.excel_file_path,self.all_project_list)
                     if fav_status != self.last_managed_project["fav_status"]: #pokud doslo ke zmenene statusu
                         if self.make_project_favourite:
-                            if self.last_managed_project["name"] != project_name:
-                                status_text = f"Projekt: {self.last_managed_project["name"]} (nově: {project_name}) úspěšně pozměněn a přidán do oblíbených"
+                            if self.last_managed_project['name'] != project_name:
+                                status_text = f"Projekt: {self.last_managed_project['name']} (nově: {project_name}) úspěšně pozměněn a přidán do oblíbených"
                             else:
-                                status_text = f"Projekt: {self.last_managed_project["name"]} úspěšně pozměněn a přidán do oblíbených"
+                                status_text = f"Projekt: {self.last_managed_project['name']} úspěšně pozměněn a přidán do oblíbených"
                             Tools.add_colored_line(self.main_console,status_text,"green",None,True)
                         else:
-                            if self.last_managed_project["name"] != project_name:
-                                status_text = f"Projekt: {self.last_managed_project["name"]} (nově: {project_name}) úspěšně pozměněn a odebrán z oblíbených"
+                            if self.last_managed_project['name'] != project_name:
+                                status_text = f"Projekt: {self.last_managed_project['name']} (nově: {project_name}) úspěšně pozměněn a odebrán z oblíbených"
                             else:
-                                status_text = f"Projekt: {self.last_managed_project["name"]} úspěšně pozměněn a odebrán z oblíbených"
+                                status_text = f"Projekt: {self.last_managed_project['name']} úspěšně pozměněn a odebrán z oblíbených"
                             Tools.add_colored_line(self.main_console,status_text,"green",None,True)
                     else:
-                        if self.last_managed_project["name"] != project_name:
-                            status_text = f"Projekt: {self.last_managed_project["name"]} (nově: {project_name}) úspěšně pozměněn"
+                        if self.last_managed_project['name'] != project_name:
+                            status_text = f"Projekt: {self.last_managed_project['name']} (nově: {project_name}) úspěšně pozměněn"
                         else:
-                            status_text = f"Projekt: {self.last_managed_project["name"]} úspěšně pozměněn"
+                            status_text = f"Projekt: {self.last_managed_project['name']} úspěšně pozměněn"
                         Tools.add_colored_line(self.main_console,status_text,"green",None,True)
                     if self.make_edited_project_first:
                         self.make_project_first(purpouse="silent",make_cells=False,project=self.all_project_list[currently_edited_project_id])
@@ -3136,7 +3139,7 @@ class main:
                     
                 else:
                     self.all_project_list.insert(0,{
-                        "name":project_name,
+                        'name':project_name,
                         "ip":IP_adress,
                         "mask":mask,
                         "notes":notes,
@@ -3449,9 +3452,9 @@ class main:
             found = False
 
             for i in range(0,len(self.all_project_list)):
-                if given_data == self.all_project_list[i]["name"]:
+                if given_data == self.all_project_list[i]['name']:
                     self.last_managed_project = self.all_project_list[i]
-                    # self.last_project_name =    str(self.all_rows[i]["name"])
+                    # self.last_project_name =    str(self.all_rows[i]['name'])
                     # self.last_project_ip =      str(self.all_rows[i]["ip"])
                     # self.last_project_mask =    str(self.all_rows[i]["mask"])
                     # self.last_project_notes =   str(self.all_rows[i]["notes"])
@@ -3516,9 +3519,9 @@ class main:
             if project == None:
                 return
             
-            print("clicked project: ",project["name"])
+            print("clicked project: ",project['name'])
             self.search_input.delete("0","300")
-            self.search_input.insert("0",str(project["name"]))
+            self.search_input.insert("0",str(project['name']))
             self.last_managed_project = project
             # only if it is not pressed againt the same:
             if widget != self.last_selected_widget:
@@ -3617,7 +3620,7 @@ class main:
                 context_menu.add_separator()
                 context_menu.add_command(label="Kopírovat projekt",font=("Arial",22,"bold"),command=lambda: self.add_new_project(init_copy=True))
                 context_menu.add_separator()
-                context_menu.add_command(label="Přesunout na začátek",font=("Arial",22,"bold"),command=lambda: self.make_project_first(input_entry_bypass=str(project["name"])))
+                context_menu.add_command(label="Přesunout na začátek",font=("Arial",22,"bold"),command=lambda: self.make_project_first(input_entry_bypass=str(project['name'])))
                 context_menu.add_separator()
                 context_menu.add_command(label="Odstranit",font=("Arial",22,"bold"),command=lambda: self.delete_project(button_trigger=True,flag="context_menu"))
             elif flag == "ip_frame":
@@ -3677,12 +3680,11 @@ class main:
                     worksheet = workbook[excel_worksheet]
                     worksheet['D' + str(row+1)] = notes
 
-                project_index = main.IP_tools.get_project_index(self.all_project_list,project["name"])
+                self.all_project_list = main.IP_tools.read_excel_data(self.excel_file_path)
+                project_index = main.IP_tools.get_project_index(self.all_project_list,project['name'])
                 save_to_workbook(notes,project_index,"ip_address_list")
                 workbook.save(filename=self.excel_file_path)
                 workbook.close()
-                self.all_project_list = main.IP_tools.read_excel_data(self.excel_file_path)
-                self.manage_bin(flag="save_edited_ip",project=project,new_edited_name=project["name"])
 
             def on_enter_entry(widget,project):
                 if not opened_window_check():
@@ -3707,6 +3709,7 @@ class main:
                         if notes_before != notes_after:
                             self.changed_notes = [project["notes"],notes_before]
                             self.undo_edit.configure(state = "normal")
+                            self.manage_bin(flag="save_edited_ip",project=project,new_edited_name=project['name'])
                             project["notes"] = notes_after
                             save_changed_notes(notes_after,project)
 
@@ -3722,6 +3725,7 @@ class main:
                     else:
                         # jinak pouze ulož změny (když je dvakrát nakliknuto to samé)
                         if notes_before != notes_after:
+                            self.manage_bin(flag="save_edited_ip",project=project,new_edited_name=project['name'])
                             project["notes"] = notes_after
                             self.changed_notes = [project["notes"],notes_before]
                             self.undo_edit.configure(state = "normal")
@@ -3786,7 +3790,7 @@ class main:
                 if self.show_favourite and projects["fav_status"] == "0":
                     continue
                 btn_frame = customtkinter.CTkFrame(master=column1,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)# frame s názvem projektu
-                button =    customtkinter.CTkButton(master = btn_frame,width = 200,height=40,text = str(projects["name"]),font=("Arial",20,"bold"),corner_radius=0)
+                button =    customtkinter.CTkButton(master = btn_frame,width = 200,height=40,text = str(projects['name']),font=("Arial",20,"bold"),corner_radius=0)
                 button.     pack(padx =5,pady = 5, fill= "x")
                 btn_frame.  pack(side = "top",anchor = "w",expand = False,fill= "x")
                 button.     bind("<Button-1>",lambda e,widget = btn_frame, project = projects: self.clicked_on_project(project,widget))
@@ -3819,7 +3823,7 @@ class main:
                 notes_frame.    bind("<Button-1>",lambda e,widget = notes_frame, project = projects, textbox_widget = notes: self.clicked_on_project(project,widget,textbox_widget,flag="notes"))
                 notes.          bind("<Button-1>",lambda e,widget = notes_frame, project = projects, textbox_widget = notes: self.clicked_on_project(project,widget,textbox_widget,flag="notes"))
 
-                project_notes = str(projects["notes"])
+                project_notes = str(projects['notes'])
                 if "\n" in project_notes:
                     notes_rows = project_notes.split("\n")
                     first_row = notes_rows[0]
@@ -3903,7 +3907,7 @@ class main:
             - silent
             """
             def check_position():
-                project_index = main.IP_tools.get_project_index(self.all_project_list,project["name"])
+                project_index = main.IP_tools.get_project_index(self.all_project_list,project['name'])
                 prev_pos = project_index
                 max_position = len(self.all_project_list)
                 if upwards:
@@ -3931,7 +3935,7 @@ class main:
                     position = 0
 
                 if len(self.all_project_list) > 0:
-                    project_index = main.IP_tools.get_project_index(self.all_project_list,project["name"])
+                    project_index = main.IP_tools.get_project_index(self.all_project_list,project['name'])
                     self.all_project_list.pop(project_index)
 
                 self.all_project_list.insert(position,project)
@@ -3940,9 +3944,9 @@ class main:
                 if make_cells:
                     self.make_project_cells()
                 if purpouse == "search":
-                    Tools.add_colored_line(self.main_console,f"Projekt {project["name"]} nalezen","green",None,True)
+                    Tools.add_colored_line(self.main_console,f"Projekt {project['name']} nalezen","green",None,True)
                 elif purpouse != "silent":
-                    Tools.add_colored_line(self.main_console,f"Projekt {project["name"]} přesunut na začátek","green",None,True)
+                    Tools.add_colored_line(self.main_console,f"Projekt {project['name']} přesunut na začátek","green",None,True)
             elif result == None and purpouse != "silent":
                 print("nevlozeno id")
                 if purpouse == "search":
@@ -4277,12 +4281,12 @@ class main:
         def sort_by_alphabet(self):
             project_names_array=[]
             for projects in self.all_project_list:
-                project_names_array.append(projects["name"])
+                project_names_array.append(projects['name'])
             project_names_sorted = sorted(project_names_array)
             whole_projects_sorted = []
             for names in project_names_sorted:
                 for projects in self.all_project_list:
-                    if projects["name"] == names:
+                    if projects['name'] == names:
                         whole_projects_sorted.append(projects)
                         break
             
