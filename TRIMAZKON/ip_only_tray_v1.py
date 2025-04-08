@@ -990,8 +990,8 @@ class tray_app_service:
 
 
 
-# inst = tray_app_service(r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON/",Tools.resource_path('images/logo_TRIMAZKON.ico'),"TRIMAZKON.exe","TRIMAZKON.json")
+# inst = tray_app_service(r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON/",Tools.resource_path('images/logo_TRIMAZKON.ico'),"TRIMAZKON.exe","jhv_IP.json")
 # inst.main()
 
-# trimazkon_tray_instance = tray_app_service(r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON/",Tools.resource_path('images/logo_TRIMAZKON.ico'),"TRIMAZKON.exe","TRIMAZKON.json")
+# trimazkon_tray_instance = tray_app_service(r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON/",Tools.resource_path('images/logo_TRIMAZKON.ico'),"TRIMAZKON.exe","jhv_IP.json")
 # trimazkon_tray_instance.show_task_log(toplevel=True)

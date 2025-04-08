@@ -1,0 +1,76 @@
+{
+    "app_settings": {
+        "default_path": "C:/Users/",
+        "maximalized": "ano",
+        "show_changelog": "ne",
+        "app_zoom": 80,
+        "app_zoom_checkbox": "ano",
+        "tray_icon_startup": "ne",
+        "default_language": "cz"
+    },
+    "sort_conv_settings": {
+        "supported_formats_sorting": [
+            "bmp",
+            "png"
+        ],
+        "prefix_function": "Func_",
+        "prefix_camera": "Cam_",
+        "max_pallets": 55,
+        "temp_dir_name": "Temp",
+        "pairs_dir_name": "Pairs",
+        "convert_bmp_dir_name": "Konvertovane_BMP",
+        "convert_jpg_dir_name": "Konvertovane_JPG",
+        "sorting_safe_mode": "ano",
+        "path_history_list": [],
+        "path_history_list_conv": []
+    },
+    "del_settings": {
+        "supported_formats_deleting": [
+            "jpg",
+            "bmp",
+            "png",
+            "ifz"
+        ],
+        "default_files_to_keep": 1000,
+        "default_cutoff_date": [
+            28,
+            2,
+            2024
+        ],
+        "to_delete_dir_name": "Ke_smazani",
+        "path_history_list": []
+    },
+    "image_browser_settings": {
+        "selected_option": 2,
+        "zoom_step": 30,
+        "movement_step": 40,
+        "show_image_film": "ano",
+        "image_film_count": 6,
+        "copyed_dir_name": "Kop\u00edrovan\u00e9_obr\u00e1zky",
+        "moved_dir_name": "P\u0159esunut\u00e9_obr\u00e1zky",
+        "path_history_list": []
+    },
+    "catalogue_settings": {
+        "database_filename": "Sharepoint_databaze.xlsx",
+        "catalogue_filename": "Katalog_kamerov\u00e9ho_vybaven\u00ed",
+        "metadata_filename": "_metadata_catalogue",
+        "subwindow_behav": 0,
+        "default_export_suffix": "xlsx",
+        "default_path": "C:/Users/",
+        "render_mode": "fast",
+        "path_history_list": []
+    },
+    "ip_settings": {
+        "default_ip_interface": 5,
+        "favorite_ip_window_status": 0,
+        "disk_or_ip_window": 0,
+        "default_window_size": 1,
+        "init_disk_refresh": 1,
+        "editable_notes": 1,
+        "disk_persistent": 1,
+        "auto_order_when_edit": 1,
+        "ask_to_delete": 100,
+        "deleted_project_bin": [],
+        "edited_project_bin": []
+    }
+}

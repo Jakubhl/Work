@@ -903,14 +903,21 @@ TRIMAZKON - msi - možnost vybrat si, co nainstalovat - hotovo
 msi - ukázat i aktuální product verze ve vybírání - hotovo
 msi - ikona - odkaz podle nazvu executable filu... - hotovo
 
+9:09 AM 4/8/2025
+TRIMAZKON - ip_setting - nefunguje kopirovani oblibenych a posouvani o pozici... - předělat adresy na objekty - hotovo
+TRIMAKZON - ip_setting - kontextmenu - možnost přidat i odebrat do oblíbených - hotovo
+TRIMAKZON - ip_setting - kontextmenu - při mazání z oblíbených upravit smazat na odstranit z oblíbených - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-TRIMAZKON - ip_setting - nefunguje kopirovani oblibenych a posouvani o pozici... - předělat adresy na objekty
+
 TRIMAZKON - katalog - nove kontextove nabidky
 
-TRIMAKZON - ip_setting - kontextmenu - při mazání z oblíbených upravit smazat na odstranit z oblíbených
-TRIMAKZON - ip_setting - kontextmenu - možnost přidat do oblíbených
+TRIMAZKON - ip_setting - znemoznit duplicitu jmen
+
+
 TRIMAKZON - ip_setting - možnost manuálně nastavit ip přes tray
+TRIMAZKON - ip_setting - optimalizovat otevirani poznamek - se zpožděním
 
 
 

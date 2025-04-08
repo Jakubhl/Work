@@ -29,7 +29,7 @@ if testing_mode:
     root.state('zoomed')
 
 class Tools:
-    config_json_filename = "TRIMAZKON.json"
+    config_json_filename = "jhv_IP.json"
     @classmethod
     def resource_path(cls,relative_path):
         """ Get the absolute path to a resource, works for dev and for PyInstaller """
@@ -615,6 +615,23 @@ class main:
                 if str(projects['name']) == str(project_name):
                     return projects
             return False
+        
+        @classmethod
+        def get_unique_name(cls,project_list,project_name):
+            project_name_list = []
+            found_count=0
+            for projects in project_list:
+                project_name_list.append(str(projects['name']))
+                if str(projects['name']) == str(project_name):
+                    found_count +=1
+            i=0
+            modified_project_name = project_name
+            if modified_project_name in project_name_list:
+                while modified_project_name in project_name_list:
+                    i+=1
+                    modified_project_name = str(project_name)+" ("+str(i)+")"
+
+            return modified_project_name
         
         @classmethod
         def get_project_index(cls,project_list,project_name):
@@ -2469,11 +2486,14 @@ class main:
             self.selected_list_disk = []
             self.control_pressed = False
             Tools.save_to_json_config("disk_or_ip_window",1,self.config_filename_path)
-            menu_cards =                    customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=50)
-            self.main_widgets =             customtkinter.CTkFrame(master=self.root,corner_radius=0)
+            top_frame =                     customtkinter.CTkFrame(master=self.root,corner_radius=0,border_width=0,fg_color="#212121")
+            top_left_frame =                customtkinter.CTkFrame(master=top_frame,corner_radius=0,border_width=0,fg_color="#212121")
+            top_right_frame =               customtkinter.CTkFrame(master=top_frame,corner_radius=0,border_width=0,fg_color="#212121")
+            menu_cards =                    customtkinter.CTkFrame(master=top_left_frame,corner_radius=0,fg_color="#636363",height=50)
+            self.main_widgets =             customtkinter.CTkFrame(master=top_left_frame,corner_radius=0)
             self.project_tree =             customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
             logo =                          customtkinter.CTkImage(Image.open(Tools.resource_path("images/jhv_logo.png")),size=(300, 100))
-            image_logo =                    customtkinter.CTkLabel(master = menu_cards,text = "",image =logo,bg_color="#212121")
+            image_logo =                    customtkinter.CTkLabel(master = top_right_frame,text = "",image =logo,bg_color="#212121")
             main_menu_button =              customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "MENU",command =  lambda: self.call_menu(),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
             button_switch_all_ip =          customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "IP - všechny",command =  lambda: main.IP_assignment(self.parent_instance,fav_w_called=False),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
             button_switch_favourite_ip =    customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "IP - oblíbené",command =  lambda: main.IP_assignment(self.parent_instance,fav_w_called=True),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
@@ -2497,7 +2517,7 @@ class main:
             reset =                         customtkinter.CTkButton(master = second_row_frame, width = 200,height=40,text = "Reset exploreru",command = lambda: self.refresh_explorer(refresh_disk=True),font=("Arial",20,"bold"),corner_radius=0)
             self.refresh_btn =              customtkinter.CTkButton(master = second_row_frame, width = 200,height=40,text = "Refresh statusů",command = lambda: self.refresh_disk_statuses(silent=False),font=("Arial",20,"bold"),corner_radius=0)
             as_admin_label =                customtkinter.CTkLabel(master = second_row_frame,text = "",font=("Arial",20,"bold"))
-            third_row_frame =               customtkinter.CTkFrame(master=self.main_widgets,corner_radius=0,fg_color="#212121")
+            third_row_frame =               customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#212121")
             self.main_console =             tk.Text(third_row_frame, wrap="none", height=0,background="black",font=("Arial",22),state=tk.DISABLED)
             project_label.                  pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             self.search_input.              pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
@@ -2519,14 +2539,17 @@ class main:
             self.main_console.              pack(pady = (10,0),padx =(5,0),anchor="w",side="left",fill="x",expand=True)
             first_row_frame.                pack(pady=0,padx=0,fill="x",side = "top")
             second_row_frame.               pack(pady=0,padx=0,fill="x",side = "top")
-            third_row_frame.                pack(pady=0,padx=0,fill="x",side = "top")
             main_menu_button.               pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
             button_switch_all_ip.           pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
             button_switch_favourite_ip.     pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
             button_switch_disk.             pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
-            image_logo.                     pack(pady = 0,padx =(15,0),anchor = "e",side = "right",ipadx = 20,ipady = 10,expand=False)
+            image_logo.                     pack(anchor = "e",side = "top",ipadx = 20,ipady = 20,expand=False)
             menu_cards.                     pack(pady=0,padx=5,fill="x",expand=False,side = "top")
             self.main_widgets.              pack(pady=0,padx=0,fill="x",side = "top")
+            top_left_frame.                 pack(pady=0,padx=0,fill="x",side = "left",expand=True)
+            top_right_frame.                pack(pady=0,padx=0,fill="y",side = "right",expand=False)
+            top_frame.                      pack(pady=0,padx=0,fill="x",side = "top")
+            third_row_frame.                pack(pady=0,padx=0,fill="x",side = "top")
             self.project_tree.              pack(pady=5,padx=5,fill="both",expand=True,side = "top")
 
             # self.option_change("",only_console=True)
@@ -2621,19 +2644,10 @@ class main:
             self.window_mode = parent.window_mode
             self.initial_path = parent.initial_path
             self.app_icon = parent.app_icon
-            self.all_rows = []
-            self.project_list = []
             self.excel_file_path = parent.excel_file_path
             self.config_filename_path = parent.config_filename_path
-            # self.last_project_name = ""
-            # self.last_project_ip = ""
-            # self.last_project_mask = ""
-            # self.last_project_notes = ""
-            # self.last_project_id = ""
-
             self.last_managed_project = None
             self.make_project_favourite = False
-            self.favourite_list = []
             self.connection_option_list = []
             self.last_selected_widget = ""
             self.last_selected_notes_widget = ""
@@ -2645,11 +2659,8 @@ class main:
             self.remember_to_change_back = []
             self.control_pressed = False
             self.edited_project_name = None
-
             self.deleted_projects_bin = []
             self.edited_projects_bin = []
-            # self.bin_projects = [[None],[None]]
-
             self.changed_notes = []
             self.notes_frame_height = 50
 
@@ -2725,14 +2736,11 @@ class main:
                 config_data = Tools.read_json_config(self.config_filename_path)
                 try:
                     self.deleted_projects_bin = config_data["deleted_project_bin"]
-                except KeyError:
-                    self.deleted_projects_bin = []
+                except Exception:
                     Tools.save_to_json_config("deleted_project_bin",self.deleted_projects_bin,self.config_filename_path)
-                try:
-                    self.edited_projects_bin = config_data["edited_project_bin"]
-                    Tools.save_to_json_config("edited_project_bin",[],self.config_filename_path) #vymazat historii editu při zapnutí
-                except KeyError:
-                    Tools.save_to_json_config("edited_project_bin",[],self.config_filename_path)
+
+                # self.edited_projects_bin = config_data["edited_project_bin"]
+                Tools.save_to_json_config("edited_project_bin",[],self.config_filename_path) #vymazat historii editu při zapnutí
                     
             def save_project_ip():# saving after deleting:
                 if project == None:
@@ -2753,6 +2761,7 @@ class main:
                 config_data = Tools.read_json_config(self.config_filename_path)
                 self.edited_projects_bin = config_data["edited_project_bin"]
                 project["new_name"] = new_edited_name
+                print("\nSAVING: ",project)
                 self.edited_projects_bin.insert(0,project)
                 if len(self.edited_projects_bin) > max_stored_edits:
                     self.edited_projects_bin.pop()
@@ -2766,17 +2775,7 @@ class main:
                 self.deleted_projects_bin = config_data["deleted_project_bin"]
                 project_to_load = self.deleted_projects_bin[0]
                 self.all_project_list = main.IP_tools.read_excel_data(self.excel_file_path)
-                
-                project_name_list = []
-                for projects in self.all_project_list:
-                    project_name_list.append(str(projects['name']))
-
-                modified_project_name = str(project_to_load['name'])
-                i=0
-                while modified_project_name in project_name_list:
-                    i+=1
-                    modified_project_name = str(project_to_load['name'])+" ("+str(i)+")"
-                
+                modified_project_name = main.IP_tools.get_unique_name(self.all_project_list,project_to_load['name'])
                 project_to_load["name"] = modified_project_name
                 self.deleted_projects_bin.pop(0)
                 if len(self.deleted_projects_bin) ==0:
@@ -2792,6 +2791,7 @@ class main:
                 config_data = Tools.read_json_config(self.config_filename_path)
                 self.edited_projects_bin = config_data["edited_project_bin"]
                 project_to_load = self.edited_projects_bin[0]
+                print("project to load: ",project_to_load)
                 old_project_name = str(project_to_load['name'])
                 current_project_name = str(project_to_load["new_name"])
                 self.all_project_list = main.IP_tools.read_excel_data(self.excel_file_path)
@@ -2801,7 +2801,6 @@ class main:
                     Tools.add_colored_line(self.main_console,f"Jméno projektu: {current_project_name} nenalezeno, nelze ho tedy obnovit","red",None,True)
                     
                 self.edited_projects_bin.pop(0)
-
                 if len(self.edited_projects_bin) ==0:
                     self.undo_edit.configure(state = "disabled")
                 Tools.save_to_json_config("edited_project_bin",self.edited_projects_bin,self.config_filename_path)
@@ -2834,13 +2833,20 @@ class main:
             output = mapping_logic[flag]()  # This will call the corresponding function
             return output
 
-        def switch_fav_status_new(self,project,wanted_status):
+        def switch_fav_status_new(self,project,wanted_status:str,refresh = False):
             project_index = main.IP_tools.get_project_index(self.all_project_list,project['name'])
             project["fav_status"] = str(wanted_status)
             self.all_project_list[project_index] = project
             main.IP_tools.save_excel_data(self.excel_file_path, self.all_project_list)
+            if refresh:
+                if wanted_status == "1":
+                    Tools.add_colored_line(self.main_console,f"Projekt {project['name']} byl přidán do oblíbených","green",None,True)
+                else:
+                    Tools.add_colored_line(self.main_console,f"Projekt {project['name']} byl odebrán z oblíbených","green",None,True)
 
-        def delete_project(self,wanted_project=None,silence=None,button_trigger = False,flag="",del_favourite=False):
+                self.make_project_cells()
+
+        def delete_project(self,wanted_project=None,silence=None,flag=""):
             if "!ctktextbox" in str(self.root.focus_get()):
                 return
         
@@ -2916,20 +2922,6 @@ class main:
                     child_root.destroy()
 
                 return deleted_project
-
-            if not button_trigger:
-                proceed(wanted_project,window=False)
-                return
-
-            if flag == "main_menu" or flag == "context_menu":
-                if self.deletion_behav == 110 or self.deletion_behav == 111:
-                    check_multiple_projects(False)
-                    return
-                
-            if self.deletion_behav == 101 or self.deletion_behav == 111:
-                check_multiple_projects(False)
-                return
-            
             
             if self.last_managed_project is None:
                 Tools.add_colored_line(self.main_console,"Nejprve vyberte projekt (nakliknout levým na parametry daného projektu nebo pravým na tlačíko projektu)","orange",None,True)
@@ -2940,6 +2932,10 @@ class main:
             elif wanted_project == None:
                 wanted_project = self.last_managed_project['name']
 
+            if self.deletion_behav == 101 or self.deletion_behav == 111 or self.show_favourite == True: #pokud odvolené dotazování nebo jsme v oblíbených
+                check_multiple_projects(False)
+                return
+            
             child_root = customtkinter.CTkToplevel()
             self.opened_window = child_root
             child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(self.app_icon)))
@@ -2977,27 +2973,32 @@ class main:
                     switch_down()
 
             def copy_previous_project():
-                if self.last_managed_project['name'] == "":
+                try:
+                    if self.last_managed_project['name'] == "":
+                        Tools.add_colored_line(self.console,"Není vybrán žádný projekt","red",None,True)
+                        return
+                    self.name_input.delete("0","300")
+                    self.name_input.insert("0",str(self.last_managed_project['name']))
+                    self.IP_adress_input.delete("0","300")
+                    self.IP_adress_input.insert("0",str(self.last_managed_project["ip"]))
+                    self.mask_input.delete("0","300")
+                    self.mask_input.insert("0",str(self.last_managed_project["mask"]))
+                    self.notes_input.delete("1.0",tk.END)
+                    self.notes_input.insert(tk.END,str(self.last_managed_project["notes"]))
+                except TypeError:
                     Tools.add_colored_line(self.console,"Není vybrán žádný projekt","red",None,True)
-                    return
-                self.name_input.delete("0","300")
-                self.name_input.insert("0",str(self.last_managed_project['name']))
-                self.IP_adress_input.delete("0","300")
-                self.IP_adress_input.insert("0",str(self.last_managed_project["ip"]))
-                self.mask_input.delete("0","300")
-                self.mask_input.insert("0",str(self.last_managed_project["mask"]))
-                self.notes_input.delete("1.0",tk.END)
-                self.notes_input.insert(tk.END,str(self.last_managed_project["notes"]))
 
-            def switch_up():
-                project_index = main.IP_tools.get_project_index(self.all_project_list,self.last_managed_project['name'])
+            def switch_up(force_index = None):
+                if force_index != None:
+                    project_index = force_index
+                else:
+                    project_index = main.IP_tools.get_project_index(self.all_project_list,self.last_managed_project['name'])
 
                 another_project_id = project_index
                 another_project_id -= 1
                 if another_project_id < 0:
                     another_project_id = len(self.all_project_list)-1
                     
-                # self.check_given_input(given_data=self.all_rows[self.last_project_id][0])
                 self.last_managed_project = self.all_project_list[another_project_id]
                 copy_previous_project()
                 refresh_favourite_status()
@@ -3010,7 +3011,6 @@ class main:
                 if previous_project_id > len(self.all_project_list)-1:
                     previous_project_id = 0
 
-                # self.check_given_input(given_data=self.all_rows[self.last_project_id][0])
                 self.last_managed_project = self.all_project_list[previous_project_id]
 
                 copy_previous_project()
@@ -3019,10 +3019,11 @@ class main:
 
             def del_project():
                 nonlocal child_root
-                result = self.delete_project(button_trigger=True)
+                project_index = main.IP_tools.get_project_index(self.all_project_list,self.last_managed_project['name'])
+                result = self.delete_project(wanted_project=self.last_managed_project['name'])
                 print(result)
                 if result:
-                    switch_up()
+                    switch_up(project_index)
                 else:
                     print("aborted")
 
@@ -3081,14 +3082,10 @@ class main:
                 mask = str(self.mask_input.get())
                 mask = check_ip_and_mask(mask)
                 notes = Tools.get_legit_notes(self.notes_input.get("1.0", tk.END))
-               
                 errors = 0
                 if project_name.replace(" ","") == "":
                     Tools.add_colored_line(self.console,f"Nezadali jste jméno projektu","red",None,True)
                     errors += 1
-                if project_name in self.project_list and edit == None:
-                    Tools.add_colored_line(self.console,f"Jméno je již používané","red",None,True)
-                    errors +=1
 
                 if IP_adress == False and errors == 0:
                     Tools.add_colored_line(self.console,f"Neplatná IP adresa","red",None,True)
@@ -3106,8 +3103,13 @@ class main:
 
                 if edit:
                     print("last_managed project:", self.last_managed_project)
-                    project_index = main.IP_tools.get_project_index(self.all_project_list,self.last_managed_project['name'])
-                    currently_edited_project_id = project_index
+                    currently_edited_project_id = main.IP_tools.get_project_index(self.all_project_list,self.last_managed_project['name'])
+                    if currently_edited_project_id == None:
+                        Tools.add_colored_line(self.main_console,f"Projekt {self.last_managed_project['name']} nenalezen","red",None,True)
+                        return
+                    
+                    if self.all_project_list[currently_edited_project_id]['name'] != project_name:
+                        project_name = main.IP_tools.get_unique_name(self.all_project_list,project_name)
                     self.all_project_list[currently_edited_project_id]['name'] = project_name
                     self.all_project_list[currently_edited_project_id]["ip"] = IP_adress
                     self.all_project_list[currently_edited_project_id]["mask"] = mask
@@ -3133,11 +3135,14 @@ class main:
                         else:
                             status_text = f"Projekt: {self.last_managed_project['name']} úspěšně pozměněn"
                         Tools.add_colored_line(self.main_console,status_text,"green",None,True)
-                    if self.make_edited_project_first:
-                        self.make_project_first(purpouse="silent",make_cells=False,project=self.all_project_list[currently_edited_project_id])
-                    self.manage_bin(flag="save_edited_ip",project=self.last_managed_project,new_edited_name=project_name)
                     
+                    
+                    self.manage_bin(flag="save_edited_ip",project=self.last_managed_project,new_edited_name=project_name)
+                    if self.make_edited_project_first:
+                        # self.all_project_list = main.IP_tools.read_excel_data(self.excel_file_path)
+                        self.make_project_first(purpouse="silent",make_cells=False,project=self.all_project_list[currently_edited_project_id],input_entry_bypass=project_name)
                 else:
+                    project_name = main.IP_tools.get_unique_name(self.all_project_list,project_name)
                     self.all_project_list.insert(0,{
                         'name':project_name,
                         "ip":IP_adress,
@@ -3153,9 +3158,6 @@ class main:
 
             child_root = customtkinter.CTkToplevel(fg_color="#212121")
             self.opened_window = child_root
-            # x = self.root.winfo_rootx()
-            # y = self.root.winfo_rooty()
-            # child_root.geometry(f"520x750+{x+50}+{y+80}")
             child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(self.app_icon)))
             refresh_title()
             top_main_frame =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_width=0,fg_color="#212121")
@@ -3167,8 +3169,8 @@ class main:
             project_switch_frame =  customtkinter.CTkFrame(master=top_right_frame,corner_radius=0,height=140,width=80)
             project_up =            customtkinter.CTkButton(master = project_switch_frame,font=("Arial",25,"bold"),width=60,height=60,corner_radius=0,text="↑",command= lambda: switch_up())
             project_down =          customtkinter.CTkButton(master = project_switch_frame,font=("Arial",25,"bold"),width=60,height=60,corner_radius=0,text="↓",command= lambda: switch_down())
-            project_up              .pack(pady=(0,5),padx=5,side = "top")
-            project_down            .pack(pady=0,padx=5,side = "top")
+            project_up              .pack(pady=(0,5),padx=5,side = "top",fill="x")
+            project_down            .pack(pady=0,padx=5,side = "top",fill="x")
             project_switch_frame.   bind("<MouseWheel>",lambda e: mouse_wheel_change(e))
             project_up.             bind("<MouseWheel>",lambda e: mouse_wheel_change(e))
             project_down.           bind("<MouseWheel>",lambda e: mouse_wheel_change(e))
@@ -3179,10 +3181,18 @@ class main:
             copy_check =           customtkinter.CTkButton(master = top_right_frame,font=("Arial",20),width=250,height=30,corner_radius=0,text="Kopírovat předchozí projekt",command= lambda: copy_previous_project())
             del_project_btn =      customtkinter.CTkButton(master = top_right_frame,font=("Arial",20),width=250,height=30,corner_radius=0,text="Smazat tento projekt",command= lambda: del_project(),fg_color="red")
             fav_status =           customtkinter.CTkLabel(master = top_left_frame, width = 20,height=30,text = "Status oblíbenosti: ",font=("Arial",20,"bold"))
-            fav_frame =            customtkinter.CTkFrame(master=top_left_frame,corner_radius=0,border_width=0,height=50,fg_color="#353535")
+            fav_frame =            customtkinter.CTkFrame(master=top_left_frame,corner_radius=0,border_width=0,height=50,fg_color="#353535",border_color="#606060")
             self.make_fav_label =  customtkinter.CTkLabel(master = fav_frame, width = 20,height=30)
             self.make_fav_btn =    customtkinter.CTkLabel(master = fav_frame, width = 50,height=50)
             refresh_favourite_status()
+            def really_leaving(e,frame):
+                x = frame.winfo_width()-1
+                y = frame.winfo_height()-1
+                if (e.x < 1 or e.x > x) or (e.y<1 or e.y > y):
+                    fav_frame.configure(border_width = 0,fg_color = "#353535")
+
+            fav_frame.bind("<Enter>",lambda e: fav_frame.configure(border_width = 2,fg_color = "#404040"))
+            fav_frame.bind("<Leave>",lambda e ,frame = fav_frame: really_leaving(e,frame))
             notes_label =          customtkinter.CTkLabel(master = child_root, width = 60,height=30,text = "Poznámky: ",font=("Arial",20,"bold"))
             self.notes_input =     customtkinter.CTkTextbox(master = child_root,font=("Arial",20),height=280,corner_radius=0)
             self.console =         tk.Text(child_root, wrap="none", height=0,background="black",font=("Arial",14),state=tk.DISABLED)
@@ -3196,28 +3206,29 @@ class main:
             project_name.pack(pady = (10,0),padx =(5,0),anchor="w",side="top")
             if edit:
                 project_selection_label.pack(pady = (10,0),padx =(5,0),anchor="w",side="top")
-                project_switch_frame.pack(pady=10,padx=10,anchor="w",side = "top")
+                project_switch_frame.pack(pady=10,padx=10,anchor="w",side = "top",fill="x")
             else:
-                copy_check.         pack(pady = (10),padx =(10,0),anchor="w",side="top")
+                copy_check.         pack(pady = (10),padx =(10),anchor="w",side="top")
             self.name_input.        pack(pady = (10,0),padx =(5,5),anchor="w",side="top",fill="x",expand=True)
             IP_adress.              pack(pady = (10,0),padx =(5,0),anchor="w",side="top")
             self.IP_adress_input.   pack(pady = (10,0),padx =(5,5),anchor="w",side="top",fill="x",expand=True)
             mask.                   pack(pady = (10,0),padx =(5,0),anchor="w",side="top")
             self.mask_input.        pack(pady = (10,0),padx =(5,5),anchor="w",side="top",fill="x",expand=True)
             fav_status.             pack(pady = (10,0),padx =(5,0),anchor="w",side="top")
-            if edit:
-                del_project_btn.    pack(pady = (10),padx =(10,0),anchor="s",side="left")
+            if edit and not self.show_favourite:
+                del_project_btn.    pack(pady = (10),padx =(10),anchor="s",side="left")
             fav_frame.              pack(pady = (10),padx =(10),anchor="w",side="top",fill="x",expand=True)
             self.make_fav_btn.      pack(pady = (10),padx =(5,0),anchor="w",side="left")
-            self.make_fav_btn.      bind("<Button-1>",lambda e: make_favourite_toggle_via_edit(e))
             self.make_fav_label.    pack(pady = (10),padx =(5,0),anchor="w",side="left")
+            fav_frame.              bind("<Button-1>",lambda e: make_favourite_toggle_via_edit(e))
+            self.make_fav_btn.      bind("<Button-1>",lambda e: make_favourite_toggle_via_edit(e))
             self.make_fav_label.    bind("<Button-1>",lambda e: make_favourite_toggle_via_edit(e))
             top_left_frame.         pack(anchor="w",side="left",fill="both",expand = True)
-            top_right_frame.        pack(anchor="w",side="left",fill="both",expand = True)
+            top_right_frame.        pack(anchor="e",side="right",fill="y",expand = False,ipadx=2,ipady=2)
             top_main_frame.         pack(anchor="w",side="top",fill="both",expand = True)
             notes_label.            pack(pady = (10,0),padx =(5,0),anchor="w",side="top")
-            self.notes_input.       pack(pady = (10,0),padx =(5,0),anchor="w",side="top",fill="x",expand=True)
-            self.console.           pack(pady = (10,0),padx =(5,0),anchor="w",side="top",fill="x",expand=True)
+            self.notes_input.       pack(pady = (10,0),padx =(5),anchor="w",side="top",fill="x",expand=True)
+            self.console.           pack(pady = (10,0),padx =(5),anchor="w",side="top",fill="x",expand=True)
             exit_button.            pack(pady = (10,0),padx =(5,0),anchor="e",side="right")
             save_button.            pack(pady = (10,0),padx =(5,0),anchor="e",side="right")
             buttons_frame.          pack(pady = (0,10),padx =(0,10),anchor="w",side="top",fill="x",expand=True)
@@ -3454,11 +3465,6 @@ class main:
             for i in range(0,len(self.all_project_list)):
                 if given_data == self.all_project_list[i]['name']:
                     self.last_managed_project = self.all_project_list[i]
-                    # self.last_project_name =    str(self.all_rows[i]['name'])
-                    # self.last_project_ip =      str(self.all_rows[i]["ip"])
-                    # self.last_project_mask =    str(self.all_rows[i]["mask"])
-                    # self.last_project_notes =   str(self.all_rows[i]["notes"])
-                    # self.last_project_id = i
                     found = True
             return found    
 
@@ -3469,34 +3475,26 @@ class main:
             flag = unfocus:
             - při kliku mimo se odebere focus z nakliknutých widgetů
             """
-            def on_leave_entry(widget):
+            def on_leave_entry(last_selected_textbox):
                 """
                 při kliku na jiný widget:
                 - upraví text pouze na první řádek
                 """
-                widget.configure(state = "normal")
+                last_selected_textbox.configure(state = "normal")
                 if "\n" in self.last_managed_project["notes"]:
                     notes_rows = self.last_managed_project["notes"].split("\n")
                     first_row = notes_rows[0]
-                    widget.delete("1.0",tk.END)
-                    widget.insert(tk.END,str(first_row))
+                    last_selected_textbox.delete("1.0",tk.END)
+                    last_selected_textbox.insert(tk.END,str(first_row))
+                    last_selected_textbox.configure(height = 40) #notes
                 if self.default_note_behav == 0:
-                    widget.configure(state = "disabled")
-
-            def shrink_frame(widget_frame,widget_notes):
-                widget_notes.configure(state = "normal")
-                new_height = 50
-                widget_frame.configure(height = new_height) #frame
-                widget_notes.configure(height = new_height-10) #notes
-                if self.default_note_behav == 0:
-                    widget_notes.configure(state = "disabled")
+                    last_selected_textbox.configure(state = "disabled")
 
             if flag == "unfocus":
                 try:
-                    if self.last_selected_notes_widget != "" and self.last_selected_notes_widget.winfo_exists():
-                        if self.last_selected_textbox != ""  and self.last_selected_textbox.winfo_exists():
+                    if str(self.last_selected_notes_widget) != "" and self.last_selected_notes_widget.winfo_exists():
+                        if str(self.last_selected_textbox) != ""  and self.last_selected_textbox.winfo_exists():
                             on_leave_entry(self.last_selected_textbox)
-                            shrink_frame(self.last_selected_widget,self.last_selected_textbox)
                             self.last_selected_textbox = ""
                             self.last_selected_notes_widget = ""
 
@@ -3522,14 +3520,15 @@ class main:
             print("clicked project: ",project['name'])
             self.search_input.delete("0","300")
             self.search_input.insert("0",str(project['name']))
-            self.last_managed_project = project
             # only if it is not pressed againt the same:
             if widget != self.last_selected_widget:
                 try:
-                    if self.last_selected_notes_widget != "" and self.last_selected_notes_widget.winfo_exists():
-                        if self.last_selected_textbox != ""  and self.last_selected_textbox.winfo_exists():
-                            on_leave_entry(self.last_selected_textbox)
-                            shrink_frame(self.last_selected_widget,self.last_selected_textbox)
+                    if str(self.last_selected_textbox) != "" and self.last_selected_textbox.winfo_exists():
+                        on_leave_entry(self.last_selected_textbox)
+                    else:
+                        self.last_selected_textbox = ""
+                        self.last_selected_notes_widget = ""
+
                     if flag == "notes":
                         self.last_selected_textbox = textbox
                         self.last_selected_notes_widget = widget
@@ -3539,15 +3538,13 @@ class main:
                         self.last_selected_textbox = ""
                         self.last_selected_notes_widget = ""
                         widget.focus_set()
-
                 except Exception as e:
-                    print("chyba s navracenim framu do puvodniho formatu",e)
+                    print("chyba s navracenim framu do puvodniho formatu: ",e)
                 
                 try:
                     if self.last_selected_widget != "" and self.last_selected_widget.winfo_exists():
                         if len(self.selected_list) == 0 and not self.control_pressed:
                             self.last_selected_widget.configure(border_color="#636363")
-
                             if self.last_selected_widget in self.remember_to_change_back:
                                 self.remember_to_change_back.pop(self.remember_to_change_back.index(self.last_selected_widget))
 
@@ -3564,13 +3561,13 @@ class main:
 
                     if not widget in self.remember_to_change_back:
                         self.remember_to_change_back.append(widget)
-
                     print("remember: ", self.remember_to_change_back)
 
                 except Exception as e:
                     print("chyba pri zmene fucusu",e)
                     pass
 
+                self.last_managed_project = project
                 # self.last_selected_widget_id = widget_id
 
         def refresh_ip_statuses(self):
@@ -3603,28 +3600,35 @@ class main:
                     unbind_connected_ip(parameter,ip_frame)
 
         def show_context_menu(self,event,project,flag=""):
-            """
-            - first index (y) = index celeho radku
-            - second index (x) = index jednoho parametru
-            """
-            context_menu = tk.Menu(self.root,tearoff=0,fg="white",bg="black",font=("Arial",20,"bold"))
-            # self.check_given_input(given_data=self.all_rows[first_index][0])
+            context_menu = tk.Menu(self.root,tearoff=0,fg="white",bg="#202020",activebackground="#606060")
             self.last_managed_project = project
+            delete_label = "Odstranit"
+            if self.show_favourite:
+                delete_label = "Odebrat z oblíbených"
             
             if flag == "button":
-                context_menu.add_command(label="Nastavit",font=("Arial",22,"bold"),command=lambda: self.change_computer_ip(project))
+                context_menu.add_command(label="Nastavit",font=("Arial",22),command=lambda: self.change_computer_ip(project))
                 context_menu.add_separator()
-                context_menu.add_command(label="Kopírovat IP adresu",font=("Arial",22,"bold"), command=lambda: pyperclip.copy(str(project["ip"])))
+                context_menu.add_command(label="Kopírovat IP adresu",font=("Arial",22), command=lambda: pyperclip.copy(str(project["ip"])))
                 context_menu.add_separator()
-                context_menu.add_command(label="Editovat",font=("Arial",22,"bold"),command=lambda: self.add_new_project(True,project))
+                context_menu.add_command(label="Editovat",font=("Arial",22),command=lambda: self.add_new_project(True,project))
                 context_menu.add_separator()
-                context_menu.add_command(label="Kopírovat projekt",font=("Arial",22,"bold"),command=lambda: self.add_new_project(init_copy=True))
+                context_menu.add_command(label="Kopírovat projekt",font=("Arial",22),command=lambda: self.add_new_project(init_copy=True))
                 context_menu.add_separator()
-                context_menu.add_command(label="Přesunout na začátek",font=("Arial",22,"bold"),command=lambda: self.make_project_first(input_entry_bypass=str(project['name'])))
+                context_menu.add_command(label="Přesunout na začátek",font=("Arial",22),command=lambda: self.make_project_first(input_entry_bypass=str(project['name'])))
                 context_menu.add_separator()
-                context_menu.add_command(label="Odstranit",font=("Arial",22,"bold"),command=lambda: self.delete_project(button_trigger=True,flag="context_menu"))
+                if not self.show_favourite:
+                    if project["fav_status"] == "0":
+                        context_menu.add_command(label="Přidat do oblíbených",font=("Arial",22),command=lambda: self.switch_fav_status_new(project,"1",refresh = True))
+                        context_menu.add_separator()
+                    elif project["fav_status"] == "1":
+                        context_menu.add_command(label="Odebrat z oblíbených",font=("Arial",22),command=lambda: self.switch_fav_status_new(project,"0",refresh = True))
+                        context_menu.add_separator()
+                context_menu.add_command(label=delete_label,font=("Arial",22),command=lambda: self.delete_project(flag="context_menu"))
+
             elif flag == "ip_frame":
-                context_menu.add_command(label="Kopírovat IP adresu",font=("Arial",22,"bold"), command=lambda: pyperclip.copy(str(project["ip"])))
+                context_menu.add_command(label="Kopírovat IP adresu",font=("Arial",22), command=lambda: pyperclip.copy(str(project["ip"])))
+
 
             context_menu.tk_popup(event.x_root, event.y_root)
 
@@ -3688,65 +3692,7 @@ class main:
 
             def on_enter_entry(widget,project):
                 if not opened_window_check():
-                    if str(widget) != str(self.last_selected_notes_widget) + ".!ctktextbox":
-                        widget.configure(state = "normal")
-                        widget.delete("1.0",tk.END)
-                        widget.insert(tk.END,str(project["notes"]))
-                        if self.default_note_behav == 0:
-                            widget.configure(state = "disabled")
 
-            def on_leave_entry(widget,project):
-                """
-                při opuštění widgetu cursorem:
-                - upraví text pouze na první řádek
-                - uloží změny
-                """
-                if not opened_window_check():
-                    notes_before = filter_text_input(str(project["notes"]))
-                    notes_after = filter_text_input(str(widget.get("1.0",tk.END)))
-                    if str(widget) != str(self.last_selected_notes_widget) + ".!ctktextbox":
-                        widget.configure(state = "normal")
-                        if notes_before != notes_after:
-                            self.changed_notes = [project["notes"],notes_before]
-                            self.undo_edit.configure(state = "normal")
-                            self.manage_bin(flag="save_edited_ip",project=project,new_edited_name=project['name'])
-                            project["notes"] = notes_after
-                            save_changed_notes(notes_after,project)
-
-                        if "\n" in project["notes"]:
-                            notes_rows = project["notes"].split("\n")
-                            first_row = notes_rows[0]
-                            widget.delete("1.0",tk.END)
-                            widget.insert(tk.END,str(first_row))
-
-                        if self.default_note_behav == 0:
-                            widget.configure(state = "disabled")
-                        self.root.focus_set() # unfocus widget
-                    else:
-                        # jinak pouze ulož změny (když je dvakrát nakliknuto to samé)
-                        if notes_before != notes_after:
-                            self.manage_bin(flag="save_edited_ip",project=project,new_edited_name=project['name'])
-                            project["notes"] = notes_after
-                            self.changed_notes = [project["notes"],notes_before]
-                            self.undo_edit.configure(state = "normal")
-                            save_changed_notes(notes_after,project)
-                        self.root.focus_set() # unfocus widget
-                        
-            def shrink_frame(widget):
-                tolerance = 5
-                if abs(int(widget[0]._current_height)-self.notes_frame_height) <= tolerance:
-                    return
-                if not opened_window_check():
-                    if str(widget[0]) != str(self.last_selected_notes_widget):
-                        widget[1].configure(state = "normal")
-                        new_height = self.notes_frame_height
-                        widget[0].configure(height = new_height) #frame
-                        widget[1].configure(height = new_height-10) #notes
-                        if self.default_note_behav == 0:
-                            widget[1].configure(state = "disabled")
-
-            def expand_frame(widget,project):
-                if not opened_window_check():
                     if str(widget[0]) != str(self.last_selected_notes_widget):
                         tolerance = 5
                         if abs(int(widget[0]._current_height)-self.notes_frame_height) <= tolerance: # if the height is not default then it means it is expanded already
@@ -3757,15 +3703,66 @@ class main:
                                 notes_rows = project["notes"].split("\n")
                                 if len(notes_rows) > 1:
                                     expanded_dim = addition + (len(notes_rows)-1) * 25
-                                    widget[0].configure(height = expanded_dim)
+                                    # widget[0].configure(height = expanded_dim)
                                     widget[1].configure(state = "normal")
                                     widget[1].configure(height = expanded_dim-10)
-                                if self.default_note_behav == 0:
-                                    widget[1].configure(state = "disabled")
-                            # else:
-                            #     if self.default_note_behav == 0:
-                            #         widget[1].configure(state = "disabled")
-            
+                                    if str(widget[1]) != str(self.last_selected_notes_widget) + ".!ctktextbox":
+                                        widget[1].delete("1.0",tk.END)
+                                        widget[1].insert(tk.END,str(project["notes"]))
+
+                    if self.default_note_behav == 0:
+                        widget[1].configure(state = "disabled")
+
+            def on_leave_entry(widget,project):
+                """
+                při opuštění widgetu cursorem:
+                - upraví text pouze na první řádek
+                - uloží změny
+                """
+
+                if not opened_window_check():
+                    notes_widget = widget[1]
+                    notes_before = filter_text_input(str(project["notes"]))
+                    notes_after = filter_text_input(str(notes_widget.get("1.0",tk.END)))
+                    if str(notes_widget) != str(self.last_selected_notes_widget) + ".!ctktextbox":
+                        notes_widget.configure(state = "normal")
+                        if notes_before != notes_after:
+                            self.changed_notes = [project["notes"],notes_before]
+                            self.undo_edit.configure(state = "normal")
+                            self.manage_bin(flag="save_edited_ip",project=project,new_edited_name=project['name'])
+                            project["notes"] = notes_after
+                            save_changed_notes(notes_after,project)
+
+                        if "\n" in project["notes"]:
+                            notes_rows = project["notes"].split("\n")
+                            first_row = notes_rows[0]
+                            notes_widget.delete("1.0",tk.END)
+                            notes_widget.insert(tk.END,str(first_row))
+
+                        if self.default_note_behav == 0:
+                            notes_widget.configure(state = "disabled")
+                        self.root.focus_set() # unfocus widget
+                    else:
+                        # jinak pouze ulož změny (když je dvakrát nakliknuto to samé)
+                        if notes_before != notes_after:
+                            self.manage_bin(flag="save_edited_ip",project=project,new_edited_name=project['name'])
+                            project["notes"] = notes_after
+                            self.changed_notes = [project["notes"],notes_before]
+                            self.undo_edit.configure(state = "normal")
+                            save_changed_notes(notes_after,project)
+                        self.root.focus_set() # unfocus widget
+
+                    tolerance = 5
+                    if abs(int(widget[0]._current_height)-self.notes_frame_height) <= tolerance:
+                        return
+                    if str(widget[0]) != str(self.last_selected_notes_widget):
+                        widget[1].configure(state = "normal")
+                        new_height = self.notes_frame_height
+                        # widget[0].configure(height = new_height) #frame
+                        widget[1].configure(height = new_height-10) #notes
+                        if self.default_note_behav == 0:
+                            widget[1].configure(state = "disabled")
+                        
             def add_row_return(widget):
                 addition = widget[0]._current_height
                 expanded_dim = addition + 24
@@ -3790,10 +3787,10 @@ class main:
                 if self.show_favourite and projects["fav_status"] == "0":
                     continue
                 btn_frame = customtkinter.CTkFrame(master=column1,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)# frame s názvem projektu
-                button =    customtkinter.CTkButton(master = btn_frame,width = 200,height=40,text = str(projects['name']),font=("Arial",20,"bold"),corner_radius=0)
+                button =    customtkinter.CTkButton(master = btn_frame,width = 200,height=40,text = str(projects['name']),font=("Arial",20,"bold"),corner_radius=0,command=lambda widget = btn_frame, project = projects: self.clicked_on_project(project,widget))
                 button.     pack(padx =5,pady = 5, fill= "x")
                 btn_frame.  pack(side = "top",anchor = "w",expand = False,fill= "x")
-                button.     bind("<Button-1>",lambda e,widget = btn_frame, project = projects: self.clicked_on_project(project,widget))
+                # button.     bind("<Button-1>",lambda e,widget = btn_frame, project = projects: self.clicked_on_project(project,widget))
                 button.     bind("<Double-1>",lambda e,project = projects: self.change_computer_ip(project))
                 button.     bind("<Button-3>",lambda e, project = projects: self.show_context_menu(e,project,flag="button"))
                 if str(projects["fav_status"]) == "1":
@@ -3818,7 +3815,7 @@ class main:
 
                 notes_frame =   customtkinter.CTkFrame(master=column3,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)# frame s poznamkami...
                 notes =         customtkinter.CTkTextbox(master = notes_frame,font=("Arial",20,"bold"),corner_radius=0,fg_color="black",height=40)
-                notes.          pack(padx =5,pady = 5,anchor="w",fill="x",expand = True)
+                notes.          pack(padx =5,pady = 5,anchor="w",fill="x")
                 notes_frame.    pack(pady=0,padx=0,side = "top",anchor = "w",fill="x",expand = True)
                 notes_frame.    bind("<Button-1>",lambda e,widget = notes_frame, project = projects, textbox_widget = notes: self.clicked_on_project(project,widget,textbox_widget,flag="notes"))
                 notes.          bind("<Button-1>",lambda e,widget = notes_frame, project = projects, textbox_widget = notes: self.clicked_on_project(project,widget,textbox_widget,flag="notes"))
@@ -3831,11 +3828,9 @@ class main:
                     notes.insert(tk.END,str(first_row))
                 else:
                     notes.insert(tk.END,project_notes)
-                
-                notes.bind("<Enter>",lambda e, widget = [notes_frame,notes],project=projects:expand_frame(widget,project))
-                notes.bind("<Leave>",lambda e, widget = [notes_frame,notes]:shrink_frame(widget))
-                notes.bind("<Enter>",lambda e, widget = notes,project=projects:on_enter_entry(widget,project))
-                notes.bind("<Leave>",lambda e, widget = notes,project=projects:on_leave_entry(widget,project))
+
+                notes.bind("<Enter>",lambda e, widget = [notes_frame,notes],project=projects: on_enter_entry(widget,project))
+                notes.bind("<Leave>",lambda e, widget = [notes_frame,notes],project=projects: on_leave_entry(widget,project))
                 notes.bind("<Return>",lambda e, widget = [notes_frame,notes]:add_row_return(widget))
 
                 if self.default_note_behav == 0:
@@ -3856,7 +3851,7 @@ class main:
             column3.pack(fill="both",expand=True, side = "left")
             self.project_tree.update()
             self.project_tree.update_idletasks()
-            if len(self.all_rows) > 0:
+            if len(self.all_project_list) > 0:
                 self.notes_frame_height = int(notes_frame._current_height)
             try:
                 self.project_tree._parent_canvas.yview_moveto(0.0)
@@ -3961,11 +3956,6 @@ class main:
             if self.show_favourite and (determine_status == None or determine_status == "all"):
                 self.show_favourite = False
                 window_status = 0
-                self.last_project_name = ""
-                self.last_project_ip = ""
-                self.last_project_mask = ""
-                self.last_project_notes = ""
-                self.last_project_id = ""
                 self.last_selected_widget = ""
                 self.last_selected_notes_widget = ""
                 self.last_selected_textbox = ""
@@ -3976,29 +3966,17 @@ class main:
                     self.search_input.configure(placeholder_text="Název projektu")
                     self.make_project_cells()
                 else:
-                    self.all_rows, self.project_list, self.favourite_list = main.IP_tools.read_excel_data(self.excel_file_path,self.show_favourite)
-                    self.check_given_input() #check ve druhem prostredi
-                    self.make_project_cells(no_read=True)
-                self.button_remove_main.configure(command = lambda: self.delete_project(button_trigger=True,flag="main_menu"))
+                    self.make_project_cells()
+                self.button_remove_main.configure(command = lambda: self.delete_project(flag="main_menu"))
                 Tools.save_to_json_config("favorite_ip_window_status",window_status,self.config_filename_path)
                 self.button_switch_favourite_ip. configure(fg_color="black")
                 self.button_switch_all_ip.       configure(fg_color="#212121")
                 self.button_remove_main.         configure(text="Smazat")
-                # poznámky mohou být None...
-                if Tools.get_none_count(self.bin_projects[0]) < 2 and len(self.bin_projects[0]) > 3:
-                    self.undo_button.configure(state = "normal")
-                else:
-                    self.undo_button.configure(state = "disabled")
 
             elif self.show_favourite == False and (determine_status == None or determine_status == "fav"):
                 # favourite window
                 self.show_favourite = True
                 window_status = 1
-                self.last_project_name = ""
-                self.last_project_ip = ""
-                self.last_project_mask = ""
-                self.last_project_notes = ""
-                self.last_project_id = ""
                 self.last_selected_widget = ""
                 self.last_selected_notes_widget = ""
                 self.last_selected_textbox = ""
@@ -4009,15 +3987,12 @@ class main:
                     self.search_input.configure(placeholder_text="Název projektu")
                     self.make_project_cells()
                 else:
-                    self.all_rows, self.project_list, self.favourite_list = main.IP_tools.read_excel_data(self.excel_file_path,self.show_favourite)
-                    self.check_given_input() #check ve druhem prostredi
-                    self.make_project_cells(no_read=True)
+                    self.make_project_cells()
                 # self.button_remove_main.configure(command = lambda: self.switch_fav_status("with_refresh"))
                 Tools.save_to_json_config("favorite_ip_window_status",window_status,self.config_filename_path)
                 self.button_switch_favourite_ip. configure(fg_color="#212121")
                 self.button_switch_all_ip.       configure(fg_color="black")
                 self.button_remove_main.         configure(text="Odebrat")
-                self.undo_button.                configure(state = "disabled")
 
         def refresh_interfaces(self,all = False):
             """
@@ -4258,8 +4233,8 @@ class main:
             mask_entry.             pack(pady=(10,0),padx=10,side = "top",anchor = "w")
             manual_console.         pack(pady=(10,0),padx=10,side = "top",anchor = "w")
             buttons_frame.          pack(pady=(10),padx=10,side = "top",anchor = "e")
-            save_button.            pack(pady=0,padx=(10,0),side = "right",anchor = "w")
-            exit_button.            pack(pady=0,padx=0,side = "right",anchor = "e")
+            exit_button.            pack(pady=0,padx=(10,0),side = "right",anchor = "w")
+            save_button.            pack(pady=0,padx=0,side = "right",anchor = "e")
         
             online_list = self.refresh_interfaces()
             select_interface.configure(values = self.connection_option_list)
@@ -4312,11 +4287,14 @@ class main:
             
             Tools.clear_frame(self.root)
             self.control_pressed = False
-            menu_cards =                        customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=50,border_width=0)
-            self.main_widgets =                 customtkinter.CTkFrame(master=self.root,corner_radius=0,border_width=0)
+            top_frame =                         customtkinter.CTkFrame(master=self.root,corner_radius=0,border_width=0,fg_color="#212121")
+            top_left_frame =                    customtkinter.CTkFrame(master=top_frame,corner_radius=0,border_width=0,fg_color="#212121")
+            top_right_frame =                   customtkinter.CTkFrame(master=top_frame,corner_radius=0,border_width=0,fg_color="#212121")
+            menu_cards =                        customtkinter.CTkFrame(master=top_left_frame,corner_radius=0,fg_color="#636363",height=50,border_width=0)
+            self.main_widgets =                 customtkinter.CTkFrame(master=top_left_frame,corner_radius=0,border_width=0)
             self.project_tree =                 customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0,border_width=0)
             logo =                              customtkinter.CTkImage(Image.open(Tools.resource_path("images/jhv_logo.png")),size=(300, 100))
-            image_logo =                        customtkinter.CTkLabel(master = menu_cards,text = "",image =logo,bg_color="#212121")
+            image_logo =                        customtkinter.CTkLabel(master = top_right_frame,text = "",image =logo,bg_color="#212121")
             main_menu_button =                  customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "MENU",command =  lambda: self.call_menu(),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
             self.button_switch_all_ip =         customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "IP - všechny",command =  lambda: self.show_favourite_toggle(determine_status="all"),font=("Arial",25,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
             self.button_switch_favourite_ip =   customtkinter.CTkButton(master = menu_cards, width = 200,height=50,text = "IP - oblíbené",command =  lambda: self.show_favourite_toggle(determine_status="fav"),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
@@ -4333,7 +4311,7 @@ class main:
             self.search_input =         customtkinter.CTkEntry(master = first_row_frame,font=("Arial",20),width=160,height=40,placeholder_text="Název projektu",corner_radius=0)
             button_search =             customtkinter.CTkButton(master = first_row_frame, width = 150,height=40,text = "Vyhledat",command =  lambda: self.make_project_first("search"),font=("Arial",20,"bold"),corner_radius=0)
             self.button_add_main =      customtkinter.CTkButton(master = first_row_frame, width = 150,height=40,text = "Nový projekt", command = lambda: self.add_new_project(),font=("Arial",20,"bold"),corner_radius=0)
-            self.button_remove_main =   customtkinter.CTkButton(master = first_row_frame, width = 100,height=40,text = "Smazat", command =  lambda: self.delete_project(button_trigger=True,flag="main_menu"),font=("Arial",20,"bold"),corner_radius=0)
+            self.button_remove_main =   customtkinter.CTkButton(master = first_row_frame, width = 100,height=40,text = "Smazat", command =  lambda: self.delete_project(flag="main_menu"),font=("Arial",20,"bold"),corner_radius=0)
             self.undo_button =          customtkinter.CTkButton(master = first_row_frame, width = 50,height=40,text = "↶", command =  lambda: self.manage_bin(flag="load_deleted_ip"),font=(None,28,"bold"),corner_radius=0,border_width=1,text_color="red")
             button_edit_main =          customtkinter.CTkButton(master = first_row_frame, width = 110,height=40,text = "Editovat",command =  lambda: self.edit_project(),font=("Arial",20,"bold"),corner_radius=0)
             self.undo_edit =            customtkinter.CTkButton(master = first_row_frame, width = 50,height=40,text = "↶", command =  lambda: self.manage_bin(flag="load_edited_ip"),font=(None,28,"bold"),corner_radius=0,border_width=1,text_color="red")
@@ -4360,10 +4338,15 @@ class main:
                     self.undo_button.configure(state = "disabled")
 
             # edit undo
-            if len(Tools.read_json_config(self.config_filename_path)["edited_project_bin"])>0:
+            config_data = Tools.read_json_config(self.config_filename_path)
+            if len(config_data["edited_project_bin"])>0:
                 self.undo_edit.configure(state = "normal")
             else:
                 self.undo_edit.configure(state = "disabled")
+            if len(config_data["deleted_project_bin"])>0:
+                self.undo_button.configure(state = "normal")
+            else:
+                self.undo_button.configure(state = "disabled")
 
             second_row_frame =              customtkinter.CTkFrame(master=self.main_widgets,corner_radius=0,border_width=0,fg_color="#212121")
             connect_label =                 customtkinter.CTkLabel(master = second_row_frame, width = 100,height=40,text = "Připojení: ",font=("Arial",20,"bold"),justify="left",anchor="w")
@@ -4375,13 +4358,13 @@ class main:
             self.static_label2 =            customtkinter.CTkLabel(master = second_row_frame,width=200, height=40,text = "",font=("Arial",22,"bold"),bg_color="black")
             online_label =                  customtkinter.CTkLabel(master = second_row_frame, height=40,text = "Online: ",font=("Arial",22,"bold"))
             self.online_list =              customtkinter.CTkLabel(master = second_row_frame, height=40,text = "",font=("Arial",22,"bold"))
-            third_row_frame =               customtkinter.CTkFrame(master=self.main_widgets,corner_radius=0,border_width=0,fg_color="#212121")
+            third_row_frame =               customtkinter.CTkFrame(master=self.root,corner_radius=0,border_width=0,fg_color="#212121")
             self.main_console =             tk.Text(third_row_frame, wrap="none", height=0,background="black",font=("Arial",22),state=tk.DISABLED)
             main_menu_button.               pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
             self.button_switch_all_ip.      pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
             self.button_switch_favourite_ip.pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
             button_switch_disk.             pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
-            image_logo.                     pack(pady = 0,padx =(15,0),anchor = "e",side = "right",ipadx = 20,ipady = 10,expand=False)
+            image_logo.                     pack(anchor = "e",side = "top",ipadx = 20,ipady = 20,expand=False)
             menu_cards.                     pack(pady=0,padx=5,fill="x",expand=False,side = "top")
             project_label.                  pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             self.search_input.              pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
@@ -4405,12 +4388,15 @@ class main:
             self.static_label2.             pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             online_label.                   pack(pady = (10,0),padx =(20,0),anchor="w",side="left")
             self.online_list.               pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
-            self.main_console.              pack(pady = (10,0),padx =(5,0),anchor="w",side="left",fill="x",expand=True)
+            self.main_console.              pack(pady = (10,0),padx =5,anchor="w",side="left",fill="x",expand=True)
             first_row_frame.                pack(pady=0,padx=0,fill="x",side = "top")
             second_row_frame.               pack(pady=0,padx=0,fill="x",side = "top")
-            third_row_frame.                pack(pady=0,padx=0,fill="x",side = "top")
             self.main_widgets.              pack(pady=0,padx=0,fill="x",side = "top")
-            self.project_tree.              pack(pady=5,padx=5,fill="both",expand=True,side = "top")
+            top_left_frame.                 pack(pady=0,padx=0,fill="x",side = "left",expand=True)
+            top_right_frame.                pack(pady=0,padx=0,fill="y",side = "right",expand=False)
+            top_frame.                      pack(pady=0,padx=0,fill="x",side = "top")
+            third_row_frame.                pack(pady=0,padx=0,fill="x",side = "top")
+            self.project_tree.              pack(pady=(0,5),padx=5,fill="both",expand=True,side = "top")
 
             self.refresh_interfaces() # aktualizace hodnot nabídky
             if self.default_connection_option < len(self.connection_option_list):
@@ -4486,11 +4472,11 @@ class main:
             self.root.bind("<Control_L>",lambda e: control_button(True))
             self.root.bind("<Control-Button-1>",lambda e: multi_select())
             self.root.bind("<KeyRelease-Control_L>",lambda e: control_button(False))
-            self.root.bind("<Delete>",lambda e: self.delete_project(button_trigger=True,flag="main_menu"))
+            self.root.bind("<Delete>",lambda e: self.delete_project(flag="main_menu"))
             # self.root.mainloop()
 
 if testing_mode:
     # IP_assignment(root,"","max",str(os.getcwd())+"\\",100)
     print(str(os.getcwd())+"\\")
-    main(root,"","max",str(os.getcwd())+"\\",100,"TRIMAZKON.json")
+    main(root,"","max",str(os.getcwd())+"\\",100,"jhv_IP.json")
     root.mainloop()
