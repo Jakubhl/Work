@@ -10,7 +10,7 @@ import subprocess
 import sys
 import json
 # import threading
-import IP_setting_v5 as IP_setting
+import IP_setting_v6 as IP_setting
 from functools import partial
 import win32con
 from win32api import *
@@ -835,6 +835,11 @@ class tray_app_service:
         # child_root.after(10, child_root.wait_window())
         # child_root.wait_window()
 
+    def print_balloon_message(self,message_title:str,message:str):
+        WindowsBalloonTip(message_title,
+                    str(message),
+                    self.app_icon)
+
     def set_selected_ip(self,interface,no_data,no_data2,ip):
         def callback_from_ip_set(output_msg):
             print("callback from ip: ",output_msg)
@@ -876,6 +881,23 @@ class tray_app_service:
                 print(stdout,stderr)
                 # print(e)
 
+        def call_manual_setting():
+            command = self.initial_path +"/"+ self.main_app_exe_name + " manual_ip_setting"
+            print("calling main app with: ",command)
+            process = subprocess.Popen(command, 
+                                        shell=True, 
+                                        text=True,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
+                                        creationflags=subprocess.CREATE_NO_WINDOW)
+            stdout, stderr = process.communicate()
+            try:
+                stdout_str = stdout.decode('utf-8')
+                stderr_str = stderr.decode('utf-8')
+                print(stdout_str,stderr_str)
+            except Exception as e:
+                print(stdout,stderr)
+
         def call_show_all_tasks():
             command = self.initial_path +"/"+ self.main_app_exe_name + " open_task_list"
             print("calling main app with: ",command)
@@ -910,7 +932,7 @@ class tray_app_service:
             except Exception as e:
                 print(stdout,stderr)
                 
-        run_app_label = 'Spustit aplikaci TRIMAZKON'
+        run_app_label = 'Spustit aplikaci jhv_IP'
         show_scheduled_tasks_label = 'Nastavené úkoly'
         deletion_log_label = 'Záznamy o mazání'
         shut_down_label = 'Vypnout'
@@ -934,6 +956,7 @@ class tray_app_service:
         print(favourite_project_list)
 
         self.menu = Menu(MenuItem(run_app_label, lambda: call_main_app()),
+                         MenuItem("Nastavit adresu manuálně", lambda: call_manual_setting()),
                         #  MenuItem(show_scheduled_tasks_label, lambda: call_show_all_tasks()),
                         #  MenuItem(deletion_log_label, lambda: call_show_all_logs()),
                          *[MenuItem(set_ip_label + str(interface), 

@@ -8,8 +8,9 @@ change_log_list = [" Verze 1.0.0 (31.3.2025)",
     """ 
     - přepracování mechaniky oblíbené/neoblíbené
         -> v excelu už postačí jeden list
-    - vracení změn - navýšená kapacita na 10 změn
-    - nově lze vrátit až 5 smazaných projektů
+    - navýšená kapacita na navrácení 10 změn (jen ip)
+    - nově lze vrátit až 5 smazaných projektů (jen ip)
+    - 
     \n"""
 
 ]

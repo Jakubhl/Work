@@ -18,7 +18,7 @@ import copy
 import pyperclip
 import json
 
-testing_mode = True
+testing_mode = False
 
 if testing_mode:
     customtkinter.set_appearance_mode("dark")
@@ -785,23 +785,12 @@ class main:
             print(f"{interface} DHCP: no")
 
         @classmethod
-        def is_project_favourite(cls,favourite_list,array_index):
-            try:
-                fav_status = int(favourite_list[array_index])
-                if fav_status == 1:
-                    return True
-                else:
-                    return False
-                
-            except Exception:
-                return False
-
-        @classmethod
         def get_favourite_ips_addr(cls,excel_file_path):
-            all_rows = cls.read_excel_data(excel_file_path,True)[0]
+            all_projects = cls.read_excel_data(excel_file_path)
             fav_ip_list = []
-            for rows in all_rows:
-                fav_ip_list.append(str(rows[1])+" | "+str(rows[0]))
+            for projects in all_projects:
+                if str(projects["fav_status"]) == "1":
+                    fav_ip_list.append(str(projects["ip"])+" | "+str(projects["name"]))
 
             return fav_ip_list
 
@@ -974,6 +963,128 @@ class main:
             
             return output_message
 
+        @classmethod
+        def manual_ip_setting(cls,app_icon_path,output_callback):
+            window = customtkinter.CTkToplevel()
+            window.after(200, lambda: window.iconbitmap(Tools.resource_path(app_icon_path)))
+            # self.opened_window = window
+            window.title("Manuální nastavení IPv4 adresy")
+
+            def check_ip_and_mask(input_value):
+                input_splitted = input_value.split(".")
+                if len(input_splitted) == 4:
+                    return input_value
+                else:
+                    return False
+
+            def call_ip_change():
+                interface = str(select_interface.get())
+                interface_ip = cls.get_current_ip_list([interface])[0]
+                online_interfaces = cls.fill_interfaces()[1]
+                online_addresses = cls.get_current_ip_list(online_interfaces)
+
+                if "DHCP" in str(select_mode.get()):
+                    cls.change_to_DHCP(interface,interface_ip,output_callback)
+                    # window.destroy()
+                    return
+                
+                ip_input = ip_address_entry.get()
+                mask_input = mask_entry.get()
+                ip_checked = check_ip_and_mask(ip_input)
+                mask_checked = check_ip_and_mask(mask_input)
+                errors = 0
+                if ip_checked == False and errors == 0:
+                    Tools.add_colored_line(manual_console,f"Neplatná IP adresa","red",None,True)
+                    errors += 1
+                if mask_checked == False and errors == 0:
+                    Tools.add_colored_line(manual_console,f"Neplatná maska","red",None,True)
+                    errors += 1
+
+                if errors == 0:
+                    # self.change_computer_ip(0,force_params=[ip_input,mask_input])
+                    cls.change_computer_ip(ip_input,interface,interface_ip,online_addresses,output_callback)
+                    # window.destroy()
+
+            def call_option_change(*args):
+                nonlocal ip_address_entry
+                # self.interface_drop_options.set(str(*args))
+                # self.option_change(*args)
+                ip_address_entry.delete(0,300)
+                ip_address_entry.insert(0,cls.get_current_ip_list([select_interface.get()])[0])
+                check_interface_status()
+
+            def switch_manual_dhcp(*args):
+                nonlocal ip_address_entry
+                nonlocal mask_entry
+                if "DHCP" in str(*args):
+                    ip_address_entry.configure(state = "disabled",text_color = "gray32")
+                    mask_entry.configure(state = "disabled",text_color = "gray32")
+                else:
+                    ip_address_entry.configure(state = "normal",text_color = "gray84")
+                    mask_entry.configure(state = "normal",text_color = "gray84")
+
+            def check_interface_status(online_list = False):
+                if online_list == False:
+                    online_list = cls.fill_interfaces()[1]
+
+                found = False
+                for items in online_list:
+                    if items == str(select_interface.get()):
+                        found = True
+                        select_interface.configure(fg_color = "green",button_color = "green")
+                        interface_status.configure(text = "Online")
+                        break
+
+                if not found:
+                    select_interface.configure(fg_color = "red",button_color = "red")
+                    interface_status.configure(text = "Offline")
+
+            interface_label =       customtkinter.CTkLabel(master = window,text = "Manuálně nastavit IPv4 adresu pro: ",font=("Arial",20,"bold"))
+            interface_frame =       customtkinter.CTkFrame(master = window,corner_radius=0,border_width=0,fg_color="#181818")
+            select_interface =      customtkinter.CTkOptionMenu(master = interface_frame,width=320,height=50,font=("Arial",20,"bold"),dropdown_font=("Arial",20),corner_radius=0,command= lambda args:  call_option_change(args))
+            interface_status =      customtkinter.CTkLabel(master = interface_frame,text = "",font=("Arial",20,"bold"))
+            select_interface.       pack(pady=(10,0),padx=10,side = "left",anchor = "w")
+            interface_status.       pack(pady=(10,0),padx=10,side = "left",anchor = "w")
+            mode_label =            customtkinter.CTkLabel(master = window,text = "Způsob nastavení: ",font=("Arial",20,"bold"))
+            select_mode =           customtkinter.CTkOptionMenu(master = window,width=400,height=50,font=("Arial",20,"bold"),dropdown_font=("Arial",20),corner_radius=0,values = ["manuálně","automaticky (DHCP)"],command= lambda args: switch_manual_dhcp(args))
+            ip_address =            customtkinter.CTkLabel(master = window,text = "IPv4 adresa: ",font=("Arial",20,"bold"))
+            ip_address_entry =      customtkinter.CTkEntry(master = window,width=400,height=50,font=("Arial",20),corner_radius=0)
+            mask =                  customtkinter.CTkLabel(master = window,text = "IPv4 maska: ",font=("Arial",20,"bold"))
+            mask_entry =            customtkinter.CTkEntry(master = window,width=400,height=50,font=("Arial",20),corner_radius=0)
+            manual_console =        tk.Text(window, wrap="none", height=0, width=36,background="black",font=("Arial",14),state=tk.DISABLED)
+            buttons_frame =         customtkinter.CTkFrame(master = window,corner_radius=0,border_width=0,fg_color="#181818")
+            save_button =           customtkinter.CTkButton(master = buttons_frame, width = 190,height=40,text = "Nastavit", command = lambda: call_ip_change(),font=("Arial",20,"bold"),corner_radius=0)
+            exit_button =           customtkinter.CTkButton(master = buttons_frame, width = 190,height=40,text = "Zrušit", command = lambda: window.destroy(),font=("Arial",20,"bold"),corner_radius=0)
+            interface_label.        pack(pady=(10,0),padx=10,side = "top",anchor = "w",expand = False)
+            interface_frame.        pack(pady=(0),padx=0,side = "top",anchor = "w")
+            mode_label.             pack(pady=(10,0),padx=10,side = "top",anchor = "w")
+            select_mode.            pack(pady=(10,0),padx=10,side = "top",anchor = "w")
+            ip_address.             pack(pady=(10,0),padx=10,side = "top",anchor = "w")
+            ip_address_entry.       pack(pady=(10,0),padx=10,side = "top",anchor = "w")
+            mask.                   pack(pady=(10,0),padx=10,side = "top",anchor = "w")
+            mask_entry.             pack(pady=(10,0),padx=10,side = "top",anchor = "w")
+            manual_console.         pack(pady=(10,0),padx=10,side = "top",anchor = "w")
+            buttons_frame.          pack(pady=(10),padx=10,side = "top",anchor = "e")
+            exit_button.            pack(pady=0,padx=(10,0),side = "right",anchor = "w")
+            save_button.            pack(pady=0,padx=0,side = "right",anchor = "e")
+        
+            online_list = cls.fill_interfaces()[1]
+            all_interfaces = cls.fill_interfaces()[0]
+            select_interface.configure(values = all_interfaces)
+            select_interface.set(all_interfaces[0])
+            ip_address_entry.insert(0,cls.get_current_ip_list([all_interfaces[0]])[0])
+            mask_entry.insert(0,"255.255.255.0")
+            check_interface_status(online_list)
+            
+            # self.root.bind("<Button-1>",lambda e: window.destroy(),"+")
+            window.update()
+            window.update_idletasks()
+            # x = self.root.winfo_rootx()
+            # y = self.root.winfo_rooty()
+            # window.geometry(f"{window.winfo_width()}x{window.winfo_height()}+{x+150}+{y+5}")
+            window.focus_force()
+            window.focus()
+
     def __init__(self,root,menu_callback_function,window_mode,initial_path,zoom_factor,config_filename,without_gui =False):
         self.root = root
         self.menu_callback = menu_callback_function
@@ -1084,6 +1195,9 @@ class main:
                 self.deletion_behav = 100
 
             self.bin_projects = self.manage_bin("read_sheet")
+            # self.deleted_projects_bin = []
+            # self.edited_projects_bin = []
+            # self.manage_bin("read_sheet")
             self.create_widgets_disk(init=True)
 
         def call_menu(self): # Tlačítko menu (konec, návrat do menu)
@@ -1266,20 +1380,17 @@ class main:
 
         def manage_bin(self,flag="",parameters=[],wb=None):
             """
-            First_row in bin worksheet = last deleted ip\n
-            Second_row in bin worksheet = last deleted disk\n
-            self.bin_projects = [0] deleted projects (disk)\n
-            self.bin_projects = [1] edited projects (disk)\n
             flag:\n
             - read_sheet
             - save_project_disk
             - load_deleted_disk
             - save_edited_disk
             - load_edited_disk
-            - change_notes_back_disk
             """
+            max_stored_deletions = 5
+            max_stored_edits = 10    
             bin_worksheet = "projects_bin2"
-            
+
             def read_sheet():
                 wb = load_workbook(self.excel_file_path)
                 if not bin_worksheet in wb.sheetnames:
@@ -1796,26 +1907,22 @@ class main:
                     self.password_input.configure(state = "disabled")
 
             child_root = customtkinter.CTkToplevel(fg_color="#212121")
-            child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(self.app_icon)))
             self.opened_window = child_root
-            x = self.root.winfo_rootx()
-            y = self.root.winfo_rooty()
-            # child_root.geometry(f"520x820+{x+50}+{y+100}")
+            child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(self.app_icon)))
             refresh_title()
-            top_main_frame =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_width=0,fg_color="#212121")
-            top_left_frame =   customtkinter.CTkFrame(master=top_main_frame,corner_radius=0,border_width=2,fg_color="#212121")
-            top_right_frame =   customtkinter.CTkFrame(master=top_main_frame,corner_radius=0,border_width=2,fg_color="#212121")
+            top_main_frame =            customtkinter.CTkFrame(master=child_root,corner_radius=0,border_width=0,fg_color="#212121")
+            top_left_frame =            customtkinter.CTkFrame(master=top_main_frame,corner_radius=0,border_width=2,fg_color="#212121")
+            top_right_frame =           customtkinter.CTkFrame(master=top_main_frame,corner_radius=0,border_width=2,fg_color="#212121")
             project_name =              customtkinter.CTkLabel(master = top_left_frame, width = 20,height=30,text = "Název projektu: ",font=("Arial",20,"bold"))
             project_selection_label =   customtkinter.CTkLabel(master = top_right_frame, width = 200,height=30,text = "Přepnout projekt: ",font=("Arial",20,"bold"))
             project_switch_frame =      customtkinter.CTkFrame(master=top_right_frame,corner_radius=0,border_width=0,height=140,width=80)
             project_up =                customtkinter.CTkButton(master = project_switch_frame,font=("Arial",25,"bold"),width=60,height=60,corner_radius=0,text="↑",command= lambda: switch_up())
             project_down =              customtkinter.CTkButton(master = project_switch_frame,font=("Arial",25,"bold"),width=60,height=60,corner_radius=0,text="↓",command= lambda: switch_down())
-            project_up                  .pack(pady=(0,5),padx=5,side = "top")
-            project_down                .pack(pady=0,padx=5,side = "top")
+            project_up                  .pack(pady=(0,5),padx=5,side = "top",fill="x")
+            project_down                .pack(pady=0,padx=5,side = "top",fill="x")
             project_switch_frame.       bind("<MouseWheel>",lambda e: mouse_wheel_change(e))
             project_up.                 bind("<MouseWheel>",lambda e: mouse_wheel_change(e))
             project_down.               bind("<MouseWheel>",lambda e: mouse_wheel_change(e))
-
             copy_check =                customtkinter.CTkButton(master = top_right_frame,font=("Arial",20),width=250,height=30,corner_radius=0,text="Kopírovat předchozí projekt",command= lambda: copy_previous_project())
             del_project_btn =           customtkinter.CTkButton(master = top_right_frame,font=("Arial",20),width=250,height=30,corner_radius=0,text="Smazat tento projekt",command= lambda: del_project(),fg_color="red")
             self.name_input =           customtkinter.CTkEntry(master = top_left_frame,font=("Arial",20),width=200,height=30,corner_radius=0)
@@ -1840,11 +1947,11 @@ class main:
             exit_button =  customtkinter.CTkButton(master = buttons_frame, width = 200,height=40,text = "Zrušit", command = lambda: child_root.destroy(),font=("Arial",20,"bold"),corner_radius=0)
             project_name.pack(pady = (10,0),padx =(5,0),anchor="w",side="top")
             if edit != True:
-                copy_check.pack(pady = (10),padx =(10,0),anchor="w",side="top")
+                copy_check.pack(pady = (10),padx =(10),anchor="w",side="top",fill="x")
             if edit:
                 project_selection_label.pack(pady = (10,0),padx =(5,0),anchor="w",side="top")
-                project_switch_frame.pack(pady=10,padx=10,anchor="w",side = "top")
-                del_project_btn.pack(pady = (10),padx =(10,0),anchor="s",side="left")
+                project_switch_frame.pack(pady=10,padx=10,anchor="w",side = "top",fill="x")
+                del_project_btn.pack(pady = (10),padx =(10),anchor="s",side="left",fill="x")
             self.name_input.        pack(pady = (10,0),padx =(5,5),anchor="w",side="top",fill="x",expand=True)
             disk_letter.            pack(pady = (10,0),padx =(5,0),anchor="w",side="top")
             self.disk_letter_input. pack(pady = (10,0),padx =(5,5),anchor="w",side="top",fill="x",expand=True)
@@ -1857,14 +1964,14 @@ class main:
             show_pass_btn.          pack(anchor="w",side="left")
             pwd_frame.              pack(pady = (10),padx =(5),anchor="w",side="top",fill="x",expand=True)
             top_left_frame.         pack(anchor="w",side="left",fill="both",expand = True)
-            top_right_frame.        pack(anchor="w",side="left",fill="both",expand = True)
+            top_right_frame.        pack(anchor="w",side="left",fill="y",expand =False,ipadx=2,ipady=2)
             top_main_frame.         pack(anchor="w",side="top",fill="both",expand = True)
             notes_label.            pack(pady = (10,0),padx =(5,0),anchor="w",side="top")
-            self.notes_input.       pack(pady = (10,0),padx =(5,0),anchor="w",side="top",fill="x",expand=True)
-            self.console.           pack(pady = (10,0),padx =(5,0),anchor="w",side="top",fill="x",expand=True)
+            self.notes_input.       pack(pady = (10,0),padx =(5),anchor="w",side="top",fill="both",expand=True)
+            self.console.           pack(pady = (10,0),padx =(5),anchor="w",side="top",fill="x",expand=False)
             exit_button.            pack(pady = (10,0),padx =(5,0),anchor="e",side="right")
             save_button.            pack(pady = (10,0),padx =(5,0),anchor="e",side="right")
-            buttons_frame.          pack(pady = (0,10),padx =(0,10),anchor="w",side="top",fill="x",expand=True)
+            buttons_frame.          pack(pady = (0,10),padx =(0,10),anchor="w",side="top",fill="x",expand=False)
 
             if init_copy: # kopírovat pro vytvoreni noveho projektu, neni edit...
                 copy_previous_project()
@@ -2014,7 +2121,7 @@ class main:
             - first index (y) = index celeho radku
             - second index (x) = index jednoho parametru
             """
-            context_menu = tk.Menu(self.root,tearoff=0,fg="white",bg="black",font=("Arial",20,"bold"))
+            context_menu = tk.Menu(self.root,tearoff=0,fg="white",bg="#202020",activebackground="#606060")
             self.check_given_input(given_data=self.disk_all_rows[first_index][0])
             
             if flag == "button":
@@ -2075,19 +2182,33 @@ class main:
 
             def on_enter_entry(widget,row_of_widget):
                 if not opened_window_check():
-                    if str(widget) != str(self.last_selected_notes_widget) + ".!ctktextbox":
-                        widget.configure(state = "normal")
-                        widget.delete("1.0",tk.END)
-                        widget.insert(tk.END,str(self.disk_all_rows[row_of_widget][5]))
-                        if self.default_note_behav == 0:
-                            widget.configure(state = "disabled")
+                    if str(widget[0]) != str(self.last_selected_notes_widget):
+                        tolerance = 5
+                        if abs(int(widget[0]._current_height)-self.notes_frame_height) <= tolerance: # if the height is not 50 then it means it is expanded already
+                            filtered_input = filter_text_input(self.disk_all_rows[row_of_widget][5])
+                            self.disk_all_rows[row_of_widget][5] = filtered_input
+                            addition = self.notes_frame_height
+                            if "\n" in self.disk_all_rows[row_of_widget][5]:
+                                notes_rows = self.disk_all_rows[row_of_widget][5].split("\n")
+                                if len(notes_rows) > 1:
+                                    expanded_dim = addition + (len(notes_rows)-1) * 25
+                                    # widget[0].configure(height = expanded_dim)
+                                    widget[1].configure(state = "normal")
+                                    widget[1].configure(height = expanded_dim-10)
+                                    if str(widget) != str(self.last_selected_notes_widget) + ".!ctktextbox":
+                                        widget[1].delete("1.0",tk.END)
+                                        widget[1].insert(tk.END,str(self.disk_all_rows[row_of_widget][5]))
+
+                    if self.default_note_behav == 0:
+                        widget[1].configure(state = "disabled")
+
 
             def on_leave_entry(widget,row_of_widget):
                 if not opened_window_check():
                     notes_before = filter_text_input(str(self.disk_all_rows[row_of_widget][5]))
-                    notes_after = filter_text_input(str(widget.get("1.0",tk.END)))
-                    if str(widget) != str(self.last_selected_notes_widget) + ".!ctktextbox":
-                        widget.configure(state = "normal")
+                    notes_after = filter_text_input(str(widget[1].get("1.0",tk.END)))
+                    if str(widget[1]) != str(self.last_selected_notes_widget) + ".!ctktextbox":
+                        widget[1].configure(state = "normal")
                         if notes_before != notes_after:
                             self.disk_all_rows[row_of_widget][5] = notes_after
                             self.changed_notes_disk = [self.disk_all_rows[row_of_widget][0],notes_before]
@@ -2097,11 +2218,11 @@ class main:
                         if "\n" in self.disk_all_rows[row_of_widget][5]:
                             notes_rows = self.disk_all_rows[row_of_widget][5].split("\n")
                             first_row = notes_rows[0]
-                            widget.delete("1.0",tk.END)
-                            widget.insert(tk.END,str(first_row))
+                            widget[1].delete("1.0",tk.END)
+                            widget[1].insert(tk.END,str(first_row))
                         
                         if self.default_note_behav == 0:
-                            widget.configure(state = "disabled")
+                            widget[1].configure(state = "disabled")
                         self.root.focus_set() # unfocus widget
                     else:
                         # jinak pouze ulož změny
@@ -2111,6 +2232,18 @@ class main:
                             self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="change_notes_back_disk"))
                             save_changed_notes(notes_after,row_of_widget)
                         self.root.focus_set() # unfocus widget
+
+                    tolerance = 5
+                    if abs(int(widget[0]._current_height)-self.notes_frame_height) <= tolerance:
+                        return
+                    if not opened_window_check():
+                        if str(widget[0]) != str(self.last_selected_notes_widget):
+                            widget[1].configure(state = "normal")
+                            new_height = self.notes_frame_height
+                            # widget[0].configure(height = new_height)
+                            widget[1].configure(height = new_height-10)
+                            if self.default_note_behav == 0:
+                                widget[1].configure(state = "disabled")
 
             def shrink_frame(widget):
                 tolerance = 5
@@ -2145,8 +2278,8 @@ class main:
 
             def add_row_return(widget):
                 addition = widget[0]._current_height
-                expanded_dim = addition + 26
-                widget[0].configure(height = expanded_dim)
+                expanded_dim = addition + 24
+                # widget[0].configure(height = expanded_dim)
                 widget[1].configure(height = expanded_dim-10)
 
             if not no_read:
@@ -2216,10 +2349,13 @@ class main:
                         else:
                             notes.insert(tk.END,str(self.disk_all_rows[y][x]))
                         
-                        notes.bind("<Enter>",lambda e, widget = [notes_frame,notes],row=y: expand_frame(widget,row))
-                        notes.bind("<Leave>",lambda e, widget = [notes_frame,notes]:       shrink_frame(widget))
-                        notes.bind("<Enter>",lambda e, widget = notes,row=y:               on_enter_entry(widget,row))
-                        notes.bind("<Leave>",lambda e, widget = notes,row=y:               on_leave_entry(widget,row))
+                        notes.bind("<Enter>",lambda e, widget = [notes_frame,notes],row=y: on_enter_entry(widget,row))
+                        notes.bind("<Leave>",lambda e, widget = [notes_frame,notes],row=y: on_leave_entry(widget,row))
+
+                        # notes.bind("<Enter>",lambda e, widget = [notes_frame,notes],row=y: expand_frame(widget,row))
+                        # notes.bind("<Leave>",lambda e, widget = [notes_frame,notes]:       shrink_frame(widget))
+                        # notes.bind("<Enter>",lambda e, widget = notes,row=y:               on_enter_entry(widget,row))
+                        # notes.bind("<Leave>",lambda e, widget = notes,row=y:               on_leave_entry(widget,row))
                         notes.bind("<Return>",lambda e, widget = [notes_frame,notes]: add_row_return(widget))
 
                         if self.default_note_behav == 0:
@@ -2664,6 +2800,7 @@ class main:
             self.changed_notes = []
             self.notes_frame_height = 50
 
+            
             read_parameters = Tools.read_json_config(self.config_filename_path)
             if read_parameters != None:
                 self.default_connection_option = read_parameters["default_ip_interface"]
@@ -2717,17 +2854,12 @@ class main:
     
         def manage_bin(self,flag="",project=None,new_edited_name = None):
             """
-            First_row in bin worksheet = last deleted ip\n
-            Second_row in bin worksheet = last deleted disk\n
-            self.bin_projects = [0] deleted projects\n
-            self.bin_projects = [1] edited projects\n
             flag:\n
             - read_sheet
             - save_project_ip
             - load_deleted_ip
             - save_edited_ip
             - load_edited_ip
-            - change_notes_back
             """
             max_stored_deletions = 5
             max_stored_edits = 10
@@ -2965,7 +3097,7 @@ class main:
             child_root.wait_window()
             return project_found
 
-        def add_new_project(self,edit = None,init_copy = False):
+        def add_new_project(self,edit = None,init_copy = False,childroot_given = None):
             def mouse_wheel_change(e):
                 if -e.delta < 0:
                     switch_up()
@@ -3068,7 +3200,7 @@ class main:
                     self.make_project_favourite = True
                     do_favourite()
 
-            def save_project():
+            def save_project(add_next = False):
                 def check_ip_and_mask(input_value):
                     input_splitted = input_value.split(".")
                     if len(input_splitted) == 4:
@@ -3154,17 +3286,25 @@ class main:
                     Tools.add_colored_line(self.main_console,f"Nový projekt: {project_name} byl úspěšně přidán","green",None,True)
 
                 self.make_project_cells()
-                child_root.destroy()
+                if add_next:
+                    Tools.clear_frame(child_root)
+                    self.root.after(10,self.add_new_project(childroot_given=child_root))
+                else:
+                    child_root.destroy()
 
-            child_root = customtkinter.CTkToplevel(fg_color="#212121")
+            if childroot_given == None:
+                child_root = customtkinter.CTkToplevel(fg_color="#212121")
+            else:
+                child_root = childroot_given
+
             self.opened_window = child_root
             child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(self.app_icon)))
             refresh_title()
-            top_main_frame =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_width=0,fg_color="#212121")
-            top_left_frame =   customtkinter.CTkFrame(master=top_main_frame,corner_radius=0,border_width=2,fg_color="#212121")
-            top_right_frame =   customtkinter.CTkFrame(master=top_main_frame,corner_radius=0,border_width=2,fg_color="#212121")
-            project_name =    customtkinter.CTkLabel(master = top_left_frame, width = 20,height=30,text = "Název projektu: ",font=("Arial",20,"bold"))
-            self.name_input = customtkinter.CTkEntry(master = top_left_frame,font=("Arial",20),width=200,height=30,corner_radius=0)
+            top_main_frame =        customtkinter.CTkFrame(master=child_root,corner_radius=0,border_width=0,fg_color="#212121")
+            top_left_frame =        customtkinter.CTkFrame(master=top_main_frame,corner_radius=0,border_width=2,fg_color="#212121")
+            top_right_frame =       customtkinter.CTkFrame(master=top_main_frame,corner_radius=0,border_width=2,fg_color="#212121")
+            project_name =          customtkinter.CTkLabel(master = top_left_frame, width = 20,height=30,text = "Název projektu: ",font=("Arial",20,"bold"))
+            self.name_input =       customtkinter.CTkEntry(master = top_left_frame,font=("Arial",20),width=200,height=30,corner_radius=0)
             project_selection_label = customtkinter.CTkLabel(master = top_right_frame, width = 200,height=30,text = "Přepnout projekt: ",font=("Arial",20,"bold"))
             project_switch_frame =  customtkinter.CTkFrame(master=top_right_frame,corner_radius=0,height=140,width=80)
             project_up =            customtkinter.CTkButton(master = project_switch_frame,font=("Arial",25,"bold"),width=60,height=60,corner_radius=0,text="↑",command= lambda: switch_up())
@@ -3179,6 +3319,7 @@ class main:
             mask =                 customtkinter.CTkLabel(master = top_left_frame, width = 20,height=30,text = "Maska: ",font=("Arial",20,"bold"))
             self.mask_input =      customtkinter.CTkEntry(master = top_left_frame,font=("Arial",20),width=200,height=30,corner_radius=0)
             copy_check =           customtkinter.CTkButton(master = top_right_frame,font=("Arial",20),width=250,height=30,corner_radius=0,text="Kopírovat předchozí projekt",command= lambda: copy_previous_project())
+            save_and_add_next =    customtkinter.CTkButton(master = top_right_frame,font=("Arial",20),width=250,height=30,corner_radius=0,text="Uložit a přidat další",command= lambda: save_project(add_next = True))
             del_project_btn =      customtkinter.CTkButton(master = top_right_frame,font=("Arial",20),width=250,height=30,corner_radius=0,text="Smazat tento projekt",command= lambda: del_project(),fg_color="red")
             fav_status =           customtkinter.CTkLabel(master = top_left_frame, width = 20,height=30,text = "Status oblíbenosti: ",font=("Arial",20,"bold"))
             fav_frame =            customtkinter.CTkFrame(master=top_left_frame,corner_radius=0,border_width=0,height=50,fg_color="#353535",border_color="#606060")
@@ -3197,10 +3338,7 @@ class main:
             self.notes_input =     customtkinter.CTkTextbox(master = child_root,font=("Arial",20),height=280,corner_radius=0)
             self.console =         tk.Text(child_root, wrap="none", height=0,background="black",font=("Arial",14),state=tk.DISABLED)
             buttons_frame =        customtkinter.CTkFrame(master=child_root,corner_radius=0,border_width=0,fg_color="#212121")
-            if edit:
-                save_button =  customtkinter.CTkButton(master = buttons_frame, width = 200,height=40,text = "Uložit", command = lambda: save_project(),font=("Arial",20,"bold"),corner_radius=0)
-            else:
-                save_button =  customtkinter.CTkButton(master = buttons_frame, width = 200,height=40,text = "Uložit", command = lambda: save_project(),font=("Arial",20,"bold"),corner_radius=0)
+            save_button =  customtkinter.CTkButton(master = buttons_frame, width = 200,height=40,text = "Uložit", command = lambda: save_project(),font=("Arial",20,"bold"),corner_radius=0)
             exit_button =  customtkinter.CTkButton(master = buttons_frame, width = 200,height=40,text = "Zrušit", command = lambda: child_root.destroy(),font=("Arial",20,"bold"),corner_radius=0)
 
             project_name.pack(pady = (10,0),padx =(5,0),anchor="w",side="top")
@@ -3209,6 +3347,7 @@ class main:
                 project_switch_frame.pack(pady=10,padx=10,anchor="w",side = "top",fill="x")
             else:
                 copy_check.         pack(pady = (10),padx =(10),anchor="w",side="top")
+                save_and_add_next.  pack(pady = (10),padx =(0,10),anchor="w",side="top")
             self.name_input.        pack(pady = (10,0),padx =(5,5),anchor="w",side="top",fill="x",expand=True)
             IP_adress.              pack(pady = (10,0),padx =(5,0),anchor="w",side="top")
             self.IP_adress_input.   pack(pady = (10,0),padx =(5,5),anchor="w",side="top",fill="x",expand=True)
@@ -3227,11 +3366,11 @@ class main:
             top_right_frame.        pack(anchor="e",side="right",fill="y",expand = False,ipadx=2,ipady=2)
             top_main_frame.         pack(anchor="w",side="top",fill="both",expand = True)
             notes_label.            pack(pady = (10,0),padx =(5,0),anchor="w",side="top")
-            self.notes_input.       pack(pady = (10,0),padx =(5),anchor="w",side="top",fill="x",expand=True)
-            self.console.           pack(pady = (10,0),padx =(5),anchor="w",side="top",fill="x",expand=True)
+            self.notes_input.       pack(pady = (10,0),padx =(5),anchor="w",side="top",fill="both",expand=True)
+            self.console.           pack(pady = (10,0),padx =(5),anchor="w",side="top",fill="x",expand=False)
             exit_button.            pack(pady = (10,0),padx =(5,0),anchor="e",side="right")
             save_button.            pack(pady = (10,0),padx =(5,0),anchor="e",side="right")
-            buttons_frame.          pack(pady = (0,10),padx =(0,10),anchor="w",side="top",fill="x",expand=True)
+            buttons_frame.          pack(pady = (0,10),padx =(0,10),anchor="w",side="top",fill="x",expand=False)
             if edit or init_copy:
                 copy_previous_project()
             else:
@@ -3766,7 +3905,7 @@ class main:
             def add_row_return(widget):
                 addition = widget[0]._current_height
                 expanded_dim = addition + 24
-                widget[0].configure(height = expanded_dim)
+                # widget[0].configure(height = expanded_dim)
                 widget[1].configure(height = expanded_dim-10)
            
             if no_read == None:
@@ -4246,10 +4385,9 @@ class main:
             self.root.bind("<Button-1>",lambda e: window.destroy(),"+")
             window.update()
             window.update_idletasks()
-            x = self.root.winfo_rootx()
-            y = self.root.winfo_rooty()
-            window.geometry(f"{window.winfo_width()}x{window.winfo_height()}+{x+150}+{y+5}")
-
+            # x = self.root.winfo_rootx()
+            # y = self.root.winfo_rooty()
+            # window.geometry(f"{window.winfo_width()}x{window.winfo_height()}+{x+150}+{y+5}")
             window.focus_force()
             window.focus()
 

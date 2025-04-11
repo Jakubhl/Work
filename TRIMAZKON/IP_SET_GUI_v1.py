@@ -70,7 +70,7 @@ import os
 import time
 from PIL import Image#, ImageTk
 # import Deleting_option_v2 as Deleting
-import IP_setting_v5 as IP_setting
+import IP_setting_v6 as IP_setting
 import ip_only_tray_v1 as trimazkon_tray
 import ip_set_changelog
 from tkinter import filedialog
@@ -221,7 +221,6 @@ class Subwindows:
         child_root.focus()
         child_root.focus_force()
         child_root.grab_set()
-
 
 class WindowsBalloonTip:
     """
@@ -1106,6 +1105,15 @@ class Tools:
                 print("Error checking trial period:", e)
                 return False
 
+        @classmethod
+        def open_manual_ip_setting_window(cls):
+            def output_callback(output_message):
+                WindowsBalloonTip("Proveden pokus o změnu IP adresy",
+                    str(output_message),
+                    app_icon)
+            ip_set_instance = IP_setting.main(None,None,None,initial_path,None,config_filename,True)
+            ip_set_instance.IP_tools.manual_ip_setting(app_icon_path=app_icon,output_callback=output_callback)
+
 class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
     """
     aby bylo možné posílat běžící aplikaci parametry:
@@ -1187,6 +1195,10 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
                             start_new_root() # spousteni pres admina, bylo potreba shodit cely processID
                             # self.root.after(0,menu.menu(clear_root=True))
 
+                    elif "Open manual ip setting window" in received_data:
+                        manual_ip_thread = threading.Thread(target= Tools.open_manual_ip_setting_window,)
+                        manual_ip_thread.start()
+
                     elif "Open list with del tasks" in received_data:
                         trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
                         # trimazkon_tray_instance.show_all_tasks(toplevel=True)
@@ -1258,7 +1270,12 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
                 message = message + str(params) + "|||"
             print("Message sent: ",message)
             win32file.WriteFile(handle, message.encode())
-        
+
+        elif "Open manual ip setting window" in str(command):
+            message = "Open manual ip setting window"
+            print("Message sent.",message)
+            win32file.WriteFile(handle, message.encode())
+
         elif "Open list with del tasks" in str(command):
             message = "Open list with del tasks"
             print("Message sent.",message)
@@ -1344,12 +1361,18 @@ if len(sys.argv) > 1 and not global_licence_load_error:
         pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
         pipeline_duplex_instance.call_checking(f"Establish main menu gui",[])
     
+    elif sys.argv[1] == "manual_ip_setting":
+        load_gui = False
+        loop_request = False
+        pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
+        pipeline_duplex_instance.call_checking(f"Open manual ip setting window",[])
+    
     elif sys.argv[1] == "open_task_list":
         load_gui = False
         loop_request = False
         pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
         pipeline_duplex_instance.call_checking(f"Open list with del tasks",[])
-    
+
     elif sys.argv[1] == "open_log_list":
         load_gui = False
         loop_request = False

@@ -907,22 +907,26 @@ msi - ikona - odkaz podle nazvu executable filu... - hotovo
 TRIMAZKON - ip_setting - nefunguje kopirovani oblibenych a posouvani o pozici... - předělat adresy na objekty - hotovo
 TRIMAKZON - ip_setting - kontextmenu - možnost přidat i odebrat do oblíbených - hotovo
 TRIMAKZON - ip_setting - kontextmenu - při mazání z oblíbených upravit smazat na odstranit z oblíbených - hotovo
+TRIMAZKON - ip_setting - optimalizovat otevirani poznamek - se zpožděním - hotovo
+TRIMAZKON - ip_setting - znemoznit duplicitu jmen - hotovo
+
+10:45 AM 4/11/2025
+TRIMAZKON - ip_setting - dodělat změny i u disků (notes, edit okno, kontext_menu) - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
-TRIMAZKON - katalog - nove kontextove nabidky
-
-TRIMAZKON - ip_setting - znemoznit duplicitu jmen
 
 
-TRIMAKZON - ip_setting - možnost manuálně nastavit ip přes tray
-TRIMAZKON - ip_setting - optimalizovat otevirani poznamek - se zpožděním
+TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama, možná přesměrovat i edity a deletions
 
+TRIMAKZON - ip_setting - možnost manuálně nastavit ip přes tray - otestovat na exe
+
+TRIMAZKON - ip_setting - dodělat změny i u disků: manage_bin
 
 
 TRIMAZKON - msi instalačky se dotazovat zda s konzolí či bez
-
+TRIMAZKON - katalog - nove kontextove nabidky
 
 
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
