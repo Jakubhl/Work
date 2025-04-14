@@ -11,6 +11,9 @@ import psutil
 # name_of_task = "dailyscript_test"
 # cmd_command = f"schtasks /Delete /TN {name_of_task} /F"
 # connection_status = subprocess.call(cmd_command,shell=True,text=True)
+open("broken_image.jpg", "wb").close()
+k = input("stop")
+
 
 print(len(str("")))
 all_string = "|||Datum: 17.12.2024 10:12:26||Zkontrolováno: 161 souborů||Starších: 153 souborů||Smazáno: 0 souborů"

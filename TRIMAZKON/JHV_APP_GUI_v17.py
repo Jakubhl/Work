@@ -55,7 +55,7 @@ exe_path = sys.executable
 exe_name = os_path_basename(exe_path)
 config_filename = "TRIMAZKON.json"
 app_name = "TRIMAZKON"
-app_version = "4.3.2"
+app_version = "4.3.3"
 loop_request = False
 root = None
 print("exe name: ",exe_name)
@@ -66,7 +66,7 @@ app_running_status = initial_tools.check_runing_app_duplicity()
 print("already opened app status: ",app_running_status)
 open_image_only = False
 if len(sys.argv) > 1 and app_running_status == True:
-    used_cmd_calls = ["deleting","trigger_by_tray","run_tray","open_task_list","open_log_list","app_shutdown","edit_existing_task","settings_tray","settings_tray_del","admin_menu","installer_call"]
+    used_cmd_calls = ["deleting","trigger_by_tray","run_tray","open_task_list","open_log_list","app_shutdown","edit_existing_task","settings_tray","settings_tray_del","admin_menu","installer_call","manual_ip_setting"]
     if str(sys.argv[1]) not in used_cmd_calls:
         if sys.argv[0] != sys.argv[1]:
             open_image_only = True
@@ -81,7 +81,7 @@ if not open_image_only:
     import Converting_option_v3 as Converting
     import catalogue_maker_v5 as Catalogue
     import sharepoint_download as download_database
-    import IP_setting_v5 as IP_setting
+    import IP_setting_v6 as IP_setting
     import trimazkon_tray_v5 as trimazkon_tray
     import string_database
     from tkinter import filedialog
@@ -1649,6 +1649,15 @@ if not open_image_only:
                 print("Error checking trial period:", e)
                 return False
 
+        @classmethod
+        def open_manual_ip_setting_window(cls):
+            def output_callback(output_message):
+                WindowsBalloonTip("Proveden pokus o změnu IP adresy",
+                    str(output_message),
+                    app_icon)
+            ip_set_instance = IP_setting.main(None,None,None,initial_path,None,config_filename,True)
+            ip_set_instance.IP_tools.manual_ip_setting(app_icon_path=app_icon,output_callback=output_callback)
+
 class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
     """
     aby bylo možné posílat běžící aplikaci parametry:
@@ -1737,6 +1746,10 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
                         print("params to send: ",params_to_send)
                         del_thread = threading.Thread(target=Tools.deleting_via_cmd,args=[params_to_send],name="Deleting_thread")
                         del_thread.start()
+
+                    elif "Open manual ip setting window" in received_data:
+                        manual_ip_thread = threading.Thread(target= Tools.open_manual_ip_setting_window,)
+                        manual_ip_thread.start()
 
                     elif "Open list with del tasks" in received_data:
                         trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
@@ -1840,6 +1853,11 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
                 message = message + str(params) + "|||"
             print("Message sent: ",message)
             win32file.WriteFile(handle, message.encode())
+
+        elif "Open manual ip setting window" in str(command):
+            message = "Open manual ip setting window"
+            print("Message sent.",message)
+            win32file.WriteFile(handle, message.encode())
         
         elif "Open list with del tasks" in str(command):
             message = "Open list with del tasks"
@@ -1931,6 +1949,12 @@ if not open_image_only:
             loop_request = False
             pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
             pipeline_duplex_instance.call_checking(f"Establish main menu gui",[])
+
+        elif sys.argv[1] == "manual_ip_setting":
+            load_gui = False
+            loop_request = False
+            pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True) # pokud už je aplikace spuštěná nezapínej server, trvá to...
+            pipeline_duplex_instance.call_checking(f"Open manual ip setting window",[])
         
         elif sys.argv[1] == "open_task_list":
             load_gui = False
@@ -2251,6 +2275,7 @@ if not open_image_only:
         - umožňuje: měnit rychlost přehrávání, přiblížení, otočení obrázku
         - reaguje na klávesové zkratky
         """
+        
         def __init__(self,root,IB_as_def_browser_path = None,selected_image = "",path_given = "",params_given = None):
             self.root = root
             self.path_given = path_given
@@ -2556,6 +2581,7 @@ if not open_image_only:
                                 #zobrazit obrazek vybrany v exploreru
                                 self.increment_of_image = self.all_images.index(path+self.selected_image)
                             self.default_path = r"{}".format(path)
+                            # self.default_path = Tools.path_check(path)
                             path_to_add_to_history = self.default_path
                             self.convert_files()
                             center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
@@ -2698,16 +2724,24 @@ if not open_image_only:
             if not only_next_ifz:
                 self.loaded_image_status = False
             
-            def corrupted_image_handling():
+            def corrupted_image_handling(error_message = None):
                 with Image.open(Tools.resource_path("images/loading3.png")) as opened_image:
                     rotated_image = opened_image.rotate(180,expand=True)
-                resized = rotated_image.resize(size=(800,800))
-                error_image = ImageTk.PhotoImage(resized)
-                if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
-                    self.main_frame.delete("lower")
-                    self.main_image = self.main_frame.create_image(0, 0, anchor=tk.NW, image=error_image,tag ="raise")
-                    self.main_frame.tag_lower(self.main_image)
-                    self.main_frame.update()
+                    width,height = rotated_image.size
+                    # width,height = 800, 800
+
+                if error_message != None:
+                    self.main_frame.delete("error_message")
+                    self.main_frame.create_text(
+                        800,  # x coordinate
+                        400,  # y coordinate
+                        text=error_message,      # the text to show
+                        fill="orange",    # same color as your cursor
+                        font=("Arial", 30),         # font and size
+                        tags="error_message"              # same tag, so it can be deleted with others
+                    )
+
+                return (rotated_image, width, height)
 
             def check_image_growth_boundaries():
                 frame_dimensions = self.get_frame_dimensions()
@@ -2782,7 +2816,8 @@ if not open_image_only:
                         except Exception as e:
                             error_message = f"Obrázek: {image_to_show} je poškozen"
                             print(error_message)
-                            return False
+                            error_image, width, height = corrupted_image_handling()
+                            return error_image
 
                     if reload_buffer:
                         if len(self.image_queue)>len(self.all_images):
@@ -2851,13 +2886,14 @@ if not open_image_only:
                     with Image.open(image_to_show) as opened_image:
                         rotated_image = opened_image.rotate(self.rotation_angle,expand=True)
                         width,height = rotated_image.size
+                    self.main_frame.delete("error_message")
+
                 except Exception as e:
-                    error_message = f"Obrázek: {image_to_show} je poškozen"
+                    error_message = f"Obrázek:\n{image_to_show}\nje poškozený"
                     print(error_message)
                     if not in_new_window:
-                        corrupted_image_handling()
-                        return error_message
-
+                        rotated_image, width, height = corrupted_image_handling(error_message)
+                        # return error_message
 
                 if in_new_window:
                     def resize_image(event, label, original_image,frame_given = False):
@@ -3302,7 +3338,6 @@ if not open_image_only:
 
                 self.main_frame.create_line(image_center_x-cursor_len_x, image_center_y, image_center_x+cursor_len_x, image_center_y, fill=self.drawing_color,tags="drawing",width=self.drawing_thickness)
                 self.main_frame.create_line(image_center_x, image_center_y-cursor_len_y, image_center_x, image_center_y+cursor_len_y, fill=self.drawing_color,tags="drawing",width=self.drawing_thickness)
-
 
             window = customtkinter.CTkToplevel()
             window.after(200, lambda: window.iconbitmap(app_icon))
@@ -6973,7 +7008,7 @@ if not open_image_only:
             if testing:
                 self.database_downloaded = True 
             config_data = Tools.read_json_config()
-            self.database_filename = config_data["catalogue_settings"]["database_filename"]
+            self.database_filename = str(config_data["catalogue_settings"]["database_filename"])
             # self.default_excel_filename = config_data["catalogue_settings"]["catalogue_filename"]
             # self.default_xml_file_name = config_data["catalogue_settings"]["metadata_filename"]
             # self.default_subwindow_status = config_data["catalogue_settings"]["subwindow_behav"]

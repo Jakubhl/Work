@@ -347,7 +347,22 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
       - nově možnost výběru instalace sw
       - volba zda vytvořit ikonu
       - volba zda spustit po instalaci
-  
+    """
+        ,"\nVerze 4.3.3 (14.04.2025)"
+        ,
+  """ 
+  ip_setting:
+    - přepracování mechaniky oblíbené/neoblíbené
+        -> v excelu už postačí jeden list
+    - navýšená kapacita navrácení změn na 10 (jen ip)
+    - nově lze vrátit až 5 smazaných projektů (jen ip)
+    - nové možnosti v kontextové nabídce
+    - optimalizace otevírání poznámek
+    - v system tray nově možnost nastavit adresu manuálně
+
+  prohlížeč obrázků:
+    - opraveno .ifz + konvertování
+    - oprava chování u poškozených souborů
     """
 ]
 

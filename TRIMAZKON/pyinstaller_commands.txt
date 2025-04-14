@@ -55,7 +55,12 @@ Add-MpPreference -ExclusionPath "C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\
 python generovani_MSI_TRIMAZKON_v2.py bdist_msi
 
 ORCA:
-- podmínky, co nainstalovat přes tabulky component
+- import tabulek .idt: Binary, Control, ControlEvent, CustomAction, Dialog, InstallExecuteSequence, InstallUISequence, Property, Shortcut
+- podmínky, co nainstalovat přes tabulky component:
+INSTALL_OPTION1 = "1" trimazkon all
+INSTALL_OPTION2 = "1" jhv_ip
+INSTALL_OPTION3 = "1" jhv_MAZ
+
 
 
 

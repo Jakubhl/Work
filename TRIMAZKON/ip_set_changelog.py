@@ -8,9 +8,11 @@ change_log_list = [" Verze 1.0.0 (31.3.2025)",
     """ 
     - přepracování mechaniky oblíbené/neoblíbené
         -> v excelu už postačí jeden list
-    - navýšená kapacita na navrácení 10 změn (jen ip)
+    - navýšená kapacita navrácení změn na 10 (jen ip)
     - nově lze vrátit až 5 smazaných projektů (jen ip)
-    - 
+    - nové možnosti v kontextové nabídce
+    - optimalizace otevírání poznámek
+    - v system tray nově možnost nastavit adresu manuálně
     \n"""
 
 ]

@@ -1910,6 +1910,9 @@ class Catalogue_gui:
         self.optics_database_pointer = 0
         self.camera_cable_database_pointer = 0
         self.accessory_database_pointer = 0
+        if len(self.download_database_console_input) > 0:
+            return
+
         load_failed = False
         try:
             wb = load_workbook(filename=sharepoint_database_path)

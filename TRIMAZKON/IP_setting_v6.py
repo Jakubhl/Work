@@ -984,7 +984,10 @@ class main:
                 online_addresses = cls.get_current_ip_list(online_interfaces)
 
                 if "DHCP" in str(select_mode.get()):
-                    cls.change_to_DHCP(interface,interface_ip,output_callback)
+                    def console_callback(msg):
+                        Tools.add_colored_line(manual_console,msg,"white",None,True)
+                        output_callback(msg)
+                    cls.change_to_DHCP(interface,interface_ip,console_callback)
                     # window.destroy()
                     return
                 
@@ -1002,7 +1005,10 @@ class main:
 
                 if errors == 0:
                     # self.change_computer_ip(0,force_params=[ip_input,mask_input])
-                    cls.change_computer_ip(ip_input,interface,interface_ip,online_addresses,output_callback)
+                    def console_callback(msg):
+                        Tools.add_colored_line(manual_console,msg,"white",None,True)
+                        output_callback(msg)
+                    cls.change_computer_ip(ip_input,interface,interface_ip,online_addresses,console_callback)
                     # window.destroy()
 
             def call_option_change(*args):
@@ -1043,8 +1049,8 @@ class main:
             interface_frame =       customtkinter.CTkFrame(master = window,corner_radius=0,border_width=0,fg_color="#181818")
             select_interface =      customtkinter.CTkOptionMenu(master = interface_frame,width=320,height=50,font=("Arial",20,"bold"),dropdown_font=("Arial",20),corner_radius=0,command= lambda args:  call_option_change(args))
             interface_status =      customtkinter.CTkLabel(master = interface_frame,text = "",font=("Arial",20,"bold"))
-            select_interface.       pack(pady=(10,0),padx=10,side = "left",anchor = "w")
-            interface_status.       pack(pady=(10,0),padx=10,side = "left",anchor = "w")
+            select_interface.       pack(pady=(10,0),padx=10,side = "left",anchor = "w",fill="x",expand=True)
+            interface_status.       pack(pady=(10,0),padx=10,side = "right",anchor = "e")
             mode_label =            customtkinter.CTkLabel(master = window,text = "Způsob nastavení: ",font=("Arial",20,"bold"))
             select_mode =           customtkinter.CTkOptionMenu(master = window,width=400,height=50,font=("Arial",20,"bold"),dropdown_font=("Arial",20),corner_radius=0,values = ["manuálně","automaticky (DHCP)"],command= lambda args: switch_manual_dhcp(args))
             ip_address =            customtkinter.CTkLabel(master = window,text = "IPv4 adresa: ",font=("Arial",20,"bold"))
@@ -1056,17 +1062,17 @@ class main:
             save_button =           customtkinter.CTkButton(master = buttons_frame, width = 190,height=40,text = "Nastavit", command = lambda: call_ip_change(),font=("Arial",20,"bold"),corner_radius=0)
             exit_button =           customtkinter.CTkButton(master = buttons_frame, width = 190,height=40,text = "Zrušit", command = lambda: window.destroy(),font=("Arial",20,"bold"),corner_radius=0)
             interface_label.        pack(pady=(10,0),padx=10,side = "top",anchor = "w",expand = False)
-            interface_frame.        pack(pady=(0),padx=0,side = "top",anchor = "w")
+            interface_frame.        pack(pady=(0),padx=0,side = "top",anchor = "w",fill="x")
             mode_label.             pack(pady=(10,0),padx=10,side = "top",anchor = "w")
-            select_mode.            pack(pady=(10,0),padx=10,side = "top",anchor = "w")
+            select_mode.            pack(pady=(10,0),padx=10,side = "top",anchor = "w",fill="x")
             ip_address.             pack(pady=(10,0),padx=10,side = "top",anchor = "w")
-            ip_address_entry.       pack(pady=(10,0),padx=10,side = "top",anchor = "w")
+            ip_address_entry.       pack(pady=(10,0),padx=10,side = "top",anchor = "w",fill="x")
             mask.                   pack(pady=(10,0),padx=10,side = "top",anchor = "w")
-            mask_entry.             pack(pady=(10,0),padx=10,side = "top",anchor = "w")
-            manual_console.         pack(pady=(10,0),padx=10,side = "top",anchor = "w")
-            buttons_frame.          pack(pady=(10),padx=10,side = "top",anchor = "e")
+            mask_entry.             pack(pady=(10,0),padx=10,side = "top",anchor = "w",fill="x")
+            manual_console.         pack(pady=(10,0),padx=10,side = "top",anchor = "w",fill="x")
             exit_button.            pack(pady=0,padx=(10,0),side = "right",anchor = "w")
             save_button.            pack(pady=0,padx=0,side = "right",anchor = "e")
+            buttons_frame.          pack(pady=(10),padx=10,side = "bottom",anchor = "e",fill="x")
         
             online_list = cls.fill_interfaces()[1]
             all_interfaces = cls.fill_interfaces()[0]
@@ -1075,13 +1081,9 @@ class main:
             ip_address_entry.insert(0,cls.get_current_ip_list([all_interfaces[0]])[0])
             mask_entry.insert(0,"255.255.255.0")
             check_interface_status(online_list)
-            
-            # self.root.bind("<Button-1>",lambda e: window.destroy(),"+")
             window.update()
             window.update_idletasks()
-            # x = self.root.winfo_rootx()
-            # y = self.root.winfo_rooty()
-            # window.geometry(f"{window.winfo_width()}x{window.winfo_height()}+{x+150}+{y+5}")
+            window.geometry(f"{600}x{500}")
             window.focus_force()
             window.focus()
 
@@ -4460,6 +4462,7 @@ class main:
             button_settings_behav =     customtkinter.CTkButton(master = first_row_frame, width = 40,height=40,text="⚙️",command =  lambda: self.setting_window(),font=(None,22),corner_radius=0)
             manual_ip_set =             customtkinter.CTkButton(master = first_row_frame, width = 40,height=40,text="Manuálně",command =  lambda: self.manual_ip_setting(),font=("Arial",20,"bold"),corner_radius=0)
             
+
             if self.show_favourite:
                 self.button_remove_main.            configure(text="Odebrat")
                 self.button_switch_favourite_ip.    configure(fg_color="#212121")
@@ -4617,4 +4620,5 @@ if testing_mode:
     # IP_assignment(root,"","max",str(os.getcwd())+"\\",100)
     print(str(os.getcwd())+"\\")
     main(root,"","max",str(os.getcwd())+"\\",100,"jhv_IP.json")
+    
     root.mainloop()

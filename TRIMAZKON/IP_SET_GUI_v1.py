@@ -47,7 +47,7 @@ class initial_tools:
         else:
             return path
 
-testing = True
+testing = False
 
 global_recources_load_error = False
 global_licence_load_error = False

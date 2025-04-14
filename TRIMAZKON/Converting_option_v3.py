@@ -29,9 +29,11 @@ def path_check(path_raw,only_repair = None):
 
 def resource_path(relative_path):
     """ Get the absolute path to a resource, works for dev and for PyInstaller """
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath("."), relative_path)
+    # if hasattr(sys, '_MEIPASS'):
+    #     return os.path.join(sys._MEIPASS, relative_path)
+    # return os.path.join(os.path.abspath("."), relative_path)
+    BASE_DIR = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.abspath(".")
+    return os.path.join(BASE_DIR, relative_path)
 
 # application_path = str(whole_app_path) + "/convert_application/"
 application_path = resource_path("convert_application/")

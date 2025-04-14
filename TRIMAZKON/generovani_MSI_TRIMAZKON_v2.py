@@ -65,8 +65,8 @@ msi_data = {"Shortcut": shortcut_table,}
 # Setup configuration
 setup(
     name="TRIMAZKON",
-    version="4.3.2",
-    description="TRIMAZKON v_4.3.2",
+    version="4.3.3",
+    description="TRIMAZKON v_4.3.3",
     executables=[whole_app_exe,jhv_MAZ_exe,ip_set_exe],
     options={
         "build_exe": {

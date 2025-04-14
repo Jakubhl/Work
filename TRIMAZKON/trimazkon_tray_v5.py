@@ -10,7 +10,7 @@ import subprocess
 import sys
 import json
 # import threading
-import IP_setting_v5 as IP_setting
+import IP_setting_v6 as IP_setting
 from functools import partial
 import win32con
 from win32api import *
@@ -909,7 +909,23 @@ class tray_app_service:
                 print(stdout_str,stderr_str)
             except Exception as e:
                 print(stdout,stderr)
-                
+
+        def call_manual_setting():
+            command = self.initial_path +"/"+ self.main_app_exe_name + " manual_ip_setting"
+            print("calling main app with: ",command)
+            process = subprocess.Popen(command, 
+                                        shell=True, 
+                                        text=True,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
+                                        creationflags=subprocess.CREATE_NO_WINDOW)
+            stdout, stderr = process.communicate()
+            try:
+                stdout_str = stdout.decode('utf-8')
+                stderr_str = stderr.decode('utf-8')
+                print(stdout_str,stderr_str)
+            except Exception as e:
+                print(stdout,stderr)     
 
         run_app_label = 'Spustit aplikaci TRIMAZKON'
         show_scheduled_tasks_label = 'Nastavené úkoly'
@@ -938,6 +954,7 @@ class tray_app_service:
         self.menu = Menu(MenuItem(run_app_label, lambda: call_main_app()),
                          MenuItem(show_scheduled_tasks_label, lambda: call_show_all_tasks()),
                          MenuItem(deletion_log_label, lambda: call_show_all_logs()),
+                         MenuItem("Nastavit IP adresu manuálně", lambda: call_manual_setting()),
                          *[MenuItem(set_ip_label + str(interface), 
                                     Menu(*[MenuItem(address, partial(self.set_selected_ip, interface, address)) for address in favourite_project_list])
                                     ) for interface in online_interfaces_adr],

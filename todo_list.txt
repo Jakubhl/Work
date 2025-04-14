@@ -913,19 +913,20 @@ TRIMAZKON - ip_setting - znemoznit duplicitu jmen - hotovo
 10:45 AM 4/11/2025
 TRIMAZKON - ip_setting - dodělat změny i u disků (notes, edit okno, kontext_menu) - hotovo
 
+12:48 PM 4/14/2025
+TRIMAKZON - ip_setting - možnost manuálně nastavit ip přes tray - otestovat na exe - hotovo
+TRIMAZKON - prohlížeč - opravena resource path k converting appce - hotovo
+TRIMAZKON - prohlížeč - zase padá na corrupted filech - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
-
-
 TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama, možná přesměrovat i edity a deletions
-
-TRIMAKZON - ip_setting - možnost manuálně nastavit ip přes tray - otestovat na exe
-
 TRIMAZKON - ip_setting - dodělat změny i u disků: manage_bin
+TRIMAZKON - ip_setting - přímá editace poznámek - změna se nepromítne do posouvání projektů mezi sebou
 
+TRIMAZKON - msi - dodělat tlačítko <back do výběru programů
 
-TRIMAZKON - msi instalačky se dotazovat zda s konzolí či bez
 TRIMAZKON - katalog - nove kontextove nabidky
 
 
