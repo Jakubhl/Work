@@ -3349,7 +3349,7 @@ class main:
                 project_switch_frame.pack(pady=10,padx=10,anchor="w",side = "top",fill="x")
             else:
                 copy_check.         pack(pady = (10),padx =(10),anchor="w",side="top")
-                save_and_add_next.  pack(pady = (10),padx =(0,10),anchor="w",side="top")
+                save_and_add_next.  pack(pady = (0,10),padx =(10),anchor="w",side="top")
             self.name_input.        pack(pady = (10,0),padx =(5,5),anchor="w",side="top",fill="x",expand=True)
             IP_adress.              pack(pady = (10,0),padx =(5,0),anchor="w",side="top")
             self.IP_adress_input.   pack(pady = (10,0),padx =(5,5),anchor="w",side="top",fill="x",expand=True)

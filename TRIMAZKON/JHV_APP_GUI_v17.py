@@ -66,7 +66,7 @@ app_running_status = initial_tools.check_runing_app_duplicity()
 print("already opened app status: ",app_running_status)
 open_image_only = False
 if len(sys.argv) > 1 and app_running_status == True:
-    used_cmd_calls = ["deleting","trigger_by_tray","run_tray","open_task_list","open_log_list","app_shutdown","edit_existing_task","settings_tray","settings_tray_del","admin_menu","installer_call","manual_ip_setting"]
+    used_cmd_calls = ["deleting","trigger_by_tray","run_tray","open_task_list","open_log_list","app_shutdown","edit_existing_task","settings_tray","settings_tray_del","admin_menu","installer_call","manual_ip_setting","admin_ip_setting"]
     if str(sys.argv[1]) not in used_cmd_calls:
         if sys.argv[0] != sys.argv[1]:
             open_image_only = True
@@ -1610,6 +1610,14 @@ if not open_image_only:
                 # current_paths.append(str(new_path))
                 current_paths.insert(0,str(new_path))
                 Tools.save_to_json_config(current_paths,which_settings,parameter_name)
+            else:
+                try:
+                    current_paths.pop(current_paths.index(new_path))
+                    # current_paths.append(str(new_path))
+                    current_paths.insert(0,str(new_path))
+                    Tools.save_to_json_config(current_paths,which_settings,parameter_name)
+                except Exception as e:
+                    print(e)
 
         @classmethod
         def store_installation_date(cls,refresh_callback):
@@ -1980,7 +1988,7 @@ if not open_image_only:
             pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True)
             pipeline_duplex_instance.call_checking(f"Edit existing task",sys.argv)
 
-        elif sys.argv[1] == "settings_tray" or sys.argv[1] == "settings_tray_del" or sys.argv[1] == "admin_menu":
+        elif sys.argv[1] == "settings_tray" or sys.argv[1] == "settings_tray_del" or sys.argv[1] == "admin_menu" or sys.argv[1] == "admin_ip_setting":
             pid = int(sys.argv[2])
             Tools.terminate_pid(pid) #vypnout thread s tray aplikací
 
@@ -2094,6 +2102,12 @@ if not open_image_only:
             """
             tato funkce přijímá příkazy z pipeline serveru
             """
+            try:
+                if self.config_data["app_settings"]["maximalized"]  == "ano":
+                    self.root.after(0, lambda:self.root.state('zoomed')) # max zoom, porad v okne
+            except Exception as e:
+                print(e)
+
             print("received in menu: ",params)
             print("Image browser running status: ",self.ib_running)
             if self.ib_running == False:
@@ -2349,7 +2363,7 @@ if not open_image_only:
             if self.state == "running":
                 self.stop()
 
-            list_of_frames = [self.main_frame,self.frame_with_path,self.frame_with_console,self.frame_with_buttons,self.background_frame,self.image_film_frame_center,self.image_film_frame_right,self.image_film_frame_left]
+            list_of_frames = [self.main_frame,self.frame_with_path,self.frame_with_console,self.frame_with_buttons,self.background_frame,self.image_film_frame_center,self.image_film_frame_right,self.image_film_frame_left,self.image_film_frame]
             for frames in list_of_frames:
                 frames.pack_forget()
                 frames.grid_forget()
@@ -2565,7 +2579,6 @@ if not open_image_only:
                             else:
                                 #zobrazit obrazek vybrany v exploreru
                                 self.increment_of_image = self.all_images.index(path+self.selected_image)
-
                             self.view_image(self.increment_of_image)
                             if path not in self.inserted_path_history:
                                 self.inserted_path_history.insert(0,path)
@@ -2595,6 +2608,8 @@ if not open_image_only:
                         if path_to_add_to_history not in self.inserted_path_history:
                             self.inserted_path_history.insert(0,path_to_add_to_history)
                             Tools.add_new_path_to_history(path_to_add_to_history,"image_browser_settings")
+
+                        self.Reset_all(only_initial=True)
                     else:
                         Tools.add_colored_line(self.console,"- V zadané cestě nebyly nalezeny obrázky","red",None,True)
                 else:
@@ -2633,14 +2648,18 @@ if not open_image_only:
             """
             Vrací aktuální rozměry rámečku
             """
-            whole_app_height = self.root._current_height
+            # whole_app_height = self.root._current_height
             whole_app_width = self.root._current_width
             width = whole_app_width
-            self.frame_with_path.update_idletasks()
-            self.image_film_frame_center.update_idletasks()
-            height = whole_app_height-self.frame_with_path._current_height-30
-            if self.image_film == True:
-                height = height - self.image_film_frame_center._current_height
+            # self.frame_with_path.update_idletasks()
+            # self.image_film_frame.update_idletasks()
+            self.main_frame.update_idletasks()
+            # height = whole_app_height-self.frame_with_path._current_height-30
+            canvas_height = self.main_frame.winfo_height()
+            # if self.image_film == True:
+                # height = height - self.image_film_frame._current_height
+
+            height = canvas_height
             return [width, height]
 
         def calc_current_format(self,width,height,new_window_status = False,frame_dim_given = None): # Přepočítávání rozměrů obrázku do rozměru rámce podle jeho formátu + zooming
@@ -3218,21 +3237,25 @@ if not open_image_only:
                 # self.view_image(self.increment_of_image,None,True,reset=True)
                 self.view_image(self.increment_of_image,None,reset=True,reload_buffer=True)
         
-        def Reset_all(self): # Vrátí všechny slidery a natočení obrázku do původní polohy
+        def Reset_all(self,only_initial=False): # Vrátí všechny slidery a natočení obrázku do původní polohy
             """
             Vrátí všechny slidery a natočení obrázku do původní polohy
             """
-            self.rotation_angle = 0.0
-            self.zoom_slider.set(100)
-            self.update_zoom_slider(100)
-            self.speed_slider.set(100)
-            self.update_speed_slider(100)
+            reset_request = False
+            if not only_initial:
+                self.rotation_angle = 0.0
+                self.zoom_slider.set(100)
+                self.update_zoom_slider(100)
+                self.speed_slider.set(100)
+                self.update_speed_slider(100)
+                reset_request = True
+
             if self.ifz_located == True:
                 if len(self.converted_images) != 0:
                     center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
-                    self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],True,reset=True)
+                    self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],True,reset=reset_request)
             else:
-                self.view_image(self.increment_of_image,None,True,reset=True)
+                self.view_image(self.increment_of_image,None,True,reset=reset_request)
             self.root.update_idletasks()
             self.main_frame.update_idletasks()
         
@@ -3592,6 +3615,8 @@ if not open_image_only:
                     self.selected_image = "" #muze byt vlozet z otevreni pres obrazek kdyz oteviram jinou cestu přes historii musim init
                     self.start(path)
 
+                config_data = Tools.read_json_config()
+                self.inserted_path_history = config_data["image_browser_settings"]["path_history_list"]
                 if len(self.inserted_path_history) > 0:
                     path_context_menu = tk.Menu(self.root, tearoff=0,fg="white",bg="black")
                     for i in range(0,len(self.inserted_path_history)):
@@ -3685,9 +3710,12 @@ if not open_image_only:
             self.frame_with_buttons.        pack(pady=0,padx=(0,0),fill="x",expand=False,side = "top")
             self.background_frame =         customtkinter.CTkFrame(master=self.root,corner_radius=0)
             self.main_frame =               tk.Canvas(master=self.background_frame,bg="black",highlightthickness=0)
-            self.image_film_frame_left =    customtkinter.CTkFrame(master=self.root,height = 100,corner_radius=0)
-            self.image_film_frame_center =  customtkinter.CTkFrame(master=self.root,height = 100,width = 200,corner_radius=0)
-            self.image_film_frame_right =   customtkinter.CTkFrame(master=self.root,height = 100,corner_radius=0)
+            self.main_frame.                pack(pady=0,padx=5,ipadx=10,ipady=10,fill="both",expand=True,side = "bottom",anchor= "center")
+            
+            self.image_film_frame =    customtkinter.CTkFrame(master=self.root,corner_radius=0,height = 200)
+            self.image_film_frame_left =    customtkinter.CTkFrame(master=self.image_film_frame,height = 100,corner_radius=0)
+            self.image_film_frame_center =  customtkinter.CTkFrame(master=self.image_film_frame,height = 200,width = 200,corner_radius=0)
+            self.image_film_frame_right =   customtkinter.CTkFrame(master=self.image_film_frame,height = 100,corner_radius=0)
             self.background_frame.          pack(pady=(10,0),padx=5,ipadx=10,ipady=10,fill="both",expand=True,side = "top")
             if self.image_film == True:
                 self.image_film_frame_left. pack(pady=5,expand=True,side = "left",fill="x")
@@ -3695,7 +3723,7 @@ if not open_image_only:
                 self.image_film_frame_right.pack(pady=5,expand=True,side = "left",fill="x")
                 self.images_film_center =   customtkinter.CTkLabel(master = self.image_film_frame_center,text = "")
                 self.images_film_center.    pack()
-            self.main_frame.                pack(pady=0,padx=5,ipadx=10,ipady=10,fill="both",expand=True,side = "bottom",anchor= "center")
+                self.image_film_frame.pack(side="top",fill="x",expand=False)
             self.name_or_path.select()
             context_menu_button.bind("<Button-1>", call_path_context_menu)
 
@@ -3988,7 +4016,7 @@ if not open_image_only:
                     path_from_history = config_data["image_browser_settings"]["path_history_list"][0]
                     self.path_set.delete("0","200")
                     self.path_set.insert("0", path_from_history)
-                    Tools.add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white",None,True)
+                    Tools.add_colored_line(self.console,"Byla vložena cesta z historie cest","white",None,True)
                     self.root.update_idletasks()
                     self.image_browser_path = path_from_history
                     self.start(path_from_history)

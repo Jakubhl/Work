@@ -1391,7 +1391,7 @@ if len(sys.argv) > 1 and not global_licence_load_error:
         pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True)
         pipeline_duplex_instance.call_checking(f"Edit existing task",sys.argv)
 
-    elif sys.argv[1] == "settings_tray" or sys.argv[1] == "settings_tray_del" or sys.argv[1] == "admin_menu":
+    elif sys.argv[1] == "settings_tray" or sys.argv[1] == "settings_tray_del" or sys.argv[1] == "admin_menu"  or sys.argv[1] == "admin_ip_setting":
         pid = int(sys.argv[2])
         Tools.terminate_pid(pid) #vypnout thread s tray aplikací
 

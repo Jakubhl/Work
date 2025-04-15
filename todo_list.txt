@@ -918,6 +918,11 @@ TRIMAKZON - ip_setting - možnost manuálně nastavit ip přes tray - otestovat 
 TRIMAZKON - prohlížeč - opravena resource path k converting appce - hotovo
 TRIMAZKON - prohlížeč - zase padá na corrupted filech - hotovo
 
+11:44 AM 4/15/2025
+TRIMAZKON - prohlížeč, změnit pořadí v historii cest, když uložit cestu... - hotovo
+TRIMAZKON - prohlížeč - minimalizované okno když deiconify z tray - hotovo
+TRIMAZKON - ip_setting - nejde admin - hotovo
+release verze 4.3.3 - publikace pro všechny
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -925,9 +930,12 @@ TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama
 TRIMAZKON - ip_setting - dodělat změny i u disků: manage_bin
 TRIMAZKON - ip_setting - přímá editace poznámek - změna se nepromítne do posouvání projektů mezi sebou
 
-TRIMAZKON - msi - dodělat tlačítko <back do výběru programů
+
+
+TRIMAZKON - msi - dodělat tlačítko <back do výběru programů??
 
 TRIMAZKON - katalog - nove kontextove nabidky
+
 
 
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
