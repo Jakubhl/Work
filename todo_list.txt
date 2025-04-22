@@ -923,20 +923,28 @@ TRIMAZKON - prohlížeč, změnit pořadí v historii cest, když uložit cestu.
 TRIMAZKON - prohlížeč - minimalizované okno když deiconify z tray - hotovo
 TRIMAZKON - ip_setting - nejde admin - hotovo
 release verze 4.3.3 - publikace pro všechny
+
+8:10 AM 4/22/2025
+TRIMAZKON - ip_setting - přímá editace poznámek - změna se nepromítne do posouvání projektů mezi sebou - hotovo
+TRIMAZKON - ip_setting - dodělat změny i u disků: manage_bin - hotovo
+TRIMAZKON - ip_setting - oprava špatně dekodovanych nazvu inrefacu - hotovo
+
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama, možná přesměrovat i edity a deletions
-TRIMAZKON - ip_setting - dodělat změny i u disků: manage_bin
-TRIMAZKON - ip_setting - přímá editace poznámek - změna se nepromítne do posouvání projektů mezi sebou
+
+TRIMAZKON - automatické stahování nové verze
 
 
 
-TRIMAZKON - msi - dodělat tlačítko <back do výběru programů??
+
 
 TRIMAZKON - katalog - nove kontextove nabidky
 
 
+??? TRIMAZKON - msi - dodělat tlačítko <back do výběru programů??
 
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
 ??? Koumu: admin práva, online auto aktualizace nové verze

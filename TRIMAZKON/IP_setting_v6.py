@@ -18,7 +18,7 @@ import copy
 import pyperclip
 import json
 
-testing_mode = False
+testing_mode = True
 
 if testing_mode:
     customtkinter.set_appearance_mode("dark")
@@ -308,7 +308,7 @@ class Tools:
         return [output,corrected_path,name_of_selected_file]
 
     @classmethod
-    def import_option_window(cls,root,app_icon_path,default_path,callback,ip_env = False):
+    def import_option_window(cls,root,app_icon_path,default_path,callback,ip_env = False,setting_window=None):
         child_root = customtkinter.CTkToplevel(fg_color="#212121")
         child_root.after(200, lambda: child_root.iconbitmap(app_icon_path))
         child_root.title("Možnosti exportování souboru")
@@ -341,6 +341,10 @@ class Tools:
                 import_path.insert(0, str(output[1])+str(output[2]))
                 Tools.add_colored_line(console,"Byla vložena cesta pro uložení","green",None,True)
             print(output[0])
+
+            if setting_window != None:
+                setting_window.focus()
+                setting_window.focus_force()
             child_root.focus()
             child_root.focus_force()
 
@@ -389,6 +393,42 @@ class Tools:
         child_root.focus()
         child_root.focus_force()
 
+    @classmethod
+    def get_unique_name(cls,project_list,project_name):
+        project_name_list = []
+        found_count=0
+        for projects in project_list:
+            project_name_list.append(str(projects['name']))
+            if str(projects['name']) == str(project_name):
+                found_count +=1
+        i=0
+        modified_project_name = project_name
+        if modified_project_name in project_name_list:
+            while modified_project_name in project_name_list:
+                i+=1
+                modified_project_name = str(project_name)+" ("+str(i)+")"
+
+        return modified_project_name
+    
+    @classmethod
+    def get_project_index(cls,project_list,project_name):
+        name_list = []
+        for projects in project_list:
+            name_list.append(str(projects['name']))
+
+        try:
+            found_index = name_list.index(project_name)
+            return found_index
+        except ValueError:
+            return None
+        
+    @classmethod
+    def found_project_name(cls,project_list,project_name):
+        for projects in project_list:
+            if str(projects['name']) == str(project_name):
+                return projects
+        return False
+    
 class main:
     class DM_tools:  
         @classmethod
@@ -469,48 +509,25 @@ class main:
         @classmethod
         def save_excel_data_disk(cls,
                                 excel_file_path,
-                                len_of_disk_array,
-                                last_project_id,
-                                project_name,
-                                disk_letter,
-                                ftp_address,
-                                username,
-                                password,
-                                notes,
-                                only_edit = None,
-                                force_row_to_print=None,
-                                force_ws = None,
+                                project_list,
                                 wb_given = None):
             if wb_given == None:
                 workbook = load_workbook(excel_file_path)
             else:
                 workbook = wb_given
 
-            if force_ws == None:
-                worksheet = workbook["disk_list"]
-            else:
-                worksheet = workbook[force_ws]
-            # excel je od jednicky...
-            if force_row_to_print == None:
-                row_to_print = int(len_of_disk_array) +1
-                if only_edit != None:
-                    #pouze změna na temtýž řádku
-                    if last_project_id != "":
-                        row_to_print = (len_of_disk_array - last_project_id)
-            else:
-                row_to_print = force_row_to_print
-            #A = nazev projektu
-            worksheet['A' + str(row_to_print)] = project_name
-            #B = písmeno disku, označení...
-            worksheet['B' + str(row_to_print)] = disk_letter
-            #C = ftp adresa
-            worksheet['C' + str(row_to_print)] = ftp_address
-            #D = uživatelské jméno
-            worksheet['D' + str(row_to_print)] = username
-            #E = heslo
-            worksheet['E' + str(row_to_print)] = password
-            #F = poznamky
-            worksheet['F' + str(row_to_print)] = notes
+            worksheet = workbook["disk_list"]
+         
+            for i in range(0,len(project_list)):
+                notes = str(project_list[i]["notes"])
+                if notes == None or notes.replace(" ","") == "":
+                    notes = ""
+                worksheet['A' + str(i+1)] = str(project_list[i]['name']) #A = nazev projektu
+                worksheet['B' + str(i+1)] = str(project_list[i]['disk_letter'])  #B = písmeno disku, označení...
+                worksheet['C' + str(i+1)] = str(project_list[i]['ftp'])  #C = ftp adresa
+                worksheet['D' + str(i+1)] = str(project_list[i]['user'])  #D = uživatelské jméno
+                worksheet['E' + str(i+1)] = str(project_list[i]['password'])  #E = heslo
+                worksheet['F' + str(i+1)] = notes #F = poznamky
 
             workbook.save(filename = excel_file_path)
             if wb_given == None:
@@ -519,14 +536,18 @@ class main:
         @classmethod
         def read_excel_data(cls,excel_file_path):
             """
-            Returns:
-            - [disk_all_rows,disk_project_list]
+            returns obj:
+            - name
+            - disk_letter
+            - ftp
+            - user
+            - password
+            - notes
             """
             workbook = load_workbook(excel_file_path,read_only=True)
-            # seznam vsech ftp pripojeni k diskum
-            disk_all_rows = []
-            disk_project_list = []  
             worksheet = workbook["disk_list"]
+            project_list = []
+
             for row in worksheet.iter_rows(values_only=True):
                 row_array = []
                 for items in row[:6]:
@@ -534,13 +555,18 @@ class main:
                         row_array.append("")
                     else:
                         row_array.append(str(items))
-                disk_project_list.insert(0,row_array[0])
-                disk_all_rows.insert(0,row_array)
+
+                project_object = {
+                    'name':row_array[0],
+                    "disk_letter":row_array[1],
+                    "ftp":row_array[2],
+                    "user":row_array[3],
+                    "password":row_array[4],
+                    "notes":row_array[5],
+                }
+                project_list.append(project_object)
             workbook.close()
-            # worksheet = workbook["Settings"]
-            # default_disk_status_behav = int(worksheet['B' + str(6)].value)
-            
-            return [disk_all_rows,disk_project_list]
+            return project_list
 
     class IP_tools:
         @classmethod
@@ -573,10 +599,12 @@ class main:
         @classmethod
         def read_excel_data(cls,excel_file_path):
             """
-            returns:
-            - [0] all_rows_ip list
-            - [1] project_list
-            - [2] favorite_list
+            returns obj:
+            - name
+            - ip
+            - mask
+            - notes
+            - fav_status
             """
             excel_worksheet = "ip_address_list"
             workbook = load_workbook(excel_file_path,read_only=True)
@@ -608,42 +636,6 @@ class main:
             workbook.close()
             # print(project_list)
             return project_list
-
-        @classmethod
-        def found_project_name(cls,project_list,project_name):
-            for projects in project_list:
-                if str(projects['name']) == str(project_name):
-                    return projects
-            return False
-        
-        @classmethod
-        def get_unique_name(cls,project_list,project_name):
-            project_name_list = []
-            found_count=0
-            for projects in project_list:
-                project_name_list.append(str(projects['name']))
-                if str(projects['name']) == str(project_name):
-                    found_count +=1
-            i=0
-            modified_project_name = project_name
-            if modified_project_name in project_name_list:
-                while modified_project_name in project_name_list:
-                    i+=1
-                    modified_project_name = str(project_name)+" ("+str(i)+")"
-
-            return modified_project_name
-        
-        @classmethod
-        def get_project_index(cls,project_list,project_name):
-            name_list = []
-            for projects in project_list:
-                name_list.append(str(projects['name']))
-
-            try:
-                found_index = name_list.index(project_name)
-                return found_index
-            except ValueError:
-                return None
 
         @classmethod
         def get_current_ip_list(cls,connection_option_list:list):
@@ -686,16 +678,9 @@ class main:
                                                         stderr=subprocess.PIPE,
                                                         creationflags=subprocess.CREATE_NO_WINDOW)
             stdout, stderr = process.communicate()
-            try:
-                stdout_str = stdout.decode('utf-8')
-                data = str(stdout_str)
-            except UnicodeDecodeError:
-                try:
-                    stdout_str = stdout.decode('cp1250')
-                    data = str(stdout_str)
-                except UnicodeDecodeError:
-                    data = str(stdout)
-                
+            stdout_str = stdout.decode("cp852",errors="ignore")
+            print(stdout_str)
+            data = str(stdout_str)
             lines = data.strip().splitlines()
             interfaces = []
             interface_statuses =[]
@@ -1087,6 +1072,62 @@ class main:
             window.focus_force()
             window.focus()
 
+    class ToolTip:
+        def __init__(self, widget, text, root, delay=1000):
+            self.widget = widget
+            self.text = text
+            self.delay = delay  # Delay before hiding
+            self.tip_window = None
+            self.hide_after_id = None
+            self.root = root
+
+            self.widget.bind("<Enter>", self.on_enter)
+            self.widget.bind("<Leave>", self.on_leave)
+
+        def on_enter(self, event=None):
+            # Cancel scheduled hide if user comes back
+            if self.hide_after_id:
+                print("after cancel")
+                self.widget.after_cancel(self.hide_after_id)
+                self.hide_after_id = None
+
+            self.show_tooltip()
+
+        def on_leave(self, event=None):
+            # Schedule the tooltip to hide after delay
+            if self.tip_window and self.tip_window.winfo_exists():
+                self.hide_after_id = self.widget.after(self.delay, self.hide_tooltip)
+                # self.hide_after_id = self.root.after(self.delay, self.hide_tooltip)
+
+        def show_tooltip(self):
+            if self.tip_window and self.tip_window.winfo_exists():
+                return  # Already showing
+
+            x = self.widget.winfo_rootx() + 50
+            y = self.widget.winfo_rooty() + 10
+
+            self.tip_window = customtkinter.CTkToplevel()
+            self.tip_window.wm_overrideredirect(True)
+            self.tip_window.attributes("-topmost", True)
+            self.tip_window.wm_geometry(f"+{x}+{y}")
+
+            label = customtkinter.CTkLabel(
+                self.tip_window,
+                text=self.text,
+                font=("Arial", 18),
+                corner_radius=5
+            )
+            label.pack(ipadx=5, ipady=5)
+            self.tip_window.update()
+            self.tip_window.update_idletasks()
+            self.tip_window.wait_window()
+
+        def hide_tooltip(self):
+            # if self.tip_window and self.tip_window.winfo_exists():
+            self.tip_window.destroy()
+            self.tip_window = None
+            self.hide_after_id = None
+
     def __init__(self,root,menu_callback_function,window_mode,initial_path,zoom_factor,config_filename,without_gui =False):
         self.root = root
         self.menu_callback = menu_callback_function
@@ -1154,27 +1195,19 @@ class main:
             self.app_icon = parent.app_icon
             self.config_filename_path = parent.config_filename_path
             self.initial_path = parent.initial_path
-            self.disk_all_rows = []
-            self.disk_project_list = []
-            self.bin_projects = [[None],[None]]
+            self.all_project_list = []
+            self.last_managed_project = None
             self.last_project_id = ""
             self.opened_window = ""
             self.last_selected_widget = ""
             self.last_selected_notes_widget = ""
             self.last_selected_textbox = ""
-            self.last_project_name = ""
-            self.last_project_ip = ""
-            self.last_project_mask = ""
-            self.last_project_notes = ""
-            self.last_project_disk_letter = ""
-            self.last_project_ftp = ""
-            self.last_project_username = ""
-            self.last_project_password = ""
             self.last_inserted_password = ""
-            self.last_selected_widget_id = 0
             self.changed_notes_disk = []
             self.selected_list_disk = []
             self.remember_to_change_back = []
+            self.deleted_projects_bin = []
+            self.edited_projects_bin = []
             self.notes_frame_height = 50
             read_parameters = Tools.read_json_config(self.config_filename_path)
             if read_parameters != None:
@@ -1196,10 +1229,7 @@ class main:
                 self.make_edited_project_first = True
                 self.deletion_behav = 100
 
-            self.bin_projects = self.manage_bin("read_sheet")
-            # self.deleted_projects_bin = []
-            # self.edited_projects_bin = []
-            # self.manage_bin("read_sheet")
+            self.manage_bin("read_sheet")
             self.create_widgets_disk(init=True)
 
         def call_menu(self): # Tlačítko menu (konec, návrat do menu)
@@ -1221,41 +1251,34 @@ class main:
             self.root.update_idletasks()
             self.menu_callback()
         
-        def clicked_on_project(self,event,widget_id,widget,textbox = "",flag = ""):
+        def clicked_on_project(self,project,widget,textbox = "",flag = ""):
             """
             flag = notes:
             - při nakliknutí poznámky zůstanou expandnuté a při kliku na jinou je potřeba předchozí vrátit zpět
             flag = unfocus:
             - při kliku mimo se odebere focus z nakliknutých widgetů
             """
-            def on_leave_entry(widget,row_of_widget):
+            def on_leave_entry(last_selected_textbox):
                 """
                 při kliku na jiný widget:
                 - upraví text pouze na první řádek
                 """
-                widget.configure(state = "normal")
-                if "\n" in self.disk_all_rows[row_of_widget][5]:
-                    notes_rows = self.disk_all_rows[row_of_widget][5].split("\n")
-                    first_row = notes_rows[0]
-                    widget.delete("1.0",tk.END)
-                    widget.insert(tk.END,str(first_row))
-                if self.default_note_behav == 0:
-                    widget.configure(state = "disabled")
-
-            def shrink_frame(widget_frame,widget_notes):
-                widget_notes.configure(state = "normal")
                 new_height = self.notes_frame_height
-                widget_frame.configure(height = new_height) #frame
-                widget_notes.configure(height = new_height-10) #notes
+                last_selected_textbox.configure(state = "normal")
+                if "\n" in self.last_managed_project["notes"]:
+                    notes_rows = self.last_managed_project["notes"].split("\n")
+                    first_row = notes_rows[0]
+                    last_selected_textbox.delete("1.0",tk.END)
+                    last_selected_textbox.insert(tk.END,str(first_row))
+                    last_selected_textbox.configure(height = new_height-10) #notes
                 if self.default_note_behav == 0:
-                    widget_notes.configure(state = "disabled")
+                    last_selected_textbox.configure(state = "disabled")
 
             if flag == "unfocus":
                 try:
                     if self.last_selected_notes_widget != "" and self.last_selected_notes_widget.winfo_exists():
                         if self.last_selected_textbox != ""  and self.last_selected_textbox.winfo_exists():
-                            on_leave_entry(self.last_selected_textbox,self.last_selected_widget_id)
-                            shrink_frame(self.last_selected_widget,self.last_selected_textbox)
+                            on_leave_entry(self.last_selected_textbox)
                             self.last_selected_textbox = ""
                             self.last_selected_notes_widget = ""
 
@@ -1263,29 +1286,31 @@ class main:
                         self.last_selected_widget.configure(border_color="#636363")
                         self.last_selected_widget = ""
 
-                    for frame_and_id in self.remember_to_change_back:
-                        if frame_and_id[0].winfo_exists(): 
-                            frame_and_id[0].configure(border_color="#636363")
+                    for frame in self.remember_to_change_back:
+                        if frame.winfo_exists(): 
+                            frame.configure(border_color="#636363")
                     self.selected_list_disk = []
                     self.remember_to_change_back = []
+                    self.last_managed_project = None
 
                 except Exception as e:
                     print("chyba při odebírání focusu: ",e)
                 return
 
-            if widget_id == None:
+            if project == None:
                 return
-            print("widget_id",widget_id)
+            print("clicked project: ",project['name'])
             self.search_input.delete("0","300")
-            self.search_input.insert("0",str(self.disk_all_rows[widget_id][0]))
-            self.check_given_input()
+            self.search_input.insert("0",str(project['name']))
             # only if it is not pressed againt the same:
             if widget != self.last_selected_widget:
                 try:
-                    if self.last_selected_notes_widget != "" and self.last_selected_notes_widget.winfo_exists():
-                        if self.last_selected_textbox != ""  and self.last_selected_textbox.winfo_exists():
-                            on_leave_entry(self.last_selected_textbox,self.last_selected_widget_id)
-                            shrink_frame(self.last_selected_widget,self.last_selected_textbox)
+                    if self.last_selected_textbox != ""  and self.last_selected_textbox.winfo_exists():
+                        on_leave_entry(self.last_selected_textbox)
+                    else:
+                        self.last_selected_textbox = ""
+                        self.last_selected_notes_widget = ""
+
                     if flag == "notes":
                         self.last_selected_textbox = textbox
                         self.last_selected_notes_widget = widget
@@ -1304,30 +1329,29 @@ class main:
                         if len(self.selected_list_disk) == 0 and not self.control_pressed:
                             self.last_selected_widget.configure(border_color="#636363")
 
-                            if [self.last_selected_widget,self.last_selected_widget_id] in self.remember_to_change_back:
-                                self.remember_to_change_back.pop(self.remember_to_change_back.index([self.last_selected_widget,self.last_selected_widget_id]))
+                            if self.last_selected_widget in self.remember_to_change_back:
+                                self.remember_to_change_back.pop(self.remember_to_change_back.index(self.last_selected_widget))
 
                         # pokud došlo k další interakci s jiným widgeten
                         elif not self.control_pressed:
-                            for frame_and_id in self.remember_to_change_back:
-                                if frame_and_id[0].winfo_exists(): 
-                                    frame_and_id[0].configure(border_color="#636363")
+                            for frame in self.remember_to_change_back:
+                                if frame.winfo_exists(): 
+                                    frame.configure(border_color="#636363")
                             self.selected_list_disk = []
                             self.remember_to_change_back = []
 
                     self.last_selected_widget = widget
                     widget.configure(border_color="white")
 
-                    if not [widget,widget_id] in self.remember_to_change_back:
-                        self.remember_to_change_back.append([widget,widget_id])
-
+                    if not widget in self.remember_to_change_back:
+                        self.remember_to_change_back.append(widget)
                     print("remember: ", self.remember_to_change_back)
 
                 except Exception as e:
                     print("chyba pri zmene fucusu",e)
                     pass
 
-                self.last_selected_widget_id = widget_id
+                self.last_managed_project = project
 
         def refresh_disk_statuses(self,silent=True):
             online_disks = []
@@ -1344,7 +1368,7 @@ class main:
                     param_frame.configure(fg_color = "black") # <= init
 
                     for i in range(0,len(non_persistant_disks)):
-                        if non_persistant_disks[i][0:1] == str(self.disk_all_rows[y][1]):
+                        if non_persistant_disks[i][0:1] == str(self.all_project_list[y][1]):
                             drive_status = main.DM_tools.check_network_drive_status(non_persistant_disks[i])
                             if drive_status == True:
                                 online_disks.append(non_persistant_disks[i][0:1])
@@ -1354,7 +1378,7 @@ class main:
                                 param_frame.configure(fg_color = "red")
 
                     for i in range(0,len(mapped_disks)):
-                        if mapped_disks[i][0:1] == str(self.disk_all_rows[y][1]):
+                        if mapped_disks[i][0:1] == str(self.all_project_list[y]["disk_letter"]):
                             drive_status = main.DM_tools.check_network_drive_status(mapped_disks[i])
                             if drive_status == True:
                                 online_disks.append(mapped_disks[i][0:1])
@@ -1380,7 +1404,7 @@ class main:
             run_backgroung = threading.Thread(target=refresh_thread,)
             run_backgroung.start()
 
-        def manage_bin(self,flag="",parameters=[],wb=None):
+        def manage_bin(self,flag="",project=None,new_edited_name=None):
             """
             flag:\n
             - read_sheet
@@ -1390,165 +1414,97 @@ class main:
             - load_edited_disk
             """
             max_stored_deletions = 5
-            max_stored_edits = 10    
-            bin_worksheet = "projects_bin2"
+            max_stored_edits = 10
 
             def read_sheet():
-                wb = load_workbook(self.excel_file_path)
-                if not bin_worksheet in wb.sheetnames:
-                    ws = wb.create_sheet(title=bin_worksheet)
-                    ws.sheet_state = "hidden"
-                    wb.save(self.excel_file_path)
-                    wb.close()
-                    print("adding new bin sheet to excel")
-                    return [[None],[None]]
-                else:
-                    ws = wb[bin_worksheet]
-                    row_data_disk = list(ws.iter_rows(min_row=2, max_row=2, values_only=True))[0]
-                    wb.close()
-                    return [list(row_data_disk),[None]] # provedene zmeny v editu pri spusteni programu nanacitam. Jen smazané projekty...
-                
-            def save_project_disk():
-                nonlocal wb
-                if wb == None:
-                    return False
-                main.DM_tools.save_excel_data_disk(self.excel_file_path,
-                                                        len(self.disk_all_rows),
-                                                        self.last_project_id,
-                                                        parameters[0],
-                                                        parameters[1],
-                                                        parameters[2],
-                                                        parameters[3],
-                                                        parameters[4],
-                                                        parameters[5],
-                                                        force_row_to_print=2,
-                                                        force_ws=bin_worksheet,
-                                                        wb_given=wb)
-                self.bin_projects[0] = [parameters[0],parameters[1],parameters[2],parameters[3],parameters[4],parameters[5]]
+                config_data = Tools.read_json_config(self.config_filename_path)
+                try:
+                    self.deleted_projects_bin = config_data["deleted_project_bin_disk"]
+                except Exception:
+                    Tools.save_to_json_config("deleted_project_bin_disk",self.deleted_projects_bin,self.config_filename_path)
+
+                # self.edited_projects_bin = config_data["edited_project_bin_disk"]
+                Tools.save_to_json_config("edited_project_bin_disk",[],self.config_filename_path) #vymazat historii editu při zapnutí
+                    
+            def save_project_disk():# saving after deleting:
+                if project == None:
+                    return
+                config_data = Tools.read_json_config(self.config_filename_path)
+                self.deleted_projects_bin = config_data["deleted_project_bin_disk"]
                 self.undo_button.configure(state = "normal")
-            
-            def save_edited_disk():
-                self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="load_edited_disk"))
-                main.DM_tools.save_excel_data_disk(self.excel_file_path,
-                                                len(self.disk_all_rows),
-                                                self.last_project_id,
-                                                parameters[0],
-                                                parameters[1],
-                                                parameters[2],
-                                                parameters[3],
-                                                parameters[4],
-                                                parameters[5],
-                                                force_row_to_print=4,
-                                                force_ws=bin_worksheet,
-                                                wb_given=wb)
-                self.bin_projects[1] = [parameters[0],parameters[1],parameters[2],parameters[3],parameters[4],parameters[5]]
+                self.deleted_projects_bin.insert(0,project)
+
+                if len(self.deleted_projects_bin) > max_stored_deletions:
+                    self.deleted_projects_bin.pop()
+                Tools.save_to_json_config("deleted_project_bin_disk",self.deleted_projects_bin,self.config_filename_path)
+
+            def save_edited_disk():# saving after editing:
+                if project == None or new_edited_name == None:
+                    return
+                self.undo_edit.configure(state = "normal")
+                config_data = Tools.read_json_config(self.config_filename_path)
+                self.edited_projects_bin = config_data["edited_project_bin_disk"]
+                project["new_name"] = new_edited_name
+                print("\nSAVING: ",project)
+                self.edited_projects_bin.insert(0,project)
+                if len(self.edited_projects_bin) > max_stored_edits:
+                    self.edited_projects_bin.pop()
+                Tools.save_to_json_config("edited_project_bin_disk",self.edited_projects_bin,self.config_filename_path)
 
             def load_deleted_disk():
                 """
                 adds new project from history and deletes the history
                 """
-                wb = load_workbook(self.excel_file_path)
-                ws = wb[bin_worksheet]
-                row_data_disk = list(ws.iter_rows(min_row=2, max_row=2, values_only=True))[0]
+                config_data = Tools.read_json_config(self.config_filename_path)
+                self.deleted_projects_bin = config_data["deleted_project_bin_disk"]
+                project_to_load = self.deleted_projects_bin[0]
+                self.all_project_list = main.DM_tools.read_excel_data(self.excel_file_path)
+                modified_project_name = Tools.get_unique_name(self.all_project_list,project_to_load['name'])
+                project_to_load["name"] = modified_project_name
+                self.deleted_projects_bin.pop(0)
+                if len(self.deleted_projects_bin) ==0:
+                    self.undo_button.configure(state = "disabled")
 
-                print("\nrow data disk: ",row_data_disk,"\n")
-
-                project_name = row_data_disk[0]
-                if project_name in self.disk_project_list:
-                    Tools.add_colored_line(self.main_console,f"Jméno projektu: {project_name} je již používané, nelze ho tedy obnovit","red",None,True)
-                    wb.close()
-                    return
-                
-                self.bin_projects[0] = []
-                if len(row_data_disk) <6:
-                    notes = ""
-                else:
-                    notes = row_data_disk[5]
-                self.undo_button.configure(state = "disabled")
-                ws.delete_rows(2)
-                wb.save(self.excel_file_path)
-                wb.close()
-                main.DM_tools.save_excel_data_disk(self.excel_file_path,
-                                                len(self.disk_all_rows),
-                                                self.last_project_id,
-                                                project_name,
-                                                row_data_disk[1],
-                                                row_data_disk[2],
-                                                row_data_disk[3],
-                                                row_data_disk[4],
-                                                notes)
-                Tools.add_colored_line(self.main_console,f"Projekt: {project_name} byl úspěšně obnoven","green",None,True)
+                Tools.save_to_json_config("deleted_project_bin_disk",self.deleted_projects_bin,self.config_filename_path)
+                self.all_project_list.insert(0,project_to_load)
+                main.DM_tools.save_excel_data_disk(self.excel_file_path,self.all_project_list)
+                Tools.add_colored_line(self.main_console,f"Projekt: {project_to_load['name']} byl úspěšně obnoven","green",None,True)
                 self.make_project_cells_disk()
-
-            def change_notes_back_disk():
-                print("loading back: ",self.changed_notes_disk)    
-            
-                def save_changed_notes(notes,row):
-                    workbook = load_workbook(self.excel_file_path)
-                    worksheet = workbook["disk_list"]
-                    worksheet['F' + str(len(self.disk_all_rows)-row)] = notes
-                    workbook.save(filename=self.excel_file_path)
-                    workbook.close()
-                
-                project_name = self.changed_notes_disk[0]
-                notes_before = self.changed_notes_disk[1]
-                id = None
-                for i in range(0,len(self.disk_all_rows)):
-                    if self.disk_all_rows[i][0] == project_name:
-                        id = i
-
-                save_changed_notes(notes_before,id)
-                Tools.add_colored_line(self.main_console,f"Poznámky u projektu: {project_name} byly úspěšně obnoveny","green",None,True)
-                self.make_project_cells_disk()
-
-                if Tools.get_none_count(self.bin_projects[1]) < 4 and len(self.bin_projects[1]) == 6:
-                    self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="load_edited_disk"))
-                else:
-                    self.undo_edit.configure(state = "disabled")
-                self.changed_notes_disk = []
 
             def load_edited_disk():
-                wb = load_workbook(self.excel_file_path)
-                ws = wb[bin_worksheet]
-                not_edited_data_disk = list(ws.iter_rows(min_row=4, max_row=4, values_only=True))[0]
+                config_data = Tools.read_json_config(self.config_filename_path)
+                self.edited_projects_bin = config_data["edited_project_bin_disk"]
+                project_to_load = self.edited_projects_bin[0]
+                print("project to load: ",project_to_load)
+                old_project_name = str(project_to_load['name'])
+                current_project_name = str(project_to_load["new_name"])
+                self.all_project_list = main.DM_tools.read_excel_data(self.excel_file_path)
+                project_index = Tools.get_project_index(self.all_project_list,current_project_name)
 
-                print("\nrow data disk: ",not_edited_data_disk,"\n")
-                if self.edited_project_name_disk not in self.disk_project_list:
-                    Tools.add_colored_line(self.main_console,f"Jméno projektu: {self.edited_project_name_disk} nenalezeno, nelze ho tedy obnovit","red",None,True)
-                    wb.close()
+                if project_index == None:
+                    Tools.add_colored_line(self.main_console,f"Jméno projektu: {current_project_name} nenalezeno, nelze ho tedy obnovit","red",None,True)
+                    
+                self.edited_projects_bin.pop(0)
+                if len(self.edited_projects_bin) ==0:
+                    self.undo_edit.configure(state = "disabled")
+                Tools.save_to_json_config("edited_project_bin_disk",self.edited_projects_bin,self.config_filename_path)
+                if project_index == None: #let it to be deleted... no use, corrupted
                     return
                 
-                self.bin_projects[1] = []
-                self.undo_edit.configure(state = "disabled")
-                ws.delete_rows(3)
-                wb.save(self.excel_file_path)
-                wb.close()
+                print(project_to_load,"\n",self.all_project_list[project_index])
+                self.all_project_list[project_index]["name"] = str(project_to_load["name"])
+                self.all_project_list[project_index]["disk_letter"] = str(project_to_load["disk_letter"])
+                self.all_project_list[project_index]["ftp"] = str(project_to_load["ftp"])
+                self.all_project_list[project_index]["user"] = str(project_to_load["user"])
+                self.all_project_list[project_index]["password"] = str(project_to_load["password"])
+                self.all_project_list[project_index]["notes"] = str(project_to_load["notes"])
 
-                param = [not_edited_data_disk[0],not_edited_data_disk[1],not_edited_data_disk[2],not_edited_data_disk[3],not_edited_data_disk[4],not_edited_data_disk[5]]
-                for i in range(0,len(param)):
-                    if param[i] == None:
-                        param[i] = ""
-
-                id = None
-                for i in range(0,len(self.disk_all_rows)):
-                    if self.edited_project_name_disk == self.disk_all_rows[i][0]:
-                        id = i
-                
-                main.DM_tools.save_excel_data_disk(self.excel_file_path,
-                                                len(self.disk_all_rows),
-                                                self.last_project_id,
-                                                param[0],
-                                                param[1],
-                                                param[2],
-                                                param[3],
-                                                param[4],
-                                                param[5],
-                                                force_row_to_print=len(self.disk_all_rows)-id)
-
-                if self.edited_project_name_disk != param[0]:
-                    Tools.add_colored_line(self.main_console,f"U projektu: {self.edited_project_name_disk} (původně: {param[0]}) byly odebrány provedené změny","green",None,True)
+                # self.all_project_list.insert(0,project_to_load)
+                main.DM_tools.save_excel_data_disk(self.excel_file_path,self.all_project_list)
+                if old_project_name != current_project_name:
+                    Tools.add_colored_line(self.main_console,f"U projektu: {old_project_name} (původně: {current_project_name}) byly odebrány provedené změny","green",None,True)
                 else:
-                    Tools.add_colored_line(self.main_console,f"U projektu: {self.edited_project_name_disk} byly odebrány provedené změny","green",None,True)
+                    Tools.add_colored_line(self.main_console,f"U projektu: {old_project_name} byly odebrány provedené změny","green",None,True)
                 self.make_project_cells_disk()
 
             mapping_logic = {
@@ -1557,12 +1513,11 @@ class main:
                 "load_deleted_disk": load_deleted_disk,
                 "save_edited_disk": save_edited_disk,
                 "load_edited_disk": load_edited_disk,
-                "change_notes_back_disk": change_notes_back_disk,
             }
 
             output = mapping_logic[flag]()
 
-            self.disk_all_rows, self.disk_project_list = main.DM_tools.read_excel_data(self.excel_file_path)
+            self.all_project_list = main.DM_tools.read_excel_data(self.excel_file_path)
             return output
         
         def check_given_input(self,given_data = None):
@@ -1576,18 +1531,11 @@ class main:
                 return found
             found = False
 
-            for i in range(0,len(self.disk_all_rows)):
-                if given_data == self.disk_all_rows[i][0]:
-                    self.last_project_name =        str(self.disk_all_rows[i][0])
-                    self.last_project_disk_letter = str(self.disk_all_rows[i][1])
-                    self.last_project_ftp =         str(self.disk_all_rows[i][2])
-                    self.last_project_username =    str(self.disk_all_rows[i][3])
-                    self.last_project_password =    str(self.disk_all_rows[i][4])
-                    self.last_project_notes =       str(self.disk_all_rows[i][5])
-                    self.last_project_id = i
+            for i in range(0,len(self.all_project_list)):
+                if given_data == self.all_project_list[i]['name']:
+                    self.last_managed_project = self.all_project_list[i]
                     found = True
-                
-            return found    
+            return found  
 
         def refresh_explorer(self,refresh_disk=None):
             """
@@ -1619,7 +1567,7 @@ class main:
                     self.refresh_disk_statuses()
                     child_root.destroy()
 
-            child_root = customtkinter.CTkToplevel()
+            child_root = customtkinter.CTkToplevel(fg_color="#212121")
             self.opened_window = child_root
             x = self.root.winfo_rootx()
             y = self.root.winfo_rooty()
@@ -1628,9 +1576,9 @@ class main:
             child_root.title("Odpojování síťového disku")
             
             found_drive_letters=[]
-            for i in range(0,len(self.disk_all_rows)):
-                if not self.disk_all_rows[i][1] in found_drive_letters:
-                    found_drive_letters.append(self.disk_all_rows[i][1])
+            for i in range(0,len(self.all_project_list)):
+                if not self.all_project_list[i]["disk_letter"] in found_drive_letters:
+                    found_drive_letters.append(self.all_project_list[i]["disk_letter"])
 
             mapped_disks = main.DM_tools.list_mapped_disks()
             non_persistent_disks = main.DM_tools.list_non_persistent_disks()
@@ -1645,27 +1593,31 @@ class main:
             label =                     customtkinter.CTkLabel(master = child_root, width = 20,height=30,text = "Vyberte disk nebo vyhledejte manuálně: ",font=("Arial",20,"bold"))
             self.drive_letter_input =   customtkinter.CTkOptionMenu(master = child_root,font=("Arial",20),width=200,height=30,values=found_drive_letters,corner_radius=0)
             self.DL_manual_entry =      customtkinter.CTkEntry(master = child_root,font=("Arial",20),width=200,height=30,corner_radius=0,placeholder_text="manuálně")
-            del_button =                customtkinter.CTkButton(master = child_root, width = 200,height=40,text = "Odpojit", command = lambda: delete_disk(child_root),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
-            exit_button =               customtkinter.CTkButton(master = child_root, width = 200,height=40,text = "Zrušit", command = lambda: child_root.destroy(),font=("Arial",20,"bold"),corner_radius=0)
-            label.                      grid(column = 0,row=0,pady = 5,padx =10,sticky = tk.W)
-            self.drive_letter_input.    grid(column = 0,row=1,pady = 5,padx =10,sticky = tk.W)
-            self.DL_manual_entry.       grid(column = 0,row=2,pady = 5,padx =10,sticky = tk.W)
-            del_button.                 grid(column = 0,row=3,pady = 5,padx =10,sticky = tk.W)
-            exit_button.                grid(column = 0,row=3,pady = 5,padx =220,sticky = tk.W)
+            btn_frame =                 customtkinter.CTkFrame(master=child_root,corner_radius=0,border_width=0,fg_color="#212121")
+            del_button =                customtkinter.CTkButton(master = btn_frame, width = 200,height=40,text = "Odpojit", command = lambda: delete_disk(child_root),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
+            exit_button =               customtkinter.CTkButton(master = btn_frame, width = 200,height=40,text = "Zrušit", command = lambda: child_root.destroy(),font=("Arial",20,"bold"),corner_radius=0)
+            exit_button.                pack(pady=5,padx=(0,10),anchor = "e",side="right")
+            del_button.                 pack(pady=5,padx=(0,10),anchor = "e",side="right")
+            btn_frame.                  pack(pady=0,padx=0,fill="x",side = "bottom")
+            label.                      pack(pady=5,padx=(10),anchor = "n",side="top")
+            self.drive_letter_input.    pack(pady=5,padx=(10),anchor = "n",side="top")
+            self.DL_manual_entry.       pack(pady=5,padx=(10),anchor = "n",side="top")
+
             child_root.update()
             child_root.update_idletasks()
             child_root.focus()
             child_root.focus_force()
             self.root.bind("<Button-1>",lambda e: child_root.destroy(),"+")
-
-            print("selected: ",self.last_project_disk_letter)
             print("disk letter list: ",found_drive_letters)
             try:
-                self.drive_letter_input.set(self.last_project_disk_letter)
+                self.drive_letter_input.set(self.last_managed_project["disk_letter"])
             except Exception:
                 pass
 
-        def delete_project_disk(self,button_trigger = False,wanted_project=None,flag=""):
+        def delete_project_disk(self,wanted_project=None,silence=None,flag=""):
+            if "!ctktextbox" in str(self.root.focus_get()):
+                return
+            
             project_found = False
             name_list = []
 
@@ -1678,7 +1630,7 @@ class main:
                     for names in name_list:
                         print(names)
                         project_found = False
-                        self.disk_all_rows, self.disk_project_list = main.DM_tools.read_excel_data(self.excel_file_path)
+                        self.all_project_list = main.DM_tools.read_excel_data(self.excel_file_path)
                         proceed(names,window,True)
                             
                     Tools.add_colored_line(self.main_console,f"Byly úspěšně odstraněny tyto projekty: {name_list}","orange",None,True)
@@ -1692,25 +1644,28 @@ class main:
             def proceed(wanted_project, window = True, multiple_status = False):
                 nonlocal project_found
                 nonlocal child_root
-                # nonlocal wanted_project
-
+                deleted_project = None
                 if wanted_project == None:
-                    self.disk_all_rows, self.disk_project_list = main.DM_tools.read_excel_data(self.excel_file_path)
+                    self.all_project_list = main.DM_tools.read_excel_data(self.excel_file_path)
                     wanted_project = str(self.search_input.get())
                 workbook = load_workbook(self.excel_file_path)
-                for i in range(0,len(self.disk_project_list)):
-                    if self.disk_project_list[i] == wanted_project and len(str(self.disk_project_list[i])) == len(str(wanted_project)):
-                        row_index = self.disk_project_list.index(wanted_project)
-                        row_data = self.disk_all_rows[row_index]
-                        self.manage_bin(flag="save_project_disk",parameters=row_data,wb=workbook)
-                        worksheet = workbook["disk_list"]
-                        worksheet.delete_rows(len(self.disk_all_rows)-row_index)
-                        workbook.save(self.excel_file_path)
-                        project_found = True
-                        break
+                worksheet = workbook["disk_list"]
+
+                project_to_delete = Tools.found_project_name(self.all_project_list,wanted_project)
+                if project_to_delete == False:
+                    Tools.add_colored_line(self.main_console,"Nejprve vyberte projekt (nakliknout levým na parametry daného projektu nebo pravým na tlačíko projektu)","orange",None,True)
+                    return
+                
+                self.manage_bin(flag="save_project_disk",project=project_to_delete)
+                project_index = Tools.get_project_index(self.all_project_list,project_to_delete['name'])
+                worksheet.delete_rows(project_index+1)
+                workbook.save(self.excel_file_path)
+                workbook.close()
+                project_found = True
+                deleted_project = project_to_delete
 
                 workbook.close()
-                if not multiple_status:
+                if silence==None and not multiple_status:
                     if project_found:
                         Tools.add_colored_line(self.main_console,f"Projekt {wanted_project} byl odstraněn","orange",None,True)    
                         self.make_project_cells_disk() #refresh = cele zresetovat, jine: id, poradi...
@@ -1718,42 +1673,40 @@ class main:
                         Tools.add_colored_line(self.main_console,"Nejprve vyberte projekt (nakliknout levým na parametry daného projektu nebo pravým na tlačíko projektu)","orange",None,True)
                     else:
                         Tools.add_colored_line(self.main_console,f"Zadaný projekt: {wanted_project} nebyl nalezen","red",None,True)
-                
+
+                elif project_found and not multiple_status:  # zresetuj i v pripade silence...
+                    self.make_project_cells_disk() #refresh = cele zresetovat, jine: id, poradi...
+
                 if window and child_root.winfo_exists():
                     child_root.grab_release()
                     child_root.destroy()
 
-            if not button_trigger:
-                proceed(wanted_project,window=False)
-                return
+                return deleted_project
 
-            if flag == "main_menu" or flag == "context_menu":
-                if self.deletion_behav == 110 or self.deletion_behav == 111:
-                    check_multiple_projects(False)
-                    return
-                
+            if self.last_managed_project is None:
+                Tools.add_colored_line(self.main_console,"Nejprve vyberte projekt (nakliknout levým na parametry daného projektu nebo pravým na tlačíko projektu)","orange",None,True)
+                return
+            elif str(self.last_managed_project['name']).replace(" ","") == "":
+                Tools.add_colored_line(self.main_console,"Nejprve vyberte projekt (nakliknout levým na parametry daného projektu nebo pravým na tlačíko projektu)","orange",None,True)
+                return
+            elif wanted_project == None:
+                wanted_project = self.last_managed_project['name']
+            
             if self.deletion_behav == 101 or self.deletion_behav == 111:
                 check_multiple_projects(False)
                 return
 
-            if self.last_project_name.replace(" ","") == "":
-                Tools.add_colored_line(self.main_console,"Nejprve vyberte projekt (nakliknout levým na parametry daného projektu nebo pravým na tlačíko projektu)","orange",None,True)
-                return
-            elif wanted_project == None:
-                wanted_project = self.last_project_name
-            
             child_root = customtkinter.CTkToplevel()
             self.opened_window = child_root
-
-            # child_root.geometry(f"650x130+{x+80}+{y+150}")
             child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(self.app_icon)))
             child_root.title("Upozornění")
-            proceed_label_text = f"Opravdu si přejete odstranit projekt {self.last_project_name}?"
-            if flag == "context_menu":
-                self.selected_list_disk = []
+            proceed_label_text = f"Opravdu si přejete odstranit projekt {self.last_managed_project['name']}?"
+            # if flag == "context_menu":
+            #     self.selected_list_disk = []
             if len(self.selected_list_disk) > 1:
-                for ids in self.selected_list_disk:
-                    name_list.append(self.disk_all_rows[ids][0])
+                for projects in self.selected_list_disk:
+                    if str(projects['name']) not in name_list:
+                        name_list.append(str(projects['name']))
                 proceed_label_text = f"Opravdu si přejete odstranit vybrané projekty:\n{name_list}?"
             proceed_label = customtkinter.CTkLabel(master = child_root,text = proceed_label_text,font=("Arial",22,"bold"),justify = "left",anchor="w")
             button_yes =    customtkinter.CTkButton(master = child_root,text = "ANO",font=("Arial",20,"bold"),width = 180,height=40,corner_radius=0,command=lambda: check_multiple_projects(True))
@@ -1770,70 +1723,7 @@ class main:
             child_root.wait_window()
             return project_found
 
-        def save_new_project_data_disk(self,child_root,only_edit = None):
-            project_name = str(self.name_input.get())
-            disk_letter =  str(self.disk_letter_input.get())
-            ftp_address =  str(self.FTP_adress_input.get())
-            username =     str(self.username_input.get())
-            # password =     str(self.password_input.get())
-            password =     str(self.last_inserted_password)
-            notes = Tools.get_legit_notes(self.notes_input.get("1.0", tk.END))
-            errors = 0
-            if project_name.replace(" ","") == "":
-                Tools.add_colored_line(self.console,f"Nezadali jste jméno projektu","red",None,True)
-                errors += 1
-            if project_name in self.disk_project_list and only_edit == None:
-                Tools.add_colored_line(self.console,f"Jméno je již používané","red",None,True)
-                errors +=1
-            elif disk_letter.replace(" ","") == "":
-                Tools.add_colored_line(self.console,f"Nezadali jste písmeno disku","red",None,True)
-                errors += 1
-            elif ftp_address.replace(" ","") == "":
-                Tools.add_colored_line(self.console,f"Nezadali jste adresu","red",None,True)
-                errors += 1
-            
-            # poznamky nejsou povinne
-            if errors ==0:
-                self.disk_all_rows, self.disk_project_list = main.DM_tools.read_excel_data(self.excel_file_path)
-                if only_edit == None:
-                    main.DM_tools.save_excel_data_disk(self.excel_file_path,
-                                                            len(self.disk_all_rows),
-                                                            self.last_project_id,
-                                                            project_name,
-                                                            disk_letter,
-                                                            ftp_address,
-                                                            username,
-                                                            password,
-                                                            notes)
-                else:
-                    main.DM_tools.save_excel_data_disk(self.excel_file_path,
-                                                            len(self.disk_all_rows),
-                                                            self.last_project_id,
-                                                            project_name,
-                                                            disk_letter,
-                                                            ftp_address,
-                                                            username,
-                                                            password,
-                                                            notes,
-                                                            only_edit=True)                
-                child_root.destroy()
-                if only_edit == None:
-                    self.make_project_cells_disk()
-                    Tools.add_colored_line(self.main_console,f"Přidán nový projekt: {project_name}","green",None,True)
-                else: # edit - musi byt proveden reset
-                    self.edited_project_name_disk = project_name
-                    self.manage_bin("save_edited_disk",parameters=[self.last_project_name,self.last_project_disk_letter,self.last_project_ftp,
-                                                                self.last_project_username,self.last_project_password,self.last_project_notes])
-                    if self.make_edited_project_first:
-                        self.make_project_first_disk(purpouse="silent",make_cells = False)
-                    self.make_project_cells_disk()
-                    if self.last_project_name != project_name:
-                        status_text = f"Projekt: {self.last_project_name} (nově: {project_name}) úspěšně pozměněn"
-                    else:
-                        status_text = f"Projekt: {self.last_project_name} úspěšně pozměněn"
-                    Tools.add_colored_line(self.main_console,status_text,"green",None,True)
-
-        def add_new_project_disk(self,edit = None,init_copy=False):
+        def add_new_project_disk(self,edit = None,init_copy=False,childroot_given = None):
             def mouse_wheel_change(e):
                 if -e.delta < 0:
                     switch_up()
@@ -1841,49 +1731,59 @@ class main:
                     switch_down()
 
             def copy_previous_project():
-                if self.last_project_name == "":
+                try:
+                    if self.last_managed_project['name'] == "":
+                        Tools.add_colored_line(self.console,"Není vybrán žádný projekt","red",None,True)
+                        return
+                    self.last_inserted_password = str(self.last_managed_project['password'])
+                    self.name_input.delete("0","300")
+                    self.name_input.insert("0",str(self.last_managed_project['name']))
+                    self.disk_letter_input.delete("0","300")
+                    self.disk_letter_input.insert("0",str(self.last_managed_project['disk_letter']))
+                    self.FTP_adress_input.delete("0","300")
+                    self.FTP_adress_input.insert("0",str(self.last_managed_project['ftp']))
+                    self.username_input.delete("0","300")
+                    self.username_input.insert("0",str(self.last_managed_project['user']))
+                    self.password_input.delete("0","300")
+                    self.password_input.insert("0",str(len(self.last_managed_project['password'])*"*"))
+                    self.notes_input.delete("1.0",tk.END)
+                    self.notes_input.insert(tk.END,str(self.last_managed_project['notes']))
+
+                except TypeError:
                     Tools.add_colored_line(self.console,"Není vybrán žádný projekt","red",None,True)
-                    return
-                
-                self.last_inserted_password = str(self.last_project_password)
-                self.name_input.delete("0","300")
-                self.name_input.insert("0",str(self.last_project_name))
-                self.disk_letter_input.delete("0","300")
-                self.disk_letter_input.insert("0",str(self.last_project_disk_letter))
-                self.FTP_adress_input.delete("0","300")
-                self.FTP_adress_input.insert("0",str(self.last_project_ftp))
-                self.username_input.delete("0","300")
-                self.username_input.insert("0",str(self.last_project_username))
-                self.password_input.delete("0","300")
-                self.password_input.insert("0",str(len(self.last_project_password)*"*"))
-                self.notes_input.delete("1.0",tk.END)
-                self.notes_input.insert(tk.END,str(self.last_project_notes))
-            
-            def switch_up():
-                print("up ",self.last_project_id)
-                self.last_project_id -= 1
-                if self.last_project_id < 0:
-                    self.last_project_id = len(self.disk_all_rows)-1
+
+            def switch_up(force_index = None):
+                if force_index != None:
+                    project_index = force_index
+                else:
+                    project_index = Tools.get_project_index(self.all_project_list,self.last_managed_project['name'])
+
+                another_project_id = project_index
+                another_project_id -= 1
+                if another_project_id < 0:
+                    another_project_id = len(self.all_project_list)-1
                     
-                self.check_given_input(given_data=self.disk_all_rows[self.last_project_id][0])
+                self.last_managed_project = self.all_project_list[another_project_id]
                 copy_previous_project()
                 refresh_title()
 
             def switch_down():
-                print("down ",self.last_project_id)
-                self.last_project_id += 1
-                if self.last_project_id > len(self.disk_all_rows)-1:
-                    self.last_project_id = 0
+                project_index = Tools.get_project_index(self.all_project_list,self.last_managed_project['name'])
+                previous_project_id = project_index
+                previous_project_id += 1
+                if previous_project_id > len(self.all_project_list)-1:
+                    previous_project_id = 0
 
-                self.check_given_input(given_data=self.disk_all_rows[self.last_project_id][0])
+                self.last_managed_project = self.all_project_list[previous_project_id]
                 copy_previous_project()
                 refresh_title()
 
             def del_project():
                 nonlocal child_root
-                result = self.delete_project_disk(button_trigger=True)
+                project_index = Tools.get_project_index(self.all_project_list,self.last_managed_project['name'])
+                result = self.delete_project_disk()
                 if result:
-                    switch_up()
+                    switch_up(project_index)
                 else:
                     print("aborted")
 
@@ -1895,7 +1795,7 @@ class main:
                 if edit == None:
                     child_root.title("Nový projekt")
                 else:
-                    child_root.title("Editovat projekt: "+self.last_project_name)
+                    child_root.title("Editovat projekt: "+ str(self.last_managed_project['name']))
 
             def show_password():
                 if str(self.password_input.get()) == str(len(self.last_inserted_password)*"*"):
@@ -1908,7 +1808,80 @@ class main:
                     self.password_input.insert("0",str(len(self.last_inserted_password)*"*"))
                     self.password_input.configure(state = "disabled")
 
-            child_root = customtkinter.CTkToplevel(fg_color="#212121")
+            def save_project(add_next = False):
+                project_name = str(self.name_input.get())
+                disk_letter =  str(self.disk_letter_input.get())
+                ftp_address =  str(self.FTP_adress_input.get())
+                username =     str(self.username_input.get())
+                password =     str(self.last_inserted_password)
+                notes = Tools.get_legit_notes(self.notes_input.get("1.0", tk.END))
+                errors = 0
+
+                if project_name.replace(" ","") == "":
+                    Tools.add_colored_line(self.console,f"Nezadali jste jméno projektu","red",None,True)
+                    errors += 1
+                elif disk_letter.replace(" ","") == "":
+                    Tools.add_colored_line(self.console,f"Nezadali jste písmeno disku","red",None,True)
+                    errors += 1
+                elif ftp_address.replace(" ","") == "":
+                    Tools.add_colored_line(self.console,f"Nezadali jste adresu","red",None,True)
+                    errors += 1
+                if errors>0:
+                    return
+                
+                self.all_project_list = main.DM_tools.read_excel_data(self.excel_file_path)
+
+                if edit:
+                    print("last_managed project:", self.last_managed_project)
+                    currently_edited_project_id = Tools.get_project_index(self.all_project_list,self.last_managed_project['name'])
+                    if currently_edited_project_id == None:
+                        Tools.add_colored_line(self.main_console,f"Projekt {self.last_managed_project['name']} nenalezen","red",None,True)
+                        return
+                    
+                    if self.all_project_list[currently_edited_project_id]['name'] != project_name:
+                        project_name = Tools.get_unique_name(self.all_project_list,project_name)
+                    self.all_project_list[currently_edited_project_id]['name'] = project_name
+                    self.all_project_list[currently_edited_project_id]["disk_letter"] = disk_letter
+                    self.all_project_list[currently_edited_project_id]["ftp"] = ftp_address
+                    self.all_project_list[currently_edited_project_id]["user"] = username
+                    self.all_project_list[currently_edited_project_id]["password"] = password
+                    self.all_project_list[currently_edited_project_id]["notes"] = notes
+                    main.DM_tools.save_excel_data_disk(self.excel_file_path,self.all_project_list)
+
+                    if self.last_managed_project['name'] != project_name:
+                        status_text = f"Projekt: {self.last_managed_project['name']} (nově: {project_name}) úspěšně pozměněn"
+                    else:
+                        status_text = f"Projekt: {self.last_managed_project['name']} úspěšně pozměněn"
+                    Tools.add_colored_line(self.main_console,status_text,"green",None,True)
+                    
+                    self.manage_bin(flag="save_edited_disk",project=self.last_managed_project,new_edited_name=project_name)
+                    if self.make_edited_project_first:
+                        self.make_project_first_disk(purpouse="silent",make_cells=False,project=self.all_project_list[currently_edited_project_id],input_entry_bypass=project_name)
+                else:
+                    project_name = Tools.get_unique_name(self.all_project_list,project_name)
+                    self.all_project_list.insert(0,{
+                        'name':project_name,
+                        "disk_letter":disk_letter,
+                        "ftp":ftp_address,
+                        "user":username,
+                        "password":password,
+                        "notes":notes,
+                    })
+                    main.DM_tools.save_excel_data_disk(self.excel_file_path,self.all_project_list)
+                    Tools.add_colored_line(self.main_console,f"Nový projekt: {project_name} byl úspěšně přidán","green",None,True)
+
+                self.make_project_cells_disk()
+                if add_next:
+                    Tools.clear_frame(child_root)
+                    self.root.after(10,self.add_new_project_disk(childroot_given=child_root))
+                else:
+                    child_root.destroy()
+
+
+            if childroot_given == None:
+                child_root = customtkinter.CTkToplevel(fg_color="#212121")
+            else:
+                child_root = childroot_given
             self.opened_window = child_root
             child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(self.app_icon)))
             refresh_title()
@@ -1926,6 +1899,7 @@ class main:
             project_up.                 bind("<MouseWheel>",lambda e: mouse_wheel_change(e))
             project_down.               bind("<MouseWheel>",lambda e: mouse_wheel_change(e))
             copy_check =                customtkinter.CTkButton(master = top_right_frame,font=("Arial",20),width=250,height=30,corner_radius=0,text="Kopírovat předchozí projekt",command= lambda: copy_previous_project())
+            save_and_add_next =         customtkinter.CTkButton(master = top_right_frame,font=("Arial",20),width=250,height=30,corner_radius=0,text="Uložit a přidat další",command= lambda: save_project(add_next = True))
             del_project_btn =           customtkinter.CTkButton(master = top_right_frame,font=("Arial",20),width=250,height=30,corner_radius=0,text="Smazat tento projekt",command= lambda: del_project(),fg_color="red")
             self.name_input =           customtkinter.CTkEntry(master = top_left_frame,font=("Arial",20),width=200,height=30,corner_radius=0)
             disk_letter =               customtkinter.CTkLabel(master = top_left_frame,height=30,text = "Písmeno disku: ",font=("Arial",20,"bold"))
@@ -1942,14 +1916,12 @@ class main:
             self.notes_input =          customtkinter.CTkTextbox(master = child_root,font=("Arial",20),height=260,corner_radius=0)
             self.console =              tk.Text(child_root, wrap="none", height=0,background="black",font=("Arial",14),state=tk.DISABLED)
             buttons_frame =             customtkinter.CTkFrame(master=child_root,corner_radius=0,border_width=0,fg_color="#212121")
-            if edit == None:
-                save_button =  customtkinter.CTkButton(master = buttons_frame, width = 200,height=40,text = "Uložit", command = lambda: self.save_new_project_data_disk(child_root),font=("Arial",20,"bold"),corner_radius=0)
-            else:
-                save_button =  customtkinter.CTkButton(master = buttons_frame, width = 200,height=40,text = "Uložit", command = lambda: self.save_new_project_data_disk(child_root,True),font=("Arial",20,"bold"),corner_radius=0)
-            exit_button =  customtkinter.CTkButton(master = buttons_frame, width = 200,height=40,text = "Zrušit", command = lambda: child_root.destroy(),font=("Arial",20,"bold"),corner_radius=0)
+            save_button =               customtkinter.CTkButton(master = buttons_frame, width = 200,height=40,text = "Uložit", command = lambda: save_project(),font=("Arial",20,"bold"),corner_radius=0)
+            exit_button =               customtkinter.CTkButton(master = buttons_frame, width = 200,height=40,text = "Zrušit", command = lambda: child_root.destroy(),font=("Arial",20,"bold"),corner_radius=0)
             project_name.pack(pady = (10,0),padx =(5,0),anchor="w",side="top")
             if edit != True:
-                copy_check.pack(pady = (10),padx =(10),anchor="w",side="top",fill="x")
+                copy_check.         pack(pady = (10),padx =(10),anchor="w",side="top")
+                save_and_add_next.  pack(pady = (0,10),padx =(10),anchor="w",side="top")
             if edit:
                 project_selection_label.pack(pady = (10,0),padx =(5,0),anchor="w",side="top")
                 project_switch_frame.pack(pady=10,padx=10,anchor="w",side = "top",fill="x")
@@ -2006,11 +1978,13 @@ class main:
 
         def make_project_first_disk(self,purpouse = None,make_cells = True,input_entry_bypass = None,project= None,upwards=False,downwards=False):
             def check_position():
-                max_position = len(self.disk_all_rows)
+                project_index = Tools.get_project_index(self.all_project_list,project['name'])
+                prev_pos = project_index
+                max_position = len(self.all_project_list)
                 if upwards:
-                    position = self.last_project_id -1
+                    position = prev_pos -1
                 elif downwards:
-                    position = self.last_project_id +1
+                    position = prev_pos +1
 
                 if position < 0:
                     position = max_position-1
@@ -2022,39 +1996,28 @@ class main:
             self.remember_to_change_back = []
             self.last_selected_widget = ""
 
-            if result == True:
-                #zmena poradi
+            if result == True: #zmena poradi
                 if project == None:
-                    project = self.disk_all_rows[self.last_project_id]
+                    project = self.last_managed_project
 
                 if downwards or upwards:
                     position = check_position()
                 else:
                     position = 0
 
-                self.disk_all_rows.pop(self.last_project_id)
-                self.disk_all_rows.insert(position,project)
-                self.last_project_id = position
+                if len(self.all_project_list) > 0:
+                    project_index = Tools.get_project_index(self.all_project_list,project['name'])
+                    self.all_project_list.pop(project_index)
 
-                for i in range(0,len(self.disk_all_rows)):
-                    row = (len(self.disk_all_rows)-1)-i
-                    main.DM_tools.save_excel_data_disk(self.excel_file_path,
-                                                len(self.disk_all_rows),
-                                                self.last_project_id,
-                                                self.disk_all_rows[i][0],
-                                                self.disk_all_rows[i][1],
-                                                self.disk_all_rows[i][2],
-                                                self.disk_all_rows[i][3],
-                                                self.disk_all_rows[i][4],
-                                                self.disk_all_rows[i][5],
-                                                force_row_to_print=row+1)
+                self.all_project_list.insert(position,project)
+                main.DM_tools.save_excel_data_disk(self.excel_file_path,self.all_project_list)
+
                 if make_cells:
                     self.make_project_cells_disk()
-
                 if purpouse == "search":
-                    Tools.add_colored_line(self.main_console,f"Projekt {self.disk_all_rows[0][0]} nalezen","green",None,True)
+                    Tools.add_colored_line(self.main_console,f"Projekt {project['name']} nalezen","green",None,True)
                 elif purpouse != "silent":
-                    Tools.add_colored_line(self.main_console,f"Projekt {self.disk_all_rows[0][0]} přesunut na začátek","green",None,True)
+                    Tools.add_colored_line(self.main_console,f"Projekt {project['name']} přesunut na začátek","green",None,True)
             elif result == None and purpouse != "silent":
                 if purpouse == "search":
                     Tools.add_colored_line(self.main_console,f"Vložte hledaný projekt do vyhledávání","orange",None,True)
@@ -2063,11 +2026,11 @@ class main:
             elif purpouse != "silent":
                 Tools.add_colored_line(self.main_console,"Projekt nenalezen","red",None,True)
 
-        def map_disk(self,button_row):
-            Drive_letter = str(self.disk_all_rows[button_row][1])
-            ftp_adress = str(self.disk_all_rows[button_row][2])
-            user = str(self.disk_all_rows[button_row][3])
-            password = str(self.disk_all_rows[button_row][4])
+        def map_disk(self,project):
+            Drive_letter = str(project["disk_letter"])
+            ftp_adress = str(project["ftp"])
+            user = str(project["user"])
+            password = str(project["password"])
 
             delete_command = "net use " + Drive_letter + ": /del"
             subprocess.run(delete_command, shell=True)
@@ -2118,28 +2081,25 @@ class main:
             else:
                 Tools.add_colored_line(self.main_console,f"Připojení selhalo (ixon? musí být zvolena alespoň 1 složka na disku...)","red",None,True)
 
-        def show_context_menu(self,event,first_index,second_index,flag=""):
-            """
-            - first index (y) = index celeho radku
-            - second index (x) = index jednoho parametru
-            """
+        def show_context_menu(self,event,project,flag=""):
             context_menu = tk.Menu(self.root,tearoff=0,fg="white",bg="#202020",activebackground="#606060")
-            self.check_given_input(given_data=self.disk_all_rows[first_index][0])
+            self.last_managed_project = project
+            # self.check_given_input(given_data=self.all_project_list[first_index][0])
             
             if flag == "button":
-                context_menu.add_command(label="Namapovat",font=("Arial",22,"bold"),command=lambda: self.map_disk(first_index))
+                context_menu.add_command(label="Namapovat",font=("Arial",22,"bold"),command=lambda: self.map_disk(project))
                 context_menu.add_separator()
-                context_menu.add_command(label="Kopírovat FTP adresu",font=("Arial",22,"bold"), command=lambda: pyperclip.copy(self.disk_all_rows[first_index][2]))
+                context_menu.add_command(label="Kopírovat FTP adresu",font=("Arial",22,"bold"), command=lambda: pyperclip.copy(str(project["ftp"])))
                 context_menu.add_separator()
-                context_menu.add_command(label="Editovat",font=("Arial",22,"bold"),command=lambda: self.add_new_project_disk(True))
+                context_menu.add_command(label="Editovat",font=("Arial",22,"bold"),command=lambda: self.add_new_project_disk(edit=True))
                 context_menu.add_separator()
                 context_menu.add_command(label="Kopírovat projekt",font=("Arial",22,"bold"),command=lambda: self.add_new_project_disk(init_copy=True))
                 context_menu.add_separator()
-                context_menu.add_command(label="Přesunout na začátek",font=("Arial",22,"bold"),command=lambda: self.make_project_first_disk(input_entry_bypass=self.disk_all_rows[first_index][0]))
+                context_menu.add_command(label="Přesunout na začátek",font=("Arial",22,"bold"),command=lambda: self.make_project_first_disk(input_entry_bypass=str(project["name"])))
                 context_menu.add_separator()
-                context_menu.add_command(label="Odstranit",font=("Arial",22,"bold"),command=lambda: self.delete_project_disk(button_trigger=True,flag="context_menu"))
+                context_menu.add_command(label="Odstranit",font=("Arial",22,"bold"),command=lambda: self.delete_project_disk(flag="context_menu"))
             elif flag == "ftp_frame":
-                context_menu.add_command(label="Kopírovat FTP adresu",font=("Arial",22,"bold"), command=lambda: pyperclip.copy(self.disk_all_rows[first_index][2]))
+                context_menu.add_command(label="Kopírovat FTP adresu",font=("Arial",22,"bold"), command=lambda: pyperclip.copy(str(project["ftp"])))
             elif flag == "disk_letter":
                 context_menu.add_command(label="Refresh",font=("Arial",22,"bold"), command=lambda: self.refresh_disk_statuses(silent=False))
                 context_menu.add_separator()
@@ -2175,23 +2135,30 @@ class main:
                         legit_notes = legit_notes + legit_rows[i]+ "\n"
                 return legit_notes
             
-            def save_changed_notes(notes,row):
+            def save_changed_notes(notes,project):
                 workbook = load_workbook(self.excel_file_path)
-                worksheet = workbook["disk_list"]
-                worksheet['F' + str(len(self.disk_all_rows)-row)] = notes
+                def save_to_workbook(notes,row,excel_worksheet):
+                    nonlocal workbook
+                    worksheet = workbook[excel_worksheet]
+                    worksheet['D' + str(row+1)] = notes
+
+                self.all_project_list = main.DM_tools.read_excel_data(self.excel_file_path)
+                project_index = Tools.get_project_index(self.all_project_list,project['name'])
+                save_to_workbook(notes,project_index,"disk_list")
+                self.all_project_list[project_index]["notes"] = notes
                 workbook.save(filename=self.excel_file_path)
                 workbook.close()
 
-            def on_enter_entry(widget,row_of_widget):
+            def on_enter_entry(widget,project):
                 if not opened_window_check():
                     if str(widget[0]) != str(self.last_selected_notes_widget):
                         tolerance = 5
                         if abs(int(widget[0]._current_height)-self.notes_frame_height) <= tolerance: # if the height is not 50 then it means it is expanded already
-                            filtered_input = filter_text_input(self.disk_all_rows[row_of_widget][5])
-                            self.disk_all_rows[row_of_widget][5] = filtered_input
+                            filtered_input = filter_text_input(project["notes"])
+                            project["notes"] = filtered_input
                             addition = self.notes_frame_height
-                            if "\n" in self.disk_all_rows[row_of_widget][5]:
-                                notes_rows = self.disk_all_rows[row_of_widget][5].split("\n")
+                            if "\n" in project["notes"]:
+                                notes_rows = project["notes"].split("\n")
                                 if len(notes_rows) > 1:
                                     expanded_dim = addition + (len(notes_rows)-1) * 25
                                     # widget[0].configure(height = expanded_dim)
@@ -2199,26 +2166,26 @@ class main:
                                     widget[1].configure(height = expanded_dim-10)
                                     if str(widget) != str(self.last_selected_notes_widget) + ".!ctktextbox":
                                         widget[1].delete("1.0",tk.END)
-                                        widget[1].insert(tk.END,str(self.disk_all_rows[row_of_widget][5]))
+                                        widget[1].insert(tk.END,str(project["notes"]))
 
                     if self.default_note_behav == 0:
                         widget[1].configure(state = "disabled")
 
-
-            def on_leave_entry(widget,row_of_widget):
+            def on_leave_entry(widget,project):
                 if not opened_window_check():
-                    notes_before = filter_text_input(str(self.disk_all_rows[row_of_widget][5]))
+                    notes_before = filter_text_input(str(project["notes"]))
                     notes_after = filter_text_input(str(widget[1].get("1.0",tk.END)))
                     if str(widget[1]) != str(self.last_selected_notes_widget) + ".!ctktextbox":
                         widget[1].configure(state = "normal")
                         if notes_before != notes_after:
-                            self.disk_all_rows[row_of_widget][5] = notes_after
-                            self.changed_notes_disk = [self.disk_all_rows[row_of_widget][0],notes_before]
-                            self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="change_notes_back_disk"))
-                            save_changed_notes(notes_after,row_of_widget)
+                            self.changed_notes_disk = [project["notes"],notes_before]
+                            self.undo_edit.configure(state = "normal")
+                            self.manage_bin(flag="save_edited_disk",project=project,new_edited_name=project['name'])
+                            project["notes"] = notes_after
+                            save_changed_notes(notes_after,project)
 
-                        if "\n" in self.disk_all_rows[row_of_widget][5]:
-                            notes_rows = self.disk_all_rows[row_of_widget][5].split("\n")
+                        if "\n" in project["notes"]:
+                            notes_rows = project["notes"].split("\n")
                             first_row = notes_rows[0]
                             widget[1].delete("1.0",tk.END)
                             widget[1].insert(tk.END,str(first_row))
@@ -2229,10 +2196,11 @@ class main:
                     else:
                         # jinak pouze ulož změny
                         if notes_before != notes_after:
-                            self.disk_all_rows[row_of_widget][5] = notes_after
-                            self.changed_notes_disk = [self.disk_all_rows[row_of_widget][0],notes_before]
-                            self.undo_edit.configure(state = "normal",command = lambda: self.manage_bin(flag="change_notes_back_disk"))
-                            save_changed_notes(notes_after,row_of_widget)
+                            self.manage_bin(flag="save_edited_disk",project=project,new_edited_name=project['name'])
+                            project["notes"] = notes_after
+                            self.changed_notes_disk = [project["notes"],notes_before]
+                            self.undo_edit.configure(state = "normal")
+                            save_changed_notes(notes_after,project)
                         self.root.focus_set() # unfocus widget
 
                     tolerance = 5
@@ -2247,37 +2215,6 @@ class main:
                             if self.default_note_behav == 0:
                                 widget[1].configure(state = "disabled")
 
-            def shrink_frame(widget):
-                tolerance = 5
-                if abs(int(widget[0]._current_height)-self.notes_frame_height) <= tolerance:
-                    return
-                if not opened_window_check():
-                    if str(widget[0]) != str(self.last_selected_notes_widget):
-                        widget[1].configure(state = "normal")
-                        new_height = self.notes_frame_height
-                        widget[0].configure(height = new_height)
-                        widget[1].configure(height = new_height-10)
-                        if self.default_note_behav == 0:
-                            widget[1].configure(state = "disabled")
-
-            def expand_frame(widget,row_of_widget):
-                if not opened_window_check():
-                    if str(widget[0]) != str(self.last_selected_notes_widget):
-                        tolerance = 5
-                        if abs(int(widget[0]._current_height)-self.notes_frame_height) <= tolerance: # if the height is not 50 then it means it is expanded already
-                            filtered_input = filter_text_input(self.disk_all_rows[row_of_widget][5])
-                            self.disk_all_rows[row_of_widget][5] = filtered_input
-                            addition = self.notes_frame_height
-                            if "\n" in self.disk_all_rows[row_of_widget][5]:
-                                notes_rows = self.disk_all_rows[row_of_widget][5].split("\n")
-                                if len(notes_rows) > 1:
-                                    expanded_dim = addition + (len(notes_rows)-1) * 25
-                                    widget[0].configure(height = expanded_dim)
-                                    widget[1].configure(state = "normal")
-                                    widget[1].configure(height = expanded_dim-10)
-                                if self.default_note_behav == 0:
-                                    widget[1].configure(state = "disabled")
-
             def add_row_return(widget):
                 addition = widget[0]._current_height
                 expanded_dim = addition + 24
@@ -2285,7 +2222,7 @@ class main:
                 widget[1].configure(height = expanded_dim-10)
 
             if not no_read:
-                self.disk_all_rows, self.disk_project_list = main.DM_tools.read_excel_data(self.excel_file_path)
+                self.all_project_list = main.DM_tools.read_excel_data(self.excel_file_path)
 
             Tools.clear_frame(self.project_tree)
             if self.default_disk_status_behav == 1:
@@ -2303,77 +2240,67 @@ class main:
             column3_header.     pack(padx = (5,0),side = "top",anchor = "w",expand = False)
             column4_header.     pack(padx = (5,0),side = "top",anchor = "w")
             self.disk_letter_frame_list = []
-            # y = widgets ve smeru y, x = widgets ve smeru x
-            for y in range(0,len(self.disk_all_rows)):
-                for x in range(0,len(self.disk_all_rows[y])):# x: 0=button, 1=disk_letter, 2=ip, 3=name, 4=password, 5=notes
-                    if x == 0:
-                        btn_frame = customtkinter.CTkFrame(master=column1,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)
-                        button =    customtkinter.CTkButton(master = btn_frame,width=200,height=40,text = self.disk_all_rows[y][x],font=("Arial",20,"bold"),corner_radius=0)
-                        button.     pack(padx =5,pady = 5, fill= "x")
-                        btn_frame.  pack(side = "top",anchor = "w",expand = False)
-                        button.     bind("<Button-1>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
-                        button.     bind("<Double-1>",lambda e,widget_id = y: self.map_disk(widget_id))
-                        button.     bind("<Button-3>",lambda e, first_index = y, second_index = x: self.show_context_menu(e,first_index,second_index,flag="button"))
-                        # button.     bind("<Button-3>",lambda e,widget_id = y: self.map_disk(widget_id))
 
-                    elif x == 1: # frame s písmenem disku, menší šířka, podbarvení
-                        param_frame =   customtkinter.CTkFrame(master=column2,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)
-                        parameter =     customtkinter.CTkLabel(master = param_frame,text = self.disk_all_rows[y][x],font=("Arial",20,"bold"),width = 40,height=40)
-                        parameter.      pack(padx = (5,5),pady = 5)
-                        param_frame.    pack(side = "top")
-                        self.disk_letter_frame_list.append(param_frame)
-                        param_frame.    bind("<Button-1>",lambda e,widget = param_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
-                        parameter.      bind("<Button-1>",lambda e,widget = param_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
-                        parameter.      bind("<Button-3>",lambda e, first_index = y, second_index = x: self.show_context_menu(e,first_index,second_index,flag="disk_letter"))
+            for projects in self.all_project_list:
+                btn_frame = customtkinter.CTkFrame(master=column1,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)
+                button =    customtkinter.CTkButton(master = btn_frame,width=200,height=40,text = projects["name"],font=("Arial",20,"bold"),corner_radius=0,command=lambda widget = btn_frame, project = projects: self.clicked_on_project(project,widget))
+                button.     pack(padx =5,pady = 5, fill= "x")
+                btn_frame.  pack(side = "top",anchor = "w",expand = False)
+                # button.     bind("<Button-1>",lambda e,widget = btn_frame, widget_id = y: self.clicked_on_project(e, widget_id,widget))
+                button.     bind("<Double-1>",lambda e,project = projects: self.map_disk(project))
+                button.     bind("<Button-3>",lambda e,project = projects: self.show_context_menu(e,project,flag="button"))
 
-                    elif x == 2: # frame s ftp adresou
-                        param_frame2 =   customtkinter.CTkFrame(master=column3,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)
-                        parameter2 =     customtkinter.CTkLabel(master = param_frame2,text = self.disk_all_rows[y][x],font=("Arial",20,"bold"),justify='left',anchor = "w",width = 300,height=40)
-                        parameter2.      pack(padx = (10,5),pady = 5,anchor = "w",fill="x")
-                        param_frame2.    pack(side = "top",fill="x",expand = False)
-                        param_frame2.    bind("<Button-1>",lambda e,widget = param_frame2, widget_id = y: self.clicked_on_project(e, widget_id,widget))
-                        parameter2.      bind("<Button-1>",lambda e,widget = param_frame2, widget_id = y: self.clicked_on_project(e, widget_id,widget))
-                        parameter2.      bind("<Button-3>",lambda e, first_index = y, second_index = x: self.show_context_menu(e,first_index,second_index,flag="ftp_frame"))
+                param_frame =   customtkinter.CTkFrame(master=column2,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)
+                parameter =     customtkinter.CTkLabel(master = param_frame,text = projects["disk_letter"],font=("Arial",20,"bold"),width = 40,height=40)
+                parameter.      pack(padx = (5,5),pady = 5)
+                param_frame.    pack(side = "top")
+                self.disk_letter_frame_list.append(param_frame)
+                param_frame.    bind("<Button-1>",lambda e,widget = param_frame, project = projects: self.clicked_on_project(project,widget))
+                parameter.      bind("<Button-1>",lambda e,widget = param_frame, project = projects: self.clicked_on_project(project,widget))
+                parameter.      bind("<Button-3>",lambda e, project = projects: self.show_context_menu(e,project,flag="disk_letter"))
 
-                    elif x == 5: #frame s poznamkami...
-                        notes_frame =   customtkinter.CTkFrame(master=column4,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)
-                        notes =         customtkinter.CTkTextbox(master = notes_frame,font=("Arial",20,"bold"),height=40,corner_radius=0,fg_color="black")
-                        notes.          pack(padx =5,pady = 5,anchor="w",fill="x")
-                        notes_frame.    pack(pady=0,padx=0,side = "top",anchor = "w",fill="x",expand = True)
-                        notes_frame.    bind("<Button-1>",lambda e,widget = notes_frame, textbox_widget = notes, widget_id = y: self.clicked_on_project(e, widget_id,widget,textbox_widget,flag="notes"))
-                        notes.          bind("<Button-1>",lambda e,widget = notes_frame, textbox_widget = notes, widget_id = y: self.clicked_on_project(e, widget_id,widget,textbox_widget,flag="notes"))
+                param_frame2 =   customtkinter.CTkFrame(master=column3,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)
+                parameter2 =     customtkinter.CTkLabel(master = param_frame2,text = projects["ftp"],font=("Arial",20,"bold"),justify='left',anchor = "w",width = 300,height=40)
+                parameter2.      pack(padx = (10,5),pady = 5,anchor = "w",fill="x")
+                param_frame2.    pack(side = "top",fill="x",expand = False)
+                param_frame2.    bind("<Button-1>",lambda e,widget = param_frame2, project = projects: self.clicked_on_project(project,widget))
+                parameter2.      bind("<Button-1>",lambda e,widget = param_frame2, project = projects: self.clicked_on_project(project,widget))
+                parameter2.      bind("<Button-3>",lambda e, project = projects: self.show_context_menu(e,project,flag="ftp_frame"))
 
-                        if "\n" in self.disk_all_rows[y][x]:
-                            notes_rows = self.disk_all_rows[y][x].split("\n")
-                            first_row = notes_rows[0]
-                            notes.delete("1.0",tk.END)
-                            notes.insert(tk.END,str(first_row))
-                        else:
-                            notes.insert(tk.END,str(self.disk_all_rows[y][x]))
-                        
-                        notes.bind("<Enter>",lambda e, widget = [notes_frame,notes],row=y: on_enter_entry(widget,row))
-                        notes.bind("<Leave>",lambda e, widget = [notes_frame,notes],row=y: on_leave_entry(widget,row))
+                notes_frame =   customtkinter.CTkFrame(master=column4,corner_radius=0,fg_color="black",border_color="#636363",border_width=2)
+                notes =         customtkinter.CTkTextbox(master = notes_frame,font=("Arial",20,"bold"),height=40,corner_radius=0,fg_color="black")
+                notes.          pack(padx =5,pady = 5,anchor="w",fill="x")
+                notes_frame.    pack(pady=0,padx=0,side = "top",anchor = "w",fill="x",expand = True)
+                notes_frame.    bind("<Button-1>",lambda e,widget = notes_frame, textbox_widget = notes, project = projects: self.clicked_on_project(project,widget,textbox_widget,flag="notes"))
+                notes.          bind("<Button-1>",lambda e,widget = notes_frame, textbox_widget = notes, project = projects: self.clicked_on_project(project,widget,textbox_widget,flag="notes"))
 
-                        # notes.bind("<Enter>",lambda e, widget = [notes_frame,notes],row=y: expand_frame(widget,row))
-                        # notes.bind("<Leave>",lambda e, widget = [notes_frame,notes]:       shrink_frame(widget))
-                        # notes.bind("<Enter>",lambda e, widget = notes,row=y:               on_enter_entry(widget,row))
-                        # notes.bind("<Leave>",lambda e, widget = notes,row=y:               on_leave_entry(widget,row))
-                        notes.bind("<Return>",lambda e, widget = [notes_frame,notes]: add_row_return(widget))
+                project_notes = str(projects["notes"])
+                if "\n" in project_notes:
+                    notes_rows = project_notes.split("\n")
+                    first_row = notes_rows[0]
+                    notes.delete("1.0",tk.END)
+                    notes.insert(tk.END,str(first_row))
+                else:
+                    notes.insert(tk.END,project_notes)
+                
+                notes.bind("<Enter>",lambda e, widget = [notes_frame,notes],project=projects: on_enter_entry(widget,project))
+                notes.bind("<Leave>",lambda e, widget = [notes_frame,notes],project=projects: on_leave_entry(widget,project))
+                notes.bind("<Return>",lambda e, widget = [notes_frame,notes]: add_row_return(widget))
 
-                        if self.default_note_behav == 0:
-                            notes.configure(state = "disabled")
+                if self.default_note_behav == 0:
+                    notes.configure(state = "disabled")
 
-                if y == self.last_project_id: # případ že posouvám s projektem nahoru/ dolů/ top (zvíraznit selectnuté)
-                    self.selected_list_disk.append(y)
+                if projects == self.last_managed_project: # případ že posouvám s projektem nahoru/ dolů/ top (zvíraznit selectnuté)
+                    self.selected_list_disk.append(projects)
                     self.last_selected_widget = btn_frame
                     btn_frame.configure(border_color="white")
-                    self.remember_to_change_back.append([btn_frame,y])
+                    self.remember_to_change_back.append(btn_frame)
                     param_frame.configure(border_color="white")
-                    self.remember_to_change_back.append([param_frame,y])
+                    self.remember_to_change_back.append(param_frame)
                     param_frame2.configure(border_color="white")
-                    self.remember_to_change_back.append([param_frame2,y])
+                    self.remember_to_change_back.append(param_frame2)
                     notes_frame.configure(border_color="white")
-                    self.remember_to_change_back.append([notes_frame,y])
+                    self.remember_to_change_back.append(notes_frame)
 
             column1.pack(fill="both",expand=False,side = "left")
             column2.pack(fill="both",expand=False,side = "left")
@@ -2381,7 +2308,7 @@ class main:
             column4.pack(fill="both",expand=True, side = "left")
             self.project_tree.update()
             self.project_tree.update_idletasks()
-            if len(self.disk_all_rows) > 0:
+            if len(self.all_project_list) > 0:
                 try:
                     self.notes_frame_height = int(notes_frame._current_height)
                 except Exception:
@@ -2454,27 +2381,15 @@ class main:
             def load_old_config():
                 def callback_with_path(path_given):
                     try:
-                        disk_rows = main.DM_tools.read_excel_data(path_given)[0]
-                        for i in range(0,len(disk_rows)):
-                            row = (len(disk_rows)-1)-i
-                            main.DM_tools.save_excel_data_disk(self.excel_file_path,
-                                                                0,
-                                                                "",
-                                                                disk_rows[i][0],
-                                                                disk_rows[i][1],
-                                                                disk_rows[i][2],
-                                                                disk_rows[i][3],
-                                                                disk_rows[i][4],
-                                                                disk_rows[i][5],
-                                                                force_row_to_print=row+1)
-                            
+                        disk_rows = main.DM_tools.read_excel_data(path_given)
+                        main.DM_tools.save_excel_data_disk(self.excel_file_path,disk_rows)    
                         self.make_project_cells_disk()
                         Tools.add_colored_line(self.main_console,"Seznam adres disků ze souboru úspěšně nahrán a uložen","green",None,True)
                             
                     except Exception as e:
                         Tools.add_colored_line(self.main_console,f"Nepodařilo se načíst data z externího souboru: {e}","red",None,True)
 
-                Tools.import_option_window(self.root,self.app_icon,self.initial_path,callback_with_path)
+                Tools.import_option_window(self.root,self.app_icon,self.initial_path,callback_with_path,setting_window=child_root)
 
             child_root = customtkinter.CTkToplevel()
             self.opened_window = child_root
@@ -2529,12 +2444,14 @@ class main:
 
             load_config_frame = customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#707070",border_width=2)
             load_config_label = customtkinter.CTkLabel(master = load_config_frame, width = 100,height=40,text = "Načíst seznam adres disků (z jiného konfiguračního souboru)",font=("Arial",20,"bold"))
-            config_btn_frame = customtkinter.CTkFrame(master=load_config_frame,corner_radius=0,fg_color="#212121")
+            config_btn_frame =  customtkinter.CTkFrame(master=load_config_frame,corner_radius=0,fg_color="#212121")
             button_load =       customtkinter.CTkButton(master = config_btn_frame, width = 150,height=40,text = "Zvolit soubor",command = lambda:load_old_config(),font=("Arial",20,"bold"),corner_radius=0)
             button_open =       customtkinter.CTkButton(master = config_btn_frame, width = 150,height=40,text = "Otevřít aktuální",command = lambda: os.startfile(self.excel_file_path),font=("Arial",20,"bold"),corner_radius=0)
+            open_path =         customtkinter.CTkButton(master = config_btn_frame, width = 150,height=40,text = "Otevřít složku",command = lambda: os.startfile(self.initial_path),font=("Arial",20,"bold"),corner_radius=0)
             load_config_label.  pack(pady = (10,0),padx=10,side="top",anchor = "w")
             button_load.        pack(pady = (5,10),padx=(10,0),side="left",anchor = "w")
             button_open.        pack(pady = (5,10),padx=(10,0),side="left",anchor = "w")
+            open_path.          pack(pady = (5,10),padx=(10,0),side="left",anchor = "w")
             config_btn_frame.   pack(pady = 2,padx=2,side="top",fill="x",anchor = "w")
 
             close_frame =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
@@ -2576,32 +2493,20 @@ class main:
 
         def sort_by_alphabet(self):
             project_names_array=[]
-            for projects in self.disk_all_rows:
-                project_names_array.append(projects[0])
+            for projects in self.all_project_list:
+                project_names_array.append(projects['name'])
             project_names_sorted = sorted(project_names_array)
             whole_projects_sorted = []
             for names in project_names_sorted:
-                for projects in self.disk_all_rows:
-                    if projects[0] == names:
+                for projects in self.all_project_list:
+                    if projects['name'] == names:
                         whole_projects_sorted.append(projects)
                         break
             
-            self.disk_all_rows = copy.deepcopy(whole_projects_sorted)            
-            for i in range(0,len(self.disk_all_rows)):
-                    row = (len(self.disk_all_rows)-1)-i
-                    main.DM_tools.save_excel_data_disk(self.excel_file_path,
-                                                len(self.disk_all_rows),
-                                                self.last_project_id,
-                                                self.disk_all_rows[i][0],
-                                                self.disk_all_rows[i][1],
-                                                self.disk_all_rows[i][2],
-                                                self.disk_all_rows[i][3],
-                                                self.disk_all_rows[i][4],
-                                                self.disk_all_rows[i][5],
-                                                force_row_to_print=row+1)
-            
+            self.all_project_list = copy.deepcopy(whole_projects_sorted)
+            main.DM_tools.save_excel_data_disk(self.excel_file_path,self.all_project_list)
             self.make_project_cells_disk()
-            Tools.add_colored_line(self.main_console,f"Projekty seřazeny podle abecedy","green",None,True)
+            Tools.add_colored_line(self.main_console,f"Projekty úspěsně seřazeny podle abecedy","green",None,True)
 
         def create_widgets_disk(self,init=None):
             Tools.clear_frame(self.root)
@@ -2641,7 +2546,7 @@ class main:
             self.search_input =             customtkinter.CTkEntry(master = first_row_frame,font=("Arial",20),width=160,height=40,placeholder_text="Název projektu",corner_radius=0)
             button_search =                 customtkinter.CTkButton(master = first_row_frame, width = 150,height=40,text = "Vyhledat",command =  lambda: self.make_project_first_disk("search"),font=("Arial",20,"bold"),corner_radius=0)
             button_add =                    customtkinter.CTkButton(master = first_row_frame, width = 150,height=40,text = "Nový projekt", command = lambda: self.add_new_project_disk(),font=("Arial",20,"bold"),corner_radius=0)
-            button_remove =                 customtkinter.CTkButton(master = first_row_frame, width = 100,height=40,text = "Smazat", command =  lambda: self.delete_project_disk(button_trigger=True,flag="main_menu"),font=("Arial",20,"bold"),corner_radius=0)
+            button_remove =                 customtkinter.CTkButton(master = first_row_frame, width = 100,height=40,text = "Smazat", command =  lambda: self.delete_project_disk(flag="main_menu"),font=("Arial",20,"bold"),corner_radius=0)
             self.undo_button =              customtkinter.CTkButton(master = first_row_frame, width = 50,height=40,text = "↶", command =  lambda: self.manage_bin(flag="load_deleted_disk"),font=("",28,"bold"),corner_radius=0,border_width=1,text_color="red")
             button_edit =                   customtkinter.CTkButton(master = first_row_frame, width = 110,height=40,text = "Editovat",command =  lambda: edit_project(),font=("Arial",20,"bold"),corner_radius=0)
             self.undo_edit =                customtkinter.CTkButton(master = first_row_frame, width = 50,height=40,text = "↶", command =  lambda: self.manage_bin(flag="load_edited_disk"),font=("",28,"bold"),corner_radius=0,border_width=1,text_color="red")
@@ -2690,14 +2595,12 @@ class main:
             third_row_frame.                pack(pady=0,padx=0,fill="x",side = "top")
             self.project_tree.              pack(pady=5,padx=5,fill="both",expand=True,side = "top")
 
-            # self.option_change("",only_console=True)
-            if Tools.get_none_count(self.bin_projects[1]) < 4 and len(self.bin_projects[1]) == 6:
+            config_data = Tools.read_json_config(self.config_filename_path)
+            if len(config_data["edited_project_bin_disk"])>0:
                 self.undo_edit.configure(state = "normal")
             else:
                 self.undo_edit.configure(state = "disabled")
-
-            # poznámky, username, password mohou být None
-            if Tools.get_none_count(self.bin_projects[0]) < 4 and len(self.bin_projects[0]) > 2:
+            if len(config_data["deleted_project_bin_disk"])>0:
                 self.undo_button.configure(state = "normal")
             else:
                 self.undo_button.configure(state = "disabled")
@@ -2749,24 +2652,28 @@ class main:
                 widget = str(e.widget)
                 if not ".!ctkscrollableframe" in widget and not ".!ctktoplevel" in widget and not ".!ctkbutton" in widget:
                     #odebrat focus
-                    self.clicked_on_project("",None,None,None,flag="unfocus")
+                    self.clicked_on_project(None,None,None,flag="unfocus")
             self.root.bind("<Button-1>",call_unfocus,"+")
 
             def control_button(status):
                 self.control_pressed = status
                 if status == True:
-                    if not self.last_selected_widget_id in self.selected_list_disk:
-                        self.selected_list_disk.append(self.last_selected_widget_id)
+                    if self.last_managed_project is None:
+                        return
+                    if not self.last_managed_project in self.selected_list_disk:
+                        self.selected_list_disk.append(self.last_managed_project)
 
             def multi_select():
-                if not self.last_project_id in self.selected_list_disk:
-                    self.selected_list_disk.append(self.last_project_id)
-                    print(self.selected_list_disk)
+                if self.last_managed_project is None:
+                    return
+                if not self.last_managed_project in self.selected_list_disk:
+                    self.selected_list_disk.append(self.last_managed_project)
+                    # print("selected_list - ",self.selected_list_disk)
 
             self.root.bind("<Control_L>",lambda e: control_button(True))
             self.root.bind("<Control-Button-1>",lambda e: multi_select())
             self.root.bind("<KeyRelease-Control_L>",lambda e: control_button(False))
-            self.root.bind("<Delete>",lambda e: self.delete_project_disk(button_trigger=True,flag="main_menu"))
+            self.root.bind("<Delete>",lambda e: self.delete_project_disk(flag="main_menu"))
             self.root.update()
             self.make_project_cells_disk(disk_statuses=False,init=True)
             # self.root.mainloop()
@@ -2775,6 +2682,7 @@ class main:
         """
         Umožňuje měnit nastavení statických IP adres
         """  
+        
         def __init__(self,parent,fav_w_called=None):
             self.parent_instance = parent
             self.root = parent.root
@@ -2790,7 +2698,6 @@ class main:
             self.last_selected_widget = ""
             self.last_selected_notes_widget = ""
             self.last_selected_textbox = ""
-            self.last_selected_widget_id = 0
             self.opened_window = ""
             self.ip_frame_list = []
             self.selected_list = []
@@ -2801,8 +2708,6 @@ class main:
             self.edited_projects_bin = []
             self.changed_notes = []
             self.notes_frame_height = 50
-
-            
             read_parameters = Tools.read_json_config(self.config_filename_path)
             if read_parameters != None:
                 self.default_connection_option = read_parameters["default_ip_interface"]
@@ -2909,7 +2814,7 @@ class main:
                 self.deleted_projects_bin = config_data["deleted_project_bin"]
                 project_to_load = self.deleted_projects_bin[0]
                 self.all_project_list = main.IP_tools.read_excel_data(self.excel_file_path)
-                modified_project_name = main.IP_tools.get_unique_name(self.all_project_list,project_to_load['name'])
+                modified_project_name = Tools.get_unique_name(self.all_project_list,project_to_load['name'])
                 project_to_load["name"] = modified_project_name
                 self.deleted_projects_bin.pop(0)
                 if len(self.deleted_projects_bin) ==0:
@@ -2929,7 +2834,7 @@ class main:
                 old_project_name = str(project_to_load['name'])
                 current_project_name = str(project_to_load["new_name"])
                 self.all_project_list = main.IP_tools.read_excel_data(self.excel_file_path)
-                project_index = main.IP_tools.get_project_index(self.all_project_list,current_project_name)
+                project_index = Tools.get_project_index(self.all_project_list,current_project_name)
 
                 if project_index == None:
                     Tools.add_colored_line(self.main_console,f"Jméno projektu: {current_project_name} nenalezeno, nelze ho tedy obnovit","red",None,True)
@@ -2968,7 +2873,7 @@ class main:
             return output
 
         def switch_fav_status_new(self,project,wanted_status:str,refresh = False):
-            project_index = main.IP_tools.get_project_index(self.all_project_list,project['name'])
+            project_index = Tools.get_project_index(self.all_project_list,project['name'])
             project["fav_status"] = str(wanted_status)
             self.all_project_list[project_index] = project
             main.IP_tools.save_excel_data(self.excel_file_path, self.all_project_list)
@@ -3019,14 +2924,14 @@ class main:
                 excel_worksheet = "ip_address_list"
                 worksheet = workbook[excel_worksheet]
 
-                project_to_delete = main.IP_tools.found_project_name(self.all_project_list,wanted_project)
+                project_to_delete = Tools.found_project_name(self.all_project_list,wanted_project)
                 if project_to_delete == False:
                     Tools.add_colored_line(self.main_console,"Nejprve vyberte projekt (nakliknout levým na parametry daného projektu nebo pravým na tlačíko projektu)","orange",None,True)
                     return
                 if not self.show_favourite:
                     # když mažu z oblíbených, tak neukládám historii
                     self.manage_bin(flag="save_project_ip",project=project_to_delete)
-                    project_index = main.IP_tools.get_project_index(self.all_project_list,project_to_delete['name'])
+                    project_index = Tools.get_project_index(self.all_project_list,project_to_delete['name'])
                     worksheet.delete_rows(project_index+1)
                     workbook.save(self.excel_file_path)
                     workbook.close()
@@ -3047,8 +2952,7 @@ class main:
                     else:
                         Tools.add_colored_line(self.main_console,f"Zadaný projekt: {wanted_project} nebyl nalezen","red",None,True)
 
-                # zresetuj i v pripade silence...
-                elif project_found and not multiple_status:
+                elif project_found and not multiple_status:  # zresetuj i v pripade silence...
                     self.make_project_cells() #refresh = cele zresetovat, jine: id, poradi...
 
                 if window and child_root.winfo_exists():
@@ -3126,7 +3030,7 @@ class main:
                 if force_index != None:
                     project_index = force_index
                 else:
-                    project_index = main.IP_tools.get_project_index(self.all_project_list,self.last_managed_project['name'])
+                    project_index = Tools.get_project_index(self.all_project_list,self.last_managed_project['name'])
 
                 another_project_id = project_index
                 another_project_id -= 1
@@ -3139,21 +3043,20 @@ class main:
                 refresh_title()
 
             def switch_down():
-                project_index = main.IP_tools.get_project_index(self.all_project_list,self.last_managed_project['name'])
+                project_index = Tools.get_project_index(self.all_project_list,self.last_managed_project['name'])
                 previous_project_id = project_index
                 previous_project_id += 1
                 if previous_project_id > len(self.all_project_list)-1:
                     previous_project_id = 0
 
                 self.last_managed_project = self.all_project_list[previous_project_id]
-
                 copy_previous_project()
                 refresh_favourite_status()
                 refresh_title()
 
             def del_project():
                 nonlocal child_root
-                project_index = main.IP_tools.get_project_index(self.all_project_list,self.last_managed_project['name'])
+                project_index = Tools.get_project_index(self.all_project_list,self.last_managed_project['name'])
                 result = self.delete_project(wanted_project=self.last_managed_project['name'])
                 print(result)
                 if result:
@@ -3220,7 +3123,6 @@ class main:
                 if project_name.replace(" ","") == "":
                     Tools.add_colored_line(self.console,f"Nezadali jste jméno projektu","red",None,True)
                     errors += 1
-
                 if IP_adress == False and errors == 0:
                     Tools.add_colored_line(self.console,f"Neplatná IP adresa","red",None,True)
                     errors += 1
@@ -3237,13 +3139,13 @@ class main:
 
                 if edit:
                     print("last_managed project:", self.last_managed_project)
-                    currently_edited_project_id = main.IP_tools.get_project_index(self.all_project_list,self.last_managed_project['name'])
+                    currently_edited_project_id = Tools.get_project_index(self.all_project_list,self.last_managed_project['name'])
                     if currently_edited_project_id == None:
                         Tools.add_colored_line(self.main_console,f"Projekt {self.last_managed_project['name']} nenalezen","red",None,True)
                         return
                     
                     if self.all_project_list[currently_edited_project_id]['name'] != project_name:
-                        project_name = main.IP_tools.get_unique_name(self.all_project_list,project_name)
+                        project_name = Tools.get_unique_name(self.all_project_list,project_name)
                     self.all_project_list[currently_edited_project_id]['name'] = project_name
                     self.all_project_list[currently_edited_project_id]["ip"] = IP_adress
                     self.all_project_list[currently_edited_project_id]["mask"] = mask
@@ -3276,7 +3178,7 @@ class main:
                         # self.all_project_list = main.IP_tools.read_excel_data(self.excel_file_path)
                         self.make_project_first(purpouse="silent",make_cells=False,project=self.all_project_list[currently_edited_project_id],input_entry_bypass=project_name)
                 else:
-                    project_name = main.IP_tools.get_unique_name(self.all_project_list,project_name)
+                    project_name = Tools.get_unique_name(self.all_project_list,project_name)
                     self.all_project_list.insert(0,{
                         'name':project_name,
                         "ip":IP_adress,
@@ -3648,7 +3550,6 @@ class main:
                             frame.configure(border_color="#636363")
                     self.selected_list = []
                     self.remember_to_change_back = []
-
                     self.last_managed_project = None
 
                 except Exception as e:
@@ -3688,6 +3589,9 @@ class main:
                             self.last_selected_widget.configure(border_color="#636363")
                             if self.last_selected_widget in self.remember_to_change_back:
                                 self.remember_to_change_back.pop(self.remember_to_change_back.index(self.last_selected_widget))
+                            
+                            self.selected_list = []
+                            self.remember_to_change_back = []
 
                         # pokud došlo k další interakci s jiným widgeten
                         elif not self.control_pressed:
@@ -3709,7 +3613,6 @@ class main:
                     pass
 
                 self.last_managed_project = project
-                # self.last_selected_widget_id = widget_id
 
         def refresh_ip_statuses(self):
             def unbind_connected_ip(widget,frame):
@@ -3826,14 +3729,14 @@ class main:
                     worksheet['D' + str(row+1)] = notes
 
                 self.all_project_list = main.IP_tools.read_excel_data(self.excel_file_path)
-                project_index = main.IP_tools.get_project_index(self.all_project_list,project['name'])
+                project_index = Tools.get_project_index(self.all_project_list,project['name'])
                 save_to_workbook(notes,project_index,"ip_address_list")
+                self.all_project_list[project_index]["notes"] = notes
                 workbook.save(filename=self.excel_file_path)
                 workbook.close()
 
             def on_enter_entry(widget,project):
                 if not opened_window_check():
-
                     if str(widget[0]) != str(self.last_selected_notes_widget):
                         tolerance = 5
                         if abs(int(widget[0]._current_height)-self.notes_frame_height) <= tolerance: # if the height is not default then it means it is expanded already
@@ -4026,6 +3929,15 @@ class main:
                 self.current_address_list = main.IP_tools.get_current_ip_list(self.connection_option_list)
                 if self.static_label2.winfo_exists():
                     self.static_label2.configure(text=self.current_address_list[self.default_connection_option])
+
+                dhcp_status = main.IP_tools.check_DHCP(self.interface_drop_options.get())
+                if dhcp_status == True:
+                    # print(self.button_dhcp.cget("fg_color"))
+                    self.button_dhcp.configure(fg_color = "green")
+                else:
+                    self.button_dhcp.configure(fg_color = "#1f538d")
+                    # self.button_dhcp.configure(fg_color = "#3a7ebf")
+
             if not silent:
                 # ziskat data o aktualnim pripojeni
                 current_connection = main.IP_tools.get_ipv4_addresses()
@@ -4043,7 +3955,7 @@ class main:
             - silent
             """
             def check_position():
-                project_index = main.IP_tools.get_project_index(self.all_project_list,project['name'])
+                project_index = Tools.get_project_index(self.all_project_list,project['name'])
                 prev_pos = project_index
                 max_position = len(self.all_project_list)
                 if upwards:
@@ -4071,7 +3983,7 @@ class main:
                     position = 0
 
                 if len(self.all_project_list) > 0:
-                    project_index = main.IP_tools.get_project_index(self.all_project_list,project['name'])
+                    project_index = Tools.get_project_index(self.all_project_list,project['name'])
                     self.all_project_list.pop(project_index)
 
                 self.all_project_list.insert(position,project)
@@ -4099,8 +4011,7 @@ class main:
                 window_status = 0
                 self.last_selected_widget = ""
                 self.last_selected_notes_widget = ""
-                self.last_selected_textbox = ""
-                self.last_selected_widget_id = 0           
+                self.last_selected_textbox = ""    
                 self.ip_frame_list = []
                 if keep_search_input == False:
                     self.search_input.delete("0","300")
@@ -4121,7 +4032,6 @@ class main:
                 self.last_selected_widget = ""
                 self.last_selected_notes_widget = ""
                 self.last_selected_textbox = ""
-                self.last_selected_widget_id = 0
                 self.ip_frame_list = []
                 if keep_search_input == False:
                     self.search_input.delete("0","300")
@@ -4199,25 +4109,14 @@ class main:
                         Tools.add_colored_line(self.main_console,"Seznam ip adres ze souboru úspěšně nahrán a uložen","green",None,True)
 
                         if int(load_all_data_status) == 1:
-                            disk_rows = main.DM_tools.read_excel_data(path_given)[0]
-                            for i in range(0,len(disk_rows)):
-                                row = (len(disk_rows)-1)-i
-                                main.DM_tools.save_excel_data_disk(self.excel_file_path,
-                                                                    0,
-                                                                    "",
-                                                                    disk_rows[i][0],
-                                                                    disk_rows[i][1],
-                                                                    disk_rows[i][2],
-                                                                    disk_rows[i][3],
-                                                                    disk_rows[i][4],
-                                                                    disk_rows[i][5],
-                                                                    force_row_to_print=row+1)
+                            disk_rows = main.DM_tools.read_excel_data(path_given)
+                            main.DM_tools.save_excel_data_disk(self.excel_file_path,disk_rows)    
                             Tools.add_colored_line(self.main_console,"Seznam ip adres a disků ze souboru úspěšně nahrán a uložen","green",None,True)
                             
                     except Exception as e:
                         Tools.add_colored_line(self.main_console,f"Nepodařilo se načíst data z externího souboru: {e}","red",None,True)
 
-                Tools.import_option_window(self.root,self.app_icon,self.initial_path,callback_with_path,ip_env = True)
+                Tools.import_option_window(self.root,self.app_icon,self.initial_path,callback_with_path,ip_env = True,setting_window=child_root)
                 
             child_root = customtkinter.CTkToplevel()
             self.opened_window = child_root
@@ -4248,9 +4147,11 @@ class main:
             config_btn_frame = customtkinter.CTkFrame(master=load_config_frame,corner_radius=0,fg_color="#212121")
             button_load =       customtkinter.CTkButton(master = config_btn_frame, width = 150,height=40,text = "Zvolit soubor",command = lambda:load_old_config(),font=("Arial",20,"bold"),corner_radius=0)
             button_open =       customtkinter.CTkButton(master = config_btn_frame, width = 150,height=40,text = "Otevřít aktuální",command = lambda: os.startfile(self.excel_file_path),font=("Arial",20,"bold"),corner_radius=0)
+            open_path =         customtkinter.CTkButton(master = config_btn_frame, width = 150,height=40,text = "Otevřít složku",command = lambda: os.startfile(self.initial_path),font=("Arial",20,"bold"),corner_radius=0)
             load_config_label.  pack(pady = (10,0),padx=10,side="top",anchor = "w")
             button_load.        pack(pady = (5,10),padx=(10,0),side="left",anchor = "w")
             button_open.        pack(pady = (5,10),padx=(10,0),side="left",anchor = "w")
+            open_path.        pack(pady = (5,10),padx=(10,0),side="left",anchor = "w")
             config_btn_frame.   pack(pady = 2,padx=2,side="top",fill="x",anchor = "w")
 
             close_frame =   customtkinter.CTkFrame(master=child_root,corner_radius=0,border_color="#303030",border_width=2)
@@ -4373,10 +4274,9 @@ class main:
             mask.                   pack(pady=(10,0),padx=10,side = "top",anchor = "w")
             mask_entry.             pack(pady=(10,0),padx=10,side = "top",anchor = "w")
             manual_console.         pack(pady=(10,0),padx=10,side = "top",anchor = "w")
-            buttons_frame.          pack(pady=(10),padx=10,side = "top",anchor = "e")
-            exit_button.            pack(pady=0,padx=(10,0),side = "right",anchor = "w")
+            exit_button.            pack(pady=0,padx=(10,0),side = "right",anchor = "e")
             save_button.            pack(pady=0,padx=0,side = "right",anchor = "e")
-        
+            buttons_frame.          pack(pady=(10),padx=10,side = "bottom",anchor = "e")
             online_list = self.refresh_interfaces()
             select_interface.configure(values = self.connection_option_list)
             select_interface.set(self.interface_drop_options.get())
@@ -4387,9 +4287,6 @@ class main:
             self.root.bind("<Button-1>",lambda e: window.destroy(),"+")
             window.update()
             window.update_idletasks()
-            # x = self.root.winfo_rootx()
-            # y = self.root.winfo_rooty()
-            # window.geometry(f"{window.winfo_width()}x{window.winfo_height()}+{x+150}+{y+5}")
             window.focus_force()
             window.focus()
 
@@ -4462,7 +4359,6 @@ class main:
             button_settings_behav =     customtkinter.CTkButton(master = first_row_frame, width = 40,height=40,text="⚙️",command =  lambda: self.setting_window(),font=(None,22),corner_radius=0)
             manual_ip_set =             customtkinter.CTkButton(master = first_row_frame, width = 40,height=40,text="Manuálně",command =  lambda: self.manual_ip_setting(),font=("Arial",20,"bold"),corner_radius=0)
             
-
             if self.show_favourite:
                 self.button_remove_main.            configure(text="Odebrat")
                 self.button_switch_favourite_ip.    configure(fg_color="#212121")
@@ -4494,7 +4390,7 @@ class main:
             self.interface_drop_options =   customtkinter.CTkOptionMenu(master = second_row_frame,width=200,height=40,font=("Arial",20,"bold"),dropdown_font=("Arial",20),corner_radius=0,command=  self.option_change)
             # "⚙️", "⚒", "🔧", "🔩"
             button_settings =               customtkinter.CTkButton(master = second_row_frame, width = 40,height=40,text="⚒",command =  lambda: self.refresh_interfaces(all=True),font=("",22),corner_radius=0) #refresh interface statusů
-            button_dhcp =                   customtkinter.CTkButton(master = second_row_frame, width = 100,height=40,text = "DHCP",command =  lambda: self.change_to_DHCP(),font=("Arial",20,"bold"),corner_radius=0)
+            self.button_dhcp =              customtkinter.CTkButton(master = second_row_frame, width = 100,height=40,text = "DHCP",command =  lambda: self.change_to_DHCP(),font=("Arial",20,"bold"),corner_radius=0)
             static_label =                  customtkinter.CTkLabel(master = second_row_frame, height=40,text = "Static:",font=("Arial",20,"bold"))
             self.static_label2 =            customtkinter.CTkLabel(master = second_row_frame,width=200, height=40,text = "",font=("Arial",22,"bold"),bg_color="black")
             online_label =                  customtkinter.CTkLabel(master = second_row_frame, height=40,text = "Online: ",font=("Arial",22,"bold"))
@@ -4524,7 +4420,7 @@ class main:
             connect_label.                  pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             self.interface_drop_options.    pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             button_settings.                pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
-            button_dhcp.                    pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
+            self.button_dhcp.               pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             static_label.                   pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             self.static_label2.             pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             online_label.                   pack(pady = (10,0),padx =(20,0),anchor="w",side="left")
@@ -4538,6 +4434,15 @@ class main:
             top_frame.                      pack(pady=0,padx=0,fill="x",side = "top")
             third_row_frame.                pack(pady=0,padx=0,fill="x",side = "top")
             self.project_tree.              pack(pady=(0,5),padx=5,fill="both",expand=True,side = "top")
+
+
+                
+
+            tooltip_thread = threading.Thread(target=main.ToolTip,args=[button_make_first,"adsfasdf",self.root],daemon=True)
+            tooltip_thread.start()
+            # main.ToolTip(button_make_first,"adsfasdf",self.root)
+
+
 
             self.refresh_interfaces() # aktualizace hodnot nabídky
             if self.default_connection_option < len(self.connection_option_list):
@@ -4608,7 +4513,7 @@ class main:
                     return
                 if not self.last_managed_project in self.selected_list:
                     self.selected_list.append(self.last_managed_project)
-                    print("selected_list - ",self.selected_list)
+                    # print("selected_list - ",self.selected_list)
 
             self.root.bind("<Control_L>",lambda e: control_button(True))
             self.root.bind("<Control-Button-1>",lambda e: multi_select())
