@@ -63,7 +63,7 @@
     "ip_settings": {
         "default_ip_interface": 2,
         "favorite_ip_window_status": 0,
-        "disk_or_ip_window": 0,
+        "disk_or_ip_window": 1,
         "default_window_size": 1,
         "init_disk_refresh": 1,
         "editable_notes": 1,

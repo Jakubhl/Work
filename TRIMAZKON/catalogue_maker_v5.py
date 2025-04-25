@@ -20,7 +20,7 @@ import copy
 import json
 
 initial_path = ""
-testing = False
+testing = True
 if testing:
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")
@@ -488,14 +488,31 @@ class Save_prog_metadata:
     
 class ToplevelWindow:
     @classmethod
-    def save_prog_options_window(cls,root,app_icon_path,custom_controller_database,main_console,station_list,project_name,callback,callback_save_last_file,last_file = None,last_path = "",default_xml_file_name="_metadata_catalogue",default_path = "",exit_status = False):
+    def save_prog_options_window(cls,
+                                 root,
+                                 app_icon_path,
+                                 custom_controller_database,
+                                 main_console,
+                                 station_list,
+                                 project_name,
+                                 callback,
+                                 callback_save_last_file,
+                                 last_file = None,
+                                 last_path = "",
+                                 default_xml_file_name="_metadata_catalogue",
+                                 default_path = "",
+                                 exit_status = False,
+                                 only_save = False):
         """
         okno s možnostmi uložení rozdělaného projektu
         """
         window = customtkinter.CTkToplevel(fg_color="#212121")
         # window.geometry(f"1015x350+{self.x+200}+{self.y+50}")
         window.after(200, lambda: window.iconbitmap(app_icon_path))
-        window.title("Možnosti uložení projektu")
+        if only_save:
+            window.title("Možnosti uložení projektu")
+        else:
+            window.title("Možnosti importování projektu")
         subwindow = ""
 
         def confirm_window(final_path):
@@ -650,7 +667,6 @@ class ToplevelWindow:
         export_label2 =         customtkinter.CTkLabel(master = export_frame,text = "Zadejte cestu, kam soubor uložit:",font=("Arial",22,"bold"))
         export_path_frame =     customtkinter.CTkFrame(master = export_frame,corner_radius=0,fg_color="#212121")
         context_menu_button2  =  customtkinter.CTkButton(master = export_path_frame, width = 50,height=50, text = "V",font=("Arial",20,"bold"),corner_radius=0,fg_color="#505050")
-
         export_path =           customtkinter.CTkEntry(master = export_path_frame,font=("Arial",20),width=780,height=50,corner_radius=0)
         explorer_btn =          customtkinter.CTkButton(master = export_path_frame,text = "...",font=("Arial",22,"bold"),width = 50,height=50,corner_radius=0,command=lambda: call_browse_directories("only_dirs"))
         save_path_btn =         customtkinter.CTkButton(master = export_path_frame,text = "💾",font=("",22),width = 50,height=50,corner_radius=0,command=lambda: save_current_path())
@@ -659,20 +675,29 @@ class ToplevelWindow:
         save_path_btn           .pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
         explorer_btn            .pack(pady = 5, padx = (10,0),anchor="e",expand=False,side="right")
         console =               tk.Text(export_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED)
-        button_load =           customtkinter.CTkButton(master = export_frame,text = "Nahrát",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: call_load_file(window))
-        button_save =           customtkinter.CTkButton(master = export_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: call_save_file(window))
-        button_exit =           customtkinter.CTkButton(master = export_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window,True))
+        button_frame =          customtkinter.CTkFrame(master = export_frame,corner_radius=0,fg_color="#212121")
+        button_load =           customtkinter.CTkButton(master = button_frame,text = "Nahrát",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: call_load_file(window))
+        button_save =           customtkinter.CTkButton(master = button_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: call_save_file(window))
+        button_exit =           customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window,True))
+        button_exit             .pack(pady = 10, padx = (5,10),expand=False,side="right",anchor = "e")
+        if not only_save:
+            button_load         .pack(pady = 10, padx = 5,expand=False,side="right",anchor = "e")
+        else:
+            button_save         .pack(pady = 10, padx = 5,expand=False,side="right",anchor = "e")
         export_frame            .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left")
         export_label            .pack(pady=(15,5),padx=10,anchor="w",expand=False,side="top")
-        export_name_frame       .pack(expand=True,side="top",anchor="n",fill="x")
+        export_name_frame       .pack(expand=False,side="top",anchor="n",fill="x")
         export_label2           .pack(pady=(10,5),padx=10,anchor="w",expand=False,side="top")
-        export_path_frame       .pack(expand=True,side="top",anchor="n",fill="x")
-        console                 .pack(padx = 5,expand=True,side="top",anchor="n",fill="x")
-        button_exit             .pack(pady = 10, padx = (5,10),expand=False,side="right",anchor = "e")
-        button_load             .pack(pady = 10, padx = 5,expand=False,side="right",anchor = "e")
-        button_save             .pack(pady = 10, padx = 5,expand=False,side="right",anchor = "e")
+        export_path_frame       .pack(expand=False,side="top",anchor="n",fill="x")
+        console                 .pack(padx = 5,expand=False,side="top",anchor="n",fill="x")
+        button_frame             .pack(pady = 0, padx = (0),side="top",fill="x",anchor = "w")
+
         context_menu_button.bind("<Button-1>", lambda e: Tools.call_path_context_menu(window,export_name,context_menu_button,search_for_xmls(export_path.get())))
         context_menu_button2.bind("<Button-1>", lambda e: Tools.call_path_context_menu(window,export_path,context_menu_button2))
+
+        if not only_save:
+            export_label.configure(text = "Vyberte soubor:")
+            export_label2.configure(text = "Zadejte cestu k souboru:")
 
         if exit_status:
             button_load.configure(state = "disabled")
@@ -708,9 +733,9 @@ class ToplevelWindow:
         root.bind("<Button-1>",lambda e: close_window(window))
         window.update()
         window.update_idletasks()
-        x = root.winfo_rootx()
-        y = root.winfo_rooty()
-        window.geometry(f"{window.winfo_width()}x{window.winfo_height()}+{x+250}+{y+150}")
+        # x = root.winfo_rootx()
+        # y = root.winfo_rooty()
+        # window.geometry(f"{window.winfo_width()}x{window.winfo_height()}+{x+250}+{y+150}")
         window.after(100,window.focus_force())
         window.focus()
 
@@ -1774,8 +1799,52 @@ class Fill_details:
         detail_info = str(accessory["description"])
 
         return detail_info
-    
+
 class Catalogue_gui:
+    class ToolTip:
+        def __init__(self, widget, text, root):
+            self.widget = widget
+            self.text = text
+            self.root = root
+            self.tip_window = None
+            self.bind_it()
+
+        def bind_it(self):
+            self.widget.bind("<Enter>",lambda e,widget = self.widget: self.really_entering(e,widget))
+            self.widget.bind("<Leave>",lambda e,widget = self.widget: self.really_leaving(e,widget))
+
+        def really_entering(self,e,widget):
+            if self.tip_window != None:
+                return
+
+            def show_tooltip():
+                x = widget.winfo_rootx() + 50
+                y = widget.winfo_rooty() + 60
+                self.tip_window = customtkinter.CTkLabel(
+                    self.root,
+                    text=self.text,
+                    font=("Arial", 20),
+                    text_color="black",
+                    bg_color= "white"
+
+                )
+                self.tip_window.place(x=x,y=y)
+            show_tooltip()
+        
+        def really_leaving(self,e,widget):
+            if self.tip_window == None:
+                return
+        
+            x = widget.winfo_width()-1
+            y = widget.winfo_height()-1
+            if (e.x < 1 or e.x > x) or (e.y<1 or e.y > y):
+                try:
+                    self.root.after(0,self.tip_window.destroy)
+                    # self.tip_window.destroy()
+                except Exception as e2:
+                    print("error2")
+                self.tip_window = None
+    
     @classmethod
     def get_device_strings(cls,widget_tier):
         device_string_mapping = {
@@ -3355,7 +3424,7 @@ class Catalogue_gui:
 
         self.make_project_widgets(return_scroll=False)
 
-    def call_save_metadata_gui(self,exiting_status = False):
+    def call_save_metadata_gui(self,exiting_status = False,only_save_flag = False):
         def callback_save_last_input(filename,path_inserted,path_to_save,saving = False):
             nonlocal exiting_status
 
@@ -3385,7 +3454,8 @@ class Catalogue_gui:
                                                 self.last_path_input,
                                                 self.default_xml_file_name,
                                                 self.default_path,
-                                                exit_status = exiting_status)
+                                                exit_status = exiting_status,
+                                                only_save=only_save_flag)
 
     def copy_objects(self,widget_tier):
         if len(widget_tier) == 2:
@@ -3567,31 +3637,44 @@ class Catalogue_gui:
         self.new_device =               customtkinter.CTkButton(master = main_header_row1,text = "Nová kamera",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_manage_widgets("add_object"))
         self.edit_device =              customtkinter.CTkButton(master = main_header_row1,text = "Editovat stanici",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_edit_object())
         self.del_device =               customtkinter.CTkButton(master = main_header_row1,text = "Odebrat stanici",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_delete_object())
+        self.button_copy =              customtkinter.CTkButton(master = main_header_row1, width = 250,height=50,text="Kopírovat stanici",command =  lambda: call_copy_object(),font=("Arial",25,"bold"),corner_radius=0)
         self.project_name_input         .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         new_station                     .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         self.new_device                 .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         self.edit_device                .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         self.del_device                 .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
+        self.button_copy                .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         self.project_name_input.bind("<Key>",remaping_characters)
-
-        export_button =                 customtkinter.CTkButton(master = main_header_row2,text = "Exportovat",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command=lambda:call_export_window())
+        icon_small = 45
+        icon_large = 49
+        # export_button =                 customtkinter.CTkButton(master = main_header_row2,text = "Exportovat",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command=lambda:call_export_window())
+        export_button =               customtkinter.CTkLabel(master = main_header_row2,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/export_excel.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        export_button.bind("<Enter>",lambda e: export_button._image.configure(size=(icon_large,icon_large)))
+        export_button.bind("<Leave>",lambda e: export_button._image.configure(size=(icon_small,icon_small)))
+        export_button.bind("<Button-1>",lambda e: call_export_window())
         switch_manufacturer_frame =     customtkinter.CTkFrame(master = main_header_row2,corner_radius=0)
         switch_manufacturer_btn =       customtkinter.CTkButton(master=switch_manufacturer_frame,text="Změnit výrobce:",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command=lambda:switch_manufacturer())
         manufacturer_logo =             customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/omron_logo.png")),size=(240, 50))
         switch_manufacturer_image =     customtkinter.CTkLabel(master = switch_manufacturer_frame,text = "",image=manufacturer_logo)
-        save_button =                   customtkinter.CTkButton(master = main_header_row2,text = "Uložit/ Nahrát",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,
-                                                               command=lambda:self.call_save_metadata_gui())
-        self.button_copy =              customtkinter.CTkButton(master = main_header_row2, width = 250,height=50,text="Kopírovat stanici",command =  lambda: call_copy_object(),font=("Arial",25,"bold"),corner_radius=0)
+        # save_button =                   customtkinter.CTkButton(master = main_header_row2,text = "Uložit/ Nahrát",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command=lambda:self.call_save_metadata_gui())
+        save_button =                   customtkinter.CTkLabel(master = main_header_row2,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/save_file.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        save_button.bind("<Enter>",lambda e: save_button._image.configure(size=(icon_large,icon_large)))
+        save_button.bind("<Leave>",lambda e: save_button._image.configure(size=(icon_small,icon_small)))
+        save_button.bind("<Button-1>",lambda e: self.call_save_metadata_gui(only_save_flag=True))
+        load_button =                   customtkinter.CTkLabel(master = main_header_row2,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/open_file.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        load_button.bind("<Enter>",lambda e: load_button._image.configure(size=(icon_large,icon_large)))
+        load_button.bind("<Leave>",lambda e: load_button._image.configure(size=(icon_small,icon_small)))
+        load_button.bind("<Button-1>",lambda e: self.call_save_metadata_gui())
         button_settings =               customtkinter.CTkButton(master = main_header_row2, width = 50,height=50,text="⚙️",command =  lambda: call_setting_window(),font=("",22),corner_radius=0)
         
         switch_manufacturer_btn         .pack(pady = 0, padx = 0,anchor="w",side="left")
         switch_manufacturer_image       .pack(pady = 0, padx = (10,0),anchor="w",side="left")
-        export_button                   .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
-        switch_manufacturer_frame       .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         save_button                     .pack(pady = 0, padx = (20,0),anchor="w",expand=False,side="left")
-        self.button_copy                .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
+        load_button                     .pack(pady = 0, padx = (20,0),anchor="w",expand=False,side="left")
+        export_button                   .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         button_settings                 .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
-        self.main_console =             tk.Text(console_frame, wrap="none", height=0, width=180,background="black",font=("Arial",22),state=tk.DISABLED)
+        switch_manufacturer_frame       .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
+        self.main_console =             tk.Text(console_frame, wrap="none", height=0,background="black",font=("Arial",22),state=tk.DISABLED)
         self.main_console               .pack(pady = 10, padx = (10,0),anchor="w",expand=False,fill="x",side="bottom")
         column_labels =                 customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=50)
         self.project_tree =             customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
@@ -3616,6 +3699,11 @@ class Catalogue_gui:
         self.project_tree               .pack(pady=5,padx=5,fill="both",expand=True,side = "top")
         self.make_project_widgets(initial = initial)
         Tools.add_colored_line(self.main_console,self.download_database_console_input[0],self.download_database_console_input[1],None,True)
+
+        Catalogue_gui.ToolTip(export_button," Exporovat projekt ",self.root)
+        Catalogue_gui.ToolTip(button_settings," Nastavení ",self.root)
+        Catalogue_gui.ToolTip(save_button," Uložit projekt ",self.root)
+        Catalogue_gui.ToolTip(load_button," Nahrát projekt ",self.root)
 
         def show_initial_context_menu(event):
             if len(self.station_list) == 0:
@@ -3643,7 +3731,7 @@ class Catalogue_gui:
                 self.root.state('zoomed')
 
         self.root.bind("<f>",lambda e: maximalize_window(e))
-        self.root.mainloop()
+        # self.root.mainloop()
     
     def make_project_widgets(self,initial = False,return_scroll = True):
         self.current_block_id = ""

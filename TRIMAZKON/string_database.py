@@ -364,6 +364,18 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - opraveno .ifz + konvertování
     - oprava chování u poškozených souborů
     """
+        ,"\nVerze 4.3.4 (25.04.2025)"
+        ,
+  """ 
+  ip_setting:
+    - navýšená kapacita navrácení změn na 10 (u disků)
+    - nově lze vrátit až 5 smazaných projektů (u disků)
+    - vizualizace aktivního dhcp
+    - přidán toottip na tlačítkách + nová vizual.
+    - opraveno: změny v pozn. v komb. s posouváním
+    - opraveno: dekódování názvu interfaců (diakritika)
+    - opraveno: vyhledávání projektů
+    """
 ]
 
 

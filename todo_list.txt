@@ -928,12 +928,17 @@ release verze 4.3.3 - publikace pro všechny
 TRIMAZKON - ip_setting - přímá editace poznámek - změna se nepromítne do posouvání projektů mezi sebou - hotovo
 TRIMAZKON - ip_setting - dodělat změny i u disků: manage_bin - hotovo
 TRIMAZKON - ip_setting - oprava špatně dekodovanych nazvu inrefacu - hotovo
+TRIMAZKON - ip_setting - aby svítilo DHCP zeleně - hotovo
 
-
+9:39 AM 4/25/2025
+TRIMAZKON - ip_setting - přidán tooltip na tlačítka
+TRIMAZKON - ip_setting - nové ikony místo tlačítek - hotovo
+TRIMAZKON - ip_setting - vylepšit vyhledávání na základě pár znaků - hotovo (opraveno vyhledávání...)
+TRIMAZKON - katalog - nové ikony místo tlačítek - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
-TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama, možná přesměrovat i edity a deletions
+TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama, možná přesměrovat i edity a deletions/ uplne se zbavit excelu...
 
 TRIMAZKON - automatické stahování nové verze
 

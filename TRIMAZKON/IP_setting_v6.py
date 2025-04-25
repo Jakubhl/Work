@@ -18,7 +18,7 @@ import copy
 import pyperclip
 import json
 
-testing_mode = True
+testing_mode = False
 
 if testing_mode:
     customtkinter.set_appearance_mode("dark")
@@ -1073,60 +1073,70 @@ class main:
             window.focus()
 
     class ToolTip:
-        def __init__(self, widget, text, root, delay=1000):
+        def __init__(self, widget, text, root,delay =0.2,add_delay = False):
             self.widget = widget
             self.text = text
-            self.delay = delay  # Delay before hiding
-            self.tip_window = None
-            self.hide_after_id = None
             self.root = root
-
-            self.widget.bind("<Enter>", self.on_enter)
-            self.widget.bind("<Leave>", self.on_leave)
-
-        def on_enter(self, event=None):
-            # Cancel scheduled hide if user comes back
-            if self.hide_after_id:
-                print("after cancel")
-                self.widget.after_cancel(self.hide_after_id)
-                self.hide_after_id = None
-
-            self.show_tooltip()
-
-        def on_leave(self, event=None):
-            # Schedule the tooltip to hide after delay
-            if self.tip_window and self.tip_window.winfo_exists():
-                self.hide_after_id = self.widget.after(self.delay, self.hide_tooltip)
-                # self.hide_after_id = self.root.after(self.delay, self.hide_tooltip)
-
-        def show_tooltip(self):
-            if self.tip_window and self.tip_window.winfo_exists():
-                return  # Already showing
-
-            x = self.widget.winfo_rootx() + 50
-            y = self.widget.winfo_rooty() + 10
-
-            self.tip_window = customtkinter.CTkToplevel()
-            self.tip_window.wm_overrideredirect(True)
-            self.tip_window.attributes("-topmost", True)
-            self.tip_window.wm_geometry(f"+{x}+{y}")
-
-            label = customtkinter.CTkLabel(
-                self.tip_window,
-                text=self.text,
-                font=("Arial", 18),
-                corner_radius=5
-            )
-            label.pack(ipadx=5, ipady=5)
-            self.tip_window.update()
-            self.tip_window.update_idletasks()
-            self.tip_window.wait_window()
-
-        def hide_tooltip(self):
-            # if self.tip_window and self.tip_window.winfo_exists():
-            self.tip_window.destroy()
             self.tip_window = None
-            self.hide_after_id = None
+            self.long_task_called = False
+            self.delay = delay # in seconds
+            self.add_delay = add_delay
+            self.bind_it()
+
+        def bind_it(self):
+            self.widget.bind("<Enter>",lambda e,widget = self.widget: self.really_entering(e,widget))
+            self.widget.bind("<Leave>",lambda e,widget = self.widget: self.really_leaving(e,widget))
+
+        def really_entering(self,e,widget):
+            if self.tip_window != None or self.long_task_called:
+                return
+
+            def show_tooltip():
+                x = widget.winfo_rootx() + 50
+                y = widget.winfo_rooty() + int(widget.winfo_height())/2
+                self.tip_window = customtkinter.CTkLabel(
+                    self.root,
+                    text=self.text,
+                    font=("Arial", 20),
+                    text_color="black",
+                    bg_color= "white"
+
+                )
+                self.tip_window.place(x=x,y=y)
+            show_tooltip()
+        
+        def really_leaving(self,e,widget):
+            if self.tip_window == None or self.long_task_called:
+                return
+            def long_task():
+                time_start = time.time()
+                while 1:
+                    time.sleep(0.05)
+                    if time.time() - time_start > self.delay:
+                        break
+                try:
+                    self.root.after(0,self.tip_window.destroy)
+                    # self.tip_window.destroy()
+                except Exception as e1:
+                    print("error1")
+                self.tip_window = None
+                self.long_task_called = False
+
+            x = widget.winfo_width()-1
+            y = widget.winfo_height()-1
+            if (e.x < 1 or e.x > x) or (e.y<1 or e.y > y):
+                # if self.tip_window != None and not self.long_task_called:
+                if self.add_delay:
+                    tooltip_thread = threading.Thread(target=long_task,)
+                    self.long_task_called = True
+                    tooltip_thread.start()
+                else:
+                    try:
+                        # self.tip_window.destroy()
+                        self.root.after(0,self.tip_window.destroy)
+                    except Exception as e2:
+                        print("error2")
+                    self.tip_window = None
 
     def __init__(self,root,menu_callback_function,window_mode,initial_path,zoom_factor,config_filename,without_gui =False):
         self.root = root
@@ -1356,9 +1366,9 @@ class main:
         def refresh_disk_statuses(self,silent=True):
             online_disks = []
             offline_disks = []
-            self.refresh_btn.configure(text = "🔄",font=("",25))
-            self.refresh_btn.update()
-            self.refresh_btn.update_idletasks()
+            # self.refresh_btn.configure(text = "🔄",font=("",25))
+            # self.refresh_btn.update()
+            # self.refresh_btn.update_idletasks()
 
             def refresh_thread():
                 mapped_disks = main.DM_tools.list_mapped_disks(whole_format = True)
@@ -1399,7 +1409,7 @@ class main:
                     else:
                         Tools.add_colored_line(self.main_console,f"Namapované disky: online: {list(set(online_disks))}","white",None,True)
 
-                self.refresh_btn.configure(text = "Refresh statusů",font=("Arial",20,"bold"))
+                # self.refresh_btn.configure(text = "Refresh statusů",font=("Arial",20,"bold"))
             
             run_backgroung = threading.Thread(target=refresh_thread,)
             run_backgroung.start()
@@ -1520,7 +1530,7 @@ class main:
             self.all_project_list = main.DM_tools.read_excel_data(self.excel_file_path)
             return output
         
-        def check_given_input(self,given_data = None):
+        def check_given_input(self,given_data = None,search_flag=False):
             """
             Fills all parameters of last project
             """
@@ -1532,9 +1542,14 @@ class main:
             found = False
 
             for i in range(0,len(self.all_project_list)):
-                if given_data == self.all_project_list[i]['name']:
-                    self.last_managed_project = self.all_project_list[i]
-                    found = True
+                if search_flag:
+                    if str(given_data) in str(self.all_project_list[i]['name']):
+                        self.last_managed_project = self.all_project_list[i]
+                        found = True
+                else:
+                    if given_data == self.all_project_list[i]['name']:
+                        self.last_managed_project = self.all_project_list[i]
+                        found = True
             return found  
 
         def refresh_explorer(self,refresh_disk=None):
@@ -1992,7 +2007,13 @@ class main:
                     position = 0
                 return position
             
-            result = self.check_given_input(input_entry_bypass)
+            if purpouse == "search":
+                result = self.check_given_input(input_entry_bypass,search_flag=True)
+                if result == True:
+                    self.search_input.delete("0","300")
+                    self.search_input.insert("0",str(self.last_managed_project['name']))
+            else:
+                result = self.check_given_input(input_entry_bypass)
             self.remember_to_change_back = []
             self.last_selected_widget = ""
 
@@ -2544,8 +2565,16 @@ class main:
             first_row_frame =               customtkinter.CTkFrame(master=self.main_widgets,corner_radius=0,fg_color="#212121")
             project_label =                 customtkinter.CTkLabel(master = first_row_frame,height=40,text = "Projekt: ",font=("Arial",20,"bold"),justify="left",anchor="w")
             self.search_input =             customtkinter.CTkEntry(master = first_row_frame,font=("Arial",20),width=160,height=40,placeholder_text="Název projektu",corner_radius=0)
-            button_search =                 customtkinter.CTkButton(master = first_row_frame, width = 150,height=40,text = "Vyhledat",command =  lambda: self.make_project_first_disk("search"),font=("Arial",20,"bold"),corner_radius=0)
-            button_add =                    customtkinter.CTkButton(master = first_row_frame, width = 150,height=40,text = "Nový projekt", command = lambda: self.add_new_project_disk(),font=("Arial",20,"bold"),corner_radius=0)
+            # button_search =                 customtkinter.CTkButton(master = first_row_frame, width = 150,height=40,text = "Vyhledat",command =  lambda: self.make_project_first_disk("search"),font=("Arial",20,"bold"),corner_radius=0)
+            search_icon =                   customtkinter.CTkLabel(master = first_row_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/SearchWhite.png")),size=(32, 32)),bg_color="#212121")
+            search_icon.bind("<Enter>",lambda e: search_icon._image.configure(size=(36,36)))
+            search_icon.bind("<Leave>",lambda e: search_icon._image.configure(size=(32,32)))
+            search_icon.bind("<Button-1>",lambda e: self.make_project_first_disk("search"))
+            # button_add =                    customtkinter.CTkButton(master = first_row_frame, width = 150,height=40,text = "Nový projekt", command = lambda: self.add_new_project_disk(),font=("Arial",20,"bold"),corner_radius=0)
+            new_project_icon =               customtkinter.CTkLabel(master = first_row_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/green_plus.png")),size=(32, 32)),bg_color="#212121")
+            new_project_icon.bind("<Enter>",lambda e: new_project_icon._image.configure(size=(36,36)))
+            new_project_icon.bind("<Leave>",lambda e: new_project_icon._image.configure(size=(32,32)))
+            new_project_icon.bind("<Button-1>",lambda e: self.add_new_project_disk())
             button_remove =                 customtkinter.CTkButton(master = first_row_frame, width = 100,height=40,text = "Smazat", command =  lambda: self.delete_project_disk(flag="main_menu"),font=("Arial",20,"bold"),corner_radius=0)
             self.undo_button =              customtkinter.CTkButton(master = first_row_frame, width = 50,height=40,text = "↶", command =  lambda: self.manage_bin(flag="load_deleted_disk"),font=("",28,"bold"),corner_radius=0,border_width=1,text_color="red")
             button_edit =                   customtkinter.CTkButton(master = first_row_frame, width = 110,height=40,text = "Editovat",command =  lambda: edit_project(),font=("Arial",20,"bold"),corner_radius=0)
@@ -2555,18 +2584,32 @@ class main:
             move_downwards =                customtkinter.CTkButton(master = first_row_frame, width = 50,height=40,text = "↓",command =  lambda: self.make_project_first_disk(purpouse="silent",downwards=True),font=(None,25),corner_radius=0)
             sort_alphabet =                 customtkinter.CTkButton(master = first_row_frame, width = 50,height=40,text = "A↑",command =  lambda: self.sort_by_alphabet(),font=(None,25),corner_radius=0)
             button_settings =               customtkinter.CTkButton(master = first_row_frame, width = 40,height=40,text="⚙️",command =  lambda: self.setting_window(),font=("",22),corner_radius=0)
-            second_row_frame =              customtkinter.CTkFrame(master=self.main_widgets,corner_radius=0,fg_color="#212121")
-            delete_disk =                   customtkinter.CTkButton(master = second_row_frame, width = 250,height=40,text = "Odpojit síťový disk",command =  lambda: self.delete_disk_option_menu(),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
-            reset =                         customtkinter.CTkButton(master = second_row_frame, width = 200,height=40,text = "Reset exploreru",command = lambda: self.refresh_explorer(refresh_disk=True),font=("Arial",20,"bold"),corner_radius=0)
-            self.refresh_btn =              customtkinter.CTkButton(master = second_row_frame, width = 200,height=40,text = "Refresh statusů",command = lambda: self.refresh_disk_statuses(silent=False),font=("Arial",20,"bold"),corner_radius=0)
-            as_admin_label =                customtkinter.CTkLabel(master = second_row_frame,text = "",font=("Arial",20,"bold"))
+            # second_row_frame =              customtkinter.CTkFrame(master=self.main_widgets,corner_radius=0,fg_color="#212121")
+            # delete_disk =                   customtkinter.CTkButton(master = second_row_frame, width = 250,height=40,text = "Odpojit síťový disk",command =  lambda: self.delete_disk_option_menu(),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
+            unplug_icon =               customtkinter.CTkLabel(master = first_row_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/unplug.png")),size=(32, 32)),bg_color="#212121")
+            unplug_icon.bind("<Enter>",lambda e: unplug_icon._image.configure(size=(36,36)))
+            unplug_icon.bind("<Leave>",lambda e: unplug_icon._image.configure(size=(32,32)))
+            unplug_icon.bind("<Button-1>",lambda e: self.delete_disk_option_menu())
+            # reset =                         customtkinter.CTkButton(master = second_row_frame, width = 200,height=40,text = "Reset exploreru",command = lambda: self.refresh_explorer(refresh_disk=True),font=("Arial",20,"bold"),corner_radius=0)
+            reset_icon =               customtkinter.CTkLabel(master = first_row_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/reset.png")),size=(32, 32)),bg_color="#212121")
+            reset_icon.bind("<Enter>",lambda e: reset_icon._image.configure(size=(36,36)))
+            reset_icon.bind("<Leave>",lambda e: reset_icon._image.configure(size=(32,32)))
+            reset_icon.bind("<Button-1>",lambda e: self.refresh_explorer(refresh_disk=True))
+            # self.refresh_btn =              customtkinter.CTkButton(master = second_row_frame, width = 200,height=40,text = "Refresh statusů",command = lambda: self.refresh_disk_statuses(silent=False),font=("Arial",20,"bold"),corner_radius=0)
+            refresh_icon =               customtkinter.CTkLabel(master = first_row_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/refresh.png")),size=(32, 32)),bg_color="#212121")
+            refresh_icon.bind("<Enter>",lambda e: refresh_icon._image.configure(size=(36,36)))
+            refresh_icon.bind("<Leave>",lambda e: refresh_icon._image.configure(size=(32,32)))
+            refresh_icon.bind("<Button-1>",lambda e: self.refresh_disk_statuses(silent=False))
+            as_admin_label =                customtkinter.CTkLabel(master = first_row_frame,text = "",font=("Arial",20,"bold"))
             third_row_frame =               customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#212121")
             self.main_console =             tk.Text(third_row_frame, wrap="none", height=0,background="black",font=("Arial",22),state=tk.DISABLED)
             project_label.                  pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             self.search_input.              pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
-            button_search.                  pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
-            button_add.                     pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
-            button_remove.                  pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
+            # button_search.                  pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
+            search_icon.                    pack(pady = (10,0),padx =(10,0),anchor="w",side="left")
+            # button_add.                     pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
+            new_project_icon.               pack(pady = (10,0),padx =(10,0),anchor="w",side="left")
+            button_remove.                  pack(pady = (10,0),padx =(10,0),anchor="w",side="left")
             self.undo_button.               pack(pady = (10,0),padx =(0,0),anchor="w",side="left")
             button_edit.                    pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             self.undo_edit.                 pack(pady = (10,0),padx =(0,0),anchor="w",side="left")
@@ -2575,25 +2618,41 @@ class main:
             move_downwards.                 pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             sort_alphabet.                  pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             button_settings.                pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
-            delete_disk.                    pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
-            reset.                          pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
-            self.refresh_btn.               pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
+            # delete_disk.                    pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
+            unplug_icon.                    pack(pady = (10,0),padx =(10,0),anchor="w",side="left")
+            # reset.                          pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
+            reset_icon.                     pack(pady = (10,0),padx =(10,0),anchor="w",side="left")
+            # self.refresh_btn.               pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
+            refresh_icon.                   pack(pady = (10,0),padx =(10,0),anchor="w",side="left")
             as_admin_label.                 pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
-            self.main_console.              pack(pady = (10,0),padx =(5,0),anchor="w",side="left",fill="x",expand=True)
+            self.main_console.              pack(pady = (0,0),padx =(5,0),anchor="w",side="top",fill="x",expand=False)
             first_row_frame.                pack(pady=0,padx=0,fill="x",side = "top")
-            second_row_frame.               pack(pady=0,padx=0,fill="x",side = "top")
+            # second_row_frame.               pack(pady=0,padx=0,fill="x",side = "top")
             main_menu_button.               pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
             button_switch_all_ip.           pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
             button_switch_favourite_ip.     pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
             button_switch_disk.             pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
             image_logo.                     pack(anchor = "e",side = "top",ipadx = 20,ipady = 20,expand=False)
             menu_cards.                     pack(pady=0,padx=5,fill="x",expand=False,side = "top")
-            self.main_widgets.              pack(pady=0,padx=0,fill="x",side = "top")
-            top_left_frame.                 pack(pady=0,padx=0,fill="x",side = "left",expand=True)
+            self.main_widgets.              pack(pady=0,padx=0,fill="both",side = "top")
+            top_left_frame.                 pack(pady=0,padx=0,fill="x",side = "left",expand=True,anchor="n")
             top_right_frame.                pack(pady=0,padx=0,fill="y",side = "right",expand=False)
             top_frame.                      pack(pady=0,padx=0,fill="x",side = "top")
             third_row_frame.                pack(pady=0,padx=0,fill="x",side = "top")
             self.project_tree.              pack(pady=5,padx=5,fill="both",expand=True,side = "top")
+
+            main.ToolTip(new_project_icon," Nový projekt ",self.root)
+            main.ToolTip(search_icon," Vyhledat projekt ",self.root)
+            main.ToolTip(reset_icon," Reset exploreru ",self.root)
+            main.ToolTip(unplug_icon," Odpojit síťový disk ",self.root)
+            main.ToolTip(refresh_icon," Refresh statusu disků ",self.root)
+            main.ToolTip(button_make_first," Přesunout projekt na začátek ",self.root)
+            main.ToolTip(self.undo_button," Vrátit poslední smazaný projekt ",self.root)
+            main.ToolTip(self.undo_edit," Vrátit poslední změnu ",self.root)
+            main.ToolTip(move_upwards," Posunout o pozici výše ",self.root)
+            main.ToolTip(move_downwards," Posunout o pozici níže ",self.root)
+            main.ToolTip(sort_alphabet," Seřadit podle abecedy ",self.root)
+            main.ToolTip(button_settings," Nastavení ",self.root)
 
             config_data = Tools.read_json_config(self.config_filename_path)
             if len(config_data["edited_project_bin_disk"])>0:
@@ -2645,7 +2704,8 @@ class main:
             self.search_input.bind("<Return>",call_search)
 
             def call_refresh(e):
-                self.refresh_explorer(refresh_disk=True)
+                # self.refresh_explorer(refresh_disk=True)
+                self.refresh_disk_statuses(silent=False)
             self.root.bind("<F5>",lambda e: call_refresh(e))
 
             def call_unfocus(e):
@@ -2708,6 +2768,7 @@ class main:
             self.edited_projects_bin = []
             self.changed_notes = []
             self.notes_frame_height = 50
+
             read_parameters = Tools.read_json_config(self.config_filename_path)
             if read_parameters != None:
                 self.default_connection_option = read_parameters["default_ip_interface"]
@@ -2748,13 +2809,13 @@ class main:
             Tools.clear_frame(self.main_widgets)
             Tools.clear_frame(self.root)
             # self.root.unbind("<f>")
-            self.root.unbind("<Escape>")
-            self.root.unbind("<F5>")
-            self.root.unbind("<Button-1>")
-            self.root.unbind("<Control_L>")
-            self.root.unbind("<Control-Button-1>")
-            self.root.unbind("<KeyRelease-Control_L>")
-            self.root.unbind("<Delete>")
+            # self.root.unbind("<Escape>")
+            # self.root.unbind("<F5>")
+            # self.root.unbind("<Button-1>")
+            # self.root.unbind("<Control_L>")
+            # self.root.unbind("<Control-Button-1>")
+            # self.root.unbind("<KeyRelease-Control_L>")
+            # self.root.unbind("<Delete>")
             self.root.update()
             self.root.update_idletasks()
             self.menu_callback()
@@ -3494,7 +3555,7 @@ class main:
                 # Handle any other exceptions that may occur
                 Tools.add_colored_line(self.main_console, f"Nastala neočekávaná chyba: {e}", "red", None, True)
 
-        def check_given_input(self,given_data = None):
+        def check_given_input(self,given_data = None,search_flag=False):
             """
             Fills all parameters of last project
             """
@@ -3506,9 +3567,14 @@ class main:
             found = False
 
             for i in range(0,len(self.all_project_list)):
-                if given_data == self.all_project_list[i]['name']:
-                    self.last_managed_project = self.all_project_list[i]
-                    found = True
+                if search_flag:
+                    if str(given_data) in str(self.all_project_list[i]['name']):
+                        self.last_managed_project = self.all_project_list[i]
+                        found = True
+                else:
+                    if given_data == self.all_project_list[i]['name']:
+                        self.last_managed_project = self.all_project_list[i]
+                        found = True
             return found    
 
         def clicked_on_project(self,project,widget,textbox = "",flag = ""):
@@ -3968,8 +4034,13 @@ class main:
                 elif position > max_position-1:
                     position = 0
                 return position
-
-            result = self.check_given_input(input_entry_bypass)
+            if purpouse == "search":
+                result = self.check_given_input(input_entry_bypass,search_flag=True)
+                if result == True:
+                    self.search_input.delete("0","300")
+                    self.search_input.insert("0",str(self.last_managed_project['name']))
+            else:
+                result = self.check_given_input(input_entry_bypass)
             self.remember_to_change_back = []
             self.last_selected_widget = ""
 
@@ -4346,8 +4417,17 @@ class main:
             first_row_frame =           customtkinter.CTkFrame(master=self.main_widgets,corner_radius=0,border_width=0,fg_color="#212121")
             project_label =             customtkinter.CTkLabel(master = first_row_frame, width = 100,height=40,text = "Projekt: ",font=("Arial",20,"bold"),justify="left",anchor="w")
             self.search_input =         customtkinter.CTkEntry(master = first_row_frame,font=("Arial",20),width=160,height=40,placeholder_text="Název projektu",corner_radius=0)
-            button_search =             customtkinter.CTkButton(master = first_row_frame, width = 150,height=40,text = "Vyhledat",command =  lambda: self.make_project_first("search"),font=("Arial",20,"bold"),corner_radius=0)
-            self.button_add_main =      customtkinter.CTkButton(master = first_row_frame, width = 150,height=40,text = "Nový projekt", command = lambda: self.add_new_project(),font=("Arial",20,"bold"),corner_radius=0)
+            # button_search =             customtkinter.CTkButton(master = first_row_frame, width = 150,height=40,text = "Vyhledat",command =  lambda: self.make_project_first("search"),font=("Arial",20,"bold"),corner_radius=0)
+            search_icon =               customtkinter.CTkLabel(master = first_row_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/SearchWhite.png")),size=(32, 32)),bg_color="#212121")
+            search_icon.bind("<Enter>",lambda e: search_icon._image.configure(size=(36,36)))
+            search_icon.bind("<Leave>",lambda e: search_icon._image.configure(size=(32,32)))
+            search_icon.bind("<Button-1>",lambda e: self.make_project_first("search"))
+            # self.button_add_main =      customtkinter.CTkButton(master = first_row_frame, width = 150,height=40,text = "Nový projekt", command = lambda: self.add_new_project(),font=("Arial",20,"bold"),corner_radius=0)
+            
+            new_project_icon =               customtkinter.CTkLabel(master = first_row_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/green_plus.png")),size=(32, 32)),bg_color="#212121")
+            new_project_icon.bind("<Enter>",lambda e: new_project_icon._image.configure(size=(36,36)))
+            new_project_icon.bind("<Leave>",lambda e: new_project_icon._image.configure(size=(32,32)))
+            new_project_icon.bind("<Button-1>",lambda e: self.add_new_project())
             self.button_remove_main =   customtkinter.CTkButton(master = first_row_frame, width = 100,height=40,text = "Smazat", command =  lambda: self.delete_project(flag="main_menu"),font=("Arial",20,"bold"),corner_radius=0)
             self.undo_button =          customtkinter.CTkButton(master = first_row_frame, width = 50,height=40,text = "↶", command =  lambda: self.manage_bin(flag="load_deleted_ip"),font=(None,28,"bold"),corner_radius=0,border_width=1,text_color="red")
             button_edit_main =          customtkinter.CTkButton(master = first_row_frame, width = 110,height=40,text = "Editovat",command =  lambda: self.edit_project(),font=("Arial",20,"bold"),corner_radius=0)
@@ -4389,7 +4469,11 @@ class main:
             connect_label =                 customtkinter.CTkLabel(master = second_row_frame, width = 100,height=40,text = "Připojení: ",font=("Arial",20,"bold"),justify="left",anchor="w")
             self.interface_drop_options =   customtkinter.CTkOptionMenu(master = second_row_frame,width=200,height=40,font=("Arial",20,"bold"),dropdown_font=("Arial",20),corner_radius=0,command=  self.option_change)
             # "⚙️", "⚒", "🔧", "🔩"
-            button_settings =               customtkinter.CTkButton(master = second_row_frame, width = 40,height=40,text="⚒",command =  lambda: self.refresh_interfaces(all=True),font=("",22),corner_radius=0) #refresh interface statusů
+            # button_settings =               customtkinter.CTkButton(master = second_row_frame, width = 40,height=40,text="⚒",command =  lambda: self.refresh_interfaces(all=True),font=("",22),corner_radius=0) #refresh interface statusů
+            refresh_icon =               customtkinter.CTkLabel(master = second_row_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/refresh.png")),size=(32, 32)),bg_color="#212121")
+            refresh_icon.bind("<Enter>",lambda e: refresh_icon._image.configure(size=(36,36)))
+            refresh_icon.bind("<Leave>",lambda e: refresh_icon._image.configure(size=(32,32)))
+            refresh_icon.bind("<Button-1>",lambda e: self.refresh_interfaces(all=True))
             self.button_dhcp =              customtkinter.CTkButton(master = second_row_frame, width = 100,height=40,text = "DHCP",command =  lambda: self.change_to_DHCP(),font=("Arial",20,"bold"),corner_radius=0)
             static_label =                  customtkinter.CTkLabel(master = second_row_frame, height=40,text = "Static:",font=("Arial",20,"bold"))
             self.static_label2 =            customtkinter.CTkLabel(master = second_row_frame,width=200, height=40,text = "",font=("Arial",22,"bold"),bg_color="black")
@@ -4405,8 +4489,10 @@ class main:
             menu_cards.                     pack(pady=0,padx=5,fill="x",expand=False,side = "top")
             project_label.                  pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             self.search_input.              pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
-            button_search.                  pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
-            self.button_add_main.           pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
+            # button_search.                  pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
+            search_icon.                    pack(pady = (10,0),padx =(10,0),anchor="w",side="left")
+            # self.button_add_main.           pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
+            new_project_icon.               pack(pady = (10,0),padx =(10,0),anchor="w",side="left")
             self.button_remove_main.        pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             self.undo_button.               pack(pady = (10,0),padx =(0,0),anchor="w",side="left")
             button_edit_main.               pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
@@ -4419,7 +4505,8 @@ class main:
             manual_ip_set.                  pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             connect_label.                  pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             self.interface_drop_options.    pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
-            button_settings.                pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
+            # button_settings.                pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
+            refresh_icon.                   pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             self.button_dhcp.               pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             static_label.                   pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             self.static_label2.             pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
@@ -4435,14 +4522,17 @@ class main:
             third_row_frame.                pack(pady=0,padx=0,fill="x",side = "top")
             self.project_tree.              pack(pady=(0,5),padx=5,fill="both",expand=True,side = "top")
 
-
-                
-
-            tooltip_thread = threading.Thread(target=main.ToolTip,args=[button_make_first,"adsfasdf",self.root],daemon=True)
-            tooltip_thread.start()
-            # main.ToolTip(button_make_first,"adsfasdf",self.root)
-
-
+            main.ToolTip(new_project_icon," Nový projekt ",self.root)
+            main.ToolTip(search_icon," Vyhledat projekt ",self.root)
+            main.ToolTip(refresh_icon," Refresh připojení ",self.root)
+            main.ToolTip(button_make_first," Přesunout projekt na začátek ",self.root)
+            main.ToolTip(self.undo_button," Vrátit poslední smazaný projekt ",self.root)
+            main.ToolTip(self.undo_edit," Vrátit poslední změnu ",self.root)
+            main.ToolTip(move_upwards," Posunout o pozici výše ",self.root)
+            main.ToolTip(move_downwards," Posunout o pozici níže ",self.root)
+            main.ToolTip(sort_alphabet," Seřadit podle abecedy ",self.root)
+            main.ToolTip(button_settings_behav," Nastavení ",self.root)
+            main.ToolTip(manual_ip_set," Manuální nastavení adresy ",self.root)
 
             self.refresh_interfaces() # aktualizace hodnot nabídky
             if self.default_connection_option < len(self.connection_option_list):

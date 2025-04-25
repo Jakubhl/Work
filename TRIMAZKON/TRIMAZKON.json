@@ -67,7 +67,10 @@
         "default_export_suffix": "xlsx",
         "default_path": "C:/Users/",
         "render_mode": "fast",
-        "path_history_list": []
+        "path_history_list": [
+            "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/",
+            "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/temp/"
+        ]
     },
     "ip_settings": {
         "default_ip_interface": 0,
