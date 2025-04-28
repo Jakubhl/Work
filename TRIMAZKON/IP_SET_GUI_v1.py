@@ -55,7 +55,7 @@ exe_path = sys.executable
 exe_name = os_path_basename(exe_path)
 config_filename = "jhv_IP.json"
 app_name = "jhv_IP"
-app_version = "1.0.1"
+app_version = "1.0.2"
 loop_request = False
 root = None
 print("exe name: ",exe_name)
@@ -1868,6 +1868,9 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             }
             self.option_buttons[0].configure(fg_color="#212121")
             row_index = 1
+            insert_licence_btn =        customtkinter.CTkButton(master = self.bottom_frame_default_path, width = 200,height=40, text = "Otevřít umístění aplikace/ vložit licenci", command = lambda: os.startfile(initial_path),font=("Arial",24,"bold"))
+            insert_licence_btn.          pack(pady=(30,0),padx=5,side = "top",anchor = "w")
+
             first_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
             self.checkbox_maximalized = customtkinter.CTkCheckBox(master = first_option_frame,height=40,text = "Spouštět v maximalizovaném okně",command = lambda: self.maximalized(),font=("Arial",22,"bold"))
             first_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")

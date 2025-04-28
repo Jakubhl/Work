@@ -11,18 +11,39 @@ import psutil
 # name_of_task = "dailyscript_test"
 # cmd_command = f"schtasks /Delete /TN {name_of_task} /F"
 # connection_status = subprocess.call(cmd_command,shell=True,text=True)
-open("broken_image.jpg", "wb").close()
-k = input("stop")
+import customtkinter as ctk
+import pyperclip
 
+class CustomListbox(ctk.CTkScrollableFrame):
+    def __init__(self, parent, values, command=None, **kwargs):
+        super().__init__(parent, **kwargs)
 
-print(len(str("")))
-all_string = "|||Datum: 17.12.2024 10:12:26||Zkontrolováno: 161 souborů||Starších: 153 souborů||Smazáno: 0 souborů"
-print(all_string.split("|||"))
-splitted = all_string.split("|||")
-splitted.pop(0)
-print(splitted[0].split("||"))
-output_data = ["xx","xxf","xxx","sga"]
-output_message_clear = f"Provedeno: {output_data[3]}\nZkontrolováno: {output_data[0]} souborů\nStarších: {output_data[1]} souborů\nSmazáno: {output_data[2]} souborů"
+        self.command = command
+        self.buttons = []
+
+        for val in values:
+            btn = ctk.CTkButton(self, text=str(val), font=("Arial", 20), fg_color="transparent", hover_color="gray25",
+                                command=lambda v=val: self.on_select(v))
+            btn.pack(fill="x", pady=2)
+            self.buttons.append(btn)
+
+    def on_select(self, value):
+        if self.command:
+            self.command(value)
+
+def on_item_selected(value):
+    pyperclip.copy(value)
+    print(f"Copied {value} to clipboard")
+
+app = ctk.CTk()
+app.geometry("400x400")
+
+values = [f"Item {i}" for i in range(50)]
+
+listbox = CustomListbox(app, values, command=on_item_selected, width=200, height=300)
+listbox.pack(pady=20)
+
+app.mainloop()
 
 # def call_test():
 #     notification.notify(
@@ -98,11 +119,11 @@ class WindowsBalloonTip:
 
 # WindowsBalloonTip("Title for popup", "This is the popup's message",'images/logo_TRIMAZKON.ico')
 
-for process in psutil.process_iter(['pid', 'name', 'status']):
-    try:
-        print(f"PID: {process.info['pid']}, Name: {process.info['name']}, Status: {process.info['status']}")
-    except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-        pass  # Handle cases where processes are inaccessible
+# for process in psutil.process_iter(['pid', 'name', 'status']):
+#     try:
+#         print(f"PID: {process.info['pid']}, Name: {process.info['name']}, Status: {process.info['status']}")
+#     except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+#         pass  # Handle cases where processes are inaccessible
 
 # icon_path = Tools.resource_path('images/logo_TRIMAZKON.ico')
 # notification.notify(title="Bylo provedeno automatické mazání",

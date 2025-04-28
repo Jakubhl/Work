@@ -14,6 +14,17 @@ change_log_list = [" Verze 1.0.0 (31.3.2025)",
     - optimalizace otevírání poznámek
     - v system tray nově možnost nastavit adresu manuálně
     \n"""
+        ," Verze 1.0.2 (25.4.2025)"
+        ,
+    """ 
+    - navýšená kapacita navrácení změn na 10 (u disků)
+    - nově lze vrátit až 5 smazaných projektů (u disků)
+    - vizualizace aktivního dhcp
+    - přidán toottip na tlačítkách + nová vizual.
+    - opraveno: změny v pozn. v komb. s posouváním
+    - opraveno: dekódování názvu interfaců (diakritika)
+    - opraveno: vyhledávání projektů
+    \n"""
 
 ]
 

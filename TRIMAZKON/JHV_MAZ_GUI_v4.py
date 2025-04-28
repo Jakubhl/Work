@@ -2352,6 +2352,10 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
         if submenu_option == "default_path":
             self.option_buttons[0].configure(fg_color="#212121")
             row_index = 1
+
+            insert_licence_btn =        customtkinter.CTkButton(master = self.bottom_frame_default_path, width = 200,height=40, text = "Otevřít umístění aplikace/ vložit licenci", command = lambda: os.startfile(initial_path),font=("Arial",24,"bold"))
+            insert_licence_btn.          pack(pady=(30,0),padx=5,side = "top",anchor = "w")
+
             first_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
             self.checkbox_maximalized = customtkinter.CTkCheckBox(master = first_option_frame,height=40,text = "Spouštět v maximalizovaném okně",command = lambda: self.maximalized(),font=("Arial",22,"bold"))
             first_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
@@ -2414,6 +2418,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             context_menu_button.bind("<Button-1>", call_path_context_menu)
 
             if self.selected_language == "en":
+                insert_licence_btn.configure(text = "Open application root path/ insert license")
                 self.checkbox_maximalized.configure(text = "Run in maximized window")
                 self.tray_checkbox.configure(text = "Run jhv_MAZ in the background (in the system menu \"tray_icons\") when Windows is turned on?")
                 zomm_app_label.configure(text = "Set the overall zoom of the application:")

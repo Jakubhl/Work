@@ -18,9 +18,10 @@ import sys
 import pyperclip
 import copy
 import json
+import tkinter.font as tkFont
 
 initial_path = ""
-testing = True
+testing = False
 if testing:
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")
@@ -219,6 +220,8 @@ class Tools:
         - default_export_suffix
         - default_path
         - render_mode
+        - path_history_list
+        - hover_info_trigger_mode
         """
         # default_labels = string_database.default_setting_database
 
@@ -261,6 +264,7 @@ class Tools:
         - default_path
         - render_mode
         - path_history_list
+        - hover_info_trigger_mode
         """
         def get_input_data_format():
             if isinstance(input_data,list):
@@ -740,7 +744,17 @@ class ToplevelWindow:
         window.focus()
 
     @classmethod
-    def setting_window(cls,root,app_icon_path,default_excel_name,default_xml_name,window_status,callback,default_database_filename,detailed_view_status,render_mode = "fast"):
+    def setting_window(cls,
+                       root,
+                       app_icon_path,
+                       default_excel_name,
+                       default_xml_name,
+                       window_status,
+                       callback,
+                       default_database_filename,
+                       detailed_view_status,
+                       render_mode = "fast",
+                       hover_trigger_mode="1"):
         def close_window(window):
             window.destroy()
 
@@ -764,11 +778,16 @@ class ToplevelWindow:
             Tools.save_to_json_config(input_data[1],"catalogue_settings","metadata_filename")
             Tools.save_to_json_config(input_data[2],"catalogue_settings","subwindow_behav")
             Tools.save_to_json_config(input_data[3] + ".xlsx","catalogue_settings","database_filename")
+
             callback(input_data)
             close_window(window)
 
         def open_all_data():
             callback(["open_all_cmd",show_all_data_chckbx.get()])
+
+        def switch_hover_trigger_mode():
+            Tools.save_to_json_config(str(checkbox2.get()),"catalogue_settings","hover_info_trigger_mode")
+            callback(["hover_info_trigger_mode",str(checkbox2.get())])
 
         def switch_render_mode(mode):
             if mode == "fast":
@@ -785,11 +804,12 @@ class ToplevelWindow:
         window = customtkinter.CTkToplevel(fg_color="#212121")
         window.after(200, lambda: window.iconbitmap(app_icon_path))
         window.title("Nastavení")
-
         main_frame =                customtkinter.CTkFrame(master = window,corner_radius=0,fg_color="#212121")
         option1_frame =             customtkinter.CTkFrame(master = main_frame,corner_radius=0,border_color="#505050",border_width=1,fg_color="#212121")
         checkbox =                  customtkinter.CTkCheckBox(master = option1_frame, text = "Okna editování otevírat maximalizované",font=("Arial",22,"bold"))#,command=lambda: save_new_behav_notes()
-        checkbox.                   pack(pady = 20, padx = 10,anchor="w")
+        checkbox2 =                 customtkinter.CTkCheckBox(master = option1_frame, text = "Aut. zobrazovat detailní info pod kurzorem myši",font=("Arial",22,"bold"),command=lambda: switch_hover_trigger_mode())
+        checkbox.                   pack(pady = (20,0), padx = 10,anchor="w")
+        checkbox2.                  pack(pady = 10, padx = 10,anchor="w")
         option2_frame =             customtkinter.CTkFrame(master = main_frame,corner_radius=0,border_color="#505050",border_width=1,fg_color="#212121")
         xml_name_label =            customtkinter.CTkLabel(master = option2_frame,text = "Nastavte základní název pro ukládání rozpracovaného projektu:",font=("Arial",22,"bold"),justify = "left",anchor="w")
         xml_name_frame =            customtkinter.CTkFrame(master = option2_frame,corner_radius=0,fg_color="#212121")
@@ -854,6 +874,9 @@ class ToplevelWindow:
 
         if window_status == 1:
             checkbox.select()
+
+        if hover_trigger_mode == "1":
+            checkbox2.select()
 
         if render_mode == "fast":
             fast_render_mode.select()
@@ -1802,42 +1825,79 @@ class Fill_details:
 
 class Catalogue_gui:
     class ToolTip:
-        def __init__(self, widget, text, root):
+        def __init__(self, widget, text, root,unbind=False,subwindow_status=False,coordinates=None):
             self.widget = widget
             self.text = text
             self.root = root
             self.tip_window = None
-            self.bind_it()
+            self.coords = coordinates
+            self.subwindow_status = subwindow_status
+            if unbind:
+                self.just_destroy("",unbind=True)
+            else:
+                self.bind_it()
 
         def bind_it(self):
             self.widget.bind("<Enter>",lambda e,widget = self.widget: self.really_entering(e,widget))
             self.widget.bind("<Leave>",lambda e,widget = self.widget: self.really_leaving(e,widget))
+            self.widget.bind("<Button-1>",lambda e: self.just_destroy(e))
+
+        def just_destroy(self,e,unbind=False):
+            try:
+                if unbind:
+                    self.widget.unbind("<Enter>")
+                    self.widget.unbind("<Leave>")
+                    self.widget.unbind("<Button-1>")
+                # self.tip_window.destroy()
+                self.root.after(0,self.tip_window.destroy)
+            except Exception as ee:
+                pass
 
         def really_entering(self,e,widget):
             if self.tip_window != None:
                 return
 
             def show_tooltip():
-                x = widget.winfo_rootx() + 50
-                y = widget.winfo_rooty() + 60
+                self.widget.master.update_idletasks()
+                x = self.widget.winfo_rootx()+self.widget._current_width
+                y = self.widget.winfo_rooty()+self.widget._current_height
+                # x = self.widget.winfo_rootx()
+                # y = self.widget.winfo_rooty()
                 self.tip_window = customtkinter.CTkLabel(
                     self.root,
                     text=self.text,
                     font=("Arial", 20),
                     text_color="black",
                     bg_color= "white"
-
                 )
-                self.tip_window.place(x=x,y=y)
+                # if self.callback != None:
+                #     self.callback(self.tip_window,self.widget)
+                #     # self.tip_window.place(x=int(x),y=int(y))
+                #     return
+                # x=self.coords[0]
+                # y=self.coords[1]
+                # print(x,y)
+                self.tip_window.place(x=x+self.tip_window._current_width/2,y=y+self.tip_window._current_height/2)
+                # self.tip_window.place(x=x,y=y)
+                # self.tip_window.pack()
+
             show_tooltip()
+
+            # self.tip_window.place_configure(x=self.widget.winfo_rootx()+self.widget.winfo_x(),y=self.widget.winfo_rooty())
+            # self.widget.master.update_idletasks()
+            # self.widget.update_idletasks()
+            # x = self.widget.winfo_rootx()+self.widget._current_width
+            # y = self.widget.winfo_rooty()+self.widget._current_height
+            # self.tip_window.place_configure(x=x,y= y)
+            self.tip_window.bind("<Leave>",lambda e,widget = widget: self.really_leaving(e,widget))
         
         def really_leaving(self,e,widget):
             if self.tip_window == None:
                 return
-        
+
             x = widget.winfo_width()-1
             y = widget.winfo_height()-1
-            if (e.x < 1 or e.x > x) or (e.y<1 or e.y > y):
+            if (e.x < 1 or e.x > x) or (e.y < 1 or e.y > y):
                 try:
                     self.root.after(0,self.tip_window.destroy)
                     # self.tip_window.destroy()
@@ -1897,6 +1957,11 @@ class Catalogue_gui:
         self.default_export_extension = config_data["catalogue_settings"]["default_export_suffix"]
         self.default_path = config_data["catalogue_settings"]["default_path"]
         self.render_mode = config_data["catalogue_settings"]["render_mode"]
+        try:
+            self.hover_trigger_mode = config_data["catalogue_settings"]["hover_info_trigger_mode"]
+        except KeyError:
+            self.hover_trigger_mode = "1"
+            Tools.save_to_json_config("1","catalogue_settings","hover_info_trigger_mode")
 
         try:
             if self.default_export_extension in self.format_list:
@@ -1930,6 +1995,7 @@ class Catalogue_gui:
         self.last_xml_filename = ""
         self.last_path_input = ""
         self.last_controller_index = 0
+        self.opened_window = ""
 
         self.changes_made = False
         self.optic_light_option = "optic"
@@ -1974,18 +2040,20 @@ class Catalogue_gui:
 
         # sharepoint_database_path = Tools.resource_path(Tools.path_check(os.getcwd()) + self.default_database_filename)
         sharepoint_database_path = initial_path + self.default_database_filename
+        print(sharepoint_database_path)
 
         self.camera_database_pointer = 0
         self.optics_database_pointer = 0
         self.camera_cable_database_pointer = 0
         self.accessory_database_pointer = 0
-        if len(self.download_database_console_input) > 0:
-            return
+        # if len(self.download_database_console_input) > 0:
+        # if text_color == "red":
+        #     return
 
         load_failed = False
         try:
             wb = load_workbook(filename=sharepoint_database_path)
-        except Exception:
+        except Exception as err:
             load_failed = True
             self.download_database_console_input = []
             self.download_database_console_input.append(f"Chyba - selhalo načtení databáze produktů ({sharepoint_database_path})")
@@ -2224,8 +2292,28 @@ class Catalogue_gui:
                 context_menu.add_command(label="Kopírovat heslo",font=("Arial",22,"bold"), command=lambda: pyperclip.copy(controller_password))
         
         context_menu.tk_popup(event.x_root, event.y_root)
+        self.opened_window = context_menu
         
     def make_block(self,master_widget,height,width,fg_color,text,side,dummy_block = False,tier = "",border_color="#636363",anchor="w",fill=None):
+        def opened_window_check():
+            if self.opened_window == "":
+                return False
+            try:
+                if self.opened_window.winfo_exists():
+                    return True
+                else:
+                    return False
+            except Exception as err:
+                print(err)
+                return False
+        
+        def on_enter(e, widget_tier,widget):
+            if not opened_window_check():
+                self.switch_widget_info(e, widget_tier,widget)
+        def on_leave(e, widget_tier,widget):
+            if not opened_window_check():
+                self.switch_widget_info(e, widget_tier,widget)
+
         if dummy_block:
             dummy_block_widget =    customtkinter.CTkFrame(master=master_widget,corner_radius=0,height=height,width =width-10,fg_color="#212121")
             dummy_block_widget.     pack(pady = 0,padx =0,expand = False,side = side,anchor=anchor)
@@ -2239,11 +2327,19 @@ class Catalogue_gui:
             else:
                 block_name.pack(pady = 5,padx =5,expand = False,fill=fill)
             
-            block_name.bind("<Button-3>",lambda e, widget_tier=tier: self.show_context_menu(e, widget_tier))
+            block_name.         bind("<Button-3>",lambda e, widget_tier=tier: self.show_context_menu(e, widget_tier))
             block_widget.       bind("<Button-1>",lambda e, widget_tier=tier,widget = block_widget: self.select_block(e, widget_tier,widget))
             block_name.         bind("<Button-1>",lambda e, widget_tier=tier,widget = block_widget: self.select_block(e, widget_tier,widget))
-            block_widget.       bind("<Button-1>",lambda e, widget_tier=tier,widget = block_name: self.switch_widget_info(e, widget_tier,widget))
-            block_name.         bind("<Button-1>",lambda e, widget_tier=tier,widget = block_name: self.switch_widget_info(e, widget_tier,widget))
+            # block_widget.       bind("<Button-1>",lambda e, widget_tier=tier,widget = block_name: self.switch_widget_info(e, widget_tier,widget))
+            # block_name.         bind("<Button-1>",lambda e, widget_tier=tier,widget = block_name: self.switch_widget_info(e, widget_tier,widget))
+            if self.hover_trigger_mode == "1":
+                block_name.         bind("<Enter>",lambda e, widget_tier=tier,widget = block_name: on_enter(e, widget_tier,widget))
+                block_name.         bind("<Leave>",lambda e, widget_tier=tier,widget = block_name: on_leave(e, widget_tier,widget))
+            else:
+                block_widget.       bind("<Button-1>",lambda e, widget_tier=tier,widget = block_name: self.switch_widget_info(e, widget_tier,widget))
+                block_name.         bind("<Button-1>",lambda e, widget_tier=tier,widget = block_name: self.switch_widget_info(e, widget_tier,widget))
+
+
             # if len(tier) == 2:
             #     block_name.bind("<Double-Button-1>",lambda e,widget_tier=tier: self.show_station_images(e,widget_tier))
             #     block_widget.bind("<Double-Button-1>",lambda e,widget_tier=tier: self.show_station_images(e,widget_tier))
@@ -2777,6 +2873,11 @@ class Catalogue_gui:
                 button_prev_section_alternative.configure(state = "disabled")
                 light_checkbox.select()
                 optics_checkbox.deselect()
+                optic_search.unbind("<Button-1>")
+                alternative_search.unbind("<Button-1>")
+                optic_search.bind("<Button-1>",lambda e: manage_option_menu(optic_search.winfo_rootx(),optic_search.winfo_rooty(),self.whole_light_database,optic_type_entry,optics=True))
+                alternative_search.bind("<Button-1>",lambda e: manage_option_menu(alternative_search.winfo_rootx(),alternative_search.winfo_rooty(),self.whole_light_database,alternative_entry,optics=True))
+
             else:
                 self.optic_light_option = "optic"
                 optic_type.configure(text = "Typ objektivu")
@@ -2788,6 +2889,10 @@ class Catalogue_gui:
                 button_prev_section_alternative.configure(state = "normal")
                 light_checkbox.deselect()
                 optics_checkbox.select()
+                optic_search.unbind("<Button-1>")
+                alternative_search.unbind("<Button-1>")
+                optic_search.bind("<Button-1>",lambda e: manage_option_menu(optic_search.winfo_rootx(),optic_search.winfo_rooty(),self.whole_optics_database,optic_type_entry,optics=True))
+                alternative_search.bind("<Button-1>",lambda e: manage_option_menu(alternative_search.winfo_rootx(),alternative_search.winfo_rooty(),self.whole_optics_database,alternative_entry,optics=True))
 
         def remaping_characters(event):
             if event.char == 'ì':
@@ -2824,7 +2929,52 @@ class Catalogue_gui:
             textbox_widget.delete("0.0","end")
             textbox_widget.insert("0.0",wrapped_text)
 
+        def manage_option_menu(x,y,values,entry_widget,optics=None):
+            class FakeContextMenu(customtkinter.CTkScrollableFrame):
+                def __init__(self, parent, values, command=None, **kwargs):
+                    super().__init__(parent, **kwargs)
+                    self.command = command
+                    self.buttons = []
+                    self.one_button_height = 50
+                    self._scrollbar.configure(width=30)
+
+                    for val in values:
+                        btn = customtkinter.CTkButton(self, text=str(val), font=("Arial", 20), fg_color="transparent", hover_color="gray25",
+                                            command=lambda v=val: self.on_select(v))
+                        btn.pack(fill="x", pady=2,expand=True)
+                        self.one_button_height = btn._current_height
+                        self.buttons.append(btn)
+
+                def on_select(self, value):
+                    if self.command:
+                        self.command(value)
+
+            def on_item_selected(value):
+                entry_widget.set(str(value))
+                window.destroy()
+
+            font = tkFont.Font(family="Arial", size=20)
+            max_width_px = max(font.measure(str(val)) for val in values) + 40  # Add some padding
+            window = customtkinter.CTkToplevel(child_root)
+            window.overrideredirect(True)
+            window.configure(bg="black")
+            listbox = FakeContextMenu(window, values, command=on_item_selected, width=max_width_px)
+            listbox.pack(fill="both",expand=True)
+            child_root.bind("<Button-1>", lambda e: window.destroy(), "+")
+
+            max_visible_items = 50
+            visible_items = min(len(values), max_visible_items)
+            total_height = visible_items * int(listbox.one_button_height)
+            if total_height > child_root._current_height-100-y:
+                total_height = child_root._current_height-100-y
+
+            if optics == True: #priznak aby pri maximalizovani nelezlo mimo obrazovku
+                x=x-max_width_px
+            window.geometry(f"{max_width_px}x{total_height}+{x}+{y}")
+
         child_root = customtkinter.CTkToplevel()
+        icon_small = 45
+        icon_large = 49
         # STANICE ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         station_frame =             customtkinter.CTkFrame(master = child_root,corner_radius=0,border_width=3)
         station_name_label =        customtkinter.CTkLabel(master = station_frame,text = "Název stanice:",font=("Arial",22,"bold"))
@@ -2853,7 +3003,7 @@ class Catalogue_gui:
         # KAMERY ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         
         camera_frame =                  customtkinter.CTkFrame(master = child_root,corner_radius=0,border_width=3)
-        counter_frame_cam =             customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="transparent")
+        counter_frame_cam =             customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
         button_prev_cam =               customtkinter.CTkButton(master = counter_frame_cam,text = "<",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: previous_camera())
         counter_cam =                   customtkinter.CTkLabel(master = counter_frame_cam,text = "0/0",font=("Arial",22,"bold"))
         button_next_cam =               customtkinter.CTkButton(master = counter_frame_cam,text = ">",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: next_camera())
@@ -2862,29 +3012,39 @@ class Catalogue_gui:
         button_next_cam                 .pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
 
         camera_type =                   customtkinter.CTkLabel(master = camera_frame,text = "Typ kamery:",font=("Arial",22,"bold"))
-        option_menu_frame_cam =         customtkinter.CTkFrame(master = camera_frame,corner_radius=0)
+        option_menu_frame_cam =         customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
         camera_type_entry =             customtkinter.CTkOptionMenu(master = option_menu_frame_cam,font=("Arial",22),dropdown_font=("Arial",22),width = 300,height=50,values=self.camera_type_database[self.camera_database_pointer],corner_radius=0)
         button_prev_section_cam =       customtkinter.CTkButton(master = option_menu_frame_cam,text = "<",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,
                                                             command=lambda: switch_database_section("prev",self.camera_type_database,camera_type_entry,"camera_type"))
         button_next_section_cam =       customtkinter.CTkButton(master = option_menu_frame_cam,text = ">",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,
                                                             command=lambda: switch_database_section("next",self.camera_type_database,camera_type_entry,"camera_type"))
+        camera_search =                 customtkinter.CTkLabel(master = option_menu_frame_cam,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        camera_search.                  bind("<Enter>",lambda e: camera_search._image.configure(size=(icon_large,icon_large)))
+        camera_search.                  bind("<Leave>",lambda e: camera_search._image.configure(size=(icon_small,icon_small)))
+        camera_search.                  bind("<Button-1>",lambda e: manage_option_menu(camera_search.winfo_rootx(),camera_search.winfo_rooty(),self.whole_camera_type_database,camera_type_entry))
         camera_type_entry               .pack(pady = 5, padx = (5,0),anchor="w",expand=True,side="left",fill="x")
         button_prev_section_cam         .pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
         button_next_section_cam         .pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+        camera_search                   .pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
 
         cam_cable =                     customtkinter.CTkLabel(master = camera_frame,text = "Kabel ke kameře:",font=("Arial",22,"bold"))
-        option_menu_frame_cable =       customtkinter.CTkFrame(master = camera_frame,corner_radius=0)
+        option_menu_frame_cable =       customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
         cam_cable_menu =                customtkinter.CTkOptionMenu(master = option_menu_frame_cable,font=("Arial",22),dropdown_font=("Arial",22),width = 300,height=50,values=self.camera_cable_database[self.camera_cable_database_pointer],corner_radius=0)
         button_prev_section_cable =     customtkinter.CTkButton(master = option_menu_frame_cable,text = "<",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,
                                                               command=lambda: switch_database_section("prev",self.camera_cable_database,cam_cable_menu,"cable_type"))
         button_next_section_cable =     customtkinter.CTkButton(master = option_menu_frame_cable,text = ">",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,
                                                               command=lambda: switch_database_section("next",self.camera_cable_database,cam_cable_menu,"cable_type"))
+        cable_search =                 customtkinter.CTkLabel(master = option_menu_frame_cable,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        cable_search.                  bind("<Enter>",lambda e: cable_search._image.configure(size=(icon_large,icon_large)))
+        cable_search.                  bind("<Leave>",lambda e: cable_search._image.configure(size=(icon_small,icon_small)))
+        cable_search.                  bind("<Button-1>",lambda e: manage_option_menu(cable_search.winfo_rootx(),cable_search.winfo_rooty(),self.whole_camera_cable_database,cam_cable_menu))
         cam_cable_menu                  .pack(pady = 5, padx = (5,0),anchor="w",expand=True,side="left",fill="x")
         button_prev_section_cable       .pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
         button_next_section_cable       .pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+        cable_search                    .pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
 
         controller =                    customtkinter.CTkLabel(master = camera_frame,text = "Kontroler:",font=("Arial",22,"bold"))
-        controller_frame =              customtkinter.CTkFrame(master = camera_frame,corner_radius=0)
+        controller_frame =              customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
         controller_entry =              customtkinter.CTkOptionMenu(master = controller_frame,font=("Arial",22),dropdown_font=("Arial",22),width=280,height=50,values=self.custom_controller_drop_list,corner_radius=0,fg_color="#212121",command=controller_opt_menu_color)
         new_controller =                customtkinter.CTkButton(master = controller_frame,text = "Přidat",font=("Arial",22,"bold"),width = 80,height=50,corner_radius=0,command=lambda: call_new_controller_gui())
         controller_entry.               pack(pady = 5, padx = (10,0),anchor="w",expand=True,side="left",fill="x")
@@ -2918,9 +3078,9 @@ class Catalogue_gui:
         button_prev_opt =                   customtkinter.CTkButton(master = counter_frame_optics,text = "<",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: previous_optic())
         counter_opt =                       customtkinter.CTkLabel(master = counter_frame_optics,text = "0/0",font=("Arial",22,"bold"))
         button_next_opt =                   customtkinter.CTkButton(master = counter_frame_optics,text = ">",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: next_optic())
-        button_prev_opt                     .pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
-        counter_opt                         .pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
-        button_next_opt                     .pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
+        button_prev_opt                     .pack(pady = 0, padx = (5,0),anchor="w",side="left")
+        counter_opt                         .pack(pady = 0, padx = (5,0),anchor="w",side="left")
+        button_next_opt                     .pack(pady = 0, padx = (5,0),anchor="w",side="left")
         checkbox_frame =                    customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="transparent")
         light_checkbox =                    customtkinter.CTkCheckBox(master = checkbox_frame, text = "Světla",font=("Arial",22,"bold"),command=lambda:optics_lights_switch())
         optics_checkbox =                   customtkinter.CTkCheckBox(master = checkbox_frame, text = "Objektivy",font=("Arial",22,"bold"),command=lambda:optics_lights_switch())
@@ -2928,27 +3088,38 @@ class Catalogue_gui:
         optics_checkbox                     .pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
 
         optic_type =                        customtkinter.CTkLabel(master = optics_frame,text = "Typ objektivu:",font=("Arial",22,"bold"))
-        option_menu_frame_optic =           customtkinter.CTkFrame(master = optics_frame,corner_radius=0)
+        option_menu_frame_optic =           customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
         optic_type_entry =                  customtkinter.CTkOptionMenu(master = option_menu_frame_optic,font=("Arial",22),dropdown_font=("Arial",22),width=300,height=50,values=self.optics_database[self.optics_database_pointer],corner_radius=0)
         button_prev_section_optic =         customtkinter.CTkButton(master = option_menu_frame_optic,text = "<",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,
                                                               command=lambda: switch_database_section("prev",self.optics_database,optic_type_entry,"optic"))
         button_next_section_optic =         customtkinter.CTkButton(master = option_menu_frame_optic,text = ">",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,
                                                               command=lambda: switch_database_section("next",self.optics_database,optic_type_entry,"optic"))
+        optic_search =                      customtkinter.CTkLabel(master = option_menu_frame_optic,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        optic_search.                       bind("<Enter>",lambda e: optic_search._image.configure(size=(icon_large,icon_large)))
+        optic_search.                       bind("<Leave>",lambda e: optic_search._image.configure(size=(icon_small,icon_small)))
+        optic_search.                       bind("<Button-1>",lambda e: manage_option_menu(optic_search.winfo_rootx(),optic_search.winfo_rooty(),self.whole_optics_database,optic_type_entry,optics=True))
         optic_type_entry                    .pack(pady = 5, padx = (5,0),anchor="w",expand=True,side="left",fill="x")
         button_prev_section_optic           .pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
         button_next_section_optic           .pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+        optic_search                        .pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
         manual_optics_input =               customtkinter.CTkEntry(master = optics_frame,font=("Arial",22),width=305,height=50,corner_radius=0,placeholder_text="manuálně")
 
         alternative_type =                  customtkinter.CTkLabel(master = optics_frame,text = "Alternativa:",font=("Arial",22,"bold"))
-        option_menu_frame_alternative =     customtkinter.CTkFrame(master = optics_frame,corner_radius=0)
+        option_menu_frame_alternative =     customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
         alternative_entry =                 customtkinter.CTkOptionMenu(master = option_menu_frame_alternative,font=("Arial",22),dropdown_font=("Arial",22),width=300,height=50,values=self.optics_database[self.optics_database_pointer],corner_radius=0)
         button_prev_section_alternative =   customtkinter.CTkButton(master = option_menu_frame_alternative,text = "<",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,
                                                               command=lambda: switch_database_section("prev",self.optics_database,alternative_entry,"optic"))
         button_next_section_alternative =   customtkinter.CTkButton(master = option_menu_frame_alternative,text = ">",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,
                                                               command=lambda: switch_database_section("next",self.optics_database,alternative_entry,"optic"))
+        
+        alternative_search =                customtkinter.CTkLabel(master = option_menu_frame_alternative,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        alternative_search.                 bind("<Enter>",lambda e: alternative_search._image.configure(size=(icon_large,icon_large)))
+        alternative_search.                 bind("<Leave>",lambda e: alternative_search._image.configure(size=(icon_small,icon_small)))
+        alternative_search.                 bind("<Button-1>",lambda e: manage_option_menu(alternative_search.winfo_rootx(),alternative_search.winfo_rooty(),self.whole_optics_database,alternative_entry,optics=True))
         alternative_entry                   .pack(pady = 5, padx = (5,0),anchor="w",expand=True,side="left",fill="x")
         button_prev_section_alternative     .pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
         button_next_section_alternative     .pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+        alternative_search                        .pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
         
         note2_label_frame =                  customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
         note2_label =                        customtkinter.CTkLabel(master = note2_label_frame,text = "Poznámky:",font=("Arial",22,"bold"))
@@ -2958,7 +3129,7 @@ class Catalogue_gui:
         import_notes2_btn.                   pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
         wrap_text_btn3.                      pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
         notes_input2 =                       customtkinter.CTkTextbox(master = optics_frame,font=("Arial",22),width=300,height=200,corner_radius=0,wrap= "word")
-        counter_frame_optics                .pack(pady=(10,0),padx=3,anchor="n",expand=False,side = "top")
+        counter_frame_optics                .pack(pady=(10,0),padx=3,anchor="n",side = "top")
         checkbox_frame                      .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
         optic_type                          .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
         option_menu_frame_optic             .pack(pady = (5,0), padx = 10,anchor="w",expand=False,side="top",fill="x")
@@ -3000,21 +3171,30 @@ class Catalogue_gui:
             nonlocal button_prev_opt
             nonlocal button_next_opt
 
-            def config_buttons(button_left,button_right,index,max_array_value):
+            to_add_tooltip_list = []
+
+            def config_buttons(button_left,button_right,index,max_array_value,product = "stanice"):
                 if index ==0:
+                    # child_root.after(10, lambda: Catalogue_gui.ToolTip(button_left,"",child_root,True))
                     button_left.configure(text = "",fg_color = "#636363")
                 else:
                     button_left.configure(text = "<",fg_color = "#636363")
+                    # child_root.after(10, lambda: Catalogue_gui.ToolTip(button_left,"",child_root,True))
+                    # child_root.after(100, lambda: Catalogue_gui.ToolTip(button_left,f" Předcházející {product} ",child_root,subwindow_status=True))
 
                 if index == max_array_value:
                     button_right.configure(text = "+",fg_color = "green")
+                    # child_root.after(10, lambda: Catalogue_gui.ToolTip(button_right,"",child_root,True))
+                    # child_root.after(100, lambda: Catalogue_gui.ToolTip(button_right,f" Nová {product} ",child_root,subwindow_status=True))
                 else:
                     button_right.configure(text = ">",fg_color = "#636363")
+                    # child_root.after(10, lambda: Catalogue_gui.ToolTip(button_right,"",child_root,True))
+                    # child_root.after(100, lambda: Catalogue_gui.ToolTip(button_right,f" Další {product} ",child_root,subwindow_status=True))
 
             config_buttons(button_prev_st,button_next_st,station_index,len(self.temp_station_list)-1)
-            config_buttons(button_prev_cam,button_next_cam,camera_index,len(self.temp_station_list[station_index]["camera_list"])-1)
+            config_buttons(button_prev_cam,button_next_cam,camera_index,len(self.temp_station_list[station_index]["camera_list"])-1,product="kamera")
             # try:
-            config_buttons(button_prev_opt,button_next_opt,optics_index,len(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"])-1)
+            config_buttons(button_prev_opt,button_next_opt,optics_index,len(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"])-1,product="optika")
             # except IndexError:
                 # pass
 
@@ -3174,10 +3354,23 @@ class Catalogue_gui:
 
         if self.default_subwindow_status == 1:
             child_root.state('zoomed')
+
         child_root.update()
         child_root.update_idletasks()
         child_root.focus_force()
         child_root.focus()
+        self.opened_window = child_root
+
+        # coords=[]
+        # # coords.append(self.root.winfo_rootx()+child_root.winfo_rootx()+button_next_opt.winfo_rootx())
+        # # coords.append(self.root.winfo_rooty()+child_root.winfo_rooty()+button_next_opt.winfo_rooty())
+        # print(button_next_opt.place_info())
+        # coords.append(button_next_opt.winfo_rootx() + button_next_opt._current_width)
+        # coords.append(button_next_opt.winfo_rooty() + button_next_opt._current_height)
+        # # coords = button_next_opt.winfo_rooty()
+        # # self.root.after(200, lambda: Catalogue_gui.ToolTip(button_next_opt,f" Nová stanice ",child_root,subwindow_status=True,coordinates=coords))
+        # Catalogue_gui.ToolTip(button_next_opt,f" Nová stanice ",child_root,subwindow_status=True,coordinates=coords)
+
         # child_root.grab_set()
         # child_root.grab_release()
 
@@ -3562,12 +3755,18 @@ class Catalogue_gui:
                         self.make_project_widgets()
                     return
                 
-                if input_data[0] == "set_render_mode":
+                elif input_data[0] == "set_render_mode":
                     self.render_mode = input_data[1]
                     return
                 
-                if input_data[0] != "":
+                elif input_data[0] == "hover_info_trigger_mode":
+                    self.hover_trigger_mode = input_data[1]
+                    self.make_project_widgets()
+                    return
+                
+                elif input_data[0] != "":
                     self.default_excel_filename = input_data[0]
+
                 if input_data[1] != "":
                     self.default_xml_file_name = input_data[1]
                 if input_data[2] != "":
@@ -3583,7 +3782,8 @@ class Catalogue_gui:
                                           apply_changes_callback,
                                           self.default_database_filename,
                                           self.detailed_view,
-                                          self.render_mode)
+                                          self.render_mode,
+                                          self.hover_trigger_mode)
             
         def call_menu_routine():
             ToplevelWindow(self.root,changes_check = self.changes_made).save_check(self.call_menu,self.call_save_metadata_gui)
@@ -3699,7 +3899,6 @@ class Catalogue_gui:
         self.project_tree               .pack(pady=5,padx=5,fill="both",expand=True,side = "top")
         self.make_project_widgets(initial = initial)
         Tools.add_colored_line(self.main_console,self.download_database_console_input[0],self.download_database_console_input[1],None,True)
-
         Catalogue_gui.ToolTip(export_button," Exporovat projekt ",self.root)
         Catalogue_gui.ToolTip(button_settings," Nastavení ",self.root)
         Catalogue_gui.ToolTip(save_button," Uložit projekt ",self.root)
@@ -4898,5 +5097,5 @@ class Save_excel:
 # Catalogue_gui(root,download.output)
 if testing:
     # Catalogue_gui(root,"testing - stahování vypnuto","","max",database_filename,"excel_testing","xml_testing",0,"xlsx","","fast")
-    Catalogue_gui(root,"testing - stahování vypnuto","","max","C:\\Users\\jakub.hlavacek.local\\Desktop\\JHV\\Work\\TRIMAZKON\\")
+    Catalogue_gui(root,"testing - stahování vypnuto","","max",r"C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/")
     root.mainloop()

@@ -935,18 +935,25 @@ TRIMAZKON - ip_setting - přidán tooltip na tlačítka
 TRIMAZKON - ip_setting - nové ikony místo tlačítek - hotovo
 TRIMAZKON - ip_setting - vylepšit vyhledávání na základě pár znaků - hotovo (opraveno vyhledávání...)
 TRIMAZKON - katalog - nové ikony místo tlačítek - hotovo
+
+2:49 PM 4/28/2025
+TRIMAZKON - katalog - nove kontextove nabidky - hotovo
+TRIMAZKON - přidat tlačítko nahrát licenci do nastavení - hotovo
+TRIMAZKON - jhv_IP - přidat tlačítko nahrát licenci do nastavení - hotovo
+TRIMAZKON - jhv_MAZ - přidat tlačítko nahrát licenci do nastavení - hotovo
+
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama, možná přesměrovat i edity a deletions/ uplne se zbavit excelu...
 
-TRIMAZKON - automatické stahování nové verze
+TRIMAZKON - automatické stahování nové verze + vyřešit přeinstalaci novou verzí (upgrade code)
 
 
 
 
 
-TRIMAZKON - katalog - nove kontextove nabidky
 
 
 ??? TRIMAZKON - msi - dodělat tlačítko <back do výběru programů??

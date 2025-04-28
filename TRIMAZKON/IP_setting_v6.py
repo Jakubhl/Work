@@ -1086,14 +1086,29 @@ class main:
         def bind_it(self):
             self.widget.bind("<Enter>",lambda e,widget = self.widget: self.really_entering(e,widget))
             self.widget.bind("<Leave>",lambda e,widget = self.widget: self.really_leaving(e,widget))
+            self.widget.bind("<Button-1>",lambda e: self.just_destroy(e))
+
+        def just_destroy(self,e,unbind=False):
+            try:
+                if unbind:
+                    self.widget.unbind("<Enter>")
+                    self.widget.unbind("<Leave>")
+                    self.widget.unbind("<Button-1>")
+                # self.tip_window.destroy()
+                self.root.after(0,self.tip_window.destroy)
+            except Exception as ee:
+                pass
 
         def really_entering(self,e,widget):
             if self.tip_window != None or self.long_task_called:
                 return
 
             def show_tooltip():
-                x = widget.winfo_rootx() + 50
-                y = widget.winfo_rooty() + int(widget.winfo_height())/2
+                # x = widget.winfo_rootx() + 50
+                # y = widget.winfo_rooty() + int(widget.winfo_height())/2
+                self.widget.master.update_idletasks()
+                x = self.widget.winfo_rootx()+self.widget._current_width
+                y = self.widget.winfo_rooty()+self.widget._current_height/2
                 self.tip_window = customtkinter.CTkLabel(
                     self.root,
                     text=self.text,
@@ -1102,8 +1117,11 @@ class main:
                     bg_color= "white"
 
                 )
+                # self.tip_window.place(x=x,y=y)
                 self.tip_window.place(x=x,y=y)
             show_tooltip()
+            self.tip_window.bind("<Leave>",lambda e,widget = self.widget: self.really_leaving(e,widget))
+
         
         def really_leaving(self,e,widget):
             if self.tip_window == None or self.long_task_called:

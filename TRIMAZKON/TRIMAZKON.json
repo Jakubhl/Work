@@ -4,7 +4,7 @@
         "maximalized": "ano",
         "show_changelog": "ne",
         "app_zoom": 80,
-        "app_zoom_checkbox": "ano",
+        "app_zoom_checkbox": "ne",
         "tray_icon_startup": "ano",
         "default_language": "cz"
     },
@@ -63,14 +63,15 @@
         "database_filename": "Sharepoint_databaze.xlsx",
         "catalogue_filename": "Katalog_kamerov\u00e9ho_vybaven\u00ed",
         "metadata_filename": "_metadata_catalogue",
-        "subwindow_behav": 0,
+        "subwindow_behav": 1,
         "default_export_suffix": "xlsx",
-        "default_path": "C:/Users/",
+        "default_path": "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/temp/",
         "render_mode": "fast",
         "path_history_list": [
             "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/",
             "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/temp/"
-        ]
+        ],
+        "hover_info_trigger_mode": "1"
     },
     "ip_settings": {
         "default_ip_interface": 0,
