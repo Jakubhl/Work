@@ -938,9 +938,14 @@ TRIMAZKON - katalog - nové ikony místo tlačítek - hotovo
 
 2:49 PM 4/28/2025
 TRIMAZKON - katalog - nove kontextove nabidky - hotovo
+TRIMAZKON - katalog - hover mode - hotovo
 TRIMAZKON - přidat tlačítko nahrát licenci do nastavení - hotovo
 TRIMAZKON - jhv_IP - přidat tlačítko nahrát licenci do nastavení - hotovo
 TRIMAZKON - jhv_MAZ - přidat tlačítko nahrát licenci do nastavení - hotovo
+
+1:58 PM 4/29/2025
+TRIMAZKON - automatické stahování nové verze + vyřešit přeinstalaci novou verzí (upgrade code) - hotovo
+TRIMAZKON - při zjištění nové verze mít možnost stáhnout si log nové verze - hotovo
 
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
@@ -948,12 +953,11 @@ ________________________________________________________________________________
 
 TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama, možná přesměrovat i edity a deletions/ uplne se zbavit excelu...
 
-TRIMAZKON - automatické stahování nové verze + vyřešit přeinstalaci novou verzí (upgrade code)
 
 
+TRIMAZKON - optimalizovat tooltip window
 
-
-
+TRIMAZKON - potřeba opravit katalog download a check app verze neni v rootu
 
 
 ??? TRIMAZKON - msi - dodělat tlačítko <back do výběru programů??

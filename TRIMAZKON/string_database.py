@@ -364,9 +364,13 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - opraveno .ifz + konvertování
     - oprava chování u poškozených souborů
     """
-        ,"\nVerze 4.3.4 (25.04.2025)"
+        ,"\nVerze 4.3.4 (29.04.2025)"
         ,
   """ 
+  TRIMAZKON:
+    - možnost nahrát licenci v nastavení
+    - autoupdate z sharepointu (hlídání verzí)
+    - instalace nového sw nejprve odinstaluje starou verzi
   ip_setting:
     - navýšená kapacita navrácení změn na 10 (u disků)
     - nově lze vrátit až 5 smazaných projektů (u disků)
@@ -375,6 +379,10 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - opraveno: změny v pozn. v komb. s posouváním
     - opraveno: dekódování názvu interfaců (diakritika)
     - opraveno: vyhledávání projektů
+  Katalog:
+    - nové ikony místo tlačítek
+    - nové kontextové nabídky pro výběr komponentů
+    - nový způsob zobrazení detailu buňek
     """
 ]
 

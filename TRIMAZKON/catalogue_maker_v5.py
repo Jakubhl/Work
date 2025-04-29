@@ -22,6 +22,7 @@ import tkinter.font as tkFont
 
 initial_path = ""
 testing = False
+
 if testing:
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme("dark-blue")
@@ -2031,7 +2032,7 @@ class Catalogue_gui:
         else:
             column_index = 3
 
-        if "chyba" in self.download_status or "nepodařilo" in self.download_status:
+        if "Chyba" in self.download_status or "chyba" in self.download_status or "epodařilo" in self.download_status:
             text_color = "red"
         else:
             text_color = "green"

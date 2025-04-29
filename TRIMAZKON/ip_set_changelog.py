@@ -16,7 +16,8 @@ change_log_list = [" Verze 1.0.0 (31.3.2025)",
     \n"""
         ," Verze 1.0.2 (25.4.2025)"
         ,
-    """ 
+    """
+    - možnost nahrát licenci v nastavení
     - navýšená kapacita navrácení změn na 10 (u disků)
     - nově lze vrátit až 5 smazaných projektů (u disků)
     - vizualizace aktivního dhcp

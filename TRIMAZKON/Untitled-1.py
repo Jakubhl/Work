@@ -1,6 +1,12 @@
 import sys
 from plyer import notification
 import psutil
+import subprocess
+import os
+import shlex
+import threading
+import time
+from multiprocessing import Process
 # CREATING TASK:
 # name_of_task = "dailyscript_test"
 # path_to_app = r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON\pipe_server\untitled2.py"
@@ -11,39 +17,56 @@ import psutil
 # name_of_task = "dailyscript_test"
 # cmd_command = f"schtasks /Delete /TN {name_of_task} /F"
 # connection_status = subprocess.call(cmd_command,shell=True,text=True)
-import customtkinter as ctk
-import pyperclip
+# msi_path = f"{initial_path}Installers/{wanted_installer}"
+def call_installer(msi_path):
+    # os.startfile(msi_path)
+    # return
+    # subprocess.run(msi_path, shell=True)
+    # subprocess.call(msi_path, shell=True,start_new_session=True)
 
-class CustomListbox(ctk.CTkScrollableFrame):
-    def __init__(self, parent, values, command=None, **kwargs):
-        super().__init__(parent, **kwargs)
+    # p = subprocess.Popen(["cmd.exe", "/c",msi_path],
+    #     cwd="/",
+    #     stdout=subprocess.PIPE,
+    #     stderr=subprocess.STDOUT)
+    
+    # process_handler = subprocess.Popen(["cmd.exe", "/c",msi_path], 
+    #                                    creationflags=subprocess.DETACHED_PROCESS)
+    cmd = str(msi_path)
+    cmds = shlex.split(cmd)
+    # p = subprocess.Popen(["cmd.exe", "/c",str(msi_path)], start_new_session=True)
+    p = subprocess.Popen(msi_path,shell=True, start_new_session=True)
+    # sys.exit(0)
 
-        self.command = command
-        self.buttons = []
+    # subprocess.Popen(
+    #     ["cmd.exe", "/c",msi_path],
+    #     # start_new_session=True,
+    #     creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP,
+    #     close_fds=True,
+    #     stdout=subprocess.DEVNULL,
+    #     stderr=subprocess.DEVNULL
 
-        for val in values:
-            btn = ctk.CTkButton(self, text=str(val), font=("Arial", 20), fg_color="transparent", hover_color="gray25",
-                                command=lambda v=val: self.on_select(v))
-            btn.pack(fill="x", pady=2)
-            self.buttons.append(btn)
+    # )
 
-    def on_select(self, value):
-        if self.command:
-            self.command(value)
+def exit_and_launch(msi_path):
+    # Wrap the path in quotes to handle spaces and avoid extra escape characters
+    cmd = f'timeout /t 3 && {msi_path}'
+    
+    # Run the command in a new subprocess
+    subprocess.Popen(["cmd.exe", "/c", msi_path],
+                     creationflags=subprocess.CREATE_BREAKAWAY_FROM_JOB | subprocess.CREATE_NO_WINDOW,
+                     )
+    
+msi_path = "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/Installers/TRIMAZKON-4.3.3-win64.msi"
 
-def on_item_selected(value):
-    pyperclip.copy(value)
-    print(f"Copied {value} to clipboard")
+exit_and_launch(msi_path)
+# childProc = threading.Thread(target=exit_and_launch,args = [msi_path])
+# childProc.start()
+time.sleep(3)
+# childProc.join()
+# xx = threading.Thread(target=exit_and_launch,args=[msi_path])
+# xx.start()
 
-app = ctk.CTk()
-app.geometry("400x400")
-
-values = [f"Item {i}" for i in range(50)]
-
-listbox = CustomListbox(app, values, command=on_item_selected, width=200, height=300)
-listbox.pack(pady=20)
-
-app.mainloop()
+# k=input("kkt?")
 
 # def call_test():
 #     notification.notify(

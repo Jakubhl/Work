@@ -3980,7 +3980,10 @@ class main:
             self.project_tree.update()
             self.project_tree.update_idletasks()
             if len(self.all_project_list) > 0:
-                self.notes_frame_height = int(notes_frame._current_height)
+                try:
+                    self.notes_frame_height = int(notes_frame._current_height)
+                except Exception:
+                    pass
             try:
                 self.project_tree._parent_canvas.yview_moveto(0.0)
             except Exception:

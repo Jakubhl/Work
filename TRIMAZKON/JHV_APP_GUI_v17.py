@@ -648,6 +648,79 @@ if not open_image_only:
                 window.deiconify()
                 window.wait_window()
         
+        @classmethod
+        def download_new_version_window(cls,new_version,given_log,language_given="cz"):
+            def close_prompt(child_root):
+                child_root.grab_release()
+                child_root.destroy()
+
+            def download_the_app():
+                def call_installer(msi_path):
+                    cmd = f'timeout /t 2 && {msi_path}'
+                    subprocess.Popen(["cmd.exe", "/c", cmd],
+                                    creationflags=subprocess.CREATE_BREAKAWAY_FROM_JOB | subprocess.CREATE_NO_WINDOW)
+
+                wanted_installer = f"TRIMAZKON-{new_version}-win64.msi"
+                sharepoint_instance = download_database.database(wanted_installer,download_new_installer=True)
+                output = str(sharepoint_instance.output)
+                if "úspěšně" in output:
+                    if language_given == "en":
+                        Tools.add_colored_line(console,"New installer successfully downloaded","green",delete_line=True)
+                    else:
+                        Tools.add_colored_line(console,output,"green",delete_line=True)
+                else:
+                    if language_given == "en":
+                        Tools.add_colored_line(console,"New installer download failed","red",delete_line=True)
+                    else:
+                        Tools.add_colored_line(console,output,"red",delete_line=True)
+                msi_path = f"{initial_path}Installers/{wanted_installer}"
+                call_installer(msi_path)
+                child_root.after(1000,lambda: Tools.terminate_pid(os.getpid())) #vypnout thread i s tray aplikací
+                
+            prompt_message1 = f"Je k dispozici nová verze aplikace: {new_version} !"
+            prompt_message2 = f"Upgrade log:"
+            title_message = "Upozornění"
+            if language_given == "en":
+                prompt_message1 = f"New app version available: {new_version} !"
+                prompt_message2 = f"Upgrade log:"
+                title_message = "Notice"
+                
+            child_root = customtkinter.CTkToplevel(fg_color="#212121")
+            child_root.after(200, lambda: child_root.iconbitmap(app_icon))
+            child_root.title(title_message)
+            label_frame =       customtkinter.CTkFrame(master = child_root,corner_radius=0)
+            proceed_label =     customtkinter.CTkLabel(master = label_frame,text = prompt_message1,font=("Arial",25,"bold"),anchor="w",justify="left")
+            proceed_label2 =    customtkinter.CTkLabel(master = label_frame,text = prompt_message2,font=("Arial",20),anchor="w",justify="left")
+            proceed_label.      pack(pady=(5,0),padx=10,anchor="w",side = "top")
+            proceed_label2.     pack(pady=(5,0),padx=10,anchor="w",side = "top")
+            label_frame.        pack(pady=0,padx=0,anchor="w",side = "top",fill="x")
+            text_frame =        customtkinter.CTkFrame(master = child_root,corner_radius=0,fg_color="#212121")
+            text_widget =       customtkinter.CTkTextbox(master = text_frame,font=("Arial",22),corner_radius=0,wrap= "word",height=300)
+            for rows in given_log:
+                text_widget.insert(tk.END,str(rows)+"\n")
+
+            console =           tk.Text(master = text_frame,background="black", wrap="none",borderwidth=0,height=0,state=tk.DISABLED,font=("Arial",20))
+            text_widget.        pack(pady=(10,0),padx=10,anchor="w",side = "top",fill="both")
+            console.            pack(pady=(10,0),padx=10,anchor="w",side = "top",fill="x")
+            text_frame.         pack(pady=0,padx=0,anchor="w",side = "top",fill="both",expand = True)
+            text_widget.        configure(state="disabled")
+            button_frame =      customtkinter.CTkFrame(master = child_root,corner_radius=0)
+            button_close =      customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+            button_dwnld =      customtkinter.CTkButton(master = button_frame,text = "Stáhnout novou verzi",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  download_the_app())
+            button_close.       pack(pady = 10, padx = (0,10),anchor="e",side="right")
+            button_dwnld.       pack(pady = 10, padx = (0,10),anchor="e",side="right")
+            button_frame.       pack(pady=0,padx=0,anchor="w",side = "top",fill="x")
+
+            if language_given == "en":
+                button_close.configure(text = "Close")
+                button_dwnld.configure(text = "Download the new version")
+            child_root.update()
+            child_root.update_idletasks()
+            child_root.geometry(f"800x{child_root._current_height}")
+            child_root.focus()
+            child_root.focus_force()
+            child_root.grab_set()
+
     class WindowsBalloonTip:
         """
         Windows system notification (balloon tip).
@@ -1666,6 +1739,41 @@ if not open_image_only:
             ip_set_instance = IP_setting.main(None,None,None,initial_path,None,config_filename,True)
             ip_set_instance.IP_tools.manual_ip_setting(app_icon_path=app_icon,output_callback=output_callback)
 
+        @classmethod
+        def check_for_new_app_version(cls,language_given = "cz"):
+            new_version_log_name = "new_version_log.txt"
+            version_list = []
+            current_app_version = app_version.replace(".","")
+            current_app_version = int(current_app_version)
+            print("current version: ",current_app_version)
+            sharepoint_instance = download_database.database("",search_for_version=True)
+            installer_name_list = sharepoint_instance.output
+            if len(installer_name_list) > 0:
+                for names in installer_name_list:
+                    if names == new_version_log_name:
+                        continue
+                    name_splitted = names.split("-")
+                    if name_splitted[0] == "TRIMAZKON":
+                        version_list.append(name_splitted[1])
+            version_list_int = []
+            for versions in version_list:
+                versions = versions.replace(".","")
+                version_list_int.append(int(versions))
+
+            print(version_list_int)
+            max_sharepoint_version = max(version_list_int)
+            if current_app_version < max_sharepoint_version:
+                print("new_version_available")
+                if language_given == "en":
+                    root.title(f"{app_name} v_{app_version} (version is not up to date)")
+                else:
+                    root.title(f"{app_name} v_{app_version} (neaktuální verze)")
+                sharepoint_instance = download_database.database(new_version_log_name,get_new_version_log=True)
+                new_version_log = sharepoint_instance.output
+                max_sharepoint_version = str(max_sharepoint_version)
+                max_sharepoint_version_str = max_sharepoint_version[0]+"."+max_sharepoint_version[1]+"."+max_sharepoint_version[2]
+                Subwindows.download_new_version_window(max_sharepoint_version_str,new_version_log)
+
 class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
     """
     aby bylo možné posílat běžící aplikaci parametry:
@@ -2250,6 +2358,10 @@ if not open_image_only:
                     licence_info_status.configure(text=f"{validity_string}")
                 else:
                     licence_info_status.configure(text=f"platná do {app_licence_validity}")
+
+                if initial:
+                    check_version = threading.Thread(target=Tools.check_for_new_app_version,)
+                    self.root.after(500,check_version.start)
 
             # initial promenna aby se to nespoustelo porad do kola pri navratu do menu (system argumenty jsou stále uložené v aplikaci)
             if len(sys.argv) > 1 and initial == True:
