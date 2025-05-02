@@ -21,7 +21,7 @@ import json
 import tkinter.font as tkFont
 
 initial_path = ""
-testing = False
+testing = True
 
 if testing:
     customtkinter.set_appearance_mode("dark")
@@ -303,7 +303,7 @@ class Tools:
             Tools.save_to_json_config(current_paths,which_settings,"path_history_list")
     
     @classmethod
-    def call_path_context_menu(cls,master,entry_widget,menu_btn,items_given = False):
+    def call_path_context_menu(cls,master,entry_widget,menu_btn,items_given = False,combine_path_items=False,given_path=None):
         if items_given==False:
             path_history = Tools.read_json_config()["catalogue_settings"]["path_history_list"]
         else:
@@ -311,7 +311,14 @@ class Tools:
         print(path_history)
         def insert_path(path):
             entry_widget.delete("0","200")
-            entry_widget.insert("0", path)
+            if combine_path_items:
+                def check_dir(path):
+                    if os.path.isfile(path):
+                        path = os.path.dirname(path) + "/"
+                    return path
+                entry_widget.insert("0", check_dir(given_path) + path)
+            else:
+                entry_widget.insert("0", path)
         if len(path_history) > 0:
             path_context_menu = tk.Menu(master, tearoff=0,fg="white",bg="black")
             for i in range(0,len(path_history)):
@@ -507,7 +514,7 @@ class ToplevelWindow:
                                  default_xml_file_name="_metadata_catalogue",
                                  default_path = "",
                                  exit_status = False,
-                                 only_save = False):
+                                 only_save = True):
         """
         okno s možnostmi uložení rozdělaného projektu
         """
@@ -741,6 +748,157 @@ class ToplevelWindow:
         # x = root.winfo_rootx()
         # y = root.winfo_rooty()
         # window.geometry(f"{window.winfo_width()}x{window.winfo_height()}+{x+250}+{y+150}")
+        window.after(100,window.focus_force())
+        window.focus()
+
+    @classmethod
+    def load_prog_window(cls,
+                        root,
+                        app_icon_path,
+                        custom_controller_database,
+                        main_console,
+                        station_list,
+                        project_name,
+                        callback,
+                        callback_save_last_file,
+                        last_file = None,
+                        last_path = "",
+                        default_xml_file_name = "_metadata_catalogue",
+                        default_path = "",
+                        exit_status = False
+                        ):
+        """
+        okno s možnostmi uložení rozdělaného projektu
+        """
+        window = customtkinter.CTkToplevel(fg_color="#212121")
+        # window.geometry(f"1015x350+{self.x+200}+{self.y+50}")
+        window.after(200, lambda: window.iconbitmap(app_icon_path))
+        window.title("Možnosti importování projektu")
+        subwindow = ""
+
+        def close_window(window,button = None):
+            nonlocal subwindow
+            try:
+                if subwindow.winfo_exists():
+                    subwindow.destroy()
+            except Exception:
+                pass
+            window.destroy()
+            if button:
+                callback_save_last_file(None,None,None)
+        
+        def call_load_file(window):
+            path_inserted = export_path.get()
+            if os.path.exists(path_inserted):
+                save_prog = Save_prog_metadata(station_list=station_list,project_name=project_name,controller_database=custom_controller_database,console=console)
+                try:
+                    received_data = save_prog.read_xml_data(path_inserted)
+                    Tools.add_colored_line(main_console,f"Data úspěšně nahrána z: {path_inserted}","green",None,True)
+                    callback(received_data)
+                    # ulozit posledně načtený soubor
+                    # file_name = export_name.get()
+                    # callback_save_last_file(file_name,path_inserted,None,True)
+                    window.destroy()
+                except Exception:
+                    Tools.add_colored_line(console,f"Soubor .xml je neplatný: {path_inserted}","red",None,True)
+                    # window.destroy()
+            else:
+                Tools.add_colored_line(console,f"Zadaná cesta {path_inserted} nebyla nalezena","red",None,True)
+
+        def call_browse_directories(what_search,file_extension = [("All files", "*.*")]):
+            """
+            Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
+            """
+            def check_dir(path):
+                if os.path.isfile(path):
+                    path = os.path.dirname(path) + "/"
+                return path
+            start_path_to_give = check_dir(export_path.get())
+            if not os.path.exists(start_path_to_give):
+                start_path_to_give = None
+            output = Tools.browseDirectories(what_search,start_path=start_path_to_give,file_type=file_extension)
+            if str(output[1]) != "/":
+                export_path.delete(0,300)
+                export_path.insert(0, str(output[1]) + str(output[2]))
+                Tools.add_new_path_to_history(str(output[1]),"catalogue_settings")
+                Tools.add_colored_line(console,"Byla vložena cesta a název souboru","green",None,True)
+            print(output[0])
+
+            window.focus_force()
+            window.focus()
+
+        def search_for_xmls(path):
+            found_files = []
+            def listdir_safe(path):
+                if os.path.isfile(path):
+                    path = os.path.dirname(path)  # Use the parent directory
+                return os.listdir(path)
+            for files in listdir_safe(path):
+                if ".xml" in files:
+                    if not files in found_files:
+                        found_files.append(files)
+            return found_files
+
+        export_frame =          customtkinter.CTkFrame(master = window,corner_radius=0,fg_color="#212121")
+        export_label =          customtkinter.CTkLabel(master = export_frame,text = "Vyberte soubor:",font=("Arial",22,"bold"))
+        export_name_frame =     customtkinter.CTkFrame(master = export_frame,corner_radius=0,fg_color="#212121")
+        context_menu_button  =  customtkinter.CTkButton(master = export_name_frame, width = 50,height=50, text = "V",font=("Arial",20,"bold"),corner_radius=0,fg_color="#505050")
+        export_path =           customtkinter.CTkEntry(master = export_name_frame,font=("Arial",20),width=1000,height=50,corner_radius=0)
+        explorer_btn_name =     customtkinter.CTkButton(master = export_name_frame,text = "...",font=("Arial",22,"bold"),width = 50,height=50,corner_radius=0,command=lambda: call_browse_directories("all",[("XML files", "*.xml"),("All files", "*.*")]))
+        # format_entry =          customtkinter.CTkOptionMenu(master = export_name_frame,font=("Arial",22),dropdown_font=("Arial",22),values=[".xml"],height=50,corner_radius=0)
+        context_menu_button     .pack(pady = 5, padx = (5,0),anchor="w",side="left")
+        export_path             .pack(pady = 5, padx = 0,anchor="w",fill="x",expand=True,side="left")
+        # format_entry            .pack(pady = 5, padx = 10,anchor="e",expand=False,side="right")
+        explorer_btn_name       .pack(pady = 5, padx = 5,anchor="e",expand=False,side="right")
+        console =               tk.Text(export_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),borderwidth=0,state=tk.DISABLED)
+        button_frame =          customtkinter.CTkFrame(master = export_frame,corner_radius=0,fg_color="#212121")
+        button_load =           customtkinter.CTkButton(master = button_frame,text = "Nahrát",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: call_load_file(window))
+        button_exit =           customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window,True))
+        button_exit             .pack(pady = 10, padx = (5,10),expand=False,side="right",anchor = "e")
+        button_load             .pack(pady = 10, padx = 5,expand=False,side="right",anchor = "e")
+        export_frame            .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left")
+        export_label            .pack(pady=(15,5),padx=10,anchor="w",expand=False,side="top")
+        export_name_frame       .pack(expand=False,side="top",anchor="n",fill="x")
+        console                 .pack(padx = 5,expand=False,side="top",anchor="n",fill="x")
+        button_frame            .pack(pady = 0, padx = (0),side="top",fill="x",anchor = "w")
+
+        context_menu_button.bind("<Button-1>", lambda e: Tools.call_path_context_menu(window,export_path,context_menu_button,search_for_xmls(export_path.get()),combine_path_items=True,given_path=export_path.get()))
+
+        if exit_status:
+            button_load.configure(state = "disabled")
+
+        def get_last_path():
+            nonlocal default_path
+            checked_last_path = Tools.path_check(last_path)
+            default_path = Tools.path_check(default_path)
+            if checked_last_path != False and checked_last_path != None and checked_last_path.replace(" ","") != "" and checked_last_path.replace(" ","") != "/":
+                initial_path = str(checked_last_path)
+                Tools.add_colored_line(console,"Byla vložena posledně zvolená cesta","green",None,True)
+                return Tools.resource_path(str(checked_last_path))
+
+            elif default_path != False and default_path != None and default_path.replace(" ","") != "" and default_path.replace(" ","") != "/":
+                initial_path = str(default_path)
+                Tools.add_colored_line(console,"Byla vložena uložená cesta z konfiguračního souboru","green",None,True)
+                return Tools.resource_path(str(default_path))
+            else:
+                return Tools.resource_path(str(initial_path))
+
+        def get_last_xml():
+            found_xmls = search_for_xmls(initial_path)
+            if len(found_xmls) > 0:
+                print("nalezené soubory xml: ",found_xmls)
+                return str(found_xmls[0])
+            else:
+                return ""
+            
+        export_path.insert("0",get_last_path() + get_last_xml())
+        
+        root.bind("<Button-1>",lambda e: close_window(window))
+        window.update()
+        window.update_idletasks()
+        # x = root.winfo_rootx()
+        # y = root.winfo_rooty()
+        # window.geometry(f"900x{window._current_height}")
         window.after(100,window.focus_force())
         window.focus()
 
@@ -1014,7 +1172,6 @@ class ToplevelWindow:
         console =           tk.Text(export_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED)
         button_save =       customtkinter.CTkButton(master = export_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: call_save_file(child_root))
         button_exit =       customtkinter.CTkButton(master = export_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(child_root))
-
         export_frame        .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left")
         export_label        .pack(pady=(15,5),padx=10,anchor="w",expand=False,side="top")
         export_name_frame   .pack(expand=True,side="top",anchor="n",fill="x")
@@ -1834,36 +1991,46 @@ class Catalogue_gui:
             self.coords = coordinates
             self.subwindow_status = subwindow_status
             if unbind:
-                self.just_destroy("",unbind=True)
+                self.unbind_all("",self.widget)
             else:
                 self.bind_it()
 
         def bind_it(self):
-            self.widget.bind("<Enter>",lambda e,widget = self.widget: self.really_entering(e,widget))
-            self.widget.bind("<Leave>",lambda e,widget = self.widget: self.really_leaving(e,widget))
-            self.widget.bind("<Button-1>",lambda e: self.just_destroy(e))
+            self.widget.bind("<Enter>",lambda e,widget = self.widget: self.really_entering(e,widget),"+")
+            self.widget.bind("<Leave>",lambda e,widget = self.widget: self.really_leaving(e,widget),"+")
+            self.widget.bind("<Button-1>",lambda e,widget = self.widget:self.just_destroy(e,widget),"+")
 
-        def just_destroy(self,e,unbind=False):
+        def unbind_all(self,e,widget):
             try:
-                if unbind:
-                    self.widget.unbind("<Enter>")
-                    self.widget.unbind("<Leave>")
-                    self.widget.unbind("<Button-1>")
-                # self.tip_window.destroy()
+                self.tip_window.update_idletasks()
+                # print("destroying")
+                self.tip_window.destroy()
                 self.root.after(0,self.tip_window.destroy)
             except Exception as ee:
                 pass
+            widget.unbind("<Enter>")
+            widget.unbind("<Leave>")
+            widget.unbind("<Button-1>")
+
+        def just_destroy(self,e,widget,unbind=True):
+            if self.tip_window:
+                try:
+                    # self.tip_window.update_idletasks()
+                    # self.tip_window.destroy()
+                    self.root.after(0,self.tip_window.destroy)
+                except Exception as ee:
+                    print(ee)
+                    pass
+            # self.tip_window = None
+            
 
         def really_entering(self,e,widget):
             if self.tip_window != None:
                 return
 
             def show_tooltip():
-                self.widget.master.update_idletasks()
-                x = self.widget.winfo_rootx()+self.widget._current_width
-                y = self.widget.winfo_rooty()+self.widget._current_height
-                # x = self.widget.winfo_rootx()
-                # y = self.widget.winfo_rooty()
+                x = self.root.winfo_pointerx() +self.widget.winfo_width()
+                y = self.root.winfo_pointery() +self.widget.winfo_height()
                 self.tip_window = customtkinter.CTkLabel(
                     self.root,
                     text=self.text,
@@ -1871,26 +2038,65 @@ class Catalogue_gui:
                     text_color="black",
                     bg_color= "white"
                 )
-                # if self.callback != None:
-                #     self.callback(self.tip_window,self.widget)
-                #     # self.tip_window.place(x=int(x),y=int(y))
-                #     return
-                # x=self.coords[0]
-                # y=self.coords[1]
-                # print(x,y)
-                self.tip_window.place(x=x+self.tip_window._current_width/2,y=y+self.tip_window._current_height/2)
-                # self.tip_window.place(x=x,y=y)
-                # self.tip_window.pack()
+                self.tip_window.place(x=x,y=y)
 
-            show_tooltip()
+            # def show_tooltip_toplevel():
+            #     x = self.root.winfo_pointerx()
+            #     y = self.root.winfo_pointery()
 
-            # self.tip_window.place_configure(x=self.widget.winfo_rootx()+self.widget.winfo_x(),y=self.widget.winfo_rooty())
-            # self.widget.master.update_idletasks()
-            # self.widget.update_idletasks()
-            # x = self.widget.winfo_rootx()+self.widget._current_width
-            # y = self.widget.winfo_rooty()+self.widget._current_height
-            # self.tip_window.place_configure(x=x,y= y)
-            self.tip_window.bind("<Leave>",lambda e,widget = widget: self.really_leaving(e,widget))
+            #     # Create a toplevel tooltip window
+            #     self.tip_window = customtkinter.CTkToplevel(root)
+            #     self.tip_window.overrideredirect(True)  # Remove title bar
+            #     self.tip_window.attributes("-topmost", True)  # Bring to front
+
+            #     # Set geometry at pointer position
+            #     self.tip_window.geometry(f"+{x}+{y}")
+
+            #     # Add label inside the toplevel
+            #     label = customtkinter.CTkLabel(
+            #         self.tip_window,
+            #         text=self.text,
+            #         font=("Arial", 20),
+            #         text_color="black",
+            #         bg_color="white"
+            #     )
+            #     label.pack()
+            #     # self.tip_window.place(x=x,y=y)
+            #     # self.tip_window.pack()
+
+            def show_tooltip_v2(e):
+                screen_x = self.root.winfo_pointerx()
+                screen_y = self.root.winfo_pointery()
+                # parent_x = self.root.winfo_rootx()+self.widget.winfo_width()
+                # parent_y = self.root.winfo_rooty()-self.widget.winfo_height()
+                
+                parent_x = self.root.winfo_rootx()+e.x
+                parent_y = self.root.winfo_rooty()+e.y
+
+                local_x = screen_x - parent_x -self.widget.winfo_width()
+                # self.widget.update_idletasks()
+                # local_x = self.widget.winfo_rootx()+self.widget.winfo_width()
+                local_y = screen_y - parent_y +self.widget.winfo_height()
+                # local_y = self.widget.winfo_rooty()-self.widget.winfo_height()
+                self.tip_window = customtkinter.CTkLabel(
+                    self.root,
+                    text=self.text,
+                    font=("Arial", 20),
+                    text_color="black",
+                    bg_color= "white"
+                )
+                self.tip_window.place(x=local_x,y=local_y)
+                self.tip_window.update_idletasks()
+                # tip_window_width = int(self.tip_window.winfo_width())
+                tip_window_width = int(self.tip_window._current_width)
+                # print(tip_window_width)
+                self.tip_window.place_configure(x=local_x+tip_window_width/2,y = local_y)
+
+            if self.subwindow_status:
+                show_tooltip_v2(e)
+            else:
+                show_tooltip()
+            self.tip_window.bind("<Leave>",lambda e,widget = self.widget:self.really_leaving(e,widget))
         
         def really_leaving(self,e,widget):
             if self.tip_window == None:
@@ -3075,14 +3281,16 @@ class Catalogue_gui:
         if "" in self.optics_database:
             self.optics_database.pop(self.optics_database.index(""))
         optics_frame =                      customtkinter.CTkFrame(master = child_root,corner_radius=0,border_width=3)
-        counter_frame_optics =              customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="transparent")
+        counter_frame_optics =              customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
+        # counter_mini_frame_optics =         customtkinter.CTkFrame(master = counter_frame_optics,corner_radius=0,fg_color="#212121")
         button_prev_opt =                   customtkinter.CTkButton(master = counter_frame_optics,text = "<",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: previous_optic())
         counter_opt =                       customtkinter.CTkLabel(master = counter_frame_optics,text = "0/0",font=("Arial",22,"bold"))
-        button_next_opt =                   customtkinter.CTkButton(master = counter_frame_optics,text = ">",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: next_optic())
+        self.button_next_opt =              customtkinter.CTkButton(master = counter_frame_optics,text = ">",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: next_optic())
         button_prev_opt                     .pack(pady = 0, padx = (5,0),anchor="w",side="left")
         counter_opt                         .pack(pady = 0, padx = (5,0),anchor="w",side="left")
-        button_next_opt                     .pack(pady = 0, padx = (5,0),anchor="w",side="left")
-        checkbox_frame =                    customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="transparent")
+        self.button_next_opt                .pack(pady = 0, padx = (5,0),anchor="w",side="left")
+        # counter_mini_frame_optics           .pack(pady = 0, padx = 0,anchor="n",side="top",expand=True)
+        checkbox_frame =                    customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
         light_checkbox =                    customtkinter.CTkCheckBox(master = checkbox_frame, text = "Světla",font=("Arial",22,"bold"),command=lambda:optics_lights_switch())
         optics_checkbox =                   customtkinter.CTkCheckBox(master = checkbox_frame, text = "Objektivy",font=("Arial",22,"bold"),command=lambda:optics_lights_switch())
         light_checkbox                      .pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
@@ -3131,7 +3339,7 @@ class Catalogue_gui:
         wrap_text_btn3.                      pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
         notes_input2 =                       customtkinter.CTkTextbox(master = optics_frame,font=("Arial",22),width=300,height=200,corner_radius=0,wrap= "word")
         counter_frame_optics                .pack(pady=(10,0),padx=3,anchor="n",side = "top")
-        checkbox_frame                      .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
+        checkbox_frame                      .pack(pady = 5, padx = 10,anchor="n",expand=False,side="top")
         optic_type                          .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
         option_menu_frame_optic             .pack(pady = (5,0), padx = 10,anchor="w",expand=False,side="top",fill="x")
         manual_optics_input                 .pack(pady = 0, padx = 15,anchor="w",expand=False,side="top",fill="x")
@@ -3170,32 +3378,48 @@ class Catalogue_gui:
             nonlocal button_prev_cam
             nonlocal button_next_cam
             nonlocal button_prev_opt
-            nonlocal button_next_opt
+            # nonlocal self.button_next_opt
 
-            to_add_tooltip_list = []
+            def unbind_tooltip(widget):
+                widget.event_generate("<Button-1>")
+                widget.unbind("<Enter>")
+                widget.unbind("<Leave>")
+                widget.unbind("<Button-1>")
 
             def config_buttons(button_left,button_right,index,max_array_value,product = "stanice"):
+                button_left.configure(state="normal")
+                button_left.event_generate("<Button-1>")
+                button_right.configure(state="normal")
+                button_right.event_generate("<Button-1>")
+                
                 if index ==0:
-                    # child_root.after(10, lambda: Catalogue_gui.ToolTip(button_left,"",child_root,True))
-                    button_left.configure(text = "",fg_color = "#636363")
+                    child_root.after(10, lambda: unbind_tooltip(button_left))
+                    # child_root.after(10, lambda: Catalogue_gui.ToolTip(button_left,"",child_root,unbind=True))
+                    button_left.configure(text = "",fg_color = "#636363",state = "disabled")
                 else:
                     button_left.configure(text = "<",fg_color = "#636363")
-                    # child_root.after(10, lambda: Catalogue_gui.ToolTip(button_left,"",child_root,True))
-                    # child_root.after(100, lambda: Catalogue_gui.ToolTip(button_left,f" Předcházející {product} ",child_root,subwindow_status=True))
+                    child_root.after(10, lambda: unbind_tooltip(button_left))
+                    # child_root.after(10, lambda: Catalogue_gui.ToolTip(button_left,"",child_root,unbind=True))
+                    child_root.after(100, lambda: Catalogue_gui.ToolTip(button_left,f" Předcházející {product} ",child_root,subwindow_status=True))
+                    # Catalogue_gui.ToolTip(button_left,f" Předcházející {product} ",child_root,subwindow_status=True)
 
                 if index == max_array_value:
                     button_right.configure(text = "+",fg_color = "green")
-                    # child_root.after(10, lambda: Catalogue_gui.ToolTip(button_right,"",child_root,True))
-                    # child_root.after(100, lambda: Catalogue_gui.ToolTip(button_right,f" Nová {product} ",child_root,subwindow_status=True))
+                    child_root.after(10, lambda: unbind_tooltip(button_right))
+                    # child_root.after(10, lambda: Catalogue_gui.ToolTip(button_right,"",child_root,unbind=True))
+                    child_root.after(100, lambda: Catalogue_gui.ToolTip(button_right,f" Nová {product} ",child_root,subwindow_status=True))
+                    # Catalogue_gui.ToolTip(button_right,f" Nová {product} ",child_root,subwindow_status=True)
                 else:
                     button_right.configure(text = ">",fg_color = "#636363")
-                    # child_root.after(10, lambda: Catalogue_gui.ToolTip(button_right,"",child_root,True))
-                    # child_root.after(100, lambda: Catalogue_gui.ToolTip(button_right,f" Další {product} ",child_root,subwindow_status=True))
+                    child_root.after(10, lambda: unbind_tooltip(button_right))
+                    # child_root.after(10, lambda: Catalogue_gui.ToolTip(button_right,"",child_root,unbind=True))
+                    child_root.after(100, lambda: Catalogue_gui.ToolTip(button_right,f" Další {product} ",child_root,subwindow_status=True))
+                    # Catalogue_gui.ToolTip(button_right,f" Další {product} ",child_root,subwindow_status=True)
 
             config_buttons(button_prev_st,button_next_st,station_index,len(self.temp_station_list)-1)
             config_buttons(button_prev_cam,button_next_cam,camera_index,len(self.temp_station_list[station_index]["camera_list"])-1,product="kamera")
             # try:
-            config_buttons(button_prev_opt,button_next_opt,optics_index,len(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"])-1,product="optika")
+            config_buttons(button_prev_opt,self.button_next_opt,optics_index,len(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"])-1,product="optika")
             # except IndexError:
                 # pass
 
@@ -3362,18 +3586,17 @@ class Catalogue_gui:
         child_root.focus()
         self.opened_window = child_root
 
-        # coords=[]
-        # # coords.append(self.root.winfo_rootx()+child_root.winfo_rootx()+button_next_opt.winfo_rootx())
-        # # coords.append(self.root.winfo_rooty()+child_root.winfo_rooty()+button_next_opt.winfo_rooty())
-        # print(button_next_opt.place_info())
-        # coords.append(button_next_opt.winfo_rootx() + button_next_opt._current_width)
-        # coords.append(button_next_opt.winfo_rooty() + button_next_opt._current_height)
-        # # coords = button_next_opt.winfo_rooty()
-        # # self.root.after(200, lambda: Catalogue_gui.ToolTip(button_next_opt,f" Nová stanice ",child_root,subwindow_status=True,coordinates=coords))
-        # Catalogue_gui.ToolTip(button_next_opt,f" Nová stanice ",child_root,subwindow_status=True,coordinates=coords)
+        
+        # Catalogue_gui.ToolTip(self.button_next_opt,"Další optika",child_root)
+        # Catalogue_gui.ToolTip(self.button_next_opt,"blabla",child_root)
+        # Catalogue_gui.ToolTip(self.button_next_opt,"blabla",child_root)
+        # Catalogue_gui.ToolTip(self.button_next_opt,"blabla",child_root)
+
+        # self.root.after(200, lambda: self.call_tooltips(child_root))
 
         # child_root.grab_set()
         # child_root.grab_release()
+        
 
     def edit_object(self,args,widget_tier,new_station = False,rewrite_temp = False):
         if rewrite_temp:
@@ -3636,20 +3859,34 @@ class Catalogue_gui:
             if exiting_status:
                 self.call_menu()
 
-        ToplevelWindow.save_prog_options_window(self.root,
-                                                self.app_icon_path,
-                                                self.controller_object_list,
-                                                self.main_console,
-                                                self.station_list,
-                                                self.project_name_input.get(),
-                                                self.load_metadata_callback,
-                                                callback_save_last_input,
-                                                self.last_xml_filename,
-                                                self.last_path_input,
-                                                self.default_xml_file_name,
-                                                self.default_path,
-                                                exit_status = exiting_status,
-                                                only_save=only_save_flag)
+        if only_save_flag:
+            ToplevelWindow.save_prog_options_window(self.root,
+                                                    self.app_icon_path,
+                                                    self.controller_object_list,
+                                                    self.main_console,
+                                                    self.station_list,
+                                                    self.project_name_input.get(),
+                                                    self.load_metadata_callback,
+                                                    callback_save_last_input,
+                                                    self.last_xml_filename,
+                                                    self.last_path_input,
+                                                    self.default_xml_file_name,
+                                                    self.default_path,
+                                                    exit_status = exiting_status)
+        else:
+            ToplevelWindow.load_prog_window(self.root,
+                                            self.app_icon_path,
+                                            self.controller_object_list,
+                                            self.main_console,
+                                            self.station_list,
+                                            self.project_name_input.get(),
+                                            self.load_metadata_callback,
+                                            callback_save_last_input,
+                                            self.last_xml_filename,
+                                            self.last_path_input,
+                                            self.default_xml_file_name,
+                                            self.default_path,
+                                            exit_status = exiting_status)
 
     def copy_objects(self,widget_tier):
         if len(widget_tier) == 2:
@@ -3900,10 +4137,10 @@ class Catalogue_gui:
         self.project_tree               .pack(pady=5,padx=5,fill="both",expand=True,side = "top")
         self.make_project_widgets(initial = initial)
         Tools.add_colored_line(self.main_console,self.download_database_console_input[0],self.download_database_console_input[1],None,True)
-        Catalogue_gui.ToolTip(export_button," Exporovat projekt ",self.root)
-        Catalogue_gui.ToolTip(button_settings," Nastavení ",self.root)
-        Catalogue_gui.ToolTip(save_button," Uložit projekt ",self.root)
-        Catalogue_gui.ToolTip(load_button," Nahrát projekt ",self.root)
+        Catalogue_gui.ToolTip(export_button," Exporovat projekt ",self.root,None)
+        Catalogue_gui.ToolTip(button_settings," Nastavení ",self.root,None)
+        Catalogue_gui.ToolTip(save_button," Uložit projekt ",self.root,None)
+        Catalogue_gui.ToolTip(load_button," Nahrát projekt ",self.root,None)
 
         def show_initial_context_menu(event):
             if len(self.station_list) == 0:

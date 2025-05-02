@@ -1106,9 +1106,11 @@ class main:
             def show_tooltip():
                 # x = widget.winfo_rootx() + 50
                 # y = widget.winfo_rooty() + int(widget.winfo_height())/2
-                self.widget.master.update_idletasks()
-                x = self.widget.winfo_rootx()+self.widget._current_width
-                y = self.widget.winfo_rooty()+self.widget._current_height/2
+                # self.widget.master.update_idletasks()
+                # x = self.widget.winfo_rootx()+self.widget._current_width
+                # y = self.widget.winfo_rooty()+self.widget._current_height/2
+                x = self.root.winfo_pointerx()
+                y = self.root.winfo_pointery()
                 self.tip_window = customtkinter.CTkLabel(
                     self.root,
                     text=self.text,

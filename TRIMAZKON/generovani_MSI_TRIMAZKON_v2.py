@@ -76,7 +76,7 @@ setup(
         },
         "bdist_msi": {
             "upgrade_code": "{12345678-1234-5678-1234-567812345678}",  # Unique GUID
-            "product_code": "{EEEE5555-FFFF-0000-GGGG-7777HHHH8888}",  # NEW every version
+            "product_code": "{EEEE5555-FFFF-0001-GGGG-7777HHHH8888}",  # NEW every version
             "add_to_path": True,  # Do not add to system PATH
             "data": msi_data,
         },            
