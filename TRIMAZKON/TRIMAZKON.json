@@ -1,10 +1,10 @@
 {
     "app_settings": {
-        "default_path": "C:/Users/jakub.hlavacek.local/Desktop/JHV/Omron/Obrazky pro kameru/",
+        "default_path": "C:/Users/jakub.hlavacek.local/Downloads/",
         "maximalized": "ano",
         "show_changelog": "ne",
         "app_zoom": 80,
-        "app_zoom_checkbox": "ne",
+        "app_zoom_checkbox": "ano",
         "tray_icon_startup": "ano",
         "default_language": "cz"
     },
@@ -51,9 +51,11 @@
         "copyed_dir_name": "Kop\u00edrovan\u00e9_obr\u00e1zky",
         "moved_dir_name": "P\u0159esunut\u00e9_obr\u00e1zky",
         "path_history_list": [
+            "C:/Users/jakub.hlavacek.local/Desktop/JHV/test_images/Omron/Sn\u00edmkySC01_MS500SA/",
+            "C:/Users/jakub.hlavacek.local/Downloads/",
             "C:/Users/jakub.hlavacek.local/Desktop/JHV/Omron/Obrazky pro kameru/",
-            "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/New folder/",
             "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/",
+            "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/New folder/",
             "C:/Users/jakub.hlavacek.local/Desktop/JHV/test_images/Keyence/_503_Witte/datumovka/A/Func_0001/",
             "C:/Users/jakub.hlavacek.local/Desktop/JHV/test_images/",
             "C:/Users/jakub.hlavacek.local/Desktop/JHV/Omron/Obrazky pro kameru/Konvertovane_BMP/"
@@ -102,7 +104,9 @@
                 "fav_status": "1",
                 "new_name": "527_Teijin"
             }
-        ]
+        ],
+        "deleted_project_bin_disk": [],
+        "edited_project_bin_disk": []
     },
     "task_list": [
         {

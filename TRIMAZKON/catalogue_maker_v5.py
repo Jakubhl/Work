@@ -21,7 +21,7 @@ import json
 import tkinter.font as tkFont
 
 initial_path = ""
-testing = True
+testing = False
 
 if testing:
     customtkinter.set_appearance_mode("dark")
@@ -1996,9 +1996,9 @@ class Catalogue_gui:
                 self.bind_it()
 
         def bind_it(self):
-            self.widget.bind("<Enter>",lambda e,widget = self.widget: self.really_entering(e,widget),"+")
-            self.widget.bind("<Leave>",lambda e,widget = self.widget: self.really_leaving(e,widget),"+")
-            self.widget.bind("<Button-1>",lambda e,widget = self.widget:self.just_destroy(e,widget),"+")
+            self.widget.bind("<Enter>",lambda e,widget = self.widget: self.really_entering(e,widget))
+            self.widget.bind("<Leave>",lambda e,widget = self.widget: self.really_leaving(e,widget))
+            self.widget.bind("<Button-1>",lambda e,widget = self.widget:self.just_destroy(e,widget))
 
         def unbind_all(self,e,widget):
             try:
@@ -2013,71 +2013,32 @@ class Catalogue_gui:
             widget.unbind("<Button-1>")
 
         def just_destroy(self,e,widget,unbind=True):
-            if self.tip_window:
-                try:
-                    # self.tip_window.update_idletasks()
-                    # self.tip_window.destroy()
-                    self.root.after(0,self.tip_window.destroy)
-                except Exception as ee:
-                    print(ee)
-                    pass
-            # self.tip_window = None
+            # if self.tip_window:
+            print("clicked")
+            try:
+                self.tip_window.update_idletasks()
+            except Exception:
+                pass
+            try:
+                self.tip_window.destroy()
+                # self.root.after(0,self.tip_window.destroy)
+            except Exception as ee:
+                # print(ee)
+                pass
+            self.tip_window = None
             
 
         def really_entering(self,e,widget):
             if self.tip_window != None:
                 return
 
-            def show_tooltip():
-                x = self.root.winfo_pointerx() +self.widget.winfo_width()
-                y = self.root.winfo_pointery() +self.widget.winfo_height()
-                self.tip_window = customtkinter.CTkLabel(
-                    self.root,
-                    text=self.text,
-                    font=("Arial", 20),
-                    text_color="black",
-                    bg_color= "white"
-                )
-                self.tip_window.place(x=x,y=y)
-
-            # def show_tooltip_toplevel():
-            #     x = self.root.winfo_pointerx()
-            #     y = self.root.winfo_pointery()
-
-            #     # Create a toplevel tooltip window
-            #     self.tip_window = customtkinter.CTkToplevel(root)
-            #     self.tip_window.overrideredirect(True)  # Remove title bar
-            #     self.tip_window.attributes("-topmost", True)  # Bring to front
-
-            #     # Set geometry at pointer position
-            #     self.tip_window.geometry(f"+{x}+{y}")
-
-            #     # Add label inside the toplevel
-            #     label = customtkinter.CTkLabel(
-            #         self.tip_window,
-            #         text=self.text,
-            #         font=("Arial", 20),
-            #         text_color="black",
-            #         bg_color="white"
-            #     )
-            #     label.pack()
-            #     # self.tip_window.place(x=x,y=y)
-            #     # self.tip_window.pack()
-
             def show_tooltip_v2(e):
                 screen_x = self.root.winfo_pointerx()
                 screen_y = self.root.winfo_pointery()
-                # parent_x = self.root.winfo_rootx()+self.widget.winfo_width()
-                # parent_y = self.root.winfo_rooty()-self.widget.winfo_height()
-                
                 parent_x = self.root.winfo_rootx()+e.x
                 parent_y = self.root.winfo_rooty()+e.y
-
-                local_x = screen_x - parent_x -self.widget.winfo_width()
-                # self.widget.update_idletasks()
-                # local_x = self.widget.winfo_rootx()+self.widget.winfo_width()
+                local_x = screen_x - parent_x +self.widget.winfo_width()
                 local_y = screen_y - parent_y +self.widget.winfo_height()
-                # local_y = self.widget.winfo_rooty()-self.widget.winfo_height()
                 self.tip_window = customtkinter.CTkLabel(
                     self.root,
                     text=self.text,
@@ -2085,17 +2046,15 @@ class Catalogue_gui:
                     text_color="black",
                     bg_color= "white"
                 )
-                self.tip_window.place(x=local_x,y=local_y)
+                self.tip_window.place(x=-200,y=-200)
                 self.tip_window.update_idletasks()
-                # tip_window_width = int(self.tip_window.winfo_width())
-                tip_window_width = int(self.tip_window._current_width)
-                # print(tip_window_width)
-                self.tip_window.place_configure(x=local_x+tip_window_width/2,y = local_y)
+                if self.subwindow_status:
+                    self.tip_window.place_configure(x=local_x,y = local_y)
+                else:
+                    self.tip_window.place_configure(x=local_x,y = local_y+10)
+                # self.tip_window.place(x=local_x+tip_window_width/2,y = local_y)
 
-            if self.subwindow_status:
-                show_tooltip_v2(e)
-            else:
-                show_tooltip()
+            show_tooltip_v2(e)
             self.tip_window.bind("<Leave>",lambda e,widget = self.widget:self.really_leaving(e,widget))
         
         def really_leaving(self,e,widget):
@@ -3381,47 +3340,32 @@ class Catalogue_gui:
             # nonlocal self.button_next_opt
 
             def unbind_tooltip(widget):
-                widget.event_generate("<Button-1>")
                 widget.unbind("<Enter>")
                 widget.unbind("<Leave>")
                 widget.unbind("<Button-1>")
 
             def config_buttons(button_left,button_right,index,max_array_value,product = "stanice"):
-                button_left.configure(state="normal")
-                button_left.event_generate("<Button-1>")
-                button_right.configure(state="normal")
-                button_right.event_generate("<Button-1>")
-                
                 if index ==0:
-                    child_root.after(10, lambda: unbind_tooltip(button_left))
-                    # child_root.after(10, lambda: Catalogue_gui.ToolTip(button_left,"",child_root,unbind=True))
-                    button_left.configure(text = "",fg_color = "#636363",state = "disabled")
+                    button_left.event_generate("<Button-1>")
+                    button_left.unbind("<Enter>")
+                    button_left.configure(text = "",fg_color = "#636363")
                 else:
                     button_left.configure(text = "<",fg_color = "#636363")
-                    child_root.after(10, lambda: unbind_tooltip(button_left))
-                    # child_root.after(10, lambda: Catalogue_gui.ToolTip(button_left,"",child_root,unbind=True))
+                    unbind_tooltip(button_left)
                     child_root.after(100, lambda: Catalogue_gui.ToolTip(button_left,f" Předcházející {product} ",child_root,subwindow_status=True))
-                    # Catalogue_gui.ToolTip(button_left,f" Předcházející {product} ",child_root,subwindow_status=True)
 
                 if index == max_array_value:
                     button_right.configure(text = "+",fg_color = "green")
-                    child_root.after(10, lambda: unbind_tooltip(button_right))
-                    # child_root.after(10, lambda: Catalogue_gui.ToolTip(button_right,"",child_root,unbind=True))
+                    unbind_tooltip(button_right)
                     child_root.after(100, lambda: Catalogue_gui.ToolTip(button_right,f" Nová {product} ",child_root,subwindow_status=True))
-                    # Catalogue_gui.ToolTip(button_right,f" Nová {product} ",child_root,subwindow_status=True)
                 else:
                     button_right.configure(text = ">",fg_color = "#636363")
-                    child_root.after(10, lambda: unbind_tooltip(button_right))
-                    # child_root.after(10, lambda: Catalogue_gui.ToolTip(button_right,"",child_root,unbind=True))
+                    unbind_tooltip(button_right)
                     child_root.after(100, lambda: Catalogue_gui.ToolTip(button_right,f" Další {product} ",child_root,subwindow_status=True))
-                    # Catalogue_gui.ToolTip(button_right,f" Další {product} ",child_root,subwindow_status=True)
 
             config_buttons(button_prev_st,button_next_st,station_index,len(self.temp_station_list)-1)
             config_buttons(button_prev_cam,button_next_cam,camera_index,len(self.temp_station_list[station_index]["camera_list"])-1,product="kamera")
-            # try:
             config_buttons(button_prev_opt,self.button_next_opt,optics_index,len(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"])-1,product="optika")
-            # except IndexError:
-                # pass
 
         def initial_prefill():
             nonlocal station_index
@@ -3431,7 +3375,6 @@ class Catalogue_gui:
             new_name.delete(0,300)
             new_name.insert(0,str(self.temp_station_list[station_index]["name"]))
             new_description.delete("0.0","end")
-            # new_description.insert("1.0",filter_text_input(str(self.temp_station_list[station_index]["inspection_description"])))
             new_description.insert("0.0",str(self.temp_station_list[station_index]["inspection_description"]))
             # initial prefill - camera:
             try:
@@ -3585,14 +3528,6 @@ class Catalogue_gui:
         child_root.focus_force()
         child_root.focus()
         self.opened_window = child_root
-
-        
-        # Catalogue_gui.ToolTip(self.button_next_opt,"Další optika",child_root)
-        # Catalogue_gui.ToolTip(self.button_next_opt,"blabla",child_root)
-        # Catalogue_gui.ToolTip(self.button_next_opt,"blabla",child_root)
-        # Catalogue_gui.ToolTip(self.button_next_opt,"blabla",child_root)
-
-        # self.root.after(200, lambda: self.call_tooltips(child_root))
 
         # child_root.grab_set()
         # child_root.grab_release()

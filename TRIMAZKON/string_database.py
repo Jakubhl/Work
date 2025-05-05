@@ -364,7 +364,7 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - opraveno .ifz + konvertování
     - oprava chování u poškozených souborů
     """
-        ,"\nVerze 4.3.4 (29.04.2025)"
+        ,"\nVerze 4.3.4 (05.05.2025)"
         ,
   """ 
   TRIMAZKON:
@@ -375,7 +375,7 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - navýšená kapacita navrácení změn na 10 (u disků)
     - nově lze vrátit až 5 smazaných projektů (u disků)
     - vizualizace aktivního dhcp
-    - přidán toottip na tlačítkách + nová vizual.
+    - přidán tooltip na tlačítkách + nová vizual.
     - opraveno: změny v pozn. v komb. s posouváním
     - opraveno: dekódování názvu interfaců (diakritika)
     - opraveno: vyhledávání projektů
@@ -383,6 +383,7 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - nové ikony místo tlačítek
     - nové kontextové nabídky pro výběr komponentů
     - nový způsob zobrazení detailu buňek
+    - přidán tooltip na tlačítkách
     """
 ]
 

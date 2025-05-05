@@ -1088,41 +1088,46 @@ class main:
             self.widget.bind("<Leave>",lambda e,widget = self.widget: self.really_leaving(e,widget))
             self.widget.bind("<Button-1>",lambda e: self.just_destroy(e))
 
-        def just_destroy(self,e,unbind=False):
+        def just_destroy(self,e,widget,unbind=True):
+            # if self.tip_window:
+            print("clicked")
             try:
-                if unbind:
-                    self.widget.unbind("<Enter>")
-                    self.widget.unbind("<Leave>")
-                    self.widget.unbind("<Button-1>")
-                # self.tip_window.destroy()
-                self.root.after(0,self.tip_window.destroy)
-            except Exception as ee:
+                self.tip_window.update_idletasks()
+            except Exception:
                 pass
+            try:
+                self.tip_window.destroy()
+                # self.root.after(0,self.tip_window.destroy)
+            except Exception as ee:
+                # print(ee)
+                pass
+            self.tip_window = None
+            
 
         def really_entering(self,e,widget):
-            if self.tip_window != None or self.long_task_called:
+            if self.tip_window != None:
                 return
 
-            def show_tooltip():
-                # x = widget.winfo_rootx() + 50
-                # y = widget.winfo_rooty() + int(widget.winfo_height())/2
-                # self.widget.master.update_idletasks()
-                # x = self.widget.winfo_rootx()+self.widget._current_width
-                # y = self.widget.winfo_rooty()+self.widget._current_height/2
-                x = self.root.winfo_pointerx()
-                y = self.root.winfo_pointery()
+            def show_tooltip_v2(e):
+                screen_x = self.root.winfo_pointerx()
+                screen_y = self.root.winfo_pointery()
+                parent_x = self.root.winfo_rootx()+e.x
+                parent_y = self.root.winfo_rooty()+e.y
+                local_x = screen_x - parent_x +self.widget.winfo_width()
+                local_y = screen_y - parent_y +self.widget.winfo_height()
                 self.tip_window = customtkinter.CTkLabel(
                     self.root,
                     text=self.text,
                     font=("Arial", 20),
                     text_color="black",
                     bg_color= "white"
-
                 )
-                # self.tip_window.place(x=x,y=y)
-                self.tip_window.place(x=x,y=y)
-            show_tooltip()
-            self.tip_window.bind("<Leave>",lambda e,widget = self.widget: self.really_leaving(e,widget))
+                self.tip_window.place(x=-200,y=-200)
+                self.tip_window.update_idletasks()
+                self.tip_window.place_configure(x=local_x,y = local_y+10)
+
+            show_tooltip_v2(e)
+            self.tip_window.bind("<Leave>",lambda e,widget = self.widget:self.really_leaving(e,widget))
 
         
         def really_leaving(self,e,widget):
@@ -2586,15 +2591,15 @@ class main:
             project_label =                 customtkinter.CTkLabel(master = first_row_frame,height=40,text = "Projekt: ",font=("Arial",20,"bold"),justify="left",anchor="w")
             self.search_input =             customtkinter.CTkEntry(master = first_row_frame,font=("Arial",20),width=160,height=40,placeholder_text="Název projektu",corner_radius=0)
             # button_search =                 customtkinter.CTkButton(master = first_row_frame, width = 150,height=40,text = "Vyhledat",command =  lambda: self.make_project_first_disk("search"),font=("Arial",20,"bold"),corner_radius=0)
-            search_icon =                   customtkinter.CTkLabel(master = first_row_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/SearchWhite.png")),size=(32, 32)),bg_color="#212121")
-            search_icon.bind("<Enter>",lambda e: search_icon._image.configure(size=(36,36)))
-            search_icon.bind("<Leave>",lambda e: search_icon._image.configure(size=(32,32)))
-            search_icon.bind("<Button-1>",lambda e: self.make_project_first_disk("search"))
+            search_icon =                   customtkinter.CTkLabel(master = first_row_frame,width=36,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/SearchWhite.png")),size=(32, 32)),bg_color="#212121")
+            search_icon.                    bind("<Enter>",lambda e: search_icon._image.configure(size=(36,36)))
+            search_icon.                    bind("<Leave>",lambda e: search_icon._image.configure(size=(32,32)))
+            search_icon.                    bind("<Button-1>",lambda e: self.make_project_first_disk("search"))
             # button_add =                    customtkinter.CTkButton(master = first_row_frame, width = 150,height=40,text = "Nový projekt", command = lambda: self.add_new_project_disk(),font=("Arial",20,"bold"),corner_radius=0)
-            new_project_icon =               customtkinter.CTkLabel(master = first_row_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/green_plus.png")),size=(32, 32)),bg_color="#212121")
-            new_project_icon.bind("<Enter>",lambda e: new_project_icon._image.configure(size=(36,36)))
-            new_project_icon.bind("<Leave>",lambda e: new_project_icon._image.configure(size=(32,32)))
-            new_project_icon.bind("<Button-1>",lambda e: self.add_new_project_disk())
+            new_project_icon =              customtkinter.CTkLabel(master = first_row_frame,width=36,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/green_plus.png")),size=(32, 32)),bg_color="#212121")
+            new_project_icon.               bind("<Enter>",lambda e: new_project_icon._image.configure(size=(36,36)))
+            new_project_icon.               bind("<Leave>",lambda e: new_project_icon._image.configure(size=(32,32)))
+            new_project_icon.               bind("<Button-1>",lambda e: self.add_new_project_disk())
             button_remove =                 customtkinter.CTkButton(master = first_row_frame, width = 100,height=40,text = "Smazat", command =  lambda: self.delete_project_disk(flag="main_menu"),font=("Arial",20,"bold"),corner_radius=0)
             self.undo_button =              customtkinter.CTkButton(master = first_row_frame, width = 50,height=40,text = "↶", command =  lambda: self.manage_bin(flag="load_deleted_disk"),font=("",28,"bold"),corner_radius=0,border_width=1,text_color="red")
             button_edit =                   customtkinter.CTkButton(master = first_row_frame, width = 110,height=40,text = "Editovat",command =  lambda: edit_project(),font=("Arial",20,"bold"),corner_radius=0)
@@ -2606,23 +2611,23 @@ class main:
             button_settings =               customtkinter.CTkButton(master = first_row_frame, width = 40,height=40,text="⚙️",command =  lambda: self.setting_window(),font=("",22),corner_radius=0)
             # second_row_frame =              customtkinter.CTkFrame(master=self.main_widgets,corner_radius=0,fg_color="#212121")
             # delete_disk =                   customtkinter.CTkButton(master = second_row_frame, width = 250,height=40,text = "Odpojit síťový disk",command =  lambda: self.delete_disk_option_menu(),font=("Arial",20,"bold"),corner_radius=0,fg_color="red")
-            unplug_icon =               customtkinter.CTkLabel(master = first_row_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/unplug.png")),size=(32, 32)),bg_color="#212121")
-            unplug_icon.bind("<Enter>",lambda e: unplug_icon._image.configure(size=(36,36)))
-            unplug_icon.bind("<Leave>",lambda e: unplug_icon._image.configure(size=(32,32)))
-            unplug_icon.bind("<Button-1>",lambda e: self.delete_disk_option_menu())
+            unplug_icon =                   customtkinter.CTkLabel(master = first_row_frame,width=36,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/unplug.png")),size=(32, 32)),bg_color="#212121")
+            unplug_icon.                    bind("<Enter>",lambda e: unplug_icon._image.configure(size=(36,36)))
+            unplug_icon.                    bind("<Leave>",lambda e: unplug_icon._image.configure(size=(32,32)))
+            unplug_icon.                    bind("<Button-1>",lambda e: self.delete_disk_option_menu())
             # reset =                         customtkinter.CTkButton(master = second_row_frame, width = 200,height=40,text = "Reset exploreru",command = lambda: self.refresh_explorer(refresh_disk=True),font=("Arial",20,"bold"),corner_radius=0)
-            reset_icon =               customtkinter.CTkLabel(master = first_row_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/reset.png")),size=(32, 32)),bg_color="#212121")
-            reset_icon.bind("<Enter>",lambda e: reset_icon._image.configure(size=(36,36)))
-            reset_icon.bind("<Leave>",lambda e: reset_icon._image.configure(size=(32,32)))
-            reset_icon.bind("<Button-1>",lambda e: self.refresh_explorer(refresh_disk=True))
+            reset_icon =                    customtkinter.CTkLabel(master = first_row_frame,width=36,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/reset.png")),size=(32, 32)),bg_color="#212121")
+            reset_icon.                     bind("<Enter>",lambda e: reset_icon._image.configure(size=(36,36)))
+            reset_icon.                     bind("<Leave>",lambda e: reset_icon._image.configure(size=(32,32)))
+            reset_icon.                     bind("<Button-1>",lambda e: self.refresh_explorer(refresh_disk=True))
             # self.refresh_btn =              customtkinter.CTkButton(master = second_row_frame, width = 200,height=40,text = "Refresh statusů",command = lambda: self.refresh_disk_statuses(silent=False),font=("Arial",20,"bold"),corner_radius=0)
-            refresh_icon =               customtkinter.CTkLabel(master = first_row_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/refresh.png")),size=(32, 32)),bg_color="#212121")
-            refresh_icon.bind("<Enter>",lambda e: refresh_icon._image.configure(size=(36,36)))
-            refresh_icon.bind("<Leave>",lambda e: refresh_icon._image.configure(size=(32,32)))
-            refresh_icon.bind("<Button-1>",lambda e: self.refresh_disk_statuses(silent=False))
+            refresh_icon =                  customtkinter.CTkLabel(master = first_row_frame,text = "",width=36,image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/refresh.png")),size=(32, 32)),bg_color="#212121")
+            refresh_icon.                   bind("<Enter>",lambda e: refresh_icon._image.configure(size=(36,36)))
+            refresh_icon.                   bind("<Leave>",lambda e: refresh_icon._image.configure(size=(32,32)))
+            refresh_icon.                   bind("<Button-1>",lambda e: self.refresh_disk_statuses(silent=False))
             as_admin_label =                customtkinter.CTkLabel(master = first_row_frame,text = "",font=("Arial",20,"bold"))
             third_row_frame =               customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#212121")
-            self.main_console =             tk.Text(third_row_frame, wrap="none", height=0,background="black",font=("Arial",22),state=tk.DISABLED)
+            self.main_console =             tk.Text(third_row_frame, wrap="none", height=0,background="black",font=("Arial",22),borderwidth=0,state=tk.DISABLED)
             project_label.                  pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             self.search_input.              pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             # button_search.                  pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
@@ -2645,7 +2650,7 @@ class main:
             # self.refresh_btn.               pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             refresh_icon.                   pack(pady = (10,0),padx =(10,0),anchor="w",side="left")
             as_admin_label.                 pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
-            self.main_console.              pack(pady = (0,0),padx =(5,0),anchor="w",side="top",fill="x",expand=False)
+            self.main_console.              pack(pady = (0,0),padx =(5,0),anchor="w",side="top",fill="x",expand=False,ipady=3,ipadx=3)
             first_row_frame.                pack(pady=0,padx=0,fill="x",side = "top")
             # second_row_frame.               pack(pady=0,padx=0,fill="x",side = "top")
             main_menu_button.               pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
@@ -4441,13 +4446,13 @@ class main:
             project_label =             customtkinter.CTkLabel(master = first_row_frame, width = 100,height=40,text = "Projekt: ",font=("Arial",20,"bold"),justify="left",anchor="w")
             self.search_input =         customtkinter.CTkEntry(master = first_row_frame,font=("Arial",20),width=160,height=40,placeholder_text="Název projektu",corner_radius=0)
             # button_search =             customtkinter.CTkButton(master = first_row_frame, width = 150,height=40,text = "Vyhledat",command =  lambda: self.make_project_first("search"),font=("Arial",20,"bold"),corner_radius=0)
-            search_icon =               customtkinter.CTkLabel(master = first_row_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/SearchWhite.png")),size=(32, 32)),bg_color="#212121")
+            search_icon =               customtkinter.CTkLabel(master = first_row_frame,width=36,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/SearchWhite.png")),size=(32, 32)),bg_color="#212121")
             search_icon.bind("<Enter>",lambda e: search_icon._image.configure(size=(36,36)))
             search_icon.bind("<Leave>",lambda e: search_icon._image.configure(size=(32,32)))
             search_icon.bind("<Button-1>",lambda e: self.make_project_first("search"))
             # self.button_add_main =      customtkinter.CTkButton(master = first_row_frame, width = 150,height=40,text = "Nový projekt", command = lambda: self.add_new_project(),font=("Arial",20,"bold"),corner_radius=0)
             
-            new_project_icon =               customtkinter.CTkLabel(master = first_row_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/green_plus.png")),size=(32, 32)),bg_color="#212121")
+            new_project_icon =               customtkinter.CTkLabel(master = first_row_frame,width=36,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/green_plus.png")),size=(32, 32)),bg_color="#212121")
             new_project_icon.bind("<Enter>",lambda e: new_project_icon._image.configure(size=(36,36)))
             new_project_icon.bind("<Leave>",lambda e: new_project_icon._image.configure(size=(32,32)))
             new_project_icon.bind("<Button-1>",lambda e: self.add_new_project())
@@ -4493,7 +4498,7 @@ class main:
             self.interface_drop_options =   customtkinter.CTkOptionMenu(master = second_row_frame,width=200,height=40,font=("Arial",20,"bold"),dropdown_font=("Arial",20),corner_radius=0,command=  self.option_change)
             # "⚙️", "⚒", "🔧", "🔩"
             # button_settings =               customtkinter.CTkButton(master = second_row_frame, width = 40,height=40,text="⚒",command =  lambda: self.refresh_interfaces(all=True),font=("",22),corner_radius=0) #refresh interface statusů
-            refresh_icon =               customtkinter.CTkLabel(master = second_row_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/refresh.png")),size=(32, 32)),bg_color="#212121")
+            refresh_icon =               customtkinter.CTkLabel(master = second_row_frame,width=36,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/refresh.png")),size=(32, 32)),bg_color="#212121")
             refresh_icon.bind("<Enter>",lambda e: refresh_icon._image.configure(size=(36,36)))
             refresh_icon.bind("<Leave>",lambda e: refresh_icon._image.configure(size=(32,32)))
             refresh_icon.bind("<Button-1>",lambda e: self.refresh_interfaces(all=True))
@@ -4503,7 +4508,7 @@ class main:
             online_label =                  customtkinter.CTkLabel(master = second_row_frame, height=40,text = "Online: ",font=("Arial",22,"bold"))
             self.online_list =              customtkinter.CTkLabel(master = second_row_frame, height=40,text = "",font=("Arial",22,"bold"))
             third_row_frame =               customtkinter.CTkFrame(master=self.root,corner_radius=0,border_width=0,fg_color="#212121")
-            self.main_console =             tk.Text(third_row_frame, wrap="none", height=0,background="black",font=("Arial",22),state=tk.DISABLED)
+            self.main_console =             tk.Text(third_row_frame, wrap="none", height=0,background="black",font=("Arial",22),borderwidth=0,state=tk.DISABLED)
             main_menu_button.               pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
             self.button_switch_all_ip.      pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
             self.button_switch_favourite_ip.pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
@@ -4535,7 +4540,7 @@ class main:
             self.static_label2.             pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
             online_label.                   pack(pady = (10,0),padx =(20,0),anchor="w",side="left")
             self.online_list.               pack(pady = (10,0),padx =(5,0),anchor="w",side="left")
-            self.main_console.              pack(pady = (10,0),padx =5,anchor="w",side="left",fill="x",expand=True)
+            self.main_console.              pack(pady = (10,0),padx =5,anchor="w",side="left",fill="x",expand=True,ipady=3,ipadx=3)
             first_row_frame.                pack(pady=0,padx=0,fill="x",side = "top")
             second_row_frame.               pack(pady=0,padx=0,fill="x",side = "top")
             self.main_widgets.              pack(pady=0,padx=0,fill="x",side = "top")

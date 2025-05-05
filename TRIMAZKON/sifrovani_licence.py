@@ -94,7 +94,8 @@ def check_licence():
 # make_licence("B841925X0SNLM7S") #kingspan když je tam zasunutej disk
 # make_licence("0025_3848_41A1_B7DF") #kingspan
 # make_licence("E823_8FA6_BF53_0001_001B_444A_4876_94E7") #asus ntb
-make_licence("E823_8FA6_BF53_0001_001B_444A_48F0_774B") #honza ntb
+# make_licence("E823_8FA6_BF53_0001_001B_444A_48F0_774B") #honza ntb
+make_licence("ACE4_2E00_314A_D20C_2EE4_AC00_0000_0001") #zdenda bervid ntb
 
 # make_licence("FSB5N690910705S61_00000001") #dell ntb pracovni
 # check_licence()

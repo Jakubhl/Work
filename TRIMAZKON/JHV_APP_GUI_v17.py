@@ -47,7 +47,7 @@ class initial_tools:
         else:
             return path
 
-testing = False
+testing = True
 
 global_recources_load_error = False
 global_licence_load_error = False
@@ -2148,6 +2148,125 @@ elif open_image_only: # snaha o co nejrichlejsi odeslani parametrů na server
     pipeline_duplex_instance.call_checking(f"Open image browser starting with image: {IB_as_def_browser_path}, {selected_image}",[IB_as_def_browser_path,selected_image])
 
 if not open_image_only:
+    class ToolTip:
+        """
+        unique_class_name 
+        - udela novy bind tag a při každém dalším bindu přepíše pouze class_bind, nikoliv globálně
+        - díky tomu není potřeba volat unbind, pouze poslat unikátní název classy a vygenerovat "Custom" event
+        """
+        def __init__(self, widget, text, root,unbind=False,subwindow_status=False,reverse=False,icon_button=False,unique_class_name="tooltip_class_"):
+            self.widget = widget
+            self.text = text
+            self.root = root
+            self.tip_window = None
+            self.reverse=reverse
+            self.subwindow_status = subwindow_status
+            self.icon_button = icon_button
+            self.unique_class_name = unique_class_name
+            self.tag_name = self.unique_class_name
+            if unbind:
+                self.unbind_all("",self.widget)
+            else:
+                self.bind_it()
+
+        def bind_it(self):
+            if not self.icon_button:
+                self.widget.bind("<Enter>",lambda e,widget = self.widget: self.really_entering(e,widget))
+                self.widget.bind("<Leave>",lambda e,widget = self.widget: self.really_leaving(e,widget))
+                self.widget.bind("<Button-1>",self.just_destroy)
+            else:
+                # self.tag_name = f"tooltip_class_{id(self.widget)}"
+                self.widget.bindtags((self.widget, self.tag_name, *self.widget.bindtags()))
+                self.widget.bind_class(self.tag_name,"<Enter>",lambda e,widget = self.widget: self.really_entering(e,widget))
+                self.widget.bind_class(self.tag_name,"<Leave>",lambda e,widget = self.widget: self.really_leaving(e,widget))
+                self.widget.bind_class(self.tag_name,"<Button-1>",self.just_destroy)
+                self.widget.bind_class(self.tag_name,"<<Custom>>",self.just_destroy)
+
+        def unbind_all(self,e,widget):
+            self.just_destroy(e)
+            try:
+                self.tip_window.update_idletasks()
+                # print("destroying")
+                self.tip_window.destroy()
+                self.root.after(0,self.tip_window.destroy)
+                print("tip window:", self.tip_window)
+            except Exception as ee:
+                pass
+
+            if not self.icon_button:
+                widget.unbind("<Enter>")
+                widget.unbind("<Leave>")
+                widget.unbind("<Button-1>")
+            else:
+                widget.unbind_class(self.tag_name,"<Enter>")
+                widget.unbind_class(self.tag_name,"<Leave>")
+                widget.unbind_class(self.tag_name,"<Button-1>")
+
+        def just_destroy(self,e):
+            # if self.tip_window:
+            print("clicked")
+            try:
+                self.tip_window.update_idletasks()
+            except Exception:
+                pass
+            try:
+                self.tip_window.destroy()
+                # self.root.after(0,self.tip_window.destroy)
+            except Exception as ee:
+                # print(ee)
+                pass
+            self.tip_window = None
+            
+
+        def really_entering(self,e,widget):
+            if self.tip_window != None:
+                return
+
+            def show_tooltip_v2(e):
+                screen_x = self.root.winfo_pointerx()
+                screen_y = self.root.winfo_pointery()
+                parent_x = self.root.winfo_rootx()+e.x
+                parent_y = self.root.winfo_rooty()+e.y
+                local_x = screen_x - parent_x +self.widget.winfo_width()
+                local_y = screen_y - parent_y +self.widget.winfo_height()
+                self.tip_window = customtkinter.CTkLabel(
+                    self.root,
+                    text=self.text,
+                    font=("Arial", 20),
+                    text_color="black",
+                    bg_color= "white"
+                )
+                self.tip_window.place(x=-200,y=-200)
+                self.tip_window.update_idletasks()
+                if self.subwindow_status:
+                    self.tip_window.place_configure(x=local_x,y = local_y)
+                else:
+                    if self.reverse:
+                        tip_window_width = self.tip_window._current_width
+                        self.tip_window.place_configure(x=local_x-tip_window_width,y = local_y+10)
+                    else:
+                        self.tip_window.place_configure(x=local_x,y = local_y+10)
+                # self.tip_window.place(x=local_x+tip_window_width/2,y = local_y)
+
+            show_tooltip_v2(e)
+            if not self.icon_button:
+                self.tip_window.bind("<Leave>",lambda e,widget = self.widget:self.really_leaving(e,widget))
+            else:
+                self.tip_window.bind_class(self.tag_name,"<Leave>",lambda e,widget = self.widget:self.really_leaving(e,widget))
+        
+        def really_leaving(self,e,widget):
+            if self.tip_window == None:
+                return
+
+            x = widget.winfo_width()-1
+            y = widget.winfo_height()-1
+            if (e.x < 1 or e.x > x) or (e.y < 1 or e.y > y):
+                try:
+                    self.root.after(0,self.tip_window.destroy)
+                    # self.tip_window.destroy()
+                except Exception as e2:
+                    print("error2")
+                self.tip_window = None
 
     class main_menu:
         def __init__(self,root):
@@ -2288,7 +2407,6 @@ if not open_image_only:
             frame_with_logo.pack(pady=0,padx=0,fill="both",expand=False,side = "top")
             image_logo.pack()
             IB_as_def_browser_path = None
-            
             manage_images =         customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Obrázky (správa)", command = lambda: self.call_sorting_option(),font=("Arial",25,"bold"))
             viewer_button =         customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Prohlížeč obrázků", command = lambda: self.call_view_option(),font=("Arial",25,"bold"))
             ip_setting_button =     customtkinter.CTkButton(master= frame_with_buttons, width= 400,height=100, text = "IP setting", command = lambda: self.call_ip_manager(),font=("Arial",25,"bold"))
@@ -2296,7 +2414,7 @@ if not open_image_only:
             advanced_button =       customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Nastavení", command = lambda: self.call_advanced_option(),font=("Arial",25,"bold"))
             change_log_label =      customtkinter.CTkLabel(master=frame_with_buttons_right, width= 600,height=50,font=("Arial",24,"bold"),text="Seznam posledně provedených změn: ")
             change_log =            customtkinter.CTkTextbox(master=frame_with_buttons_right, width= 600,height=550,fg_color="#212121",font=("Arial",20),border_color="#636363",border_width=3,corner_radius=0)
-            resources_load_error =  customtkinter.CTkLabel(master=frame_with_buttons_right, width= 600,height=50,font=("Arial",24,"bold"),text="Nepodařilo se načíst konfigurační soubor (config_TRIMAZKON.xlsx)",text_color="red")
+            resources_load_error =  customtkinter.CTkLabel(master=frame_with_buttons_right, width= 600,height=50,font=("Arial",24,"bold"),text="Nepodařilo se načíst konfigurační soubor (config_TRIMAZKON.json)",text_color="red")
             manage_images.          pack(pady =(105,0), padx=20,side="top",anchor="e")
             viewer_button.          pack(pady = (10,0), padx=20,side="top",anchor="e")
             ip_setting_button.      pack(pady = (10,0), padx=20,side="top",anchor="e")
@@ -2359,7 +2477,7 @@ if not open_image_only:
                 else:
                     licence_info_status.configure(text=f"platná do {app_licence_validity}")
 
-                if initial:
+                if initial and not testing:
                     check_version = threading.Thread(target=Tools.check_for_new_app_version,)
                     self.root.after(500,check_version.start)
 
@@ -2484,8 +2602,11 @@ if not open_image_only:
             for keys in self.unbind_list:
                 self.root.unbind(keys)
             
-            if os.path.exists(self.default_path + self.temp_bmp_folder):
-                shutil.rmtree(self.default_path + self.temp_bmp_folder) # vycistit
+            try:
+                if os.path.exists(self.default_path + self.temp_bmp_folder):
+                    shutil.rmtree(self.default_path + self.temp_bmp_folder) # vycistit
+            except Exception as err_msg:
+                print(err_msg)
             menu.menu()
         
         def clear_frame(self,frame):
@@ -2626,6 +2747,37 @@ if not open_image_only:
                 self.right_labels[i].bind("<MouseWheel>",mouse_wheel2)
                 self.right_labels[i].pack(side = "left",padx=5)
 
+        def add_ifz_buttons(self):
+            self.clear_frame(self.manage_ifz_frame)
+            button_height = 40
+            larger_font = ("Arial",20,"bold")
+            ifz_label =                     customtkinter.CTkLabel(master = self.manage_ifz_frame,text = "IFZ:",justify = "left",font=("Arial",20))
+            button_back_ifz  =              customtkinter.CTkButton(master = self.manage_ifz_frame, width = 30,height=button_height,text = "<", command = self.previous_ifz_image,font=larger_font,corner_radius=0)
+            self.changable_image_num_ifz =  customtkinter.CTkEntry(master = self.manage_ifz_frame,width=45,justify = "left",font=larger_font)
+            self.changable_image_num_ifz.   delete("0","100")
+            self.changable_image_num_ifz.   insert("0",1)
+            self.current_image_num_ifz =    customtkinter.CTkLabel(master = self.manage_ifz_frame,text = "/0",justify = "left",font=larger_font)
+            button_next_ifz  =              customtkinter.CTkButton(master = self.manage_ifz_frame, width = 30,height=button_height,text = ">", command = self.next_ifz_image,font=larger_font,corner_radius=0)
+            if self.ifz_located == True:
+                ifz_label.                      pack(pady = (10,0),padx =(15,0),anchor = "w",side="left")
+                button_back_ifz.                pack(pady = (10,0),padx =(5,0),anchor = "w",side="left")
+                self.changable_image_num_ifz.   pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
+                self.current_image_num_ifz.     pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
+                button_next_ifz.                pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
+            else:
+                self.manage_ifz_frame.configure(width=0)
+
+            def jump_to_ifz(e):
+                if self.changable_image_num_ifz.get().isdigit():
+                    inserted_value = int(self.changable_image_num_ifz.get())
+                    self.next_ifz_image(increment_given=inserted_value)
+                else:
+                    self.changable_image_num_ifz.delete("0","100")
+                    self.changable_image_num_ifz.insert("0",self.increment_of_ifz_image+1)
+                self.root.focus_set() # unfocus    
+
+            self.changable_image_num_ifz.bind("<Return>",jump_to_ifz)
+
         def start(self,path): # Ověřování cesty, init, spuštění
             """
             Ověřování cesty, init, spuštění
@@ -2685,6 +2837,7 @@ if not open_image_only:
                         if self.image_film == True:
                             self.make_image_film_widgets()
                         if self.ifz_located == None:
+                            self.add_ifz_buttons()
                             if self.selected_image == "": 
                                 #zobrazit hned prvni obrazek po vlozene ceste
                                 self.increment_of_image = 0
@@ -2699,6 +2852,7 @@ if not open_image_only:
                             self.changable_image_num.delete("0","100")
                             self.changable_image_num.insert("0", str(self.increment_of_image+1))
                         else: # Nejprve prevest do bmp formatu
+                            self.add_ifz_buttons()
                             if self.selected_image == "": 
                                 #zobrazit hned prvni obrazek po vlozene ceste
                                 self.increment_of_image = 0
@@ -3146,7 +3300,12 @@ if not open_image_only:
                     self.changable_image_num_ifz.delete("0","100")
                     self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
         
-        def next_ifz_image(self): # Další ifz obrázek v pořadí
+        def next_ifz_image(self,increment_given=None): # Další ifz obrázek v pořadí
+            counter_addition=1
+            if increment_given != None:
+                if increment_given == 0:
+                    increment_given = 1
+                self.increment_of_ifz_image = increment_given-2
             number_of_found_images = self.ifz_count
             if number_of_found_images != 0 and number_of_found_images != 1:
                 if self.increment_of_ifz_image < number_of_found_images -1:
@@ -3160,7 +3319,7 @@ if not open_image_only:
                 if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
                     self.current_image_num_ifz.configure(text ="/" + str(self.ifz_count))
                     self.changable_image_num_ifz.delete("0","100")
-                    self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
+                    self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+counter_addition))
                     if load_status != None:
                         Tools.add_colored_line(self.console,load_status,"orange",None,True)
                     elif self.name_or_path.get() == 1:
@@ -3233,8 +3392,15 @@ if not open_image_only:
     
         def stop(self):
             self.state = "stop"
-            self.button_play_stop.configure(text = "SPUSTIT")
-            self.button_play_stop.configure(command = lambda: self.play())
+            # ToolTip(self.play_stop_icon,"",self.root,icon_button=True,unbind=True,unique_class_name="play_stop_icon")
+            self.play_stop_icon.event_generate("<<Custom>>")
+            ToolTip(self.play_stop_icon," Spustit sekvenci obrázků ",self.root,icon_button=True,unique_class_name="play_stop_icon")
+            self.play_stop_icon.unbind("<Button-1>")
+            self.play_stop_icon.bind("<Button-1>",lambda e: self.play())
+            self.play_stop_icon.configure(image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/play_button.png"))))
+            self.play_stop_icon._image.configure(size=(36,36))
+            # self.button_play_stop.configure(text = "SPUSTIT")
+            # self.button_play_stop.configure(command = lambda: self.play())
 
         def play(self):
             def load_image_loop():
@@ -3250,9 +3416,15 @@ if not open_image_only:
                     self.root.after(int(calculated_time),load_image_loop)
 
             self.state = "running"
-            self.button_play_stop.configure(text = "STOP")
-            self.button_play_stop.configure(command = lambda: self.stop())
-
+            # ToolTip(self.play_stop_icon,"",self.root,icon_button=True,unbind=True,unique_class_name="play_stop_icon")
+            self.play_stop_icon.event_generate("<<Custom>>")
+            ToolTip(self.play_stop_icon," Zastavit sekvenci obrázků ",self.root,icon_button=True,unique_class_name="play_stop_icon")
+            self.play_stop_icon.unbind("<Button-1>")
+            self.play_stop_icon.bind("<Button-1>",lambda e: self.stop())
+            self.play_stop_icon.configure(image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/stop_button.png"))))
+            self.play_stop_icon._image.configure(size=(36,36))
+            # self.button_play_stop.configure(text = "STOP")
+            # self.button_play_stop.configure(command = lambda: self.stop())
             thread = threading.Thread(target=load_image_loop)
             thread.start()
     
@@ -3336,10 +3508,10 @@ if not open_image_only:
 
         def rotate_image(self):
             angles = [90.0,180.0,270.0,0.0]
-            if self.rotation_angle < 270:
-                self.rotation_angle += 90.0
+            if self.rotation_angle > 0.0:
+                self.rotation_angle -= 90.0
             else:
-                self.rotation_angle = 0.0
+                self.rotation_angle = 270.0
             if self.ifz_located == True:
                 if len(self.converted_images) != 0:
                     center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
@@ -3480,7 +3652,6 @@ if not open_image_only:
             window_width = 620
             x = self.root.winfo_rootx()
             y = self.root.winfo_rooty()
-            window.geometry(f"{window_width}x{window_height}+{x+150}+{y+50}")
             window.title("Možnosti malování")
             
             top_frame =         customtkinter.CTkFrame(master = window,corner_radius=0,height=120,fg_color="gray10")
@@ -3577,10 +3748,11 @@ if not open_image_only:
             update_color("")
 
             button_exit = customtkinter.CTkButton(master = window,text = "Zavřít",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
-            button_exit.pack(pady = 10, padx = 10,expand=False,side="right",anchor = "e")
+            button_exit.pack(pady = 10, padx = 10,expand=False,side="top",anchor = "e")
             # self.root.bind("<Button-1>",lambda e: close_window(window))
             window.update()
             window.update_idletasks()
+            window.geometry(f"{window_width}x{window._current_height}+{x+150}+{y+50}")
             window.transient(self.root)
             window.attributes("-topmost", True)
             window.attributes("-disabled", False)
@@ -3748,83 +3920,123 @@ if not open_image_only:
                 self.current_image_num.configure(text = "/0")
                 self.start(self.path_set.get())
 
+            smaller_icon = 32
+            larger_icon = 36
+            button_height = 40
+            larger_font = ("Arial",20,"bold")
             self.frame_with_path =          customtkinter.CTkFrame(master=self.root,height = 200,corner_radius=0)
-            menu_button  =                  customtkinter.CTkButton(master = self.frame_with_path, width = 100,height=30, text = "MENU", command = lambda: self.call_menu(),font=("Arial",16,"bold"))
-            context_menu_button  =          customtkinter.CTkButton(master = self.frame_with_path, width = 50,height=30, text = "V",font=("Arial",16,"bold"),corner_radius=0,fg_color="#505050")
-            self.path_set =                 customtkinter.CTkEntry(master = self.frame_with_path,width = 680,height=30,placeholder_text="Zadejte cestu k souborům (kde se soubory přímo nacházejí)",corner_radius=0)
-            manual_path  =                  customtkinter.CTkButton(master = self.frame_with_path, width = 90,height=30,text = "Otevřít", command = lambda: call_start(),font=("Arial",16,"bold"))
-            tree         =                  customtkinter.CTkButton(master = self.frame_with_path, width = 120,height=30,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",16,"bold"))
-            button_save_path =              customtkinter.CTkButton(master = self.frame_with_path,width=100,height=30, text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get(),"image_browser_settings"),font=("Arial",16,"bold"))        
-            button_open_setting =           customtkinter.CTkButton(master = self.frame_with_path,width=30,height=30, text = "⚙️", command = lambda: call_setting_window(),font=("",16))
-            button_drawing =                customtkinter.CTkButton(master = self.frame_with_path,width=30,height=30, text = "Malování", command = lambda: self.switch_drawing_mode(),font=("Arial",16,"bold"))
-            menu_button.                    pack(pady = (5,0),padx =(5,0),side="left",anchor = "w")
+            menu_button  =                  customtkinter.CTkButton(master = self.frame_with_path, width = 100,height=button_height, text = "MENU", command = lambda: self.call_menu(),font=larger_font,corner_radius=0)
+            context_menu_button  =          customtkinter.CTkButton(master = self.frame_with_path, width = 40,height=button_height, text = "V",font=larger_font,corner_radius=0,fg_color="#505050")
+            self.path_set =                 customtkinter.CTkEntry(master = self.frame_with_path,width=self.root._current_width/2,height=button_height,placeholder_text="Zadejte cestu k souborům (kde se soubory přímo nacházejí)",corner_radius=0,font=("Arial",20))
+            tree         =                  customtkinter.CTkButton(master = self.frame_with_path, width = 40,height=button_height,text = "...", command = self.call_browseDirectories,font=larger_font,corner_radius=0)
+            # manual_path  =                  customtkinter.CTkButton(master = self.frame_with_path, width = 90,height=30,text = "Otevřít", command = lambda: call_start(),font=larger_font,corner_radius=0)
+            open_path_icon =                customtkinter.CTkLabel(master = self.frame_with_path,width=larger_icon,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/open_file.png")),size=(smaller_icon, smaller_icon)),bg_color="#212121")
+            open_path_icon.                 bind("<Enter>",lambda e: open_path_icon._image.configure(size=(larger_icon,larger_icon)))
+            open_path_icon.                 bind("<Leave>",lambda e: open_path_icon._image.configure(size=(smaller_icon,smaller_icon)))
+            open_path_icon.                 bind("<Button-1>",lambda e: call_start())
+            # button_save_path =              customtkinter.CTkButton(master = self.frame_with_path,width=100,height=30, text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get(),"image_browser_settings"),font=larger_font,corner_radius=0)
+            save_path_icon =                customtkinter.CTkLabel(master = self.frame_with_path,width=larger_icon,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/save_file.png")),size=(smaller_icon, smaller_icon)),bg_color="#212121")
+            save_path_icon.                 bind("<Enter>",lambda e:save_path_icon._image.configure(size=(larger_icon,larger_icon)))
+            save_path_icon.                 bind("<Leave>",lambda e:save_path_icon._image.configure(size=(smaller_icon,smaller_icon)))
+            save_path_icon.                 bind("<Button-1>",lambda e: Tools.save_path(self.console,self.path_set.get(),which_settings="image_browser_settings"))    
+            button_drawing =                customtkinter.CTkButton(master = self.frame_with_path,height=button_height, text = "Malování", command = lambda: self.switch_drawing_mode(),font=larger_font,corner_radius=0)
+            button_open_setting =           customtkinter.CTkButton(master = self.frame_with_path,width=40,height=button_height, text = "⚙️", command = lambda: call_setting_window(),font=(None,22),corner_radius=0)
+            menu_button.                    pack(pady = (5,0),padx =(10,0),side="left",anchor = "w")
             context_menu_button.            pack(pady = (5,0),padx =(5,0),side="left",anchor = "w")
             self.path_set.                  pack(pady = (5,0),padx =(0,0),side="left",anchor = "w")
-            manual_path.                    pack(pady = (5,0),padx =(5,0),side="left",anchor = "w")
-            tree.                           pack(pady = (5,0),padx =(5,0),side="left",anchor = "w")
-            button_save_path.               pack(pady = (5,0),padx =(5,0),side="left",anchor = "w")
-            button_open_setting.            pack(pady = (5,0),padx =(5,0),side="left",anchor = "w")
-            button_drawing.                 pack(pady = (5,0),padx =(5,0),side="left",anchor = "w")
+            tree.                           pack(pady = (5,0),padx =(0,0),side="left",anchor = "w")
+            open_path_icon.                 pack(pady = (5,0),padx =(10,0),side="left",anchor = "w")
+            save_path_icon.                 pack(pady = (5,0),padx =(10,0),side="left",anchor = "w")
+            button_drawing.                 pack(pady = (5,0),padx =(10,0),side="left",anchor = "w")
+            button_open_setting.            pack(pady = (5,0),padx =(5,10),side="left",anchor = "w")
             self.frame_with_path.           pack(pady=0,padx=0,fill="x",expand=False,side = "top")
-            self.frame_with_console =       customtkinter.CTkFrame(master=self.root,height = 200,corner_radius=0)
-            self.name_or_path =             customtkinter.CTkCheckBox(master = self.frame_with_console,font=("Arial",16), text = "Název/cesta",command= lambda: self.refresh_console_setting())
-            self.console =                  tk.Text(self.frame_with_console, wrap="none", height=0,background="black",font=("Arial",14),state=tk.DISABLED)
-            self.name_or_path.              pack(pady = (5,0),padx =10,anchor = "w",side="left")
-            self.console.                   pack(pady = (5,0),padx =10,anchor = "w",side="left",fill="x",expand=True)
+            self.frame_with_console =       customtkinter.CTkFrame(master=self.root,corner_radius=0)
+            self.name_or_path =             customtkinter.CTkCheckBox(master = self.frame_with_console,font=("Arial",16), text = "Název/cesta",command= lambda: self.refresh_console_setting(),corner_radius=0)
+            self.console =                  tk.Text(self.frame_with_console, wrap="none", height=0,background="black",font=("Arial",14),borderwidth=0,state=tk.DISABLED)
+            self.name_or_path.              pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
+            self.console.                   pack(pady = (10,0),padx =10,ipady=3,ipadx=5,anchor = "w",side="left",fill="x",expand=True)
             self.frame_with_console.        pack(pady=0,padx=0,fill="x",expand=False,side = "top")
-            self.frame_with_buttons =       customtkinter.CTkFrame(master=self.root,height = 200,corner_radius=0)
-            button_back  =                  customtkinter.CTkButton(master = self.frame_with_buttons, width = 20,height=30,text = "<", command = self.previous_image,font=("Arial",16,"bold"))
-            self.changable_image_num =      customtkinter.CTkEntry(master = self.frame_with_buttons,width=45,justify = "left",font=("Arial",16,"bold"))
-            self.changable_image_num.delete("0","100")
-            self.changable_image_num.insert("0",0)
-            self.current_image_num =        customtkinter.CTkLabel(master = self.frame_with_buttons,text = "/0",justify = "left",font=("Arial",16,"bold"))
-            button_next  =                  customtkinter.CTkButton(master = self.frame_with_buttons, width = 20,height=30,text = ">", command = self.next_image,font=("Arial",16,"bold"))
-            self.button_play_stop  =        customtkinter.CTkButton(master = self.frame_with_buttons, width = 90,height=30,text = "SPUSTIT", command = self.play,font=("Arial",16,"bold"))
-            button_copy  =                  customtkinter.CTkButton(master = self.frame_with_buttons, width = 80,height=30,text = "Kopír.", command = lambda: self.copy_image(self.image_browser_path),font=("Arial",16,"bold"))
-            rotate_button =                 customtkinter.CTkButton(master = self.frame_with_buttons, width = 80,height=30,text = "OTOČIT", command =  lambda: self.rotate_image(),font=("Arial",16,"bold"))
-            speed_label  =                  customtkinter.CTkLabel(master = self.frame_with_buttons,text = "Rychlost:",justify = "left",font=("Arial",12))
+            self.frame_with_buttons =       customtkinter.CTkFrame(master=self.root,corner_radius=0)
+            button_back  =                  customtkinter.CTkButton(master = self.frame_with_buttons, width = 30,height=button_height,text = "<", command = self.previous_image,font=larger_font,corner_radius=0)
+            self.changable_image_num =      customtkinter.CTkEntry(master = self.frame_with_buttons,width=45,justify = "left",font=larger_font)
+            self.changable_image_num.       delete("0","100")
+            self.changable_image_num.       insert("0",0)
+            self.current_image_num =        customtkinter.CTkLabel(master = self.frame_with_buttons,text = "/0",justify = "left",font=larger_font)
+            button_next  =                  customtkinter.CTkButton(master = self.frame_with_buttons, width = 30,height=button_height,text = ">", command = self.next_image,font=larger_font,corner_radius=0)
+            # self.button_play_stop  =        customtkinter.CTkButton(master = self.frame_with_buttons, width = 90,height=button_height,text = "SPUSTIT", command = self.play,font=larger_font,corner_radius=0)
+            self.play_stop_icon =           customtkinter.CTkLabel(master = self.frame_with_buttons,width=larger_icon ,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/play_button.png")),size=(smaller_icon, smaller_icon)),bg_color="#212121")
+            ToolTip(self.play_stop_icon," Spustit sekvenci obrázků ",self.root,icon_button=True,unique_class_name="play_stop_icon")
+            self.play_stop_icon.            bind("<Enter>",lambda e: self.play_stop_icon._image.configure(size=(larger_icon,larger_icon)))
+            self.play_stop_icon.            bind("<Leave>",lambda e: self.play_stop_icon._image.configure(size=(smaller_icon,smaller_icon)))
+            self.play_stop_icon.            bind("<Button-1>",lambda e: self.play())
+            # button_copy  =                  customtkinter.CTkButton(master = self.frame_with_buttons, width = 80,height=30,text = "KOPÍROVAT", command = lambda: self.copy_image(self.image_browser_path),font=larger_font,corner_radius=0)
+            copy_icon =                     customtkinter.CTkLabel(master = self.frame_with_buttons,width=larger_icon,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/copy_file.png")),size=(smaller_icon, smaller_icon)),bg_color="#212121")
+            copy_icon.                      bind("<Enter>",lambda e: copy_icon._image.configure(size=(larger_icon,larger_icon)))
+            copy_icon.                      bind("<Leave>",lambda e: copy_icon._image.configure(size=(smaller_icon,smaller_icon)))
+            copy_icon.                      bind("<Button-1>",lambda e: self.copy_image(self.image_browser_path))
+            # rotate_button =                 customtkinter.CTkButton(master = self.frame_with_buttons, width = 80,height=30,text = "OTOČIT", command =  lambda: self.rotate_image(),font=larger_font,corner_radius=0)
+            rotate_icon =                   customtkinter.CTkLabel(master = self.frame_with_buttons,width=larger_icon,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/rotate_file.png")),size=(smaller_icon, smaller_icon)),bg_color="#212121")
+            rotate_icon._image.configure(angle=180)
+            rotate_icon.                    bind("<Enter>",lambda e: rotate_icon._image.configure(size=(larger_icon,larger_icon)))
+            rotate_icon.                    bind("<Leave>",lambda e: rotate_icon._image.configure(size=(smaller_icon,smaller_icon)))
+            rotate_icon.                    bind("<Button-1>",lambda e: self.rotate_image())
+            speed_label  =                  customtkinter.CTkLabel(master = self.frame_with_buttons,text = "Rychlost:",justify = "left",font=("Arial",20))
             self.speed_slider =             customtkinter.CTkSlider(master = self.frame_with_buttons,width=120,from_=1,to=100,command= self.update_speed_slider)
-            self.percent1 =                 customtkinter.CTkLabel(master = self.frame_with_buttons,text = "%",justify = "left",font=("Arial",12))
-            zoom_label   =                  customtkinter.CTkLabel(master = self.frame_with_buttons,text = "ZOOM:",justify = "left",font=("Arial",12))
+            self.percent1 =                 customtkinter.CTkLabel(master = self.frame_with_buttons,text = "%",justify = "left",font=("Arial",20))
+            zoom_label   =                  customtkinter.CTkLabel(master = self.frame_with_buttons,text = "ZOOM:",justify = "left",font=("Arial",20))
             self.zoom_slider =              customtkinter.CTkSlider(master = self.frame_with_buttons,width=120,from_=100,to=500,command= self.update_zoom_slider)
-            self.percent2 =                 customtkinter.CTkLabel(master = self.frame_with_buttons,text = "%",justify = "left",font=("Arial",12))
-            reset_button =                  customtkinter.CTkButton(master = self.frame_with_buttons, width = 80,height=30,text = "RESET", command = lambda: self.Reset_all(),font=("Arial",16,"bold"))
-            ifz_label =                     customtkinter.CTkLabel(master = self.frame_with_buttons,text = "IFZ:",justify = "left",font=("Arial",12))
-            button_back_ifz  =              customtkinter.CTkButton(master = self.frame_with_buttons, width = 20,height=30,text = "<", command = self.previous_ifz_image,font=("Arial",16,"bold"))
-            self.changable_image_num_ifz =  customtkinter.CTkEntry(master = self.frame_with_buttons,width=20,justify = "left",font=("Arial",16,"bold"))
-            self.changable_image_num_ifz.delete("0","100")
-            self.changable_image_num_ifz.insert("0",1)
-            self.current_image_num_ifz =    customtkinter.CTkLabel(master = self.frame_with_buttons,text = "/0",justify = "left",font=("Arial",16,"bold"))
-            button_next_ifz  =              customtkinter.CTkButton(master = self.frame_with_buttons, width = 20,height=30,text = ">", command = self.next_ifz_image,font=("Arial",16,"bold"))
-            button_move =                   customtkinter.CTkButton(master = self.frame_with_buttons, width = 80,height=30,text = "Přesun.", command =  lambda: self.move_image(),font=("Arial",16,"bold"))
-            button_delete =                 customtkinter.CTkButton(master = self.frame_with_buttons, width = 80,height=30,text = "SMAZAT", command =  lambda: self.delete_image(),font=("Arial",16,"bold"))
-            button_back.                    pack(pady = (5,0),padx =(10,0),anchor = "w",side="left")
-            self.changable_image_num.       pack(pady = (5,0),padx =(10,0),anchor = "w",side="left")
-            self.current_image_num.         pack(pady = (5,0),padx =(10,0),anchor = "w",side="left")
-            button_next.                    pack(pady = (5,0),padx =(10,0),anchor = "w",side="left")
-            self.button_play_stop.          pack(pady = (5,0),padx =(10,0),anchor = "w",side="left")
-            button_copy.                    pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
-            rotate_button.                  pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
-            speed_label.                    pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
-            self.speed_slider.              pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
-            self.percent1.                  pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
-            zoom_label.                     pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
-            self.zoom_slider.               pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
-            self.percent2.                  pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
-            reset_button.                   pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
-            ifz_label.                      pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
-            button_back_ifz.                pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
-            self.changable_image_num_ifz.   pack(pady = (5,0),padx =(10,0),anchor = "w",side="left")
-            self.current_image_num_ifz.     pack(pady = (5,0),padx =(10,0),anchor = "w",side="left")
-            button_next_ifz.                pack(pady = (5,0),padx =(10,0),anchor = "w",side="left")
-            button_move.                    pack(pady = (5,0),padx =(10,0),anchor = "w",side="left")
-            button_delete.                  pack(pady = (5,0),padx =(5,0),anchor = "w",side="left")
-            self.frame_with_buttons.        pack(pady=0,padx=(0,0),fill="x",expand=False,side = "top")
+            self.percent2 =                 customtkinter.CTkLabel(master = self.frame_with_buttons,text = "%",justify = "left",font=("Arial",20))
+            # reset_button =                  customtkinter.CTkButton(master = self.frame_with_buttons, width = 80,height=30,text = "RESET", command = lambda: self.Reset_all(),font=larger_font,corner_radius=0)
+            reset_icon =                    customtkinter.CTkLabel(master = self.frame_with_buttons,width=larger_icon,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/reset.png")),size=(smaller_icon, smaller_icon)),bg_color="#212121")
+            reset_icon.                     bind("<Enter>",lambda e: reset_icon._image.configure(size=(larger_icon,larger_icon)))
+            reset_icon.                     bind("<Leave>",lambda e: reset_icon._image.configure(size=(smaller_icon,smaller_icon)))
+            reset_icon.                     bind("<Button-1>",lambda e: self.Reset_all())
+            self.manage_ifz_frame =         customtkinter.CTkFrame(master=self.frame_with_buttons,corner_radius=0,fg_color="#212121",width=0,height=button_height)
+            # ifz_label =                     customtkinter.CTkLabel(master = self.manage_ifz_frame,text = "IFZ:",justify = "left",font=("Arial",20))
+            # button_back_ifz  =              customtkinter.CTkButton(master = self.manage_ifz_frame, width = 30,height=button_height,text = "<", command = self.previous_ifz_image,font=larger_font,corner_radius=0)
+            # self.changable_image_num_ifz =  customtkinter.CTkEntry(master = self.manage_ifz_frame,width=45,justify = "left",font=larger_font)
+            # self.changable_image_num_ifz.   delete("0","100")
+            # self.changable_image_num_ifz.   insert("0",1)
+            # self.current_image_num_ifz =    customtkinter.CTkLabel(master = self.manage_ifz_frame,text = "/0",justify = "left",font=larger_font)
+            # button_next_ifz  =              customtkinter.CTkButton(master = self.manage_ifz_frame, width = 30,height=button_height,text = ">", command = self.next_ifz_image,font=larger_font,corner_radius=0)
+            # if self.ifz_located == True:
+            #     ifz_label.                      pack(pady = (10,0),padx =(15,0),anchor = "w",side="left")
+            #     button_back_ifz.                pack(pady = (10,0),padx =(5,0),anchor = "w",side="left")
+            #     self.changable_image_num_ifz.   pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
+            #     self.current_image_num_ifz.     pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
+            #     button_next_ifz.                pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
+            # button_move =                   customtkinter.CTkButton(master = self.frame_with_buttons, height=button_height,text = "PŘESUNOUT", command =  lambda: self.move_image(),font=larger_font,corner_radius=0)
+            move_icon =                     customtkinter.CTkLabel(master = self.frame_with_buttons,width=larger_icon,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/move_to_folder.png")),size=(smaller_icon, smaller_icon)),bg_color="#212121")
+            move_icon.                      bind("<Enter>",lambda e: move_icon._image.configure(size=(larger_icon,larger_icon)))
+            move_icon.                      bind("<Leave>",lambda e: move_icon._image.configure(size=(smaller_icon,smaller_icon)))
+            move_icon.                      bind("<Button-1>",lambda e: self.move_image())
+            # button_delete =                 customtkinter.CTkButton(master = self.frame_with_buttons, width = 80,height=button_height,text = "SMAZAT", command =  lambda: self.delete_image(),font=larger_font,corner_radius=0)
+            delete_icon =                   customtkinter.CTkLabel(master = self.frame_with_buttons,width=larger_icon,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/delete_file.png")),size=(smaller_icon, smaller_icon)),bg_color="#212121")
+            delete_icon.                    bind("<Enter>",lambda e: delete_icon._image.configure(size=(larger_icon,larger_icon)))
+            delete_icon.                    bind("<Leave>",lambda e: delete_icon._image.configure(size=(smaller_icon,smaller_icon)))
+            delete_icon.                    bind("<Button-1>",lambda e: self.delete_image())
+            button_back.                    pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
+            self.changable_image_num.       pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
+            self.current_image_num.         pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
+            button_next.                    pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
+            self.play_stop_icon.            pack(pady = (10,0),padx =(15,0),anchor = "w",side="left")
+            self.manage_ifz_frame.          pack(pady = 0,padx =0,anchor = "w",side="left",expand=False)
+            speed_label.                    pack(pady = (10,0),padx =(15,0),anchor = "w",side="left")
+            self.speed_slider.              pack(pady = (10,0),padx =(5,0),anchor = "w",side="left")
+            self.percent1.                  pack(pady = (10,0),padx =(5,0),anchor = "w",side="left")
+            zoom_label.                     pack(pady = (10,0),padx =(5,0),anchor = "w",side="left")
+            self.zoom_slider.               pack(pady = (10,0),padx =(5,0),anchor = "w",side="left")
+            self.percent2.                  pack(pady = (10,0),padx =(5,0),anchor = "w",side="left")
+            rotate_icon.                    pack(pady = (10,0),padx =(15,0),anchor = "w",side="left")
+            reset_icon.                     pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
+            copy_icon.                      pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
+            move_icon.                      pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
+            delete_icon.                    pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
+            self.frame_with_buttons.        pack(pady=0,padx=(0,0),fill="x",side = "top")
             self.background_frame =         customtkinter.CTkFrame(master=self.root,corner_radius=0)
             self.main_frame =               tk.Canvas(master=self.background_frame,bg="black",highlightthickness=0)
             self.main_frame.                pack(pady=0,padx=5,ipadx=10,ipady=10,fill="both",expand=True,side = "bottom",anchor= "center")
-            
-            self.image_film_frame =    customtkinter.CTkFrame(master=self.root,corner_radius=0,height = 200)
+            self.image_film_frame =         customtkinter.CTkFrame(master=self.root,corner_radius=0,height = 200)
             self.image_film_frame_left =    customtkinter.CTkFrame(master=self.image_film_frame,height = 100,corner_radius=0)
             self.image_film_frame_center =  customtkinter.CTkFrame(master=self.image_film_frame,height = 200,width = 200,corner_radius=0)
             self.image_film_frame_right =   customtkinter.CTkFrame(master=self.image_film_frame,height = 100,corner_radius=0)
@@ -3838,6 +4050,18 @@ if not open_image_only:
                 self.image_film_frame.pack(side="top",fill="x",expand=False)
             self.name_or_path.select()
             context_menu_button.bind("<Button-1>", call_path_context_menu)
+            reset_icon.pack_propagate(0)
+            
+            ToolTip(tree," Vyhledat cestu k souboru ",self.root)
+            ToolTip(context_menu_button," Historie vložených cest ",self.root)
+            ToolTip(button_open_setting," Nastavení ",self.root,reverse=True)
+            ToolTip(open_path_icon," Otevřít cestu ",self.root)
+            ToolTip(save_path_icon," Uložit cestu ",self.root)
+            ToolTip(rotate_icon," Otočit obrázek o 90° (<R>) ",self.root)
+            ToolTip(copy_icon,f" Kopírovat obrázek do složky \"{self.copy_dir}\" (<C>) ",self.root)
+            ToolTip(delete_icon," Smazat obrázek (<Del>) ",self.root)
+            ToolTip(reset_icon," Reset parametrů (<F5>) ",self.root)
+            ToolTip(move_icon,f" Přesunot obrázek do složky \"{self.move_dir}\" (<M>) ",self.root)
 
             def jump_to_image(e):
                 if self.changable_image_num.get().isdigit():
@@ -3854,6 +4078,16 @@ if not open_image_only:
                 self.changable_image_num.insert("0",self.increment_of_image+1)
                 self.root.focus_set() # unfocus    
             self.changable_image_num.bind("<Return>",jump_to_image)
+
+            # def jump_to_ifz(e):
+            #     if self.changable_image_num_ifz.get().isdigit():
+            #         inserted_value = int(self.changable_image_num_ifz.get())
+            #         self.next_ifz_image(increment_given=inserted_value)
+            #     else:
+            #         self.changable_image_num_ifz.delete("0","100")
+            #         self.changable_image_num_ifz.insert("0",self.increment_of_ifz_image+1)
+            #     self.root.focus_set() # unfocus
+            # self.changable_image_num_ifz.bind("<Return>",jump_to_ifz)
 
             # nastaveni defaultnich hodnot slideru
             self.zoom_slider.set(self.zoom_given)
@@ -3877,44 +4111,6 @@ if not open_image_only:
                     return False
 
             # KEYBOARD BINDING
-            def rotate_button_hover(e):
-                if int(self.rotation_angle==270):
-                    rotate_button.configure(text="0°",font=("Arial",15))
-                else:
-                    rotate_button.configure(text=str(int(self.rotation_angle)+90)+"°",font=("Arial",15))
-                rotate_button.update_idletasks()
-                return
-                    
-            def rotate_button_hover_leave(e):
-                rotate_button.configure(text="OTOČIT",font=("Arial",16,"bold"))
-            rotate_button.bind("<Enter>",rotate_button_hover)
-            rotate_button.bind("<Button-1>",rotate_button_hover)
-            rotate_button.bind("<Leave>",rotate_button_hover_leave)
-
-            def move_button_hover(e):
-                button_move.configure(text="\"M\"",font=("Arial",16,"bold"))
-                button_move.update_idletasks()
-                return
-                    
-            def move_button_hover_leave(e):
-                button_move.configure(text="Přesun.",font=("Arial",16,"bold"))
-
-            button_move.bind("<Enter>",move_button_hover)
-            button_move.bind("<Button-1>",move_button_hover)
-            button_move.bind("<Leave>",move_button_hover_leave)
-
-            def copy_button_hover(e):
-                button_copy.configure(text="\"C\"",font=("Arial",16,"bold"))
-                button_copy.update_idletasks()
-                return
-                    
-            def copy_button_hover_leave(e):
-                button_copy.configure(text="Kopír.",font=("Arial",16,"bold"))
-
-            button_copy.bind("<Enter>",copy_button_hover)
-            button_copy.bind("<Button-1>",copy_button_hover)
-            button_copy.bind("<Leave>",copy_button_hover_leave)
-
             def pressed_space(e):
                 if focused_entry_widget(): # pokud nabindovany znak neni vepisovan do entry widgetu
                     return
@@ -3975,7 +4171,7 @@ if not open_image_only:
             self.unbind_list.append("<m>")
             
             def pressed_rotate(e):
-                rotate_button_hover(e) #update uhlu zobrazovanem na tlacitku
+                # rotate_button_hover(e) #update uhlu zobrazovanem na tlacitku
                 if focused_entry_widget(): # pokud nabindovany znak neni vepisovan do entry widgetu
                     return
                 self.rotate_image()
@@ -4651,6 +4847,9 @@ if not open_image_only:
                 else:
                     main_console.configure(text=f"V historii cest: {drop_down_options.get()} nebylo nic nalezeno",text_color="orange")
 
+            def toggle_IB_canvas_bg(color):
+                print(color)
+
             if submenu_option == "default_path":
                 path_history_options = ["Třídění souborů","Konvertování souborů","Mazání souborů","Vytváření katalogu","Prohlížeč obrázků"]
                 mapping_logic = {
@@ -4957,19 +5156,26 @@ if not open_image_only:
                 text_increment = str(config_data["image_browser_settings"]["zoom_step"]) + " %"
                 text_movement = str(config_data["image_browser_settings"]["movement_step"]) + " px"
                 text_image_film = str(config_data["image_browser_settings"]["image_film_count"]) + " obrázků na každé straně"
+
+                first_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
+                first_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
+                label_IB1 =                 customtkinter.CTkLabel(master = first_option_frame,height=20,text = "Zvolte barvu pozadí prohlížeče:",justify = "left",font=("Arial",22,"bold"))
+                white_button =              customtkinter.CTkButton(master = first_option_frame,text="",width = 30,height=30,corner_radius=0,border_width=1,fg_color="#FFFFFF",command=lambda: toggle_IB_canvas_bg("black"))
+                black_button =              customtkinter.CTkButton(master = first_option_frame,text="",width = 30,height=30,corner_radius=0,border_width=1,fg_color="#000000",command=lambda: toggle_IB_canvas_bg("white"))
+
                 second_option_frame =       customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
                 second_option_frame.        pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
-                label_IB3 =                 customtkinter.CTkLabel(master = second_option_frame,height=20,text = "1. Nastavte o kolik procent se navýší přiblížení jedním krokem kolečka myši:",justify = "left",font=("Arial",22,"bold"))
+                label_IB3 =                 customtkinter.CTkLabel(master = second_option_frame,height=20,text = "Nastavte o kolik procent se navýší přiblížení jedním krokem kolečka myši:",justify = "left",font=("Arial",22,"bold"))
                 zoom_increment_set =        customtkinter.CTkSlider(master=second_option_frame,width=300,height=15,from_=5,to=100,number_of_steps= 19,command= update_zoom_increment_slider)
                 label_IB4 =                 customtkinter.CTkLabel(master = second_option_frame,height=20,text = text_increment,justify = "left",font=("Arial",20))
                 third_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
                 third_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
-                label_IB5 =                 customtkinter.CTkLabel(master = third_option_frame,height=20,text = "2. Nastavte velikost kroku při posouvání levým tlačítkem myši:",justify = "left",font=("Arial",22,"bold"))
+                label_IB5 =                 customtkinter.CTkLabel(master = third_option_frame,height=20,text = "Nastavte velikost kroku při posouvání levým tlačítkem myši:",justify = "left",font=("Arial",22,"bold"))
                 zoom_movement_set =         customtkinter.CTkSlider(master=third_option_frame,width=300,height=15,from_=10,to=100,number_of_steps= 18,command= update_drag_movement_slider)
                 label_IB6 =                 customtkinter.CTkLabel(master = third_option_frame,height=20,text = text_movement,justify = "left",font=("Arial",20))
                 forth_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
                 forth_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
-                label_image_film =          customtkinter.CTkLabel(master = forth_option_frame,height=20,text = "3. Upravte nastavení filmu obrázků:",justify = "left",font=("Arial",22,"bold"))
+                label_image_film =          customtkinter.CTkLabel(master = forth_option_frame,height=20,text = "Upravte nastavení filmu obrázků:",justify = "left",font=("Arial",22,"bold"))
                 switch_image_film =         customtkinter.CTkCheckBox(master = forth_option_frame, text = "Zapnuto",command = lambda: on_off_image_film(),font=("Arial",20))
                 num_of_image_film_images_slider = customtkinter.CTkSlider(master=forth_option_frame,width=300,height=15,from_=1,to=15,command= change_image_film_number)
                 num_of_image_film_images =  customtkinter.CTkLabel(master = forth_option_frame,height=20,text = text_image_film,justify = "left",font=("Arial",20))
@@ -4980,6 +5186,9 @@ if not open_image_only:
                     save_frame =            customtkinter.CTkFrame(     master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
                     save_frame.             pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top",anchor = "e")
                     save_changes_button =   customtkinter.CTkButton(master = save_frame,width=150,height=40, text = "Aplikovat/ načíst změny", command = lambda: self.refresh_main_window(),font=("Arial",22,"bold"))
+                label_IB1.                  grid(column =0,row=row_index+4,sticky = tk.W,pady =10,padx=10)
+                white_button.               grid(column =0,row=row_index+5,sticky = tk.W,pady =(0,10),padx=10)
+                black_button.               grid(column =0,row=row_index+5,sticky = tk.W,pady =(0,10),padx=50)
                 label_IB3.                  grid(column =0,row=row_index+6,sticky = tk.W,pady =10,padx=10)
                 zoom_increment_set.         grid(column =0,row=row_index+7,sticky = tk.W,pady =(10,20),padx=10)
                 label_IB4.                  grid(column =0,row=row_index+7,sticky = tk.W,pady =(10,20),padx=320)
@@ -5059,7 +5268,7 @@ if not open_image_only:
             elif not global_recources_load_error:
                 self.setting_widgets(submenu_option="default_path")
             elif global_recources_load_error:
-                error_label = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "Nepodařilo se načíst konfigurační soubor config_TRIMAZKON.xlsx (nastavení se nemá kam uložit)",justify = "left",font=("Arial",22,"bold"),text_color="red")
+                error_label = customtkinter.CTkLabel(master = self.bottom_frame_default_path,height=20,text = "Nepodařilo se načíst konfigurační soubor config_TRIMAZKON.json (nastavení se nemá kam uložit)",justify = "left",font=("Arial",22,"bold"),text_color="red")
                 error_label.grid(column = 0,row=0,pady = (10,0),padx =20,sticky = tk.W)
                 options0.configure(state = "disabled")
                 options1.configure(state = "disabled")
