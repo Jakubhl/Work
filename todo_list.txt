@@ -953,15 +953,22 @@ TRIMAZKON - katalog - otevírání xml, stačí vyhledat soubor... - hotovo
 7:42 AM 5/5/2025
 TRIMAZKON - optimalizovat tooltip window - hotovo
 TRIMAZKON - potřeba opravit katalog download a check app verze neni v rootu - hotovo
+release 4.3.4
 TRIMAZKON - prohlížeč - vylepšit vyzualizaci - hotovo
 TRIMAZKON - prohlížeč - schovávat přepínání ifz pokud se jedná o normální obrázky - hotovo
 TRIMAZKON - ip_setting - upravit tooltip aby ikony nerozhazovali ostatní tlačítka - hotovo
 
+7:23 AM 5/6/2025
+TRIMAZKON - prohlížeč - opraveno mazání temp složky (ifz) - hotovo
+TRIMAZKON - jhv_MAZ - udělat ikonky u zvolení jazyka - hotovo
+TRIMAZKON - prohlížeč - mít možnost přepnout barvu pozadí - přidat jako základní parametr do configu - hotovo
+TRIMAZKON - mít možnost zakázat tooltip - přidat jako základní parametr do configu - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
-TRIMAZKON - mít možnost zakázat tooltip - přidat jako základní parametr do configu
-TRIMAZKON - prohlížeč - mít možnost přepnout barvu pozadí - přidat jako základní parametr do configu
+
+
 
 
 ??? TRIMAZKON - msi - dodělat tlačítko <back do výběru programů??

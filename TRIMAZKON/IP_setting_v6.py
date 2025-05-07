@@ -58,7 +58,7 @@ class Tools:
         text_widget.configure(state=tk.DISABLED)
     
     @classmethod
-    def read_json_config(cls,config_file_path): # Funkce vraci data z configu
+    def read_json_config(cls,config_file_path,get_global_app_settings = False): # Funkce vraci data z configu
         """
         Funkce vrací data z konfiguračního souboru
 
@@ -93,8 +93,10 @@ class Tools:
                 with open(config_file_path, "r") as file:
                     output_data = json.load(file)
 
-                return output_data["ip_settings"]
-
+                if get_global_app_settings:
+                    return output_data["app_settings"]
+                else:
+                    return output_data["ip_settings"]
             except Exception as e:
                 print(f"Nejdřív zavřete soubor {cls.config_json_filename} Chyba: {e}")   
                 print("Budou načteny defaultní hodnoty")
@@ -1244,6 +1246,7 @@ class main:
             self.deleted_projects_bin = []
             self.edited_projects_bin = []
             self.notes_frame_height = 50
+            self.show_tooltip = Tools.read_json_config(self.config_filename_path,get_global_app_settings=True)["tooltip_status"]
             read_parameters = Tools.read_json_config(self.config_filename_path)
             if read_parameters != None:
                 if read_parameters["default_window_size"] == 2:
@@ -2666,18 +2669,19 @@ class main:
             third_row_frame.                pack(pady=0,padx=0,fill="x",side = "top")
             self.project_tree.              pack(pady=5,padx=5,fill="both",expand=True,side = "top")
 
-            main.ToolTip(new_project_icon," Nový projekt ",self.root)
-            main.ToolTip(search_icon," Vyhledat projekt ",self.root)
-            main.ToolTip(reset_icon," Reset exploreru ",self.root)
-            main.ToolTip(unplug_icon," Odpojit síťový disk ",self.root)
-            main.ToolTip(refresh_icon," Refresh statusu disků ",self.root)
-            main.ToolTip(button_make_first," Přesunout projekt na začátek ",self.root)
-            main.ToolTip(self.undo_button," Vrátit poslední smazaný projekt ",self.root)
-            main.ToolTip(self.undo_edit," Vrátit poslední změnu ",self.root)
-            main.ToolTip(move_upwards," Posunout o pozici výše ",self.root)
-            main.ToolTip(move_downwards," Posunout o pozici níže ",self.root)
-            main.ToolTip(sort_alphabet," Seřadit podle abecedy ",self.root)
-            main.ToolTip(button_settings," Nastavení ",self.root)
+            if self.show_tooltip == "ano":
+                main.ToolTip(new_project_icon," Nový projekt ",self.root)
+                main.ToolTip(search_icon," Vyhledat projekt ",self.root)
+                main.ToolTip(reset_icon," Reset exploreru ",self.root)
+                main.ToolTip(unplug_icon," Odpojit síťový disk ",self.root)
+                main.ToolTip(refresh_icon," Refresh statusu disků ",self.root)
+                main.ToolTip(button_make_first," Přesunout projekt na začátek ",self.root)
+                main.ToolTip(self.undo_button," Vrátit poslední smazaný projekt ",self.root)
+                main.ToolTip(self.undo_edit," Vrátit poslední změnu ",self.root)
+                main.ToolTip(move_upwards," Posunout o pozici výše ",self.root)
+                main.ToolTip(move_downwards," Posunout o pozici níže ",self.root)
+                main.ToolTip(sort_alphabet," Seřadit podle abecedy ",self.root)
+                main.ToolTip(button_settings," Nastavení ",self.root)
 
             config_data = Tools.read_json_config(self.config_filename_path)
             if len(config_data["edited_project_bin_disk"])>0:
@@ -2793,6 +2797,7 @@ class main:
             self.edited_projects_bin = []
             self.changed_notes = []
             self.notes_frame_height = 50
+            self.show_tooltip = Tools.read_json_config(self.config_filename_path,get_global_app_settings=True)["tooltip_status"]
 
             read_parameters = Tools.read_json_config(self.config_filename_path)
             if read_parameters != None:
@@ -4550,17 +4555,18 @@ class main:
             third_row_frame.                pack(pady=0,padx=0,fill="x",side = "top")
             self.project_tree.              pack(pady=(0,5),padx=5,fill="both",expand=True,side = "top")
 
-            main.ToolTip(new_project_icon," Nový projekt ",self.root)
-            main.ToolTip(search_icon," Vyhledat projekt ",self.root)
-            main.ToolTip(refresh_icon," Refresh připojení ",self.root)
-            main.ToolTip(button_make_first," Přesunout projekt na začátek ",self.root)
-            main.ToolTip(self.undo_button," Vrátit poslední smazaný projekt ",self.root)
-            main.ToolTip(self.undo_edit," Vrátit poslední změnu ",self.root)
-            main.ToolTip(move_upwards," Posunout o pozici výše ",self.root)
-            main.ToolTip(move_downwards," Posunout o pozici níže ",self.root)
-            main.ToolTip(sort_alphabet," Seřadit podle abecedy ",self.root)
-            main.ToolTip(button_settings_behav," Nastavení ",self.root)
-            main.ToolTip(manual_ip_set," Manuální nastavení adresy ",self.root)
+            if self.show_tooltip == "ano":
+                main.ToolTip(new_project_icon," Nový projekt ",self.root)
+                main.ToolTip(search_icon," Vyhledat projekt ",self.root)
+                main.ToolTip(refresh_icon," Refresh připojení ",self.root)
+                main.ToolTip(button_make_first," Přesunout projekt na začátek ",self.root)
+                main.ToolTip(self.undo_button," Vrátit poslední smazaný projekt ",self.root)
+                main.ToolTip(self.undo_edit," Vrátit poslední změnu ",self.root)
+                main.ToolTip(move_upwards," Posunout o pozici výše ",self.root)
+                main.ToolTip(move_downwards," Posunout o pozici níže ",self.root)
+                main.ToolTip(sort_alphabet," Seřadit podle abecedy ",self.root)
+                main.ToolTip(button_settings_behav," Nastavení ",self.root)
+                main.ToolTip(manual_ip_set," Manuální nastavení adresy ",self.root)
 
             self.refresh_interfaces() # aktualizace hodnot nabídky
             if self.default_connection_option < len(self.connection_option_list):

@@ -24,7 +24,7 @@ import wmi
 # import struct
 import winreg
 
-testing = False
+testing = True
 
 
 global_recources_load_error = False
@@ -34,7 +34,7 @@ exe_name = os.path.basename(exe_path)
 config_filename = "config_MAZ.json"
 app_name = "jhv_MAZ"
 app_version = "1.0.6"
-trimazkon_version = "4.3.4"
+trimazkon_version = "4.3.5"
 loop_request = False
 root = None
 print("exe name: ",exe_name)
@@ -1979,8 +1979,8 @@ class main_menu:
         frame_with_logo.pack(pady=0,padx=0,fill="x",side = "top")
         image_logo.pack()
         trimazkon_tray_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
-        new_deleting =         customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Nastavit nové mazání", command = lambda: self.call_deleting_option(),font=("Arial",25,"bold"))
-        task_manager =         customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Zobrazit nastavené mazání", command = lambda: trimazkon_tray_instance.show_all_tasks(toplevel=True,maximalized=self.is_root_zoomed()),font=("Arial",25,"bold"))
+        new_deleting =          customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Nastavit nové mazání", command = lambda: self.call_deleting_option(),font=("Arial",25,"bold"))
+        task_manager =          customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Zobrazit nastavené mazání", command = lambda: trimazkon_tray_instance.show_all_tasks(toplevel=True,maximalized=self.is_root_zoomed()),font=("Arial",25,"bold"))
         deleting_history =      customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Zobrazit záznamy o mazání", command = lambda: trimazkon_tray_instance.show_task_log(toplevel=True,maximalized=self.is_root_zoomed()),font=("Arial",25,"bold"))
         advanced_button =       customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Nastavení", command = lambda: self.call_advanced_option(),font=("Arial",25,"bold"))
         change_log_label =      customtkinter.CTkLabel(master=frame_with_buttons_right, width= 600,height=50,font=("Arial",24,"bold"),text="Seznam posledně provedených změn: ")
@@ -2000,16 +2000,22 @@ class main_menu:
         menu_upper_frame.pack(pady=0,padx=0,fill="both",expand=True,side = "top")
         bottom_ribbon = customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#212121")
 
-        language_frame = customtkinter.CTkFrame(master=bottom_ribbon,corner_radius=0,fg_color="#212121")
-        pick_language_label = customtkinter.CTkLabel(master=language_frame,font=("Arial",24,"bold"),text="Vybrat jazyk:")
-        czech_button = customtkinter.CTkButton(master = language_frame,text=f"\U0001F1E8\U0001F1FF", width = 50,height=50, command = lambda: change_app_language("cz"),font=(None,25))
-        eng_button = customtkinter.CTkButton(master = language_frame,text=f"\U0001F1EC\U0001F1E7", width = 50,height=50, command = lambda: change_app_language("en"),font=(None,25))
-        pick_language_label.pack(pady =5,padx=5,side="left",anchor="w")
-        czech_button.pack(pady =5,padx=5,side="left",anchor="w")
-        eng_button.pack(pady =5,padx=5,side="left",anchor="w")
-        language_frame.pack(pady =20,padx=20,side="right",anchor="s")
-        # frame_with_buttons_right.pack(pady=0,padx=0,fill="both",expand=True,side = "right")
-
+        language_frame =        customtkinter.CTkFrame(master=bottom_ribbon,corner_radius=0,fg_color="#212121")
+        pick_language_label =   customtkinter.CTkLabel(master=language_frame,font=("Arial",24,"bold"),text="Vybrat jazyk:")
+        larger_icon = 46
+        smaller_icon = 43
+        cz_icon =               customtkinter.CTkLabel(master = language_frame,width=larger_icon,height=larger_icon,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/cz_icon.png")),size=(smaller_icon, smaller_icon)),bg_color="#212121")
+        cz_icon.                bind("<Enter>",lambda e: cz_icon._image.configure(size=(larger_icon,larger_icon)))
+        cz_icon.                bind("<Leave>",lambda e: cz_icon._image.configure(size=(smaller_icon,smaller_icon)))
+        cz_icon.                bind("<Button-1>",lambda e: change_app_language("cz"))
+        en_icon =               customtkinter.CTkLabel(master = language_frame,width=larger_icon,height=larger_icon,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/en_icon.png")),size=(smaller_icon, smaller_icon)),bg_color="#212121")
+        en_icon.                bind("<Enter>",lambda e: en_icon._image.configure(size=(larger_icon,larger_icon)))
+        en_icon.                bind("<Leave>",lambda e: en_icon._image.configure(size=(smaller_icon,smaller_icon)))
+        en_icon.                bind("<Button-1>",lambda e: change_app_language("en"))
+        pick_language_label.    pack(pady =5,padx=5,side="left",anchor="w")
+        cz_icon.                pack(pady =5,padx=5,side="left",anchor="w")
+        en_icon.                pack(pady =5,padx=5,side="left",anchor="w")
+        language_frame.         pack(pady =20,padx=20,side="right",anchor="s")
         licence_info_frame = customtkinter.CTkFrame(master=bottom_ribbon,corner_radius=0,fg_color="#212121")
         licence_info_label = customtkinter.CTkLabel(master=licence_info_frame,font=("Arial",24,"bold"),text="Licence:")
         licence_info_status = customtkinter.CTkLabel(master=licence_info_frame,font=("Arial",24),text="")
@@ -2017,8 +2023,6 @@ class main_menu:
         licence_info_status.pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
         licence_info_frame.pack(pady =30,padx=20,side="left",anchor="s")
         bottom_ribbon.pack(pady=0,padx=0,fill="both",side = "bottom",expand=True)
-
-        # frame_with_buttons.pack(pady=0,padx=0,fill="both",expand=True,side = "left")
         self.fill_changelog(change_log)
         change_app_language(Tools.read_json_config()[11],refresh = True)
 

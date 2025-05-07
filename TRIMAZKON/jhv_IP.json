@@ -64,7 +64,7 @@
         "default_ip_interface": 0,
         "favorite_ip_window_status": 0,
         "disk_or_ip_window": 0,
-        "default_window_size": 1,
+        "default_window_size": 0,
         "init_disk_refresh": 1,
         "editable_notes": 1,
         "disk_persistent": 1,

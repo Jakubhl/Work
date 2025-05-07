@@ -55,7 +55,7 @@ exe_path = sys.executable
 exe_name = os_path_basename(exe_path)
 config_filename = "TRIMAZKON.json"
 app_name = "TRIMAZKON"
-app_version = "4.3.4"
+app_version = "4.3.5"
 loop_request = False
 root = None
 print("exe name: ",exe_name)
@@ -909,6 +909,7 @@ if not open_image_only:
             - app_zoom_checkbox
             - tray_icon_startup
             - default_language
+            - tooltip_status
             \nSORT AND CONV SETTINGS\n
             - supported_formats_sorting
             - prefix_function
@@ -935,6 +936,7 @@ if not open_image_only:
             - copyed_dir_name
             - moved_dir_name
             - path_history_list
+            - canvas_default_color
             \nCATALOGUE SETTINGS\n
             - database_filename
             - catalogue_filename
@@ -964,7 +966,9 @@ if not open_image_only:
                     output_data = []
                     with open(initial_path+cls.config_json_filename, "r") as file:
                         output_data = json.load(file)
-
+                    
+                    output_data["image_browser_settings"].setdefault("canvas_default_color", "black")
+                    output_data["app_settings"].setdefault("tooltip_status", "ano")
                     # print("config data: ", output_data, len(output_data))
                     return output_data
 
@@ -1003,6 +1007,7 @@ if not open_image_only:
             - app_zoom_checkbox
             - tray_icon_startup
             - default_language
+            - tooltip_status
             \nSORT_CONV_SETTINGS\n
             - supported_formats_sorting
             - prefix_function
@@ -1029,6 +1034,7 @@ if not open_image_only:
             - copyed_dir_name
             - moved_dir_name
             - path_history_list
+            - canvas_default_color
             \nCATALOGUE_SETTINGS\n
             - database_filename
             - catalogue_filename
@@ -2204,7 +2210,6 @@ if not open_image_only:
 
         def just_destroy(self,e):
             # if self.tip_window:
-            print("clicked")
             try:
                 self.tip_window.update_idletasks()
             except Exception:
@@ -2536,6 +2541,7 @@ if not open_image_only:
             self.zoom_increment = config_data["image_browser_settings"]["zoom_step"]
             self.drag_increment = config_data["image_browser_settings"]["movement_step"]
             self.number_of_film_images = config_data["image_browser_settings"]["image_film_count"]
+            self.show_tooltip = config_data["app_settings"]["tooltip_status"]
             self.image_browser_path = ""
             self.unbind_list = []
             self.image_extensions = ['.jpg', '.jpeg', '.jpe', '.jif', '.jfif', '.jfi',
@@ -2604,8 +2610,9 @@ if not open_image_only:
             
             try:
                 if os.path.exists(self.default_path + self.temp_bmp_folder):
-                    shutil.rmtree(self.default_path + self.temp_bmp_folder) # vycistit
+                    self.root.after(500,lambda: shutil.rmtree(self.default_path + self.temp_bmp_folder)) # vycistit
             except Exception as err_msg:
+                print("default path: ",self.default_path)
                 print(err_msg)
             menu.menu()
         
@@ -3393,8 +3400,9 @@ if not open_image_only:
         def stop(self):
             self.state = "stop"
             # ToolTip(self.play_stop_icon,"",self.root,icon_button=True,unbind=True,unique_class_name="play_stop_icon")
-            self.play_stop_icon.event_generate("<<Custom>>")
-            ToolTip(self.play_stop_icon," Spustit sekvenci obrázků ",self.root,icon_button=True,unique_class_name="play_stop_icon")
+            if self.show_tooltip == "ano":
+                self.play_stop_icon.event_generate("<<Custom>>")
+                ToolTip(self.play_stop_icon," Spustit sekvenci obrázků ",self.root,icon_button=True,unique_class_name="play_stop_icon")
             self.play_stop_icon.unbind("<Button-1>")
             self.play_stop_icon.bind("<Button-1>",lambda e: self.play())
             self.play_stop_icon.configure(image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/play_button.png"))))
@@ -3417,8 +3425,9 @@ if not open_image_only:
 
             self.state = "running"
             # ToolTip(self.play_stop_icon,"",self.root,icon_button=True,unbind=True,unique_class_name="play_stop_icon")
-            self.play_stop_icon.event_generate("<<Custom>>")
-            ToolTip(self.play_stop_icon," Zastavit sekvenci obrázků ",self.root,icon_button=True,unique_class_name="play_stop_icon")
+            if self.show_tooltip == "ano":
+                self.play_stop_icon.event_generate("<<Custom>>")
+                ToolTip(self.play_stop_icon," Zastavit sekvenci obrázků ",self.root,icon_button=True,unique_class_name="play_stop_icon")
             self.play_stop_icon.unbind("<Button-1>")
             self.play_stop_icon.bind("<Button-1>",lambda e: self.stop())
             self.play_stop_icon.configure(image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/stop_button.png"))))
@@ -3925,7 +3934,7 @@ if not open_image_only:
             button_height = 40
             larger_font = ("Arial",20,"bold")
             self.frame_with_path =          customtkinter.CTkFrame(master=self.root,height = 200,corner_radius=0)
-            menu_button  =                  customtkinter.CTkButton(master = self.frame_with_path, width = 100,height=button_height, text = "MENU", command = lambda: self.call_menu(),font=larger_font,corner_radius=0)
+            menu_button  =                  customtkinter.CTkButton(master = self.frame_with_path, width = 150,height=button_height, text = "MENU", command = lambda: self.call_menu(),font=larger_font,corner_radius=0)
             context_menu_button  =          customtkinter.CTkButton(master = self.frame_with_path, width = 40,height=button_height, text = "V",font=larger_font,corner_radius=0,fg_color="#505050")
             self.path_set =                 customtkinter.CTkEntry(master = self.frame_with_path,width=self.root._current_width/2,height=button_height,placeholder_text="Zadejte cestu k souborům (kde se soubory přímo nacházejí)",corner_radius=0,font=("Arial",20))
             tree         =                  customtkinter.CTkButton(master = self.frame_with_path, width = 40,height=button_height,text = "...", command = self.call_browseDirectories,font=larger_font,corner_radius=0)
@@ -3965,7 +3974,6 @@ if not open_image_only:
             button_next  =                  customtkinter.CTkButton(master = self.frame_with_buttons, width = 30,height=button_height,text = ">", command = self.next_image,font=larger_font,corner_radius=0)
             # self.button_play_stop  =        customtkinter.CTkButton(master = self.frame_with_buttons, width = 90,height=button_height,text = "SPUSTIT", command = self.play,font=larger_font,corner_radius=0)
             self.play_stop_icon =           customtkinter.CTkLabel(master = self.frame_with_buttons,width=larger_icon ,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/play_button.png")),size=(smaller_icon, smaller_icon)),bg_color="#212121")
-            ToolTip(self.play_stop_icon," Spustit sekvenci obrázků ",self.root,icon_button=True,unique_class_name="play_stop_icon")
             self.play_stop_icon.            bind("<Enter>",lambda e: self.play_stop_icon._image.configure(size=(larger_icon,larger_icon)))
             self.play_stop_icon.            bind("<Leave>",lambda e: self.play_stop_icon._image.configure(size=(smaller_icon,smaller_icon)))
             self.play_stop_icon.            bind("<Button-1>",lambda e: self.play())
@@ -4052,16 +4060,23 @@ if not open_image_only:
             context_menu_button.bind("<Button-1>", call_path_context_menu)
             reset_icon.pack_propagate(0)
             
-            ToolTip(tree," Vyhledat cestu k souboru ",self.root)
-            ToolTip(context_menu_button," Historie vložených cest ",self.root)
-            ToolTip(button_open_setting," Nastavení ",self.root,reverse=True)
-            ToolTip(open_path_icon," Otevřít cestu ",self.root)
-            ToolTip(save_path_icon," Uložit cestu ",self.root)
-            ToolTip(rotate_icon," Otočit obrázek o 90° (<R>) ",self.root)
-            ToolTip(copy_icon,f" Kopírovat obrázek do složky \"{self.copy_dir}\" (<C>) ",self.root)
-            ToolTip(delete_icon," Smazat obrázek (<Del>) ",self.root)
-            ToolTip(reset_icon," Reset parametrů (<F5>) ",self.root)
-            ToolTip(move_icon,f" Přesunot obrázek do složky \"{self.move_dir}\" (<M>) ",self.root)
+            if self.show_tooltip == "ano":
+                ToolTip(self.play_stop_icon," Spustit sekvenci obrázků ",self.root,icon_button=True,unique_class_name="play_stop_icon")
+                ToolTip(tree," Vyhledat cestu k souboru ",self.root)
+                ToolTip(context_menu_button," Historie vložených cest ",self.root)
+                ToolTip(button_open_setting," Nastavení ",self.root,reverse=True)
+                ToolTip(open_path_icon," Otevřít cestu ",self.root)
+                ToolTip(save_path_icon," Uložit cestu ",self.root)
+                ToolTip(rotate_icon," Otočit obrázek o 90° (<R>) ",self.root)
+                ToolTip(copy_icon,f" Kopírovat obrázek do složky \"{self.copy_dir}\" (<C>) ",self.root)
+                ToolTip(delete_icon," Smazat obrázek (<Del>) ",self.root)
+                ToolTip(reset_icon," Reset parametrů (<F5>) ",self.root)
+                ToolTip(move_icon,f" Přesunot obrázek do složky \"{self.move_dir}\" (<M>) ",self.root)
+                ToolTip(self.name_or_path," V konzoli zobrazovat: celou cestu/ jen název ",self.root)
+
+            config_data = Tools.read_json_config()
+            if config_data["image_browser_settings"]["canvas_default_color"] == "white":
+                self.main_frame.configure(bg="white")
 
             def jump_to_image(e):
                 if self.changable_image_num.get().isdigit():
@@ -4319,7 +4334,6 @@ if not open_image_only:
                 self.start(self.path_given)
             else:
                 path = self.config_path
-                config_data = Tools.read_json_config()
                 if len(config_data["image_browser_settings"]["path_history_list"]) != 0:
                     path_from_history = config_data["image_browser_settings"]["path_history_list"][0]
                     self.path_set.delete("0","200")
@@ -4524,6 +4538,11 @@ if not open_image_only:
                     default_path_insert_console.configure(text = "Aktuálně nastavená základní cesta k souborům: " + str(path_checked),text_color="white")
                     main_console.configure(text="")
                     main_console.configure(text=console_input,text_color="green")
+                    try:
+                        selected_settings = str(drop_down_options.get())
+                        Tools.add_new_path_to_history(path_checked,mapping_logic[selected_settings])
+                    except Exception:
+                        pass
                 elif path_checked != "/":
                     main_console.configure(text="")
                     main_console.configure(text=f"Zadaná cesta: {path_given} nebyla nalezena, nebude tedy uložena",text_color="red")
@@ -4848,7 +4867,23 @@ if not open_image_only:
                     main_console.configure(text=f"V historii cest: {drop_down_options.get()} nebylo nic nalezeno",text_color="orange")
 
             def toggle_IB_canvas_bg(color):
-                print(color)
+                Tools.save_to_json_config(str(color),"image_browser_settings","canvas_default_color")
+                if color == "white":
+                    white_button.configure(border_width = 4)
+                    black_button.configure(border_width = 1)
+                    main_console.configure(text=f"Barva pozadí prohlížeče obrázků úspěšně nastavena na: bílou",text_color="green")
+                else:
+                    white_button.configure(border_width = 1)
+                    black_button.configure(border_width = 4)
+                    main_console.configure(text=f"Barva pozadí prohlížeče obrázků úspěšně nastavena na: černou",text_color="green")
+
+            def toggle_tooltip_status():
+                if tooltip_checkbox.get() == 1:
+                    Tools.save_to_json_config("ne","app_settings","tooltip_status")
+                    main_console.configure(text="Tooltip byl úspěšně zakázán",text_color="green")
+                else:
+                    Tools.save_to_json_config("ano","app_settings","tooltip_status")
+                    main_console.configure(text="Tooltip byl úspěšně povolen",text_color="green")
 
             if submenu_option == "default_path":
                 path_history_options = ["Třídění souborů","Konvertování souborů","Mazání souborů","Vytváření katalogu","Prohlížeč obrázků"]
@@ -4863,15 +4898,16 @@ if not open_image_only:
                 row_index = 1
 
                 insert_licence_btn =        customtkinter.CTkButton(master = self.bottom_frame_default_path, width = 200,height=40, text = "Otevřít umístění aplikace/ vložit licenci", command = lambda: os.startfile(initial_path),font=("Arial",24,"bold"))
-                insert_licence_btn.          pack(pady=(30,0),padx=5,side = "top",anchor = "w")
-
+                insert_licence_btn.         pack(pady=(30,0),padx=5,side = "top",anchor = "w")
                 first_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
                 self.checkbox_maximalized = customtkinter.CTkCheckBox(master = first_option_frame,height=40,text = "Spouštět v maximalizovaném okně",command = lambda: self.maximalized(),font=("Arial",22,"bold"))
                 first_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
-
                 tray_option_frame =         customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
                 self.tray_checkbox =        customtkinter.CTkCheckBox(master = tray_option_frame,height=40,text = "Spouštět TRIMAZKON na pozadí (v systémové nabídce \"tray_icons\") při zapnutí systému Windows?",command = lambda: self.tray_startup_setup(main_console),font=("Arial",22,"bold"))
                 tray_option_frame.          pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
+                tooltip_option_frame =      customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
+                tooltip_checkbox =          customtkinter.CTkCheckBox(master = tooltip_option_frame,height=40,text = "Zakázat \"tooltip\" (okna nápovědy nad tlačítky)",command = lambda: toggle_tooltip_status(),font=("Arial",22,"bold"))
+                tooltip_option_frame.       pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
 
                 current_zoom = config_data["app_settings"]["app_zoom"]
                 new_option_frame =          customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
@@ -4894,12 +4930,10 @@ if not open_image_only:
                 self.path_set =             customtkinter.CTkEntry(     master = second_option_frame,width=845,height=40,font=("Arial",20),placeholder_text="")
                 button_save5 =              customtkinter.CTkButton(    master = second_option_frame,width=100,height=40, text = "Uložit", command = lambda: save_path(),font=("Arial",22,"bold"))
                 button_explorer =           customtkinter.CTkButton(    master = second_option_frame,width=40,height=40, text = "...", command = lambda: call_browseDirectories(),font=("Arial",22,"bold"))
-
-                del_history_label =         customtkinter.CTkLabel(master = second_option_frame,height=40,text = "Mazání historie cest pro jednotlivé možnosti:",justify = "left",font=("Arial",22,"bold"))
+                del_history_label =         customtkinter.CTkLabel(master = second_option_frame,height=40,text = "Výběr skupiny historie cest (vložená cesta se ukládá pod zvolenou kategorii):",justify = "left",font=("Arial",22,"bold"))
                 context_menu_button2  =     customtkinter.CTkButton(master = second_option_frame, width = 100,height=40, text = "Náhled",font=("Arial",20,"bold"),corner_radius=0)
                 drop_down_options =         customtkinter.CTkOptionMenu(master = second_option_frame,width=350,height=40,values=path_history_options,font=("Arial",20),corner_radius=0)
                 del_path_history =          customtkinter.CTkButton(master = second_option_frame,height=40, text = "Smazat historii", command = lambda: call_delete_path_history(),font=("Arial",22,"bold"),corner_radius=0)
-
                 default_path_insert_console=customtkinter.CTkLabel(     master = second_option_frame,height=40,text ="",justify = "left",font=("Arial",22),text_color="white")
                 console_frame =             customtkinter.CTkFrame(     master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1,fg_color="black")
                 main_console =              customtkinter.CTkLabel(master = console_frame,height=20,text = str(main_console_text),text_color=str(main_console_text_color),justify = "left",font=("Arial",22))
@@ -4908,6 +4942,7 @@ if not open_image_only:
                     save_changes_button =   customtkinter.CTkButton(master = save_frame,width=150,height=40, text = "Aplikovat/ načíst změny", command = lambda: self.refresh_main_window(),font=("Arial",22,"bold"))
                 self.checkbox_maximalized.  grid(column =0,row=row_index-1,sticky = tk.W,pady =20,padx=10)
                 self.tray_checkbox.         grid(column =0,row=row_index-1,sticky = tk.W,pady =20,padx=10)
+                tooltip_checkbox.           grid(column =0,row=row_index-1,sticky = tk.W,pady =20,padx=10)
                 label5.                     grid(column =0,row=row_index,sticky = tk.W,pady =(5,0),padx=10)
                 explorer_settings_label.    grid(column =0,row=row_index+1,sticky = tk.W,pady =10,padx=10)
                 select_by_dir .             grid(column =0,row=row_index+1,sticky = tk.W,pady =0,padx=250)
@@ -4973,6 +5008,9 @@ if not open_image_only:
                 else:
                     self.tray_checkbox.deselect()
 
+                if config_data["app_settings"]["tooltip_status"]  == "ne":
+                    tooltip_checkbox.select()
+
             if submenu_option == "set_folder_names":
                 self.option_buttons[1].configure(fg_color="#212121")
                 #upravovani prefixu slozek, default: pro trideni podle kamer
@@ -5016,7 +5054,7 @@ if not open_image_only:
                 if self.windowed:
                     save_frame =                customtkinter.CTkFrame(     master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
                     save_frame.                 pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top",anchor = "e")
-                    save_changes_button =           customtkinter.CTkButton(master = save_frame,width=150,height=40, text = "Aplikovat/ načíst změny", command = lambda: self.refresh_main_window(),font=("Arial",22,"bold"))
+                    save_changes_button =       customtkinter.CTkButton(master = save_frame,width=150,height=40, text = "Aplikovat/ načíst změny", command = lambda: self.refresh_main_window(),font=("Arial",22,"bold"))
                 label_folder_name_change.       grid(column =0,row=row_index+4,sticky = tk.W,pady =10,padx=10)
                 set_new_def_folder_name.        grid(column =0,row=row_index+5,sticky = tk.W,pady =0,padx=10)
                 button_save_new_name.           grid(column =0,row=row_index+5,sticky = tk.W,pady =0,padx=215)
@@ -5155,13 +5193,12 @@ if not open_image_only:
                 self.option_buttons[4].configure(fg_color="#212121")
                 text_increment = str(config_data["image_browser_settings"]["zoom_step"]) + " %"
                 text_movement = str(config_data["image_browser_settings"]["movement_step"]) + " px"
-                text_image_film = str(config_data["image_browser_settings"]["image_film_count"]) + " obrázků na každé straně"
-
+                text_image_film = str(config_data["image_browser_settings"]["image_film_count"]) + " obrázků na každé straně"                    
                 first_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
                 first_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
                 label_IB1 =                 customtkinter.CTkLabel(master = first_option_frame,height=20,text = "Zvolte barvu pozadí prohlížeče:",justify = "left",font=("Arial",22,"bold"))
-                white_button =              customtkinter.CTkButton(master = first_option_frame,text="",width = 30,height=30,corner_radius=0,border_width=1,fg_color="#FFFFFF",command=lambda: toggle_IB_canvas_bg("black"))
-                black_button =              customtkinter.CTkButton(master = first_option_frame,text="",width = 30,height=30,corner_radius=0,border_width=1,fg_color="#000000",command=lambda: toggle_IB_canvas_bg("white"))
+                white_button =              customtkinter.CTkButton(master = first_option_frame,text="",width = 30,height=30,corner_radius=0,border_width=1,fg_color="#FFFFFF",command=lambda: toggle_IB_canvas_bg("white"))
+                black_button =              customtkinter.CTkButton(master = first_option_frame,text="",width = 30,height=30,corner_radius=0,border_width=1,fg_color="#000000",command=lambda: toggle_IB_canvas_bg("black"))
 
                 second_option_frame =       customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=20,corner_radius=0,border_width=1)
                 second_option_frame.        pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
@@ -5223,25 +5260,31 @@ if not open_image_only:
                 num_of_image_film_images_slider.bind("<ButtonRelease-1>",lambda e: slider_released(e,"IB_image_num"))
                 if config_data["image_browser_settings"]["show_image_film"] == "ano":
                     switch_image_film.select()
+                if str(config_data["image_browser_settings"]["canvas_default_color"]) == "white":
+                    white_button.configure(border_width = 4)
+                    black_button.configure(border_width = 1)
+                else:
+                    white_button.configure(border_width = 1)
+                    black_button.configure(border_width = 4)
+
 
         def creating_advanced_option_widgets(self): # Vytváří veškeré widgets (advance option MAIN)
             if self.windowed:
                 self.current_root=customtkinter.CTkToplevel()
+                self.current_root.title("Pokročilá nastavení")
                 x = self.root.winfo_rootx()
                 y = self.root.winfo_rooty()
                 self.current_root.geometry(f"1250x900+{x+200}+{y+200}")
-                self.current_root.title("Pokročilá nastavení")
                 self.current_root.after(200, lambda: self.current_root.iconbitmap(Tools.resource_path(app_icon)))
             else:
                 self.current_root = self.root
-            self.bottom_frame_default_path   = customtkinter.CTkFrame(master=self.current_root,corner_radius=0,border_width = 0)
-            self.top_frame                   = customtkinter.CTkFrame(master=self.current_root,corner_radius=0,border_width = 0)
-            self.menu_buttons_frame          = customtkinter.CTkFrame(master=self.current_root,corner_radius=0,fg_color="#636363",height=50,border_width = 0)
-            self.top_frame.                 pack(pady=(2.5,0),padx=5,fill="x",expand=False,side = "top")
-            self.menu_buttons_frame.        pack(pady=0,padx=5,fill="x",expand=False,side = "top")
-            self.bottom_frame_default_path. pack(pady=(0,2.5),padx=5,fill="both",expand=True,side = "bottom")
-            
-            label0          = customtkinter.CTkLabel(master = self.top_frame,height=20,text = "Nastavte požadované parametry (nastavení bude uloženo i po vypnutí aplikace): ",justify = "left",font=("Arial",22,"bold"))
+            self.top_frame                   =  customtkinter.CTkFrame(master=self.current_root,fg_color="#212121",corner_radius=0)
+            self.menu_buttons_frame          =  customtkinter.CTkFrame(master=self.current_root,corner_radius=0,fg_color="#636363",height=50,border_width = 0)
+            self.bottom_frame_default_path   =  customtkinter.CTkScrollableFrame(master=self.current_root,fg_color="#212121",corner_radius=0)
+            self.top_frame.                     pack(pady=(2.5,0),padx=5,fill="x",expand=False,side = "top")
+            self.menu_buttons_frame.            pack(pady=0,padx=5,fill="x",expand=False,side = "top")
+            self.bottom_frame_default_path.     pack(pady=(0,2.5),padx=5,fill="both",expand=True,side = "bottom")
+            label0          =   customtkinter.CTkLabel(master = self.top_frame,height=20,text = "Nastavte požadované parametry (nastavení bude uloženo i po vypnutí aplikace): ",justify = "left",font=("Arial",22,"bold"))
             main_menu_button =  customtkinter.CTkButton(master = self.menu_buttons_frame, width = 200,height=50,text = "MENU",                  command =  lambda: self.call_menu(),font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
             options0 =          customtkinter.CTkButton(master = self.menu_buttons_frame, width = 200,height=50,text = "Základní nastavení",    command =  lambda: self.setting_widgets(submenu_option="default_path"),font=("Arial",20,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
             options1 =          customtkinter.CTkButton(master = self.menu_buttons_frame, width = 200,height=50,text = "Názvy složek",          command =  lambda: self.setting_widgets(submenu_option="set_folder_names"),font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
@@ -5260,6 +5303,7 @@ if not open_image_only:
             options4.           grid(column = 0,row=0,pady = (10,0),padx =1070-shift_const,sticky = tk.W)
             self.option_buttons = [options0,options1,options2,options3,options4]
 
+
             if self.windowed and not global_recources_load_error:
                 if self.spec_location == "image_browser":
                     self.setting_widgets(submenu_option="set_image_browser_setting")
@@ -5275,7 +5319,6 @@ if not open_image_only:
                 options2.configure(state = "disabled")
                 options3.configure(state = "disabled")
                 options4.configure(state = "disabled")
-
 
             def maximalize_window(e):
                 # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
@@ -6008,12 +6051,12 @@ if not open_image_only:
             user_input_frame = customtkinter.CTkFrame(master=top_frame,corner_radius=0,fg_color="#212121",border_width=4,border_color="#636363")
             date_input_frame = customtkinter.CTkFrame(master=user_input_frame,corner_radius=0,fg_color="#212121")
             date_label = customtkinter.CTkLabel(master = date_input_frame,text = "‣ budou smazány soubory starší než nastavené datum:",justify = "left",font=("Arial",20))
-            set_day     = customtkinter.CTkEntry(master = date_input_frame,width=40,font=("Arial",20), placeholder_text= self.cutoff_date[0])
+            set_day     = customtkinter.CTkEntry(master = date_input_frame,width=40,font=("Arial",20), placeholder_text= self.cutoff_date[0],corner_radius=0)
             sep1        = customtkinter.CTkLabel(master = date_input_frame,width=10,text = ".",font=("Arial",20))
-            set_month   = customtkinter.CTkEntry(master = date_input_frame,width=40,font=("Arial",20), placeholder_text= self.cutoff_date[1])
+            set_month   = customtkinter.CTkEntry(master = date_input_frame,width=40,font=("Arial",20), placeholder_text= self.cutoff_date[1],corner_radius=0)
             sep2        = customtkinter.CTkLabel(master = date_input_frame,width=10,text = ".",font=("Arial",20))
-            set_year    = customtkinter.CTkEntry(master = date_input_frame,width=60,font=("Arial",20), placeholder_text= self.cutoff_date[2])
-            insert_button = customtkinter.CTkButton(master = date_input_frame,width=190, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",20,"bold"))
+            set_year    = customtkinter.CTkEntry(master = date_input_frame,width=60,font=("Arial",20), placeholder_text= self.cutoff_date[2],corner_radius=0)
+            insert_button = customtkinter.CTkButton(master = date_input_frame,width=190, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",20,"bold"),corner_radius=0)
             date_label. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
             set_day.    pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
             sep1.       pack(padx=(5,0),pady=(0,0),side="left",anchor="w")
@@ -6028,7 +6071,7 @@ if not open_image_only:
 
             day_format_input_frame = customtkinter.CTkFrame(master=user_input_frame,corner_radius=0,fg_color="#212121")
             days_label = customtkinter.CTkLabel(master = day_format_input_frame,text = "‣ to znamená starší než:",justify = "left",font=("Arial",20))
-            max_days_entry = customtkinter.CTkEntry(master = day_format_input_frame,width=60,font=("Arial",20))
+            max_days_entry = customtkinter.CTkEntry(master = day_format_input_frame,width=60,font=("Arial",20),corner_radius=0)
             max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
             days_label2 = customtkinter.CTkLabel(master = day_format_input_frame,text = "dní",justify = "left",font=("Arial",20))
             days_label. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
@@ -6039,7 +6082,7 @@ if not open_image_only:
 
             ftk_frame = customtkinter.CTkFrame(master=user_input_frame,corner_radius=0,fg_color="#212121")
             ftk_label = customtkinter.CTkLabel(master = ftk_frame,text = "‣ přičemž bude ponecháno:",justify = "left",font=("Arial",20))
-            files_to_keep_set = customtkinter.CTkEntry(master = ftk_frame,width=70,font=("Arial",20), placeholder_text= self.files_to_keep)
+            files_to_keep_set = customtkinter.CTkEntry(master = ftk_frame,width=70,font=("Arial",20), placeholder_text= self.files_to_keep,corner_radius=0)
             ftk_label2 = customtkinter.CTkLabel(master = ftk_frame,text = "souborů, vyhodnocených, jako starších",justify = "left",font=("Arial",20))
             ftk_label. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
             files_to_keep_set. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
@@ -6058,19 +6101,19 @@ if not open_image_only:
             console.pack(pady = (10,0),padx =10,side="top",anchor="w",fill="x")
 
             subfolder_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121")
-            subfolder_checkbox = customtkinter.CTkCheckBox(master = subfolder_frame, text = "Procházet subsložky? (max: 6)",command = lambda: search_subfolders(),font=("Arial",18,"bold"))
+            subfolder_checkbox = customtkinter.CTkCheckBox(master = subfolder_frame, text = "Procházet subsložky? (max: 6)",command = lambda: search_subfolders(),font=("Arial",18,"bold"),corner_radius=0)
             subfolder_warning = customtkinter.CTkLabel(master = subfolder_frame,text = "",font=("Arial",18,"bold"))
             subfolder_checkbox.pack(padx=(10,0),pady=(5,0),side="left",anchor="w")
             subfolder_warning.pack(padx=(10,0),pady=(5,0),side="left",anchor="w")
             subfolder_frame.pack(padx=(0,0),pady=0,side="top",anchor="w")
 
-            self.checkbox_testing = customtkinter.CTkCheckBox(master =self.changable_frame, text = f"Režim TESTOVÁNÍ (Soubory vyhodnocené ke smazání se pouze přesunou do složky s názvem: \"{self.to_delete_folder_name}\")",font=("Arial",18,"bold"),command=lambda: set_testing_mode())
+            self.checkbox_testing = customtkinter.CTkCheckBox(master =self.changable_frame,corner_radius=0, text = f"Režim TESTOVÁNÍ (Soubory vyhodnocené ke smazání se pouze přesunou do složky s názvem: \"{self.to_delete_folder_name}\")",font=("Arial",18,"bold"),command=lambda: set_testing_mode())
             self.checkbox_testing.pack(pady = (10,0),padx =10,side="top",anchor="w")
 
             decision_date_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121")
             decision_date_label = customtkinter.CTkLabel(master = decision_date_frame,text = "Řídit se podle: ",justify = "left",font=("Arial",20,"bold"))
-            checkbox_creation_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data vytvoření",font=("Arial",18),command=lambda:set_decision_date("creation"))
-            checkbox_modification_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data poslední změny (doporučeno)",font=("Arial",18),command=lambda:set_decision_date("modification"))
+            checkbox_creation_date = customtkinter.CTkCheckBox(master =decision_date_frame,corner_radius=0, text = "data vytvoření",font=("Arial",18),command=lambda:set_decision_date("creation"))
+            checkbox_modification_date = customtkinter.CTkCheckBox(master =decision_date_frame,corner_radius=0, text = "data poslední změny (doporučeno)",font=("Arial",18),command=lambda:set_decision_date("modification"))
             decision_date_label.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
             checkbox_creation_date.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
             checkbox_modification_date.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
@@ -6349,12 +6392,12 @@ if not open_image_only:
             user_input_frame = customtkinter.CTkFrame(master=left_side,corner_radius=0,fg_color="#212121",border_width=4,border_color="#636363")
             date_input_frame = customtkinter.CTkFrame(master=user_input_frame,corner_radius=0,fg_color="#212121")
             date_label = customtkinter.CTkLabel(master = date_input_frame,text = "‣ budou smazány adresáře starší než nastavené datum:",justify = "left",font=("Arial",20))
-            set_day     = customtkinter.CTkEntry(master = date_input_frame,width=40,font=("Arial",20), placeholder_text= self.cutoff_date[0])
+            set_day     = customtkinter.CTkEntry(master = date_input_frame,width=40,font=("Arial",20), placeholder_text= self.cutoff_date[0],corner_radius=0)
             sep1        = customtkinter.CTkLabel(master = date_input_frame,width=10,text = ".",font=("Arial",20))
-            set_month   = customtkinter.CTkEntry(master = date_input_frame,width=40,font=("Arial",20), placeholder_text= self.cutoff_date[1])
+            set_month   = customtkinter.CTkEntry(master = date_input_frame,width=40,font=("Arial",20), placeholder_text= self.cutoff_date[1],corner_radius=0)
             sep2        = customtkinter.CTkLabel(master = date_input_frame,width=10,text = ".",font=("Arial",20))
-            set_year    = customtkinter.CTkEntry(master = date_input_frame,width=60,font=("Arial",20), placeholder_text= self.cutoff_date[2])
-            insert_button = customtkinter.CTkButton(master = date_input_frame,width=190, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",20,"bold"))
+            set_year    = customtkinter.CTkEntry(master = date_input_frame,width=60,font=("Arial",20), placeholder_text= self.cutoff_date[2],corner_radius=0)
+            insert_button = customtkinter.CTkButton(master = date_input_frame,width=190, text = "Vložit dnešní datum", command = lambda: insert_current_date(),font=("Arial",20,"bold"),corner_radius=0)
             date_label. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
             set_day.    pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
             sep1.       pack(padx=(5,0),pady=(0,0),side="left",anchor="w")
@@ -6369,7 +6412,7 @@ if not open_image_only:
 
             day_format_input_frame = customtkinter.CTkFrame(master=user_input_frame,corner_radius=0,fg_color="#212121")
             days_label = customtkinter.CTkLabel(master = day_format_input_frame,text = "‣ to znamená starší než:",justify = "left",font=("Arial",20))
-            max_days_entry = customtkinter.CTkEntry(master = day_format_input_frame,width=60,font=("Arial",20))
+            max_days_entry = customtkinter.CTkEntry(master = day_format_input_frame,width=60,font=("Arial",20),corner_radius=0)
             max_days_entry.insert(0,Deleting.get_max_days(self.cutoff_date))
             days_label2 = customtkinter.CTkLabel(master = day_format_input_frame,text = "dní",justify = "left",font=("Arial",20))
             days_label. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
@@ -6382,7 +6425,7 @@ if not open_image_only:
 
             ftk_frame = customtkinter.CTkFrame(master=user_input_frame,corner_radius=0,fg_color="#212121")
             ftk_label = customtkinter.CTkLabel(master = ftk_frame,text = "‣ přičemž bude ponecháno:",justify = "left",font=("Arial",20))
-            files_to_keep_set = customtkinter.CTkEntry(master = ftk_frame,width=70,font=("Arial",20), placeholder_text= self.directories_to_keep)
+            files_to_keep_set = customtkinter.CTkEntry(master = ftk_frame,width=70,font=("Arial",20), placeholder_text= self.directories_to_keep,corner_radius=0)
             ftk_label2 = customtkinter.CTkLabel(master = ftk_frame,text = "adresářů, vyhodnocených, jako starších",justify = "left",font=("Arial",20))
             ftk_label. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
             files_to_keep_set. pack(padx=(10,0),pady=(0,0),side="left",anchor="w")
@@ -6414,13 +6457,13 @@ if not open_image_only:
             console = tk.Text(self.changable_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED)
             console.pack(pady = (10,0),padx =10,side="top",anchor="w",fill="x")
 
-            self.checkbox_testing = customtkinter.CTkCheckBox(master =self.changable_frame, text = f"Režim TESTOVÁNÍ (Soubory vyhodnocené ke smazání se pouze přesunou do složky s názvem: \"{self.to_delete_folder_name}\")",font=("Arial",18,"bold"),command=lambda:set_testing_mode())
+            self.checkbox_testing = customtkinter.CTkCheckBox(master =self.changable_frame,corner_radius=0, text = f"Režim TESTOVÁNÍ (Soubory vyhodnocené ke smazání se pouze přesunou do složky s názvem: \"{self.to_delete_folder_name}\")",font=("Arial",18,"bold"),command=lambda:set_testing_mode())
             self.checkbox_testing.pack(pady = (10,0),padx =10,side="top",anchor="w")
 
             decision_date_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121")
             decision_date_label = customtkinter.CTkLabel(master = decision_date_frame,text = "Řídit se podle: ",justify = "left",font=("Arial",20,"bold"))
-            checkbox_creation_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data vytvoření",font=("Arial",18),command=lambda:set_decision_date("creation"))
-            checkbox_modification_date = customtkinter.CTkCheckBox(master =decision_date_frame, text = "data poslední změny (doporučeno)",font=("Arial",18),command=lambda:set_decision_date("modification"))
+            checkbox_creation_date = customtkinter.CTkCheckBox(master =decision_date_frame,corner_radius=0, text = "data vytvoření",font=("Arial",18),command=lambda:set_decision_date("creation"))
+            checkbox_modification_date = customtkinter.CTkCheckBox(master =decision_date_frame,corner_radius=0, text = "data poslední změny (doporučeno)",font=("Arial",18),command=lambda:set_decision_date("modification"))
             decision_date_label.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
             checkbox_creation_date.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
             checkbox_modification_date.pack(pady = (10,0),padx =(10,0),side="left",anchor="w")
@@ -6519,15 +6562,15 @@ if not open_image_only:
             frame_path_input =      customtkinter.CTkFrame(master=header_frame,corner_radius=0)
             context_menu_button  =  customtkinter.CTkButton(master =frame_path_input, width = 50,height=50, text = "V",font=("Arial",20,"bold"),corner_radius=0,fg_color="#505050")
             self.path_set    =      customtkinter.CTkEntry(master =frame_path_input,height=50,font=("Arial",20),corner_radius=0)
-            tree        =           customtkinter.CTkButton(master =frame_path_input,height=50,width = 180,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"))
-            button_save_path =      customtkinter.CTkButton(master =frame_path_input,height=50,text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get(),"del_settings"),font=("Arial",20,"bold"))
-            button_open_setting =   customtkinter.CTkButton(master =frame_path_input,height=50,width=50, text = "⚙️", command = lambda: Advanced_option(self.root,windowed=True,spec_location="deleting_option"),font=(None,20))
+            tree        =           customtkinter.CTkButton(master =frame_path_input,height=50,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"),corner_radius=0)
+            button_save_path =      customtkinter.CTkButton(master =frame_path_input,height=50,text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get(),"del_settings"),font=("Arial",20,"bold"),corner_radius=0)
+            button_open_setting =   customtkinter.CTkButton(master =frame_path_input,height=50,width=50, text = "⚙️", command = lambda: Advanced_option(self.root,windowed=True,spec_location="deleting_option"),font=(None,20),corner_radius=0)
             context_menu_button.    pack(pady = 10,padx =(10,0),anchor ="w",side = "left")
             self.path_set.          pack(pady = 10,padx =(0,0),anchor ="w",side = "left",fill="both",expand=True)
-            tree.                   pack(pady = 10,padx =(10,0),anchor ="w",side = "left")
-            button_save_path.       pack(pady = 10,padx =(10,0),anchor ="w",side = "left")
-            button_open_setting.    pack(pady = 10,padx =(10,10),anchor = "w",side = "left")
-            frame_path_input.       pack(pady=0,padx=0,fill="both",side = "top")
+            tree.                   pack(pady = 10,padx =(5,0),anchor ="w",side = "left")
+            button_save_path.       pack(pady = 10,padx =(5,0),anchor ="w",side = "left")
+            button_open_setting.    pack(pady = 10,padx =(5,10),anchor = "w",side = "left")
+            frame_path_input.       pack(pady=0,padx=5,fill="both",side = "top")
             context_menu_button.bind("<Button-1>", call_path_context_menu)
 
             double_frame =          customtkinter.CTkFrame(master=header_frame,corner_radius=0,height=400,fg_color="#212121",border_width=2,border_color="#636363")
@@ -7193,8 +7236,6 @@ if not open_image_only:
             self.frame4 =   customtkinter.CTkScrollableFrame(master=upper_frame,corner_radius=0,fg_color="#212121")
             self.frame5 =   customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
             self.frame6 =   customtkinter.CTkFrame(master=upper_frame,corner_radius=0,fg_color="#212121")
-
-
             self.height_of_frame6 = 290
             self.width_of_frame6 = 370
             list_of_frames = [upper_frame,frame2,self.frame3,self.frame4,self.frame5,self.frame6,frame_with_cards,frame_with_logo]

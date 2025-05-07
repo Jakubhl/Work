@@ -56,7 +56,7 @@ exe_name = os_path_basename(exe_path)
 config_filename = "jhv_IP.json"
 app_name = "jhv_IP"
 app_version = "1.0.2"
-trimazkon_version = "4.3.4"
+trimazkon_version = "4.3.5"
 loop_request = False
 root = None
 print("exe name: ",exe_name)
@@ -485,6 +485,7 @@ class Tools:
             - app_zoom_checkbox
             - tray_icon_startup
             - default_language
+            - tooltip_status
             \nSORT AND CONV SETTINGS\n
             - supported_formats_sorting
             - prefix_function
@@ -541,6 +542,7 @@ class Tools:
                     with open(initial_path+cls.config_json_filename, "r") as file:
                         output_data = json.load(file)
 
+                    output_data["app_settings"].setdefault("tooltip_status", "ano")
                     # print("config data: ", output_data, len(output_data))
                     return output_data
 
@@ -579,6 +581,7 @@ class Tools:
             - app_zoom_checkbox
             - tray_icon_startup
             - default_language
+            - tooltip_status
             \nSORT_CONV_SETTINGS\n
             - supported_formats_sorting
             - prefix_function
@@ -1972,6 +1975,14 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             else:
                 main_console.configure(text=f"V historii cest: {drop_down_options.get()} nebylo nic nalezeno",text_color="orange")
 
+        def toggle_tooltip_status():
+            if tooltip_checkbox.get() == 1:
+                Tools.save_to_json_config("ne","app_settings","tooltip_status")
+                main_console.configure(text="Tooltip byl úspěšně zakázán",text_color="green")
+            else:
+                Tools.save_to_json_config("ano","app_settings","tooltip_status")
+                main_console.configure(text="Tooltip byl úspěšně povolen",text_color="green")
+
         if submenu_option == "default_path":
             path_history_options = ["Třídění souborů","Konvertování souborů","Mazání souborů","Vytváření katalogu","Prohlížeč obrázků"]
             mapping_logic = {
@@ -1989,11 +2000,12 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             first_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
             self.checkbox_maximalized = customtkinter.CTkCheckBox(master = first_option_frame,height=40,text = "Spouštět v maximalizovaném okně",command = lambda: self.maximalized(),font=("Arial",22,"bold"))
             first_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
-
             tray_option_frame =         customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
             self.tray_checkbox =        customtkinter.CTkCheckBox(master = tray_option_frame,height=40,text = "Spouštět TRIMAZKON na pozadí (v systémové nabídce \"tray_icons\") při zapnutí systému Windows?",command = lambda: self.tray_startup_setup(main_console),font=("Arial",22,"bold"))
             tray_option_frame.          pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
-
+            tooltip_option_frame =      customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
+            tooltip_checkbox =          customtkinter.CTkCheckBox(master = tooltip_option_frame,height=40,text = "Zakázat \"tooltip\" (okna nápovědy nad tlačítky)",command = lambda: toggle_tooltip_status(),font=("Arial",22,"bold"))
+            tooltip_option_frame.       pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             current_zoom = config_data["app_settings"]["app_zoom"]
             new_option_frame =          customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
             new_option_frame.           pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
@@ -2015,7 +2027,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             self.path_set =             customtkinter.CTkEntry( master = second_option_frame,width=845,height=40,font=("Arial",20),placeholder_text="")
             button_save5 =              customtkinter.CTkButton(master = second_option_frame,width=100,height=40, text = "Uložit", command = lambda: save_path(),font=("Arial",22,"bold"))
             button_explorer =           customtkinter.CTkButton(master = second_option_frame,width=40,height=40, text = "...", command = lambda: call_browseDirectories(),font=("Arial",22,"bold"))
-            del_history_label =         customtkinter.CTkLabel(master = second_option_frame,height=40,text = "Mazání historie cest pro jednotlivé možnosti:",justify = "left",font=("Arial",22,"bold"))
+            del_history_label =         customtkinter.CTkLabel(master = second_option_frame,height=40,text = "Výběr skupiny historie cest (vložená cesta se ukládá pod zvolenou kategorii):",justify = "left",font=("Arial",22,"bold"))
             context_menu_button2  =     customtkinter.CTkButton(master = second_option_frame, width = 100,height=40, text = "Náhled",font=("Arial",20,"bold"),corner_radius=0)
             drop_down_options =         customtkinter.CTkOptionMenu(master = second_option_frame,width=350,height=40,values=path_history_options,font=("Arial",20),corner_radius=0)
             del_path_history =          customtkinter.CTkButton(master = second_option_frame,height=40, text = "Smazat historii", command = lambda: call_delete_path_history(),font=("Arial",22,"bold"),corner_radius=0)
@@ -2041,7 +2053,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             del_path_history.           grid(column =0,row=row_index+4,sticky = tk.W,pady =0,padx=480)
             default_path_insert_console.grid(column =0,row=row_index+5,sticky = tk.W,pady =10,padx=10)
             main_console.               grid(column =0,row=row_index+6,sticky = tk.W,pady =10,padx=10)
-            second_option_frame.        pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
+            # second_option_frame.        pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             console_frame.              pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
             
             if self.windowed:
@@ -2091,6 +2103,9 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 self.tray_checkbox.select()
             else:
                 self.tray_checkbox.deselect()
+
+            if config_data["app_settings"]["tooltip_status"]  == "ne":
+                tooltip_checkbox.select()
 
     def creating_advanced_option_widgets(self): # Vytváří veškeré widgets (advance option MAIN)
         if self.windowed:
