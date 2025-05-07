@@ -1,0 +1,26 @@
+Property	Value
+s72	l0
+Property	Property
+ALLUSERS	2
+ARPPRODUCTICON	logo_trimazkon
+CREATE_SHORTCUT	1
+DefaultUIFont	DlgFont8
+DistVersion	4.3.5
+ErrorDialog	ErrorDlg
+INSTALL_OPTION1	1
+INSTALL_OPTION2	0
+INSTALL_OPTION3	0
+MSIINSTALLPERUSER	1
+MaintenanceForm_Action	Repair
+Manufacturer	JHV - engineering s.r.o
+PATH_TO_CMD	C:\Windows\System32\cmd.exe
+PATH_TO_EXE	UNKNOWN
+ProductCode	{EEEE5555-FFFF-0435-GGGG-7777HHHH8888}
+ProductLanguage	1033
+ProductName	TRIMAZKON
+ProductVersion	4.3.5
+Progress1	Install
+Progress2	installs
+RUN_AFTER_INSTALL	1
+SecureCustomProperties	TARGETDIR;REINSTALLMODE
+UpgradeCode	{12345678-1234-5678-1234-567812345678}

@@ -6,7 +6,8 @@
         "app_zoom": 80,
         "app_zoom_checkbox": "ano",
         "tray_icon_startup": "ne",
-        "default_language": "cz"
+        "default_language": "cz",
+        "tooltip_status": "ano"
     },
     "sort_conv_settings": {
         "supported_formats_sorting": [
@@ -61,54 +62,16 @@
         "path_history_list": []
     },
     "ip_settings": {
-        "default_ip_interface": 0,
-        "favorite_ip_window_status": 0,
+        "default_ip_interface": 2,
+        "favorite_ip_window_status": 1,
         "disk_or_ip_window": 0,
         "default_window_size": 0,
         "init_disk_refresh": 1,
         "editable_notes": 1,
         "disk_persistent": 1,
-        "auto_order_when_edit": 1,
+        "auto_order_when_edit": 0,
         "ask_to_delete": 100,
-        "deleted_project_bin": [
-            {
-                "name": "515_ ",
-                "ip": "192.168.000.000",
-                "mask": "255.255.255.0",
-                "notes": "",
-                "fav_status": "0"
-            },
-            {
-                "name": "Dom",
-                "ip": "192.168.1.131",
-                "mask": "255.255.255.0",
-                "notes": "",
-                "fav_status": "1"
-            },
-            {
-                "name": "518_Val",
-                "ip": "192.168.208.242",
-                "mask": "255.255.255.0",
-                "notes": "",
-                "fav_status": "0"
-            },
-            {
-                "name": "529_Witte",
-                "ip": "192.168.0.240",
-                "mask": "255.255.255.0",
-                "notes": "PC",
-                "fav_status": "0"
-            },
-            {
-                "name": "474 B_Austin (2) (1)",
-                "ip": "10.96.205.175",
-                "mask": "255.255.255.0",
-                "notes": "10.96.205.1\nNAS:\t10.96.205.166\nFH:\t10.96.205.154\n\t10.96.20\n-----------------------------------------\nuser:JHV_Vision, omron llllllllllllll\nPass:*Jhv2708\n---------------------------------------\nFortiClient Austin: \nPass:",
-                "fav_status": "0"
-            }
-        ],
-        "edited_project_bin": [],
-        "deleted_project_bin_disk": [],
-        "edited_project_bin_disk": []
+        "deleted_project_bin": [],
+        "edited_project_bin": []
     }
 }

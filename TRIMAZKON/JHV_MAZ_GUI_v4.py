@@ -24,7 +24,7 @@ import wmi
 # import struct
 import winreg
 
-testing = True
+testing = False
 
 
 global_recources_load_error = False
@@ -609,11 +609,11 @@ class Subwindows:
             child_root.after(1000,lambda: Tools.terminate_pid(os.getpid())) #vypnout thread i s tray aplikací
             
         prompt_message1 = f"Je k dispozici nová verze aplikace: {new_version} !"
-        prompt_message2 = f"Upgrade log:"
+        prompt_message2 = f"(Instalace nové verze zachová všechna uživatelská nastavení)\nUpgrade log:"
         title_message = "Upozornění"
         if language_given == "en":
             prompt_message1 = f"New app version available: {new_version} !"
-            prompt_message2 = f"Upgrade log:"
+            prompt_message2 = f"(Installing the new version will preserve all user settings)\nUpgrade log:"
             title_message = "Notice"
             
         child_root = customtkinter.CTkToplevel(fg_color="#212121")

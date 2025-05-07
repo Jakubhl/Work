@@ -964,19 +964,35 @@ TRIMAZKON - jhv_MAZ - udělat ikonky u zvolení jazyka - hotovo
 TRIMAZKON - prohlížeč - mít možnost přepnout barvu pozadí - přidat jako základní parametr do configu - hotovo
 TRIMAZKON - mít možnost zakázat tooltip - přidat jako základní parametr do configu - hotovo
 
+9:56 AM 5/7/2025
+TRIMAZKON - ip_gui, jhv_gui - opraveno zapisovani noveho parameteru do configu v read_json_config - hotovo
+TRIMAZKON - msi - dodělat tlačítko <back do výběru programů?? - hotovo
+release 4.3.5
+
+TRIMAZKON - Katalog - když otevřu detaily a kontext nabídka - nefunguje hover - hotovo
+TRIMAZKON - Katalog - potvrzení odebrání ztrácí focus- hotovo
+TRIMAZKON - Katalog - když přepínám v navigátoru editu a přepnu na stanici, co nemá kamery, zůstanou předešlý - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
+TRIMAZKON - autoupdate - přidat možnost nezajímá mě to... (ignorovat danou verzi - ulozit si číslo nové verze do configu a pockat az na další)
+TRIMAZKON - autoupdate - warning ikona
+
+TRIMAZKON - Katalog - zobrazit kusovník?
+
+TRIMAZKON - Katalog - udělat kopírovat -> vložit stanici
 
 
+TRIMAZKON - Katalog - podívat se na remaping characters - nejde přepsat selection...
 
-
-
-??? TRIMAZKON - msi - dodělat tlačítko <back do výběru programů??
 
 ??? TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama, možná přesměrovat i edity a deletions/ uplne se zbavit excelu... ??
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
-??? Koumu: admin práva, online auto aktualizace nové verze
 ??? návod na trimazkon
+
+nová konzole:
+console_frame, wrap="none", height=0,background="#212121",font=("Arial",22),state=tk.DISABLED,foreground="#565B5E",borderwidth=3
+pack(pady = (0,10), padx =10,anchor="w",expand=False,fill="x",side="top",ipady=3,ipadx=5
 
 
 

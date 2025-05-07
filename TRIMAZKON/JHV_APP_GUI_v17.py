@@ -47,7 +47,7 @@ class initial_tools:
         else:
             return path
 
-testing = True
+testing = False
 
 global_recources_load_error = False
 global_licence_load_error = False
@@ -678,11 +678,11 @@ if not open_image_only:
                 child_root.after(1000,lambda: Tools.terminate_pid(os.getpid())) #vypnout thread i s tray aplikací
                 
             prompt_message1 = f"Je k dispozici nová verze aplikace: {new_version} !"
-            prompt_message2 = f"Upgrade log:"
+            prompt_message2 = f"(Instalace nové verze zachová všechna uživatelská nastavení)\nUpgrade log:"
             title_message = "Upozornění"
             if language_given == "en":
                 prompt_message1 = f"New app version available: {new_version} !"
-                prompt_message2 = f"Upgrade log:"
+                prompt_message2 = f"(Installing the new version will preserve all user settings)\nUpgrade log:"
                 title_message = "Notice"
                 
             child_root = customtkinter.CTkToplevel(fg_color="#212121")
@@ -967,9 +967,14 @@ if not open_image_only:
                     with open(initial_path+cls.config_json_filename, "r") as file:
                         output_data = json.load(file)
                     
-                    output_data["image_browser_settings"].setdefault("canvas_default_color", "black")
-                    output_data["app_settings"].setdefault("tooltip_status", "ano")
+                    if not "canvas_default_color" in output_data.get("image_browser_settings", {}):
+                        Tools.save_to_json_config("black","image_browser_settings","canvas_default_color")
+                        output_data["image_browser_settings"].setdefault("canvas_default_color", "black")
+                    if not "tooltip_status" in output_data.get("app_settings", {}):
+                        Tools.save_to_json_config("ano","app_settings","tooltip_status")
+                        output_data["app_settings"].setdefault("tooltip_status", "ano")
                     # print("config data: ", output_data, len(output_data))
+
                     return output_data
 
                 except Exception as e:
@@ -2905,8 +2910,11 @@ if not open_image_only:
                 if os.path.exists(self.default_path + self.temp_bmp_folder):
                     shutil.rmtree(self.default_path + self.temp_bmp_folder) # vycistit
                 self.increment_of_ifz_image = 0
-                self.changable_image_num_ifz.delete("0","100")
-                self.changable_image_num_ifz.insert("0",0)
+                try:
+                    self.changable_image_num_ifz.delete("0","100")
+                    self.changable_image_num_ifz.insert("0",0)
+                except Exception:
+                    pass
                 # self.image_queue = [""]*((self.number_of_film_images*2)+1)
                 if len(self.image_queue)>len(self.all_images):
                     self.image_queue = [""]*(len(self.all_images))
@@ -3303,9 +3311,12 @@ if not open_image_only:
                         else:
                             Tools.add_colored_line(self.console,str(self.all_images[self.increment_of_image]),"white",None,True)
 
-                    self.current_image_num_ifz.configure(text ="/" + str(self.ifz_count))
-                    self.changable_image_num_ifz.delete("0","100")
-                    self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
+                    try:
+                        self.current_image_num_ifz.configure(text ="/" + str(self.ifz_count))
+                        self.changable_image_num_ifz.delete("0","100")
+                        self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
+                    except Exception:
+                        pass
         
         def next_ifz_image(self,increment_given=None): # Další ifz obrázek v pořadí
             counter_addition=1
@@ -3368,11 +3379,12 @@ if not open_image_only:
                     Tools.add_colored_line(self.console,str(only_name),"white",None,True)
                 else:
                     Tools.add_colored_line(self.console,str(self.all_images[self.increment_of_image]),"white",None,True)
-
-                self.current_image_num_ifz.configure(text ="/" + str(self.ifz_count))
-                self.changable_image_num_ifz.delete("0","100")
-                self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
-
+                try:
+                    self.current_image_num_ifz.configure(text ="/" + str(self.ifz_count))
+                    self.changable_image_num_ifz.delete("0","100")
+                    self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
+                except Exception:
+                    pass
         def previous_ifz_image(self): # předešlý ifz obrázek v pořadí
             number_of_found_images = self.ifz_count
             if number_of_found_images != 0 and number_of_found_images != 1:
@@ -3922,11 +3934,14 @@ if not open_image_only:
             def call_start():
                 self.changable_image_num.delete("0","100")
                 self.changable_image_num.insert("0",str(0))
-                self.changable_image_num_ifz.delete("0","100")
-                self.changable_image_num_ifz.insert("0",str(0))
-                self.selected_image = ""
-                self.current_image_num_ifz.configure(text = "/0")
                 self.current_image_num.configure(text = "/0")
+                self.selected_image = ""
+                try:
+                    self.changable_image_num_ifz.delete("0","100")
+                    self.changable_image_num_ifz.insert("0",str(0))
+                    self.current_image_num_ifz.configure(text = "/0")
+                except Exception:
+                    pass
                 self.start(self.path_set.get())
 
             smaller_icon = 32
@@ -5266,7 +5281,6 @@ if not open_image_only:
                 else:
                     white_button.configure(border_width = 1)
                     black_button.configure(border_width = 4)
-
 
         def creating_advanced_option_widgets(self): # Vytváří veškeré widgets (advance option MAIN)
             if self.windowed:

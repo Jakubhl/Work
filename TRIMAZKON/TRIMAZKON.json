@@ -1,13 +1,13 @@
 {
     "app_settings": {
-        "default_path": "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/",
+        "default_path": "C:/Users/",
         "maximalized": "ano",
         "show_changelog": "ne",
         "app_zoom": 80,
         "app_zoom_checkbox": "ano",
-        "tray_icon_startup": "ano",
+        "tray_icon_startup": "ne",
         "default_language": "cz",
-        "tooltip_status": "ne"
+        "tooltip_status": "ano"
     },
     "sort_conv_settings": {
         "supported_formats_sorting": [
@@ -22,9 +22,7 @@
         "convert_bmp_dir_name": "Konvertovane_BMP",
         "convert_jpg_dir_name": "Konvertovane_JPG",
         "sorting_safe_mode": "ano",
-        "path_history_list": [
-            "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/"
-        ],
+        "path_history_list": [],
         "path_history_list_conv": []
     },
     "del_settings": {
@@ -41,9 +39,7 @@
             2024
         ],
         "to_delete_dir_name": "Ke_smazani",
-        "path_history_list": [
-            "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/New folder/"
-        ]
+        "path_history_list": []
     },
     "image_browser_settings": {
         "selected_option": 2,
@@ -53,17 +49,8 @@
         "image_film_count": 6,
         "copyed_dir_name": "Kop\u00edrovan\u00e9_obr\u00e1zky",
         "moved_dir_name": "P\u0159esunut\u00e9_obr\u00e1zky",
-        "path_history_list": [
-            "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/",
-            "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/New folder/",
-            "C:/Users/jakub.hlavacek.local/Desktop/JHV/test_images/Omron/Sn\u00edmkySC01_MS500SA/",
-            "C:/Users/jakub.hlavacek.local/Downloads/",
-            "C:/Users/jakub.hlavacek.local/Desktop/JHV/Omron/Obrazky pro kameru/",
-            "C:/Users/jakub.hlavacek.local/Desktop/JHV/test_images/Keyence/_503_Witte/datumovka/A/Func_0001/",
-            "C:/Users/jakub.hlavacek.local/Desktop/JHV/test_images/",
-            "C:/Users/jakub.hlavacek.local/Desktop/JHV/Omron/Obrazky pro kameru/Konvertovane_BMP/"
-        ],
-        "canvas_default_color": "black"
+        "path_history_list": [],
+        "canvas_default_color": "white"
     },
     "catalogue_settings": {
         "database_filename": "Sharepoint_databaze.xlsx",
@@ -71,124 +58,24 @@
         "metadata_filename": "_metadata_catalogue",
         "subwindow_behav": 0,
         "default_export_suffix": "xlsx",
-        "default_path": "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/temp/",
+        "default_path": "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/",
         "render_mode": "fast",
         "path_history_list": [
-            "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/",
-            "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/temp/"
+            "C:/Users/jakub.hlavacek.local/Downloads/",
+            "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/temp/",
+            "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/"
         ],
         "hover_info_trigger_mode": "1"
     },
     "ip_settings": {
-        "default_ip_interface": 0,
-        "favorite_ip_window_status": 0,
+        "default_ip_interface": 2,
+        "favorite_ip_window_status": 1,
         "disk_or_ip_window": 0,
         "default_window_size": 1,
         "init_disk_refresh": 1,
         "editable_notes": 1,
         "disk_persistent": 1,
-        "auto_order_when_edit": 1,
-        "ask_to_delete": 100,
-        "deleted_project_bin": [],
-        "edited_project_bin": [],
-        "edited_projects_bin": [
-            {
-                "name": "527_Teijin (2)",
-                "ip": "10.101.28.176",
-                "mask": "255.255.255.0",
-                "notes": "XG-X2900:\t\t10.101.28.1\nOP:\t\t10.101.28.117",
-                "fav_status": "1",
-                "new_name": "527_Teijin (2)"
-            },
-            {
-                "name": "527_Teijin(1)",
-                "ip": "10.101.28.176",
-                "mask": "255.255.255.0",
-                "notes": "XG-X2900:\t\t10.101.28.17\nOP:\t\t10.101.28.117",
-                "fav_status": "1",
-                "new_name": "527_Teijin"
-            }
-        ],
-        "deleted_project_bin_disk": [],
-        "edited_project_bin_disk": []
-    },
-    "task_list": [
-        {
-            "name": "TRIMAZKON_del_task_1",
-            "operating_path": "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/New folder/",
-            "max_days": "376",
-            "files_to_keep": "1000",
-            "frequency": "12:00",
-            "more_dirs": 0,
-            "selected_option": 1,
-            "date_added": "11.03.2025 12:27:13",
-            "del_log": [
-                {
-                    "del_date": "11.03.2025 13:29:29",
-                    "files_checked": 7,
-                    "files_older": 0,
-                    "files_newer": "",
-                    "files_deleted": 0,
-                    "path_count": 0
-                },
-                {
-                    "del_date": "11.03.2025 13:35:43",
-                    "files_checked": 7,
-                    "files_older": 0,
-                    "files_newer": "",
-                    "files_deleted": 0,
-                    "path_count": 0
-                }
-            ],
-            "creation_date": 0
-        },
-        {
-            "name": "TRIMAZKON_del_task_7",
-            "operating_path": "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/New folder",
-            "max_days": "376",
-            "files_to_keep": "1000",
-            "frequency": "12:00",
-            "more_dirs": 0,
-            "selected_option": 1,
-            "date_added": "11.03.2025 15:29:09",
-            "del_log": [],
-            "creation_date": 0
-        },
-        {
-            "name": "TRIMAZKON_del_task_8",
-            "operating_path": "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/New folder",
-            "max_days": "376",
-            "files_to_keep": "1000",
-            "frequency": "12:00",
-            "more_dirs": 0,
-            "selected_option": 1,
-            "date_added": "11.03.2025 15:29:14",
-            "del_log": [],
-            "creation_date": 0
-        },
-        {
-            "name": "TRIMAZKON_del_task_9",
-            "operating_path": "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/New folder/",
-            "max_days": "376",
-            "files_to_keep": "1000",
-            "frequency": "12:00",
-            "more_dirs": 0,
-            "selected_option": 1,
-            "date_added": "11.03.2025 15:29:56",
-            "del_log": [],
-            "creation_date": 0
-        },
-        {
-            "name": "TRIMAZKON_del_task_10",
-            "operating_path": "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/New folder/",
-            "max_days": "376",
-            "files_to_keep": "1000",
-            "frequency": "12:00",
-            "more_dirs": 0,
-            "selected_option": 1,
-            "date_added": "11.03.2025 15:29:58",
-            "del_log": [],
-            "creation_date": 0
-        }
-    ]
+        "auto_order_when_edit": 0,
+        "ask_to_delete": 100
+    }
 }

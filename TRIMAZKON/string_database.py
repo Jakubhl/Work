@@ -364,7 +364,7 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - opraveno .ifz + konvertování
     - oprava chování u poškozených souborů
     """
-        ,"\nVerze 4.3.4 (05.05.2025)"
+        ,"\nVerze 4.3.4 (29.04.2025)"
         ,
   """ 
   TRIMAZKON:
@@ -384,6 +384,21 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - nové kontextové nabídky pro výběr komponentů
     - nový způsob zobrazení detailu buňek
     - přidán tooltip na tlačítkách
+    """
+        ,"\nVerze 4.3.5 (07.05.2025)"
+        ,
+  """ 
+  TRIMAZKON:
+    - možnost vypnout tooltip v nastavení
+    - optimalizace tooltipu (ip_setting + Katalog)
+    - msi:
+      - přídány tlačítka zpět
+      - opravena vizualizace s logem
+  Prohlížeč obrázků:
+    - nová vizualizace
+    - vylepšené chování u .ifz
+    - opraveno mazání temp složky (ifz)
+    - nově možnost změnit barvu pozadí
     """
 ]
 

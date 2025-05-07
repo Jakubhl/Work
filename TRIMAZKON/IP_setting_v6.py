@@ -2798,7 +2798,6 @@ class main:
             self.changed_notes = []
             self.notes_frame_height = 50
             self.show_tooltip = Tools.read_json_config(self.config_filename_path,get_global_app_settings=True)["tooltip_status"]
-
             read_parameters = Tools.read_json_config(self.config_filename_path)
             if read_parameters != None:
                 self.default_connection_option = read_parameters["default_ip_interface"]
