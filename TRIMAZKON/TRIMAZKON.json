@@ -1,6 +1,6 @@
 {
     "app_settings": {
-        "default_path": "C:/Users/",
+        "default_path": "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/",
         "maximalized": "ano",
         "show_changelog": "ne",
         "app_zoom": 80,
@@ -49,8 +49,10 @@
         "image_film_count": 6,
         "copyed_dir_name": "Kop\u00edrovan\u00e9_obr\u00e1zky",
         "moved_dir_name": "P\u0159esunut\u00e9_obr\u00e1zky",
-        "path_history_list": [],
-        "canvas_default_color": "white"
+        "path_history_list": [
+            "C:\\Users\\jakub.hlavacek.local\\Pictures/"
+        ],
+        "canvas_default_color": "black"
     },
     "catalogue_settings": {
         "database_filename": "Sharepoint_databaze.xlsx",

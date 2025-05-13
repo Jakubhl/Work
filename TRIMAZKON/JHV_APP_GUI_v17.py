@@ -1,16 +1,18 @@
 import sys
 import win32file
-from psutil import process_iter as psutil_process_iter
-from os.path import basename as os_path_basename
-from os.path import exists as os_path_exists
-from os import getpid as os_get_pid
+import psutil
+import os
+# from psutil import process_iter as psutil_process_iter
+# from os.path import basename as os_path_basename
+# from os.path import exists as os_path_exists
+# from os import getpid as os_get_pid
 
 class initial_tools:
     @classmethod
     def get_all_app_processes(cls):
         pid_list = []
         num_of_apps = 0
-        for process in psutil_process_iter(['pid', 'name']):
+        for process in psutil.process_iter(['pid', 'name']):
             # if process.info['name'] == "TRIMAZKON_test.exe":
             if process.info['name'] == exe_name:
                 pid_list.append(process.info['pid'])
@@ -42,7 +44,7 @@ class initial_tools:
             path = newPath
         #oprava mezery v nazvu
         path = r"{}".format(path)
-        if not os_path_exists(path) and only_repair == None:
+        if not os.path.exists(path) and only_repair == None:
             return False
         else:
             return path
@@ -52,10 +54,10 @@ testing = False
 global_recources_load_error = False
 global_licence_load_error = False
 exe_path = sys.executable
-exe_name = os_path_basename(exe_path)
+exe_name = os.path.basename(exe_path)
 config_filename = "TRIMAZKON.json"
 app_name = "TRIMAZKON"
-app_version = "4.3.5"
+app_version = "4.3.6"
 loop_request = False
 root = None
 print("exe name: ",exe_name)
@@ -101,6 +103,7 @@ if not open_image_only:
     import json
     # import struct
     import winreg
+    import pyperclip
 
     class Subwindows:
         @classmethod
@@ -122,16 +125,18 @@ if not open_image_only:
             child_root = customtkinter.CTkToplevel()
             child_root.after(200, lambda: child_root.iconbitmap(app_icon))
             child_root.title(window_title)
-            label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-            proceed_label = customtkinter.CTkLabel(master = label_frame,text = main_title,font=("Arial",25),anchor="w",justify="left")
-            proceed_label.pack(pady=5,padx=10,anchor="w",side = "left")
-            button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-            button_yes =    customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: run_as_admin())
-            button_no =     customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
-            button_no       .pack(pady = 5, padx = 10,anchor="e",side="right")
-            button_yes      .pack(pady = 5, padx = 10,anchor="e",side="right")
-            label_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
-            button_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+            label_frame =       customtkinter.CTkFrame(master = child_root,corner_radius=0)
+            warning_icon =      customtkinter.CTkLabel(master = label_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/warning.png")),size=(50,50)),bg_color="#212121")
+            proceed_label =     customtkinter.CTkLabel(master = label_frame,text = main_title,font=("Arial",25),anchor="w",justify="left")
+            warning_icon.       pack(pady=10,padx=30,anchor="n",side = "left")
+            proceed_label.      pack(pady=5,padx=(0,10),anchor="w",side = "left")
+            button_frame =      customtkinter.CTkFrame(master = child_root,corner_radius=0)
+            button_yes =        customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: run_as_admin())
+            button_no =         customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+            button_no.           pack(pady = 5, padx = (0,10),anchor="e",side="right")
+            button_yes.          pack(pady = 5, padx = 10,anchor="e",side="right")
+            label_frame.         pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+            button_frame.        pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
             if language_given == "en":
                 button_yes.configure(text = "YES")
                 button_no.configure(text = "Cancel")
@@ -159,13 +164,15 @@ if not open_image_only:
             child_root = customtkinter.CTkToplevel()
             child_root.after(200, lambda: child_root.iconbitmap(app_icon))
             child_root.title(title_message)
-            label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+            label_frame =   customtkinter.CTkFrame(master = child_root,corner_radius=0)
+            warning_icon =  customtkinter.CTkLabel(master = label_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/warning.png")),size=(50,50)),bg_color="#212121")
             proceed_label = customtkinter.CTkLabel(master = label_frame,text = prompt_message,font=("Arial",25),anchor="w",justify="left")
-            proceed_label.pack(pady=5,padx=10,anchor="w",side = "left")
-            button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-            button_yes =   customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: selected_yes(child_root))
-            button_no =    customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
-            button_no      .pack(pady = 5, padx = 10,anchor="e",side="right")
+            warning_icon.   pack(pady=20,padx=20,anchor="w",side = "left")
+            proceed_label.  pack(pady=(5,0),padx=(0,20),anchor="w",side = "left")
+            button_frame =  customtkinter.CTkFrame(master = child_root,corner_radius=0)
+            button_yes =    customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: selected_yes(child_root))
+            button_no =     customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+            button_no      .pack(pady = 5, padx = (0,10),anchor="e",side="right")
             button_yes     .pack(pady = 5, padx = 10,anchor="e",side="right")
             label_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
             button_frame   .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
@@ -207,29 +214,33 @@ if not open_image_only:
             child_root = customtkinter.CTkToplevel(fg_color="#212121")
             child_root.after(200, lambda: child_root.iconbitmap(app_icon))
             child_root.title(title_message)
-            label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-            proceed_label = customtkinter.CTkLabel(master = label_frame,text = prompt_message1,font=("Arial",25,"bold"),anchor="w",justify="left")
-            proceed_label.pack(pady=(5,0),padx=10,anchor="w",side = "left")
-            label_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
-
-            text_widget = tk.Text(master = child_root,background="#212121",borderwidth=0,height=9)
-            Tools.add_colored_line(text_widget,text=prompt_message2,color="gray84",font=("Arial",16),no_indent=True)
+            label_frame =       customtkinter.CTkFrame(master = child_root,corner_radius=0)
+            warning_icon =      customtkinter.CTkLabel(master = label_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/warning.png")),size=(50,50)),bg_color="#212121")
+            proceed_label =     customtkinter.CTkLabel(master = label_frame,text = prompt_message1,font=("Arial",25,"bold"),anchor="w",justify="left")
+            warning_icon.       pack(pady=20,padx=20,anchor="w",side = "left")
+            proceed_label.      pack(pady=(5,0),padx=(0,20),anchor="w",side = "left")
+            label_frame.        pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+            text_widget =       tk.Text(master = child_root,background="#212121",borderwidth=0,height=9)
+            font_given = ("Arial",16)
+            Tools.add_colored_line(text_widget,text=prompt_message2,color="gray84",font=font_given,no_indent=True)
             Tools.add_colored_line(text_widget,text=prompt_message3,color="white",font=("Arial",16,"bold"),no_indent=True)
-            Tools.add_colored_line(text_widget,text=prompt_message4,color="gray84",font=("Arial",16),no_indent=True, sameline=True)
-            Tools.add_colored_line(text_widget,text=prompt_message5,color="skyblue",font=("Arial",16),no_indent=True, sameline=True)
-            Tools.add_colored_line(text_widget,text=prompt_message6,color="gray84",font=("Arial",16),no_indent=True, sameline=True)
-            text_widget    .pack(pady=10,padx=(30,10),anchor="w",side = "top",fill="both",expand=True)
-
-            button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-            button_close =    customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
-            button_close     .pack(pady = 5, padx = 10,anchor="e",side="right")
-            button_frame   .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+            Tools.add_colored_line(text_widget,text=prompt_message4,color="gray84",font=font_given,no_indent=True, sameline=True)
+            Tools.add_colored_line(text_widget,text=prompt_message5,color="skyblue",font=font_given,no_indent=True, sameline=True)
+            Tools.add_colored_line(text_widget,text=prompt_message6,color="gray84",font=font_given,no_indent=True, sameline=True)
+            text_widget.        pack(pady=10,padx=(30,10),anchor="w",side = "top",fill="both",expand=True)
+            button_frame =      customtkinter.CTkFrame(master = child_root,corner_radius=0)
+            button_close =      customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+            button_copy =       customtkinter.CTkButton(master = button_frame,text = "Kopírovat HWID",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: pyperclip.copy(str(user_HWID)))
+            button_close.       pack(pady = 5, padx = (0,10),anchor="e",side="right")
+            button_copy.        pack(pady = 5, padx = 10,anchor="e",side="right")
+            button_frame.       pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
 
             if language_given == "en":
                 button_close.configure(text = "Close")
+                button_copy.configure(text = "Copy HWID")
             child_root.update()
             child_root.update_idletasks()
-            child_root.geometry("800x260")
+            # child_root.geometry("800x260")
             child_root.focus()
             child_root.focus_force()
             child_root.grab_set()
@@ -649,7 +660,7 @@ if not open_image_only:
                 window.wait_window()
         
         @classmethod
-        def download_new_version_window(cls,new_version,given_log,language_given="cz"):
+        def download_new_version_window(cls,new_version,given_log,language_given="cz",force_update = False):
             def close_prompt(child_root):
                 child_root.grab_release()
                 child_root.destroy()
@@ -676,6 +687,10 @@ if not open_image_only:
                 msi_path = f"{initial_path}Installers/{wanted_installer}"
                 call_installer(msi_path)
                 child_root.after(1000,lambda: Tools.terminate_pid(os.getpid())) #vypnout thread i s tray aplikací
+
+            def ignore_version():
+                Tools.save_to_json_config(str(new_version),"app_settings","ignored_version")
+                close_prompt(child_root)
                 
             prompt_message1 = f"Je k dispozici nová verze aplikace: {new_version} !"
             prompt_message2 = f"(Instalace nové verze zachová všechna uživatelská nastavení)\nUpgrade log:"
@@ -688,12 +703,16 @@ if not open_image_only:
             child_root = customtkinter.CTkToplevel(fg_color="#212121")
             child_root.after(200, lambda: child_root.iconbitmap(app_icon))
             child_root.title(title_message)
-            label_frame =       customtkinter.CTkFrame(master = child_root,corner_radius=0)
+            top_frame =         customtkinter.CTkFrame(master = child_root,corner_radius=0,fg_color="#212121")
+            warning_icon =      customtkinter.CTkLabel(master = top_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/warning.png")),size=(50,50)),bg_color="#212121")
+            label_frame =       customtkinter.CTkFrame(master = top_frame,corner_radius=0,fg_color="#212121")
             proceed_label =     customtkinter.CTkLabel(master = label_frame,text = prompt_message1,font=("Arial",25,"bold"),anchor="w",justify="left")
             proceed_label2 =    customtkinter.CTkLabel(master = label_frame,text = prompt_message2,font=("Arial",20),anchor="w",justify="left")
             proceed_label.      pack(pady=(5,0),padx=10,anchor="w",side = "top")
             proceed_label2.     pack(pady=(5,0),padx=10,anchor="w",side = "top")
-            label_frame.        pack(pady=0,padx=0,anchor="w",side = "top",fill="x")
+            warning_icon.       pack(pady=30,padx=30,anchor="w",side = "left")
+            label_frame.        pack(pady=0,padx=0,anchor="w",side = "right",fill="x")
+            top_frame.          pack(pady=0,padx=0,anchor="w",side = "top")
             text_frame =        customtkinter.CTkFrame(master = child_root,corner_radius=0,fg_color="#212121")
             text_widget =       customtkinter.CTkTextbox(master = text_frame,font=("Arial",22),corner_radius=0,wrap= "word",height=300)
             for rows in given_log:
@@ -707,13 +726,17 @@ if not open_image_only:
             button_frame =      customtkinter.CTkFrame(master = child_root,corner_radius=0)
             button_close =      customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
             button_dwnld =      customtkinter.CTkButton(master = button_frame,text = "Stáhnout novou verzi",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  download_the_app())
+            button_idc =        customtkinter.CTkButton(master = button_frame,text = "Tato verze mě nezajímá",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  ignore_version())
             button_close.       pack(pady = 10, padx = (0,10),anchor="e",side="right")
             button_dwnld.       pack(pady = 10, padx = (0,10),anchor="e",side="right")
+            if not force_update:
+                button_idc.         pack(pady = 10, padx = (0,10),anchor="e",side="right")
             button_frame.       pack(pady=0,padx=0,anchor="w",side = "top",fill="x")
 
             if language_given == "en":
                 button_close.configure(text = "Close")
                 button_dwnld.configure(text = "Download the new version")
+                button_idc.configure(text = "I don't care about this version")
             child_root.update()
             child_root.update_idletasks()
             child_root.geometry(f"800x{child_root._current_height}")
@@ -910,6 +933,7 @@ if not open_image_only:
             - tray_icon_startup
             - default_language
             - tooltip_status
+            - ignored_version
             \nSORT AND CONV SETTINGS\n
             - supported_formats_sorting
             - prefix_function
@@ -1013,6 +1037,7 @@ if not open_image_only:
             - tray_icon_startup
             - default_language
             - tooltip_status
+            - ignored_version
             \nSORT_CONV_SETTINGS\n
             - supported_formats_sorting
             - prefix_function
@@ -1751,7 +1776,14 @@ if not open_image_only:
             ip_set_instance.IP_tools.manual_ip_setting(app_icon_path=app_icon,output_callback=output_callback)
 
         @classmethod
-        def check_for_new_app_version(cls,language_given = "cz"):
+        def check_for_new_app_version(cls,language_given = "cz",force_update = False):
+            """
+            - splitne podle pomlcek TRIMAZKON-4.3.4-win64.msi
+            - vezme si jen split s verzí, ověří, že na první pozici je TRIMAZKON
+            - nahradí . za nic
+            - porovná verze
+            - pokud novější, stáhne log, zobrazí okno
+            """
             new_version_log_name = "new_version_log.txt"
             version_list = []
             current_app_version = app_version.replace(".","")
@@ -1766,12 +1798,17 @@ if not open_image_only:
                     name_splitted = names.split("-")
                     if name_splitted[0] == "TRIMAZKON":
                         version_list.append(name_splitted[1])
+                    elif testing and name_splitted[0] == "dummy_version":
+                        version_list.append(name_splitted[1])
+
             version_list_int = []
             for versions in version_list:
                 versions = versions.replace(".","")
                 version_list_int.append(int(versions))
 
-            print(version_list_int)
+            print("version list: ",version_list_int)
+            if len(version_list_int) == 0:
+                return "up to date"
             max_sharepoint_version = max(version_list_int)
             if current_app_version < max_sharepoint_version:
                 print("new_version_available")
@@ -1783,7 +1820,16 @@ if not open_image_only:
                 new_version_log = sharepoint_instance.output
                 max_sharepoint_version = str(max_sharepoint_version)
                 max_sharepoint_version_str = max_sharepoint_version[0]+"."+max_sharepoint_version[1]+"."+max_sharepoint_version[2]
-                Subwindows.download_new_version_window(max_sharepoint_version_str,new_version_log)
+                config_data = Tools.read_json_config()
+                if not force_update:
+                    if "ignored_version" in config_data["app_settings"]:
+                        ignored_version = config_data["app_settings"]["ignored_version"]
+                        print(ignored_version, max_sharepoint_version_str)
+                        if max_sharepoint_version_str == ignored_version:
+                            return
+                Subwindows.download_new_version_window(max_sharepoint_version_str,new_version_log,force_update=force_update)
+            else:
+                return "up to date"
 
 class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
     """
@@ -1794,7 +1840,7 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
         self.root = None #define later (to prevend gui loading when 2 apps opened)
         # self.current_pid = None
         self.exe_name = exe_name
-        self.current_pid = os_get_pid()
+        self.current_pid = os.getpid()
         if not no_server:
             # self.start_server()
             run_server_background = threading.Thread(target=self.start_server,)
@@ -1898,15 +1944,21 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
 
                         if root_existance == True:
                             try:
+                                if menu.ib_running == True:
+                                    root.after(10,menu.command_landed,received_params)
+                            except Exception as ib_run_err:
+                                print(ib_run_err)
+                                
+                            try:
                                 # if root.state() == "iconic":
                                 root.deiconify()
                                 root.update_idletasks()
                             except Exception as e:
                                 print(e)
                             # global menu
-                            menu = main_menu(root)
+                            menu = main_menu(root,hurry=True)
                             # root.after(100,lambda: menu.menu(clear_root=True))
-                            root.after(200,menu.command_landed,received_params)
+                            root.after(10,menu.command_landed,received_params)
                             # menu.menu(clear_root=True)
                         else:
                             start_new_root() # spousteni pres admina, bylo potreba shodit cely processID
@@ -2050,8 +2102,12 @@ if not open_image_only:
     load_gui=True
 
     print("SYSTEM: ",sys.argv)
-    if len(sys.argv) > 1 and not global_licence_load_error:
-        if sys.argv[1] == "deleting":
+    if len(sys.argv) > 1:
+        if global_licence_load_error: # jen když je spouštěno přes cmd, neuzavirej smycku...
+            load_gui = False
+            loop_request = False
+
+        elif sys.argv[1] == "deleting":
             del_thread = threading.Thread(target=Tools.deleting_via_cmd,name="Deleting_thread")
             del_thread.start()
             load_gui = False
@@ -2279,7 +2335,7 @@ if not open_image_only:
                 self.tip_window = None
 
     class main_menu:
-        def __init__(self,root):
+        def __init__(self,root,hurry=False):
             self.root = root
             pipeline_duplex.root = self.root # předání rootu do pipeline_duplex až ve chvílí, kdy je jasné, že aplikace není vícekrát spuštěná:
             # config_filename = "config_TRIMAZKON.xlsx"
@@ -2290,14 +2346,15 @@ if not open_image_only:
             self.ib_running = False
             self.run_as_admin = False
             self.TS_tray_taskname = "TRIMAZKON_startup_tray_setup"
-            #init spínání tray podle nastavení
-            if self.config_data["app_settings"]["tray_icon_startup"] == "ano":
-                task_success = Tools.establish_startup_tray()
-                if str(task_success) == "need_access":
-                    self.run_as_admin = True
-            else: # když nezaškrtnuto aut. spouštění ujisti se, že není nastavené - potřeba taky admin
-                if Tools.check_task_existence_in_TS(self.TS_tray_taskname):
-                    Tools.remove_task_from_TS(self.TS_tray_taskname)
+            if not hurry:
+                #init spínání tray podle nastavení
+                if self.config_data["app_settings"]["tray_icon_startup"] == "ano":
+                    task_success = Tools.establish_startup_tray()
+                    if str(task_success) == "need_access":
+                        self.run_as_admin = True
+                else: # když nezaškrtnuto aut. spouštění ujisti se, že není nastavené - potřeba taky admin
+                    if Tools.check_task_existence_in_TS(self.TS_tray_taskname):
+                        Tools.remove_task_from_TS(self.TS_tray_taskname)
             
         def clear_frames(self):
             for widget in self.root.winfo_children():
@@ -2358,11 +2415,16 @@ if not open_image_only:
                 print("previous image: ",self.IB_class.selected_image)
                 print("new path: ",params[1])
                 print("new image: ",params[2])
+                
+                self.IB_class.IB_as_def_browser_path = params[1]
+                self.IB_class.selected_image = params[2]
+                self.IB_class.shortcut_call()
 
-                for widget in self.root.winfo_children():
-                    widget.destroy()
-                self.root.unbind("<Button-1>")
-                self.call_view_option(params[1],params[2])
+
+                # for widget in self.root.winfo_children():
+                #     widget.destroy()
+                # self.root.unbind("<Button-1>")
+                # self.call_view_option(params[1],params[2])
 
         def on_closing(self):
             global root
@@ -2491,6 +2553,8 @@ if not open_image_only:
                     check_version = threading.Thread(target=Tools.check_for_new_app_version,)
                     self.root.after(500,check_version.start)
 
+                # Subwindows.download_new_version_window("4.4.4","real")
+
             # initial promenna aby se to nespoustelo porad do kola pri navratu do menu (system argumenty jsou stále uložené v aplikaci)
             if len(sys.argv) > 1 and initial == True:
                 raw_path = str(sys.argv[1])
@@ -2586,6 +2650,8 @@ if not open_image_only:
             self.loaded_image_status = True
             self.inserted_path_history = config_data["image_browser_settings"]["path_history_list"]
             self.last_frame_dim = [0,0]
+            
+            self.shortcut_call = lambda: self.start(self.IB_as_def_browser_path)
 
             if params_given != None:
                 print("params given",params_given)
@@ -3385,6 +3451,7 @@ if not open_image_only:
                     self.changable_image_num_ifz.insert("0", str(self.increment_of_ifz_image+1))
                 except Exception:
                     pass
+        
         def previous_ifz_image(self): # předešlý ifz obrázek v pořadí
             number_of_found_images = self.ifz_count
             if number_of_found_images != 0 and number_of_found_images != 1:
@@ -3414,7 +3481,7 @@ if not open_image_only:
             # ToolTip(self.play_stop_icon,"",self.root,icon_button=True,unbind=True,unique_class_name="play_stop_icon")
             if self.show_tooltip == "ano":
                 self.play_stop_icon.event_generate("<<Custom>>")
-                ToolTip(self.play_stop_icon," Spustit sekvenci obrázků ",self.root,icon_button=True,unique_class_name="play_stop_icon")
+                ToolTip(self.play_stop_icon," Spustit sekvenci obrázků <Mezerník> ",self.root,icon_button=True,unique_class_name="play_stop_icon")
             self.play_stop_icon.unbind("<Button-1>")
             self.play_stop_icon.bind("<Button-1>",lambda e: self.play())
             self.play_stop_icon.configure(image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/play_button.png"))))
@@ -3439,7 +3506,7 @@ if not open_image_only:
             # ToolTip(self.play_stop_icon,"",self.root,icon_button=True,unbind=True,unique_class_name="play_stop_icon")
             if self.show_tooltip == "ano":
                 self.play_stop_icon.event_generate("<<Custom>>")
-                ToolTip(self.play_stop_icon," Zastavit sekvenci obrázků ",self.root,icon_button=True,unique_class_name="play_stop_icon")
+                ToolTip(self.play_stop_icon," Zastavit sekvenci obrázků <Mezerník> ",self.root,icon_button=True,unique_class_name="play_stop_icon")
             self.play_stop_icon.unbind("<Button-1>")
             self.play_stop_icon.bind("<Button-1>",lambda e: self.stop())
             self.play_stop_icon.configure(image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/stop_button.png"))))
@@ -3963,8 +4030,16 @@ if not open_image_only:
             save_path_icon.                 bind("<Enter>",lambda e:save_path_icon._image.configure(size=(larger_icon,larger_icon)))
             save_path_icon.                 bind("<Leave>",lambda e:save_path_icon._image.configure(size=(smaller_icon,smaller_icon)))
             save_path_icon.                 bind("<Button-1>",lambda e: Tools.save_path(self.console,self.path_set.get(),which_settings="image_browser_settings"))    
-            button_drawing =                customtkinter.CTkButton(master = self.frame_with_path,height=button_height, text = "Malování", command = lambda: self.switch_drawing_mode(),font=larger_font,corner_radius=0)
-            button_open_setting =           customtkinter.CTkButton(master = self.frame_with_path,width=40,height=button_height, text = "⚙️", command = lambda: call_setting_window(),font=(None,22),corner_radius=0)
+            # button_drawing =                customtkinter.CTkButton(master = self.frame_with_path,height=button_height, text = "Malování", command = lambda: self.switch_drawing_mode(),font=larger_font,corner_radius=0)
+            button_drawing =                customtkinter.CTkLabel(master = self.frame_with_path,width=larger_icon,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/paint_brush.png")),size=(smaller_icon,smaller_icon)),bg_color="#212121")
+            button_drawing.                 bind("<Enter>",lambda e: button_drawing._image.configure(size=(larger_icon,larger_icon)))
+            button_drawing.                 bind("<Leave>",lambda e: button_drawing._image.configure(size=(smaller_icon,smaller_icon)))
+            button_drawing.                 bind("<Button-1>",lambda e: self.switch_drawing_mode())
+            # button_open_setting =           customtkinter.CTkButton(master = self.frame_with_path,width=40,height=button_height, text = "⚙️", command = lambda: call_setting_window(),font=(None,22),corner_radius=0)
+            button_open_setting =           customtkinter.CTkLabel(master = self.frame_with_path,width=larger_icon,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/settings.png")),size=(smaller_icon,smaller_icon)),bg_color="#212121")
+            button_open_setting.            bind("<Enter>",lambda e: button_open_setting._image.configure(size=(larger_icon,larger_icon)))
+            button_open_setting.            bind("<Leave>",lambda e: button_open_setting._image.configure(size=(smaller_icon,smaller_icon)))
+            button_open_setting.            bind("<Button-1>",lambda e: call_setting_window())
             menu_button.                    pack(pady = (5,0),padx =(10,0),side="left",anchor = "w")
             context_menu_button.            pack(pady = (5,0),padx =(5,0),side="left",anchor = "w")
             self.path_set.                  pack(pady = (5,0),padx =(0,0),side="left",anchor = "w")
@@ -3972,11 +4047,11 @@ if not open_image_only:
             open_path_icon.                 pack(pady = (5,0),padx =(10,0),side="left",anchor = "w")
             save_path_icon.                 pack(pady = (5,0),padx =(10,0),side="left",anchor = "w")
             button_drawing.                 pack(pady = (5,0),padx =(10,0),side="left",anchor = "w")
-            button_open_setting.            pack(pady = (5,0),padx =(5,10),side="left",anchor = "w")
+            button_open_setting.            pack(pady = (5,0),padx =(10,10),side="left",anchor = "w")
             self.frame_with_path.           pack(pady=0,padx=0,fill="x",expand=False,side = "top")
             self.frame_with_console =       customtkinter.CTkFrame(master=self.root,corner_radius=0)
             self.name_or_path =             customtkinter.CTkCheckBox(master = self.frame_with_console,font=("Arial",16), text = "Název/cesta",command= lambda: self.refresh_console_setting(),corner_radius=0)
-            self.console =                  tk.Text(self.frame_with_console, wrap="none", height=0,background="black",font=("Arial",14),borderwidth=0,state=tk.DISABLED)
+            self.console =                  tk.Text(self.frame_with_console, wrap="none", height=0,background="black",font=("Arial",14),borderwidth=0,state=tk.DISABLED,relief="flat")
             self.name_or_path.              pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
             self.console.                   pack(pady = (10,0),padx =10,ipady=3,ipadx=5,anchor = "w",side="left",fill="x",expand=True)
             self.frame_with_console.        pack(pady=0,padx=0,fill="x",expand=False,side = "top")
@@ -4076,10 +4151,11 @@ if not open_image_only:
             reset_icon.pack_propagate(0)
             
             if self.show_tooltip == "ano":
-                ToolTip(self.play_stop_icon," Spustit sekvenci obrázků ",self.root,icon_button=True,unique_class_name="play_stop_icon")
+                ToolTip(self.play_stop_icon," Spustit sekvenci obrázků <Mezerník> ",self.root,icon_button=True,unique_class_name="play_stop_icon")
                 ToolTip(tree," Vyhledat cestu k souboru ",self.root)
                 ToolTip(context_menu_button," Historie vložených cest ",self.root)
                 ToolTip(button_open_setting," Nastavení ",self.root,reverse=True)
+                ToolTip(button_drawing," Malování ",self.root,reverse=True)
                 ToolTip(open_path_icon," Otevřít cestu ",self.root)
                 ToolTip(save_path_icon," Uložit cestu ",self.root)
                 ToolTip(rotate_icon," Otočit obrázek o 90° (<R>) ",self.root)
@@ -4358,6 +4434,13 @@ if not open_image_only:
                     self.image_browser_path = path_from_history
                     self.start(path_from_history)
                 elif path != "/" and path != False:
+                    try:
+                        if path == "C:/Users/":
+                            from pathlib import Path
+                            IMG_DIR = Path.home() / "Pictures"
+                            path = str(IMG_DIR)
+                    except Exception as defpatherr:
+                        print(defpatherr)
                     self.path_set.delete("0","200")
                     self.path_set.insert("0", path)
                     Tools.add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white",None,True)
@@ -4900,6 +4983,14 @@ if not open_image_only:
                     Tools.save_to_json_config("ano","app_settings","tooltip_status")
                     main_console.configure(text="Tooltip byl úspěšně povolen",text_color="green")
 
+            def check_for_updates():
+                result = Tools.check_for_new_app_version(force_update=True)
+                if str(result) == "up to date":
+                    main_console.configure(text="Verze aplikace je aktuální",text_color="green")
+                    if self.selected_language == "en":
+                        main_console.configure(text="Application version is up to date",text_color="green")
+                    new_version_btn.configure(state = "disabled")
+
             if submenu_option == "default_path":
                 path_history_options = ["Třídění souborů","Konvertování souborů","Mazání souborů","Vytváření katalogu","Prohlížeč obrázků"]
                 mapping_logic = {
@@ -4911,9 +5002,13 @@ if not open_image_only:
                 }
                 self.option_buttons[0].configure(fg_color="#212121")
                 row_index = 1
-
-                insert_licence_btn =        customtkinter.CTkButton(master = self.bottom_frame_default_path, width = 200,height=40, text = "Otevřít umístění aplikace/ vložit licenci", command = lambda: os.startfile(initial_path),font=("Arial",24,"bold"))
-                insert_licence_btn.         pack(pady=(30,0),padx=5,side = "top",anchor = "w")
+                toptop_frame =              customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
+                insert_licence_btn =        customtkinter.CTkButton(master = toptop_frame, width = 200,height=40, text = "Otevřít umístění aplikace/ vložit licenci", command = lambda: os.startfile(initial_path),font=("Arial",24,"bold"))
+                new_version_btn =           customtkinter.CTkButton(master = toptop_frame, width = 200,height=40, text = "Vyhledat aktualizace", command = lambda: check_for_updates(),font=("Arial",24,"bold"))
+                insert_licence_btn.         pack(pady=10,padx=5,side = "left",anchor = "w")
+                new_version_btn.            pack(pady=10,padx=5,side = "left",anchor = "w")
+                toptop_frame.               pack(pady=(20,0),padx=5,fill="x",expand=False,side = "top")
+                
                 first_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
                 self.checkbox_maximalized = customtkinter.CTkCheckBox(master = first_option_frame,height=40,text = "Spouštět v maximalizovaném okně",command = lambda: self.maximalized(),font=("Arial",22,"bold"))
                 first_option_frame.         pack(pady=(10,0),padx=5,fill="x",expand=False,side = "top")
@@ -5568,7 +5663,7 @@ if not open_image_only:
             self.label   =          customtkinter.CTkLabel(master = self.bottom_frame2,text = f"Konvertované soubory budou vytvořeny uvnitř separátní složky: \"{self.bmp_folder_name}\"\nPodporované formáty: .ifz\nObsahuje-li .ifz soubor více obrázků, budou uloženy v následující syntaxi:\nxxx_0.bmp, xxx_1.bmp ...",justify = "left",font=("Arial",18,"bold"))
             button  =               customtkinter.CTkButton(master = self.bottom_frame2, text = "KONVERTOVAT", command = lambda: call_start(),font=("Arial",20,"bold"))
             self.loading_bar =      customtkinter.CTkProgressBar(master = self.bottom_frame2, mode='determinate',width = 800,height =20,progress_color="green",corner_radius=0)
-            self.console =          tk.Text(self.bottom_frame2, wrap="word",background="black",font=("Arial",16))
+            self.console =          tk.Text(self.bottom_frame2, wrap="word",background="black",font=("Arial",16),relief="flat")
             self.label.             pack(pady =10,padx=10)
             button.                 pack(pady =20,padx=10)
             button.                 _set_dimensions(300,60)
@@ -5589,9 +5684,16 @@ if not open_image_only:
                 path_from_history = config_data["sort_conv_settings"]["path_history_list_conv"][0]
                 self.path_set.delete("0","200")
                 self.path_set.insert("0", path_from_history)
-                Tools.add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white",None,True)
+                Tools.add_colored_line(self.console,"Byla vložena cesta z historie cest","white",None,True)
                 self.root.update_idletasks()
             elif recources_path != False and recources_path != "/":
+                try: # default windows img path...
+                    if recources_path == "C:/Users/":
+                        from pathlib import Path
+                        IMG_DIR = Path.home() / "Pictures"
+                        recources_path = str(IMG_DIR)
+                except Exception as defpatherr:
+                    print(defpatherr)
                 self.path_set.delete("0","200")
                 self.path_set.insert("0", str(recources_path))
                 Tools.add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white")
@@ -6111,7 +6213,7 @@ if not open_image_only:
             deletable_formats.pack(padx=10,pady=(0,0),side="top",anchor="w")
             top_frame.pack(padx=(0,0),pady=(0),side="top",anchor="w",fill="x")
             top_frame.propagate(False)
-            console = tk.Text(self.changable_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED)
+            console = tk.Text(self.changable_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED,relief="flat")
             console.pack(pady = (10,0),padx =10,side="top",anchor="w",fill="x")
 
             subfolder_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121")
@@ -6468,7 +6570,7 @@ if not open_image_only:
 
             top_frame.pack(padx=0,pady=(0),side="top",anchor="w",fill="x")
             top_frame.propagate(False)
-            console = tk.Text(self.changable_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED)
+            console = tk.Text(self.changable_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED,relief="flat")
             console.pack(pady = (10,0),padx =10,side="top",anchor="w",fill="x")
 
             self.checkbox_testing = customtkinter.CTkCheckBox(master =self.changable_frame,corner_radius=0, text = f"Režim TESTOVÁNÍ (Soubory vyhodnocené ke smazání se pouze přesunou do složky s názvem: \"{self.to_delete_folder_name}\")",font=("Arial",18,"bold"),command=lambda:set_testing_mode())
@@ -6626,7 +6728,7 @@ if not open_image_only:
             button.                 pack(pady=10,padx=(10,0),side="left",anchor="w")
             create_task_btn.        pack(pady=10,padx=(10,0),side="left",anchor="w")
             analyze_btn.            pack(pady=10,padx=(10,0),side="left",anchor="w")
-            self.console =          tk.Text(bottom_frame, wrap="word",background="black",font=("Arial",16),state=tk.DISABLED)
+            self.console =          tk.Text(bottom_frame, wrap="word",background="black",font=("Arial",16),state=tk.DISABLED,relief="flat")
             execution_btn_frame.    pack(pady =3,padx=3,side = "top",anchor="n")
             self.console.           pack(pady =0,padx=(10,0),side = "left",fill="both",expand=True)
             bottom_frame .          pack(pady =0,padx=0,side = "top",fill="both",expand=True)
@@ -6658,9 +6760,16 @@ if not open_image_only:
                 path_from_history = self.config_data["del_settings"]["path_history_list"][0]
                 self.path_set.delete("0","200")
                 self.path_set.insert("0", path_from_history)
-                Tools.add_colored_line(self.console,"Byla vložena cesta z konfiguračního souboru","white",None,True)
+                Tools.add_colored_line(self.console,"Byla vložena cesta z historie cest","white",None,True)
                 self.root.update_idletasks()
             elif recources_path != False and recources_path != "/":
+                try: # default windows img path...
+                    if recources_path == "C:/Users/":
+                        from pathlib import Path
+                        IMG_DIR = Path.home() / "Pictures"
+                        recources_path = str(IMG_DIR)
+                except Exception as defpatherr:
+                    print(defpatherr)
                 self.path_set.delete("0","200")
                 self.path_set.insert("0", str(recources_path))
                 if self.selected_language == "en":
@@ -7313,7 +7422,7 @@ if not open_image_only:
             info_frame.propagate(0)
             button =            customtkinter.CTkButton(master = self.frame5, text = "SPUSTIT", command = self.start,font=("Arial",20,"bold"))
             self.loading_bar =  customtkinter.CTkProgressBar(master = self.frame5, mode='determinate',width = 800,height =20,progress_color="green",corner_radius=0)
-            self.console =      tk.Text(self.frame5, wrap="word",background="black",font=("Arial",16),state=tk.DISABLED)
+            self.console =      tk.Text(self.frame5, wrap="word",background="black",font=("Arial",16),state=tk.DISABLED,relief="flat")
 
             button.             pack(pady =12,padx=10)
             button.             _set_dimensions(300,60)

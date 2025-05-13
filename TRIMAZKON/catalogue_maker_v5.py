@@ -21,7 +21,7 @@ import json
 import tkinter.font as tkFont
 
 initial_path = ""
-testing = True
+testing = False
 
 if testing:
     customtkinter.set_appearance_mode("dark")
@@ -46,7 +46,7 @@ class Tools:
         """
         text_widget.configure(state=tk.NORMAL)
         if font == None:
-            font = ("Arial",16)
+            font = ("Arial",22)
         if delete_line != None:
             text_widget.delete("current linestart","current lineend")
             text_widget.tag_configure(color, foreground=color,font=font)
@@ -2044,13 +2044,13 @@ class Fill_details:
 
 class Catalogue_gui:
     class ToolTip:
-        def __init__(self, widget, text, root,unbind=False,subwindow_status=False,coordinates=None):
+        def __init__(self, widget, text, root,unbind=False,subwindow_status=False,reverse=False):
             self.widget = widget
             self.text = text
             self.root = root
             self.tip_window = None
-            self.coords = coordinates
             self.subwindow_status = subwindow_status
+            self.reverse = reverse
             if unbind:
                 self.unbind_all("",self.widget)
             else:
@@ -2109,9 +2109,17 @@ class Catalogue_gui:
                 self.tip_window.place(x=-200,y=-200)
                 self.tip_window.update_idletasks()
                 if self.subwindow_status:
-                    self.tip_window.place_configure(x=local_x,y = local_y)
+                    if self.reverse:
+                        tip_window_width = self.tip_window._current_width
+                        self.tip_window.place_configure(x=local_x-tip_window_width,y = local_y)
+                    else:
+                        self.tip_window.place_configure(x=local_x,y = local_y)
                 else:
-                    self.tip_window.place_configure(x=local_x,y = local_y+10)
+                    if self.reverse:
+                        tip_window_width = self.tip_window._current_width
+                        self.tip_window.place_configure(x=local_x-tip_window_width,y = local_y+10)
+                    else:
+                        self.tip_window.place_configure(x=local_x,y = local_y+10)
                 # self.tip_window.place(x=local_x+tip_window_width/2,y = local_y)
 
             show_tooltip_v2(e)
@@ -2223,6 +2231,8 @@ class Catalogue_gui:
         self.last_path_input = ""
         self.last_controller_index = 0
         self.opened_window = ""
+        self.copy_memory = ""
+        self.copy_widget_tier = None
 
         self.changes_made = False
         self.optic_light_option = "optic"
@@ -2443,11 +2453,21 @@ class Catalogue_gui:
             self.new_device.configure(text = button_strings[0],state = tk.NORMAL)
         self.edit_device.configure(text = button_strings[1])
         self.del_device.configure(text = button_strings[2])
+
+        self.button_copy.configure(text = button_strings[3])
+        if self.copy_memory != "":
+            if len(self.copy_widget_tier) == 2:
+                button_label = "Vložit stanici"
+            if len(self.copy_widget_tier) == 4:
+                button_label = "Vložit kameru"
+            if len(self.copy_widget_tier) == 6:
+                button_label = "Vložit optiku"
+            self.button_copy.configure(text = button_label)
+
         if button_strings [3] == "":
-            self.button_copy.configure(text = button_strings[3],state = tk.DISABLED)
+            self.button_copy.configure(state = tk.DISABLED)
         else:
-            self.button_copy.configure(text = button_strings[3],state = tk.NORMAL)
-    
+            self.button_copy.configure(state = tk.NORMAL)
 
         if self.last_selected_widget[0] != "" and self.last_selected_widget[0].winfo_exists():
             # if self.last_selected_widget[0]._border_color.lower() != "#ffff00":
@@ -2500,9 +2520,12 @@ class Catalogue_gui:
         if button_strings[3] != "":
             context_menu.add_separator()
             context_menu.add_command(label=button_strings[3],font=("Arial",22,"bold"), command=lambda: self.copy_objects(str(widget_id)))
+            if self.copy_memory != "":
+                # context_menu.add_command(label="Vložit kopírované",font=("Arial",22,"bold"), command=lambda: self.copy_objects(str(widget_id),paste=True),state="disabled")
+                context_menu.add_separator()
+                context_menu.add_command(label="Vložit kopírované",font=("Arial",22,"bold"), command=lambda: self.copy_objects(str(widget_id),paste=True))
 
         if len(str(widget_id)) == 7: # Controller extra options
-
             controller_index = int(widget_id[5:7])
             controller_ip = self.controller_object_list[controller_index]["ip"]
             controller_username = self.controller_object_list[controller_index]["username"]
@@ -3129,15 +3152,27 @@ class Catalogue_gui:
                 alternative_search.bind("<Button-1>",lambda e: manage_option_menu(alternative_search.winfo_rootx(),alternative_search.winfo_rooty(),self.whole_optics_database,alternative_entry,optics=True))
 
         def remaping_characters(event):
-            if event.char == 'ì':
-                event.widget.insert(tk.INSERT, 'ě')
-                return "break"  # Stop the event from inserting the original character
-            elif event.char == 'è':
-                event.widget.insert(tk.INSERT, 'č')
-                return "break"  # Stop the event from inserting the original character
-            elif event.char == 'ø':
-                event.widget.insert(tk.INSERT, 'ř')
-                return "break"  # Stop the event from inserting the original character
+            remap = {
+                'ì': 'ě',
+                'è': 'č',
+                'ø': 'ř'
+            }
+
+            if event.char in remap:
+                widget = event.widget
+                replacement = remap[event.char]
+
+                # Zjistit, zda je něco vybráno
+                try:
+                    selection_start = widget.index("sel.first")
+                    selection_end = widget.index("sel.last")
+                    widget.delete(selection_start, selection_end)
+                    widget.insert(selection_start, replacement)
+                except tk.TclError:
+                    # Pokud nic není vybrané, vlož na pozici kurzoru
+                    widget.insert(tk.INSERT, replacement)
+
+                return "break"
         
         def add_photo():
             """
@@ -3214,7 +3249,7 @@ class Catalogue_gui:
         station_name_label =        customtkinter.CTkLabel(master = station_frame,text = "Název stanice:",font=("Arial",22,"bold"))
         name_frame =                customtkinter.CTkFrame(master = station_frame,corner_radius=0)
         button_prev_st =            customtkinter.CTkButton(master = name_frame,text = "<",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: previous_station())
-        new_name =                  customtkinter.CTkEntry(master = name_frame,font=("Arial",22),width=300,height=50,corner_radius=0)
+        new_name =                  customtkinter.CTkEntry(master = name_frame,font=("Arial",22),height=50,corner_radius=0)
         button_next_st =            customtkinter.CTkButton(master = name_frame,text = ">",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: next_station())
         button_prev_st              .pack(pady = 5, padx = 0,anchor="w",expand=False,side="left")
         new_name                    .pack(pady = 5, padx = 0,anchor="w",expand=True,side="left",fill="x")
@@ -3225,7 +3260,7 @@ class Catalogue_gui:
         wrap_text_btn =             customtkinter.CTkButton(master = description_label_frame,text = "Zarovnat text",font=("Arial",22,"bold"),width = 100,height=30,corner_radius=0,command=lambda: call_text_wrap(new_description))
         inspection_description      .pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
         wrap_text_btn               .pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
-        new_description =           customtkinter.CTkTextbox(master = station_frame,font=("Arial",22),width=300,height=220,corner_radius=0)
+        new_description =           customtkinter.CTkTextbox(master = station_frame,font=("Arial",22),width=450,height=600,corner_radius=0)
         station_name_label          .pack(pady=(15,5),padx=10,anchor="w",expand=False,side = "top")
         name_frame                  .pack(pady = 5, padx = 5,anchor="w",expand=False,side="top",fill="x")
         button_add_photo            .pack(pady=(5,5),padx=10,anchor="w",expand=False,side = "top",fill="x")
@@ -3290,7 +3325,7 @@ class Catalogue_gui:
         note_label.                     pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
         import_notes_btn.               pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
         wrap_text_btn2.                 pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
-        notes_input =                   customtkinter.CTkTextbox(master = camera_frame,font=("Arial",22),corner_radius=0)
+        notes_input =                   customtkinter.CTkTextbox(master = camera_frame,font=("Arial",22),corner_radius=0,width=450)
         counter_frame_cam               .pack(pady=(10,0),padx= 3,anchor="n",expand=False,side="top")
         camera_type                     .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
         option_menu_frame_cam           .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
@@ -3364,7 +3399,7 @@ class Catalogue_gui:
         note2_label.                         pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
         import_notes2_btn.                   pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
         wrap_text_btn3.                      pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
-        notes_input2 =                       customtkinter.CTkTextbox(master = optics_frame,font=("Arial",22),width=300,height=200,corner_radius=0,wrap= "word")
+        notes_input2 =                       customtkinter.CTkTextbox(master = optics_frame,font=("Arial",22),width=450,height=200,corner_radius=0,wrap= "word")
         counter_frame_optics                .pack(pady=(10,0),padx=3,anchor="n",side = "top")
         checkbox_frame                      .pack(pady = 5, padx = 10,anchor="n",expand=False,side="top")
         optic_type                          .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
@@ -3573,23 +3608,23 @@ class Catalogue_gui:
         child_root.after(200, lambda: child_root.iconbitmap(self.app_icon_path))
 
         if object == "station":
-            width = 3*one_segment_width
-            child_root.geometry(f"{width}x{height}+{x+100}+{y+30}")
+            # width = 3*one_segment_width
+            # child_root.geometry(f"{width}x{height}+{x+100}+{y+30}")
             child_root.title("Editování stanice: " + str(self.temp_station_list[station_index]["name"]))
             station_frame   .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
             camera_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
             optics_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
 
         elif object == "camera":
-            width = 2*one_segment_width
-            child_root.geometry(f"{width}x{height}+{x+100}+{y+30}")
+            # width = 2*one_segment_width
+            # child_root.geometry(f"{width}x{height}+{x+100}+{y+30}")
             child_root.title("Editování kamery: " + str(self.temp_station_list[station_index]["camera_list"][camera_index]["type"]))
             camera_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
             optics_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
 
         elif object == "optics":
-            width = one_segment_width
-            child_root.geometry(f"{width}x{height}+{x+100}+{y+30}")
+            # width = one_segment_width
+            # child_root.geometry(f"{width}x{height}+{x+100}+{y+30}")
             child_root.title("Editování optiky: " + str(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"]))
             optics_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
 
@@ -3601,12 +3636,16 @@ class Catalogue_gui:
         if self.default_subwindow_status == 1:
             child_root.state('zoomed')
 
+        if self.show_tooltip == "ano":
+            Catalogue_gui.ToolTip(wrap_text_btn," Zarovnat text na rozměr buňky ",child_root,subwindow_status=True)
+            Catalogue_gui.ToolTip(wrap_text_btn2," Zarovnat text na rozměr buňky ",child_root,subwindow_status=True)
+            Catalogue_gui.ToolTip(wrap_text_btn3," Zarovnat text na rozměr buňky ",child_root,subwindow_status=True,reverse=True)
+
         child_root.update()
         child_root.update_idletasks()
         child_root.focus_force()
         child_root.focus()
         self.opened_window = child_root
-
         # child_root.grab_set()
         # child_root.grab_release()
         
@@ -3760,28 +3799,99 @@ class Catalogue_gui:
                                             self.default_path,
                                             exit_status = exiting_status)
 
-    def copy_objects(self,widget_tier):
-        if len(widget_tier) == 2:
-            station_index = int(widget_tier[:2])
-            to_append = copy.deepcopy(self.station_list[station_index])
-            self.station_list.insert(station_index,to_append)
-            self.make_project_widgets()
-        elif len(widget_tier) == 4:
-            station_index = int(widget_tier[:2])
-            camera_index = int(widget_tier[2:4])
-            to_append = copy.deepcopy(self.station_list[station_index]["camera_list"][camera_index])
-            self.station_list[station_index]["camera_list"].insert(camera_index,to_append)
-            self.make_project_widgets()
-        elif len(widget_tier) == 6:
-            station_index = int(widget_tier[:2])
-            camera_index = int(widget_tier[2:4])
-            optic_index = int(widget_tier[4:])
-            to_append = copy.deepcopy(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optic_index])
-            self.station_list[station_index]["camera_list"][camera_index]["optics_list"].insert(optic_index,to_append)
-            print("\n\n",self.station_list[station_index]["camera_list"][camera_index]["optics_list"])
-            self.make_project_widgets()
+    def copy_objects(self,widget_tier,paste=False):
+        """
+        - self.copy_widget_tier = tier zkopirovaneho widgetu
+        - widget_tier = aktuální, nakliknutý widget
+        """
+        if paste:
+            try:
+                button_strings = Catalogue_gui.get_device_strings(self.current_block_id)
+                if len(self.copy_widget_tier) == 2:
+                    station_index = int(widget_tier[:2])
+                    if station_index +1 >len(self.station_list):
+                        self.station_list.append(self.copy_memory)
+                    else:
+                        self.station_list.insert(station_index+1,self.copy_memory)
+
+                    station_copyed = self.copy_memory["name"]
+                    Tools.add_colored_line(self.main_console,f"Stanice {station_copyed} byla vložena pod {self.station_list[station_index]["name"]}","green",None,True)
+                    self.copy_memory = ""
+                    self.make_project_widgets()
+                    self.button_copy.configure(text = button_strings[3])
+
+                elif len(self.copy_widget_tier) == 4:
+                    station_index = int(widget_tier[:2])
+                    if len(widget_tier) < len(self.copy_widget_tier):
+                        camera_index = len(self.station_list[station_index]["camera_list"])
+                    else:
+                        camera_index = int(widget_tier[2:4])
+
+                    if camera_index +1 >len(self.station_list[station_index]["camera_list"]):
+                        self.station_list[station_index]["camera_list"].append(self.copy_memory)
+                    else:
+                        self.station_list[station_index]["camera_list"].insert(camera_index+1,self.copy_memory)
+                    Tools.add_colored_line(self.main_console,f"Kamera {self.copy_memory["type"]} byla přiřazena k: {self.station_list[station_index]["name"]}","green",None,True)
+                    self.copy_memory = ""
+                    self.make_project_widgets()
+                    self.button_copy.configure(text = button_strings[3])
+
+                elif len(self.copy_widget_tier) == 6:
+                    station_index = int(widget_tier[:2])
+                    if len(widget_tier) < 4:
+                        Tools.add_colored_line(self.main_console,f"Pro vložení optiky definujte kameru nebo optiku pro vložení, nikoliv stanici...","red",None,True)
+                        return
+                    
+                    camera_index = int(widget_tier[2:4])
+                    if len(widget_tier) < 6:
+                        optic_index = len(self.station_list[station_index]["camera_list"][camera_index]["optics_list"])
+                    else:
+                        optic_index = int(widget_tier[4:])
+
+                    if optic_index +1 >len(self.station_list[station_index]["camera_list"][camera_index]["optics_list"]):
+                        self.station_list[station_index]["camera_list"][camera_index]["optics_list"].append(self.copy_memory)
+                    else:
+                        self.station_list[station_index]["camera_list"][camera_index]["optics_list"].insert(optic_index+1,self.copy_memory)
+                    print("\n\n",self.station_list[station_index]["camera_list"][camera_index]["optics_list"])
+                    Tools.add_colored_line(self.main_console,f"Optika {self.copy_memory["type"]} byla přiřazena k: {self.station_list[station_index]["camera_list"][camera_index]["type"]}","green",None,True)
+                    self.copy_memory = ""
+                    self.make_project_widgets()
+                    self.button_copy.configure(text = button_strings[3])
+                else:
+                    Tools.add_colored_line(self.main_console,f"Pro vložení naklikněte jinou buňku než kontroler nebo příslušenství... (jsou navázány na kameru)","red",None,True)
+            except Exception as e:
+                Tools.add_colored_line(self.main_console,f"Neočekávaná chyba: {e}","red",None,True)
+
         else:
-            Tools.add_colored_line(self.main_console,f"Kontroler a příslušenství nelze kopírovat","red",None,True)
+            try:
+                if len(widget_tier) == 2:
+                    station_index = int(widget_tier[:2])
+                    self.copy_memory = copy.deepcopy(self.station_list[station_index])
+                    self.copy_widget_tier = widget_tier
+                    self.button_copy.configure(text = "Vložit stanici")
+                    Tools.add_colored_line(self.main_console,f"Stanice {self.station_list[station_index]["name"]} byla zkopírována do schránky","green",None,True)
+
+                elif len(widget_tier) == 4:
+                    station_index = int(widget_tier[:2])
+                    camera_index = int(widget_tier[2:4])
+                    self.copy_memory = copy.deepcopy(self.station_list[station_index]["camera_list"][camera_index])
+                    self.copy_widget_tier = widget_tier
+                    self.button_copy.configure(text = "Vložit kameru")
+                    Tools.add_colored_line(self.main_console,f"Kamera {self.station_list[station_index]["camera_list"][camera_index]["type"]} byla zkopírována do schránky","green",None,True)
+
+                elif len(widget_tier) == 6:
+                    station_index = int(widget_tier[:2])
+                    camera_index = int(widget_tier[2:4])
+                    optic_index = int(widget_tier[4:])
+                    self.copy_memory = copy.deepcopy(self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optic_index])
+                    self.copy_widget_tier = widget_tier
+                    self.button_copy.configure(text = "Vložit optiku")
+                    Tools.add_colored_line(self.main_console,f"Optika {self.station_list[station_index]["camera_list"][camera_index]["optics_list"][optic_index]["type"]} byla zkopírována do schránky","green",None,True)
+
+                else:
+                    Tools.add_colored_line(self.main_console,f"Kontroler a příslušenství nelze kopírovat (jsou navázány na kameru)","red",None,True)
+            except Exception as e:
+                Tools.add_colored_line(self.main_console,f"Neočekávaná chyba: {e}","red",None,True)
 
     def create_main_widgets(self,initial=False):
         def call_manage_widgets(button):
@@ -3913,7 +4023,12 @@ class Catalogue_gui:
             widget_tier = ""
             widget_tier = self.current_block_id
             if widget_tier != "":
+                if self.copy_memory != "": #vkládám přes tlačítko...
+                    self.copy_objects(widget_tier,paste=True)
+                    return
+
                 self.copy_objects(widget_tier)
+
             else:
                 Tools.add_colored_line(self.main_console,f"Nejprve zvolte, co chcete kopírovat","red",None,True)
 
@@ -3933,13 +4048,11 @@ class Catalogue_gui:
         icon_large = 49
         self.clear_frame(self.root)
         main_header =                   customtkinter.CTkFrame(master=self.root,corner_radius=0)
-        console_frame=                  customtkinter.CTkFrame(master=self.root,corner_radius=0)
-        main_header_row0 =              customtkinter.CTkFrame(master=main_header,corner_radius=0,fg_color="#636363")
-        image_frame =                   customtkinter.CTkFrame(master=main_header,corner_radius=0,fg_color="#212121")
-        logo =                          customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/jhv_logo.png")),size=(300, 100))
-        image_logo =                    customtkinter.CTkLabel(master = image_frame,text = "",image =logo,bg_color="#212121")
-        image_logo                      .pack(pady=0,padx=0,expand=False)
-        buttons_frame =                 customtkinter.CTkFrame(master=main_header,corner_radius=0,fg_color="#212121")
+        main_header_left =              customtkinter.CTkFrame(master=main_header,corner_radius=0,fg_color="#212121")
+
+        main_header_row0 =              customtkinter.CTkFrame(master=main_header_left,corner_radius=0,fg_color="#636363")
+
+        buttons_frame =                 customtkinter.CTkFrame(master=main_header_left,corner_radius=0,fg_color="#212121")
         main_header_row1 =              customtkinter.CTkFrame(master=buttons_frame,corner_radius=0,fg_color="#212121")
         main_header_row2 =              customtkinter.CTkFrame(master=buttons_frame,corner_radius=0,fg_color="#212121")
         main_menu_button =              customtkinter.CTkButton(master = main_header_row0, width = 200,height=50,text = "MENU",command = lambda: call_menu_routine(),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
@@ -3987,7 +4100,13 @@ class Catalogue_gui:
         export_button                   .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         button_settings                 .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         switch_manufacturer_frame       .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
-        self.main_console =             tk.Text(console_frame, wrap="none", height=0,background="#212121",font=("Arial",22),state=tk.DISABLED,foreground="#565B5E")
+        image_frame =                   customtkinter.CTkFrame(master=main_header,corner_radius=0,fg_color="#212121")#,fg_color="#212121")
+        logo =                          customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/jhv_logo.png")),size=(300, 102))
+        image_logo =                    customtkinter.CTkLabel(master = image_frame,text = "",image =logo,bg_color="#212121")
+        image_logo                      .pack(pady=15,padx=0)
+        console_frame=                  customtkinter.CTkFrame(master=self.root,corner_radius=0)
+        self.main_console =             tk.Text(console_frame, wrap="none", height=0,background="#212121",foreground="#565B5E",font=("Arial",22),state=tk.DISABLED)
+        # self.main_console =             tk.Text(console_frame, wrap="none", height=0,background="#1a1a1a",foreground="#565B5E",font=("Arial",22),state=tk.DISABLED,relief="flat")
         self.main_console               .pack(pady = (0,10), padx =10,anchor="w",expand=False,fill="x",side="bottom",ipady=3,ipadx=5)
         column_labels =                 customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=50)
         self.project_tree =             customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
@@ -4004,9 +4123,10 @@ class Catalogue_gui:
         main_header_row0                .pack(pady=0,padx=0,expand=False,fill="x",side = "top",anchor="w")
         main_header_row1                .pack(pady=(0,0),padx=0,expand=False,fill="x",side = "top",anchor="w")
         main_header_row2                .pack(pady=(10,0),padx=0,expand=False,fill="x",side = "top",anchor="w")
-        buttons_frame                   .pack(pady=0,padx=0,expand=False,fill="x",side = "left",anchor="w")
-        image_frame                     .pack(pady=0,padx=0,expand=False,side = "right",anchor="e",ipadx = 15)
-        main_header                     .pack(pady=0,padx=5,expand=False,fill="x",side = "top",ipady = 10,ipadx = 10,anchor="w")
+        buttons_frame                   .pack(pady=0,padx=0,fill="x",side = "left",anchor="w")
+        image_frame                     .pack(pady=0,padx=0,side = "right",anchor="n",ipadx = 15)
+        main_header_left                .pack(pady=0,padx=5,fill="both",side = "left",anchor="w",expand=True)
+        main_header                     .pack(pady=0,padx=5,fill="x",side = "top",ipady = 10,ipadx = 10,anchor="w")
         console_frame                   .pack(pady=0,padx=0,fill="x",expand=False,side = "top")
         column_labels                   .pack(pady=0,padx=5,fill="x",expand=False,side = "top")
         self.project_tree               .pack(pady=5,padx=5,fill="both",expand=True,side = "top")
@@ -4045,7 +4165,7 @@ class Catalogue_gui:
 
         self.root.bind("<f>",lambda e: maximalize_window(e))
         # self.root.mainloop()
-    
+
     def make_project_widgets(self,initial = False,return_scroll = True):
         self.current_block_id = ""
         self.last_scroll_position = self.project_tree._parent_canvas.yview()[0]

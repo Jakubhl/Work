@@ -400,6 +400,13 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - opraveno mazání temp složky (ifz)
     - nově možnost změnit barvu pozadí
     """
+        ,"\nVerze 4.3.6 (13.05.2025)"
+        ,
+  """ 
+  TRIMAZKON:
+    - možnost vypnout tooltip v nastavení
+  Prohlížeč obrázků:
+    """
 ]
 
 

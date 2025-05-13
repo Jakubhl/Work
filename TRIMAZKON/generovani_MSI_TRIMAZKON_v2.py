@@ -12,7 +12,7 @@ include_files = [
 
 # Define the base
 base = "Win32GUI" if sys.platform == "win32" else None  # Hide console for GUI apps
-# base = None
+base = None
 
 
 # Define the executable
@@ -23,19 +23,19 @@ whole_app_exe = Executable(
     icon="images/logo_TRIMAZKON.ico",  # Application icon
 )
 
-jhv_MAZ_exe = Executable(
-    script="JHV_MAZ_GUI_v4.py",  # Main script to convert to EXE
-    base=base,
-    target_name="jhv_MAZ.exe",  # Name of the output EXE file
-    icon="images/logo_TRIMAZKON.ico",  # Application icon
-)
+# jhv_MAZ_exe = Executable(
+#     script="JHV_MAZ_GUI_v4.py",  # Main script to convert to EXE
+#     base=base,
+#     target_name="jhv_MAZ.exe",  # Name of the output EXE file
+#     icon="images/logo_TRIMAZKON.ico",  # Application icon
+# )
 
-ip_set_exe = Executable(
-    script="IP_SET_GUI_v1.py",  # Main script to convert to EXE
-    base=base,
-    target_name="jhv_IP.exe",  # Name of the output EXE file
-    icon="images/logo_TRIMAZKON.ico",  # Application icon
-)
+# ip_set_exe = Executable(
+#     script="IP_SET_GUI_v1.py",  # Main script to convert to EXE
+#     base=base,
+#     target_name="jhv_IP.exe",  # Name of the output EXE file
+#     icon="images/logo_TRIMAZKON.ico",  # Application icon
+# )
 
 shortcut_table = [
     (
@@ -65,9 +65,10 @@ msi_data = {"Shortcut": shortcut_table,}
 # Setup configuration
 setup(
     name="TRIMAZKON",
-    version="4.3.5",
-    description="TRIMAZKON v_4.3.5",
-    executables=[whole_app_exe,jhv_MAZ_exe,ip_set_exe],
+    version="4.3.6",
+    description="TRIMAZKON v_4.3.6",
+    # executables=[whole_app_exe,jhv_MAZ_exe,ip_set_exe],
+    executables=[whole_app_exe],
     options={
         "build_exe": {
             "packages": [],  # Add required packages if needed
@@ -76,7 +77,7 @@ setup(
         },
         "bdist_msi": {
             "upgrade_code": "{12345678-1234-5678-1234-567812345678}",  # Unique GUID
-            "product_code": "{EEEE5555-FFFF-0435-GGGG-7777HHHH8888}",  # NEW every version
+            "product_code": "{EEEE5555-FFFF-0436-GGGG-7777HHHH8888}",  # NEW every version
             "add_to_path": True,  # Do not add to system PATH
             "data": msi_data,
         },            

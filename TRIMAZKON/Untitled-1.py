@@ -1,12 +1,12 @@
-import sys
-from plyer import notification
-import psutil
-import subprocess
-import os
-import shlex
-import threading
-import time
-from multiprocessing import Process
+# import sys
+# from plyer import notification
+# import psutil
+# import subprocess
+# import os
+# import shlex
+# import threading
+# import time
+# from multiprocessing import Process
 # CREATING TASK:
 # name_of_task = "dailyscript_test"
 # path_to_app = r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON\pipe_server\untitled2.py"
@@ -32,7 +32,7 @@ def call_installer(msi_path):
     # process_handler = subprocess.Popen(["cmd.exe", "/c",msi_path], 
     #                                    creationflags=subprocess.DETACHED_PROCESS)
     cmd = str(msi_path)
-    cmds = shlex.split(cmd)
+    # cmds = shlex.split(cmd)
     # p = subprocess.Popen(["cmd.exe", "/c",str(msi_path)], start_new_session=True)
     p = subprocess.Popen(msi_path,shell=True, start_new_session=True)
     # sys.exit(0)
@@ -56,15 +56,57 @@ def exit_and_launch(msi_path):
                      creationflags=subprocess.CREATE_BREAKAWAY_FROM_JOB | subprocess.CREATE_NO_WINDOW,
                      )
     
-msi_path = "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/Installers/TRIMAZKON-4.3.3-win64.msi"
 
-exit_and_launch(msi_path)
-# childProc = threading.Thread(target=exit_and_launch,args = [msi_path])
-# childProc.start()
-time.sleep(3)
 # childProc.join()
 # xx = threading.Thread(target=exit_and_launch,args=[msi_path])
 # xx.start()
+
+import time
+
+start = time.time()
+import sys
+import win32file
+# from psutil import process_iter as psutil_process_iter
+# from os.path import basename as os_path_basename
+# from os.path import exists as os_path_exists
+# from os import getpid as os_get_pid
+import os
+import psutil
+
+
+# import customtkinter
+# import os
+# import time
+# from PIL import Image, ImageTk
+# import Sorting_option_v5 as Trideni
+# import Deleting_option_v2 as Deleting
+# import Converting_option_v3 as Converting
+# import catalogue_maker_v5 as Catalogue
+# import sharepoint_download as download_database
+# import IP_setting_v6 as IP_setting
+# import trimazkon_tray_v5 as trimazkon_tray
+# import string_database
+# from tkinter import filedialog
+# import tkinter as tk
+# import threading
+# import shutil
+# import ctypes
+# import win32pipe, pywintypes, psutil#,win32file
+# import subprocess
+# from win32api import *
+# from win32gui import *
+# import win32con
+# from cryptography.hazmat.primitives.asymmetric import padding
+# from cryptography.hazmat.primitives import serialization, hashes
+# import datetime
+# import wmi
+# import json
+# # import struct
+# import winreg
+
+end = time.time()
+
+print(f"Import trval: {end - start:.6f} s")
 
 # k=input("kkt?")
 

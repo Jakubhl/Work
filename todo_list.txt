@@ -973,17 +973,18 @@ TRIMAZKON - Katalog - když otevřu detaily a kontext nabídka - nefunguje hover
 TRIMAZKON - Katalog - potvrzení odebrání ztrácí focus- hotovo
 TRIMAZKON - Katalog - když přepínám v navigátoru editu a přepnu na stanici, co nemá kamery, zůstanou předešlý - hotovo
 
+7:27 AM 5/13/2025
+TRIMAZKON - kontrola licence při spuštění přes task scheduler - neshodí aplikaci, ghostuje? - opraveno
+TRIMAZKON - Katalog - udělat kopírovat -> vložit stanici - hotovo
+TRIMAZKON - Katalog - podívat se na remaping characters - nejde přepsat selection... - hotovo
+TRIMAZKON - autoupdate - warning ikona - hotovo
+TRIMAZKON - autoupdate - přidat možnost nezajímá mě to... (ignorovat danou verzi - ulozit si číslo nové verze do configu a pockat az na další) - hotovo
+TRIMAZKON - prohlížeč + deleting - default cesta k obrázkům
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-TRIMAZKON - autoupdate - přidat možnost nezajímá mě to... (ignorovat danou verzi - ulozit si číslo nové verze do configu a pockat az na další)
-TRIMAZKON - autoupdate - warning ikona
 
-TRIMAZKON - Katalog - zobrazit kusovník?
-
-TRIMAZKON - Katalog - udělat kopírovat -> vložit stanici
-
-
-TRIMAZKON - Katalog - podívat se na remaping characters - nejde přepsat selection...
+	
+TRIMAZKON - pokusy o optimalizaci
 
 
 ??? TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama, možná přesměrovat i edity a deletions/ uplne se zbavit excelu... ??

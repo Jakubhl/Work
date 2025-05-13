@@ -53,12 +53,17 @@
         {
             "key": "path_history_list",
             "value": [
+                "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/",
                 "C:/Users/"
             ]
         },
         {
             "key": "default_language",
-            "value": "cz"
+            "value": "en"
+        },
+        {
+            "key": "ignored_version",
+            "value": "4.4.4"
         }
     ]
 }

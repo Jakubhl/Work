@@ -23,8 +23,9 @@ import datetime
 import wmi
 # import struct
 import winreg
+import pyperclip
 
-testing = False
+testing = True
 
 
 global_recources_load_error = False
@@ -34,7 +35,7 @@ exe_name = os.path.basename(exe_path)
 config_filename = "config_MAZ.json"
 app_name = "jhv_MAZ"
 app_version = "1.0.6"
-trimazkon_version = "4.3.5"
+trimazkon_version = "4.3.6"
 loop_request = False
 root = None
 print("exe name: ",exe_name)
@@ -61,16 +62,18 @@ class Subwindows:
         child_root = customtkinter.CTkToplevel()
         child_root.after(200, lambda: child_root.iconbitmap(app_icon))
         child_root.title(window_title)
-        label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-        proceed_label = customtkinter.CTkLabel(master = label_frame,text = main_title,font=("Arial",25),anchor="w",justify="left")
-        proceed_label.pack(pady=5,padx=10,anchor="w",side = "left")
-        button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-        button_yes =    customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: run_as_admin())
-        button_no =     customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
-        button_no       .pack(pady = 5, padx = 10,anchor="e",side="right")
-        button_yes      .pack(pady = 5, padx = 10,anchor="e",side="right")
-        label_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
-        button_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+        label_frame =       customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        warning_icon =      customtkinter.CTkLabel(master = label_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/warning.png")),size=(50,50)),bg_color="#212121")
+        proceed_label =     customtkinter.CTkLabel(master = label_frame,text = main_title,font=("Arial",25),anchor="w",justify="left")
+        warning_icon.       pack(pady=10,padx=30,anchor="n",side = "left")
+        proceed_label.      pack(pady=5,padx=(0,10),anchor="w",side = "left")
+        button_frame =      customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        button_yes =        customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: run_as_admin())
+        button_no =         customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+        button_no.          pack(pady = 5, padx = (0,10),anchor="e",side="right")
+        button_yes.         pack(pady = 5, padx = 10,anchor="e",side="right")
+        label_frame.        pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+        button_frame.       pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
         if language_given == "en":
             button_yes.configure(text = "YES")
             button_no.configure(text = "Cancel")
@@ -99,12 +102,14 @@ class Subwindows:
         child_root.after(200, lambda: child_root.iconbitmap(app_icon))
         child_root.title(title_message)
         label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        warning_icon =  customtkinter.CTkLabel(master = label_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/warning.png")),size=(50,50)),bg_color="#212121")
         proceed_label = customtkinter.CTkLabel(master = label_frame,text = prompt_message,font=("Arial",25),anchor="w",justify="left")
-        proceed_label.pack(pady=5,padx=10,anchor="w",side = "left")
+        warning_icon.   pack(pady=20,padx=20,anchor="w",side = "left")
+        proceed_label.  pack(pady=(5,0),padx=(0,20),anchor="w",side = "left")
         button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
         button_yes =   customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: selected_yes(child_root))
         button_no =    customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
-        button_no      .pack(pady = 5, padx = 10,anchor="e",side="right")
+        button_no      .pack(pady = 5, padx = (0,10),anchor="e",side="right")
         button_yes     .pack(pady = 5, padx = 10,anchor="e",side="right")
         label_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
         button_frame   .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
@@ -146,29 +151,32 @@ class Subwindows:
         child_root = customtkinter.CTkToplevel(fg_color="#212121")
         child_root.after(200, lambda: child_root.iconbitmap(app_icon))
         child_root.title(title_message)
-        label_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-        proceed_label = customtkinter.CTkLabel(master = label_frame,text = prompt_message1,font=("Arial",25,"bold"),anchor="w",justify="left")
-        proceed_label.pack(pady=(5,0),padx=10,anchor="w",side = "left")
-        label_frame    .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
-
-        text_widget = tk.Text(master = child_root,background="#212121",borderwidth=0,height=9)
+        label_frame =       customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        warning_icon =      customtkinter.CTkLabel(master = label_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/warning.png")),size=(50,50)),bg_color="#212121")
+        proceed_label =     customtkinter.CTkLabel(master = label_frame,text = prompt_message1,font=("Arial",25,"bold"),anchor="w",justify="left")
+        warning_icon.       pack(pady=20,padx=20,anchor="w",side = "left")
+        proceed_label.      pack(pady=(5,0),padx=(0,20),anchor="w",side = "left")
+        label_frame.        pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+        text_widget =       tk.Text(master = child_root,background="#212121",borderwidth=0,height=9)
         Tools.add_colored_line(text_widget,text=prompt_message2,color="gray84",font=("Arial",16),no_indent=True)
         Tools.add_colored_line(text_widget,text=prompt_message3,color="white",font=("Arial",16,"bold"),no_indent=True)
         Tools.add_colored_line(text_widget,text=prompt_message4,color="gray84",font=("Arial",16),no_indent=True, sameline=True)
         Tools.add_colored_line(text_widget,text=prompt_message5,color="skyblue",font=("Arial",16),no_indent=True, sameline=True)
         Tools.add_colored_line(text_widget,text=prompt_message6,color="gray84",font=("Arial",16),no_indent=True, sameline=True)
-        text_widget    .pack(pady=10,padx=(30,10),anchor="w",side = "top",fill="both",expand=True)
-
-        button_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-        button_close =    customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
-        button_close     .pack(pady = 5, padx = 10,anchor="e",side="right")
-        button_frame   .pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+        text_widget.        pack(pady=10,padx=(30,10),anchor="w",side = "top",fill="both",expand=True)
+        button_frame =      customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        button_copy =       customtkinter.CTkButton(master = button_frame,text = "Kopírovat HWID",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: pyperclip.copy(str(user_HWID)))
+        button_close =      customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+        button_close.       pack(pady = 5, padx = (0,10),anchor="e",side="right")
+        button_copy.        pack(pady = 5, padx = 10,anchor="e",side="right")
+        button_frame.       pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
 
         if language_given == "en":
             button_close.configure(text = "Close")
+            button_copy.configure(text = "Copy HWID")
         child_root.update()
         child_root.update_idletasks()
-        child_root.geometry("800x260")
+        # child_root.geometry("800x260")
         child_root.focus()
         child_root.focus_force()
         child_root.grab_set()
@@ -580,7 +588,7 @@ class Subwindows:
             window.wait_window()
 
     @classmethod
-    def download_new_version_window(cls,new_version,given_log,language_given="cz"):
+    def download_new_version_window(cls,new_version,given_log,language_given="cz",force_update = False):
         def close_prompt(child_root):
             child_root.grab_release()
             child_root.destroy()
@@ -608,6 +616,10 @@ class Subwindows:
             call_installer(msi_path)
             child_root.after(1000,lambda: Tools.terminate_pid(os.getpid())) #vypnout thread i s tray aplikací
             
+        def ignore_version():
+            Tools.save_to_json_config(str(new_version),"ignored_version")
+            close_prompt(child_root)
+
         prompt_message1 = f"Je k dispozici nová verze aplikace: {new_version} !"
         prompt_message2 = f"(Instalace nové verze zachová všechna uživatelská nastavení)\nUpgrade log:"
         title_message = "Upozornění"
@@ -619,12 +631,16 @@ class Subwindows:
         child_root = customtkinter.CTkToplevel(fg_color="#212121")
         child_root.after(200, lambda: child_root.iconbitmap(app_icon))
         child_root.title(title_message)
-        label_frame =       customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        top_frame =         customtkinter.CTkFrame(master = child_root,corner_radius=0,fg_color="#212121")
+        warning_icon =      customtkinter.CTkLabel(master = top_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/warning.png")),size=(50,50)),bg_color="#212121")
+        label_frame =       customtkinter.CTkFrame(master = top_frame,corner_radius=0)
         proceed_label =     customtkinter.CTkLabel(master = label_frame,text = prompt_message1,font=("Arial",25,"bold"),anchor="w",justify="left")
         proceed_label2 =    customtkinter.CTkLabel(master = label_frame,text = prompt_message2,font=("Arial",20),anchor="w",justify="left")
         proceed_label.      pack(pady=(5,0),padx=10,anchor="w",side = "top")
         proceed_label2.     pack(pady=(5,0),padx=10,anchor="w",side = "top")
-        label_frame.        pack(pady=0,padx=0,anchor="w",side = "top",fill="x")
+        warning_icon.       pack(pady=30,padx=30,anchor="w",side = "left")
+        label_frame.        pack(pady=0,padx=0,anchor="w",side = "right",fill="x")
+        top_frame.          pack(pady=0,padx=0,anchor="w",side = "top")
         text_frame =        customtkinter.CTkFrame(master = child_root,corner_radius=0,fg_color="#212121")
         text_widget =       customtkinter.CTkTextbox(master = text_frame,font=("Arial",22),corner_radius=0,wrap= "word",height=300)
         for rows in given_log:
@@ -638,13 +654,17 @@ class Subwindows:
         button_frame =      customtkinter.CTkFrame(master = child_root,corner_radius=0)
         button_close =      customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
         button_dwnld =      customtkinter.CTkButton(master = button_frame,text = "Stáhnout novou verzi",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  download_the_app())
+        button_idc =        customtkinter.CTkButton(master = button_frame,text = "Tato verze mě nezajímá",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  ignore_version())
         button_close.       pack(pady = 10, padx = (0,10),anchor="e",side="right")
         button_dwnld.       pack(pady = 10, padx = (0,10),anchor="e",side="right")
+        if not force_update:
+            button_idc.         pack(pady = 10, padx = (0,10),anchor="e",side="right")
         button_frame.       pack(pady=0,padx=0,anchor="w",side = "top",fill="x")
 
         if language_given == "en":
             button_close.configure(text = "Close")
             button_dwnld.configure(text = "Download the new version")
+            button_idc.configure(text = "I don't care about this version")
         child_root.update()
         child_root.update_idletasks()
         child_root.geometry(f"800x{child_root._current_height}")
@@ -818,6 +838,7 @@ class Tools:
         9 tray_icon_startup\n
         10 path_history_list\n
         11 default_language\n
+        12 ignored_version\n
         """
         def filter_unwanted_chars(to_filter_data, directory = False,even_space=False):
             unwanted_chars = ["\n","\"","\'","[","]"]
@@ -902,6 +923,7 @@ class Tools:
         11 tray_icon_startup\n
         12 path_history_list\n
         13 default_language\n
+        14 ignored_version\n
         """
 
         def filter_unwanted_chars(to_filter_data, directory = False,formats = False):
@@ -921,8 +943,9 @@ class Tools:
             for item in settings:
                 if item["key"] == str(key):
                     item["value"] = new_data  # New value
-                    break
-
+                    return
+            #pokud chybí:
+            settings.append({"key": str(key), "value": new_data})
         
         if os.path.exists(initial_path + cls.config_json_filename):
             with open(initial_path+cls.config_json_filename, "r") as file:
@@ -1510,7 +1533,14 @@ class Tools:
             return False
 
     @classmethod
-    def check_for_new_app_version(cls,language_given = "cz"):
+    def check_for_new_app_version(cls,language_given = "cz",force_update=False):
+        """
+        - splitne podle pomlcek TRIMAZKON-4.3.4-win64.msi
+        - vezme si jen split s verzí, ověří, že na první pozici je TRIMAZKON
+        - nahradí . za nic
+        - porovná verze
+        - pokud novější, stáhne log, zobrazí okno
+        """
         new_version_log_name = "new_version_log.txt"
         version_list = []
         current_app_version = trimazkon_version.replace(".","")
@@ -1525,12 +1555,17 @@ class Tools:
                 name_splitted = names.split("-")
                 if name_splitted[0] == "TRIMAZKON":
                     version_list.append(name_splitted[1])
+                elif testing and name_splitted[0] == "dummy_version":
+                    version_list.append(name_splitted[1])
+
         version_list_int = []
         for versions in version_list:
             versions = versions.replace(".","")
             version_list_int.append(int(versions))
 
-        print(version_list_int)
+        print("version list: ",version_list_int)
+        if len(version_list_int) == 0:
+            return "up to date"
         max_sharepoint_version = max(version_list_int)
         if current_app_version < max_sharepoint_version:
             print("new_version_available")
@@ -1542,7 +1577,15 @@ class Tools:
             new_version_log = sharepoint_instance.output
             max_sharepoint_version = str(max_sharepoint_version)
             max_sharepoint_version_str = max_sharepoint_version[0]+"."+max_sharepoint_version[1]+"."+max_sharepoint_version[2]
-            Subwindows.download_new_version_window(max_sharepoint_version_str,new_version_log)
+            config_data = Tools.read_json_config()
+            if not force_update:
+                if len(config_data) == 13:
+                    ignored_version = config_data[12]
+                    if max_sharepoint_version_str == ignored_version:
+                        return
+            Subwindows.download_new_version_window(max_sharepoint_version_str,new_version_log,language_given=language_given,force_update=force_update)
+        else:
+            return "up to date"
 
 initial_path = Tools.get_init_path()
 print("init path: ",initial_path)
@@ -1769,9 +1812,13 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
 
 load_gui=True
 print("SYSTEM: ",sys.argv)
-if len(sys.argv) > 1 and not global_licence_load_error: # kontrola tady, aby se znovu nedefinovala classa windowsballoontip, řve to...
+if len(sys.argv) > 1: # kontrola tady, aby se znovu nedefinovala classa windowsballoontip, řve to...
     print("received: ",sys.argv[1])
-    if sys.argv[1] == "deleting":
+    if global_licence_load_error: # jen když je spouštěno přes cmd, neuzavirej smycku...
+        load_gui = False
+        loop_request = False
+
+    elif sys.argv[1] == "deleting":
         del_thread = threading.Thread(target=Tools.deleting_via_cmd,name="Deleting_thread")
         del_thread.start()
         load_gui = False
@@ -2024,7 +2071,8 @@ class main_menu:
         licence_info_frame.pack(pady =30,padx=20,side="left",anchor="s")
         bottom_ribbon.pack(pady=0,padx=0,fill="both",side = "bottom",expand=True)
         self.fill_changelog(change_log)
-        change_app_language(Tools.read_json_config()[11],refresh = True)
+        self.selected_language = Tools.read_json_config()[11]
+        change_app_language(self.selected_language,refresh = True)
 
         def maximalize_window(e):
             # netrigguj fullscreen zatimco pisu do vstupniho textovyho pole
@@ -2038,7 +2086,6 @@ class main_menu:
                 self.root.after(0, lambda:self.root.state('zoomed'))
             self.root.update()
         self.root.bind("<f>",maximalize_window)
-        
         if global_licence_load_error:
             new_deleting.configure(state="disabled")
             task_manager.configure(state="disabled")
@@ -2062,7 +2109,8 @@ class main_menu:
             self.root.after(500, lambda: Subwindows.licence_window(self.selected_language))
         else:
             if initial:
-                check_version = threading.Thread(target=Tools.check_for_new_app_version,)
+                check_version = threading.Thread(target=Tools.check_for_new_app_version,
+                                                  kwargs={"language_given": self.selected_language})
                 self.root.after(500,check_version.start)
 
         # initial promenna aby se to nespoustelo porad do kola pri navratu do menu (system argumenty jsou stále uložené v aplikaci)
@@ -2467,12 +2515,23 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                         
                 path_context_menu.tk_popup(context_menu_button.winfo_rootx(),context_menu_button.winfo_rooty()+50)
 
+        def check_for_updates():
+            result = Tools.check_for_new_app_version(force_update=True,language_given=self.selected_language)
+            if str(result) == "up to date":
+                main_console.configure(text="Verze aplikace je aktuální",text_color="green")
+                if self.selected_language == "en":
+                    main_console.configure(text="Application version is up to date",text_color="green")
+                new_version_btn.configure(state = "disabled")
+
         if submenu_option == "default_path":
             self.option_buttons[0].configure(fg_color="#212121")
-            row_index = 1
-
-            insert_licence_btn =        customtkinter.CTkButton(master = self.bottom_frame_default_path, width = 200,height=40, text = "Otevřít umístění aplikace/ vložit licenci", command = lambda: os.startfile(initial_path),font=("Arial",24,"bold"))
-            insert_licence_btn.          pack(pady=(30,0),padx=5,side = "top",anchor = "w")
+            row_index = 1                    
+            toptop_frame =              customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
+            insert_licence_btn =        customtkinter.CTkButton(master = toptop_frame, width = 200,height=40, text = "Otevřít umístění aplikace/ vložit licenci", command = lambda: os.startfile(initial_path),font=("Arial",24,"bold"))
+            new_version_btn =           customtkinter.CTkButton(master = toptop_frame, width = 200,height=40, text = "Vyhledat aktualizace", command = lambda: check_for_updates(),font=("Arial",24,"bold"))
+            insert_licence_btn.         pack(pady=10,padx=5,side = "left",anchor = "w")
+            new_version_btn.            pack(pady=10,padx=5,side = "left",anchor = "w")
+            toptop_frame.               pack(pady=(20,0),padx=5,fill="x",expand=False,side = "top")
 
             first_option_frame =        customtkinter.CTkFrame(master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
             self.checkbox_maximalized = customtkinter.CTkCheckBox(master = first_option_frame,height=40,text = "Spouštět v maximalizovaném okně",command = lambda: self.maximalized(),font=("Arial",22,"bold"))
@@ -2536,6 +2595,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
             context_menu_button.bind("<Button-1>", call_path_context_menu)
 
             if self.selected_language == "en":
+                new_version_btn.configure(text = "Check for updates")
                 insert_licence_btn.configure(text = "Open application root path/ insert license")
                 self.checkbox_maximalized.configure(text = "Run in maximized window")
                 self.tray_checkbox.configure(text = "Run jhv_MAZ in the background (in the system menu \"tray_icons\") when Windows is turned on?")
@@ -3276,7 +3336,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         deletable_formats.pack(padx=10,pady=(0,0),side="top",anchor="w")
         top_frame.pack(padx=(0,0),pady=(0),side="top",anchor="w",fill="x")
         top_frame.propagate(False)
-        console = tk.Text(self.changable_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED)
+        console = tk.Text(self.changable_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED,relief="flat")
         console.pack(pady = (10,0),padx =10,side="top",anchor="w",fill="x")
 
         subfolder_frame = customtkinter.CTkFrame(master=self.changable_frame,corner_radius=0,fg_color="#212121")
@@ -3633,7 +3693,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
 
         top_frame.pack(padx=0,pady=(0),side="top",anchor="w",fill="x")
         top_frame.propagate(False)
-        console = tk.Text(self.changable_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED)
+        console = tk.Text(self.changable_frame, wrap="none", height=0, width=30,background="black",font=("Arial",22),state=tk.DISABLED,relief="flat")
         console.pack(pady = (10,0),padx =10,side="top",anchor="w",fill="x")
 
         self.checkbox_testing = customtkinter.CTkCheckBox(master =self.changable_frame, text = f"Režim TESTOVÁNÍ (Soubory vyhodnocené ke smazání se pouze přesunou do složky s názvem: \"{self.to_delete_folder_name}\")",font=("Arial",18,"bold"),command=lambda:set_testing_mode())
@@ -3781,7 +3841,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         button.                 pack(pady=10,padx=(10,0),side="left",anchor="w")
         create_task_btn.        pack(pady=10,padx=(10,0),side="left",anchor="w")
         analyze_btn.            pack(pady=10,padx=(10,0),side="left",anchor="w")
-        self.console =          tk.Text(bottom_frame, wrap="word",background="black",font=("Arial",16),state=tk.DISABLED)
+        self.console =          tk.Text(bottom_frame, wrap="word",background="black",font=("Arial",16),state=tk.DISABLED,relief="flat")
         execution_btn_frame.    pack(pady =3,padx=3,side = "top",anchor="n")
         self.console.           pack(pady =0,padx=(10,0),side = "left",fill="both",expand=True)
         bottom_frame .          pack(pady =0,padx=0,side = "top",fill="both",expand=False)
