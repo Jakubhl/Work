@@ -980,12 +980,16 @@ TRIMAZKON - Katalog - podívat se na remaping characters - nejde přepsat select
 TRIMAZKON - autoupdate - warning ikona - hotovo
 TRIMAZKON - autoupdate - přidat možnost nezajímá mě to... (ignorovat danou verzi - ulozit si číslo nové verze do configu a pockat az na další) - hotovo
 TRIMAZKON - prohlížeč + deleting - default cesta k obrázkům
+
+10:04 AM 5/14/2025
+TRIMAZKON - prohlížeč - pokusy o optimalizaci - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
+TRIMAZKON - Katalog - nakliknuto při hoveru neshazovat... jako u poznamek v ip setting
+TRIMAZKON - možnost exportu logu? xls, txt...
 
-	
-TRIMAZKON - pokusy o optimalizaci
-
+TRIMAZKON - mssql - propojit s neuronem a databází
 
 ??? TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama, možná přesměrovat i edity a deletions/ uplne se zbavit excelu... ??
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)

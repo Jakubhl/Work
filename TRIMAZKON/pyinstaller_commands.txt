@@ -60,6 +60,7 @@ ORCA:
 INSTALL_OPTION1 = "1" trimazkon all
 INSTALL_OPTION2 = "1" jhv_ip
 INSTALL_OPTION3 = "1" jhv_MAZ
+- nezapomenout na product code - aby instalace odstranila starou verzi
 
 
 

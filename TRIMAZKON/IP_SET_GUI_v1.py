@@ -1,16 +1,14 @@
 import sys
 import win32file
-from psutil import process_iter as psutil_process_iter
-from os.path import basename as os_path_basename
-from os.path import exists as os_path_exists
-from os import getpid as os_get_pid
+import psutil
+import os
 
 class initial_tools:
     @classmethod
     def get_all_app_processes(cls):
         pid_list = []
         num_of_apps = 0
-        for process in psutil_process_iter(['pid', 'name']):
+        for process in psutil.process_iter(['pid', 'name']):
             # if process.info['name'] == "TRIMAZKON_test.exe":
             if process.info['name'] == exe_name:
                 pid_list.append(process.info['pid'])
@@ -42,17 +40,17 @@ class initial_tools:
             path = newPath
         #oprava mezery v nazvu
         path = r"{}".format(path)
-        if not os_path_exists(path) and only_repair == None:
+        if not os.path.exists(path) and only_repair == None:
             return False
         else:
             return path
 
-testing = True
+testing = False
 
 global_recources_load_error = False
 global_licence_load_error = False
 exe_path = sys.executable
-exe_name = os_path_basename(exe_path)
+exe_name = os.path.basename(exe_path)
 config_filename = "jhv_IP.json"
 app_name = "jhv_IP"
 app_version = "1.0.2"
@@ -1277,7 +1275,7 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
         self.root = None #define later (to prevend gui loading when 2 apps opened)
         # self.current_pid = None
         self.exe_name = exe_name
-        self.current_pid = os_get_pid()
+        self.current_pid = os.getpid()
         if not no_server:
             # self.start_server()
             run_server_background = threading.Thread(target=self.start_server,)

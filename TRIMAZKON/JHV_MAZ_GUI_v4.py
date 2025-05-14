@@ -25,7 +25,7 @@ import wmi
 import winreg
 import pyperclip
 
-testing = True
+testing = False
 
 
 global_recources_load_error = False

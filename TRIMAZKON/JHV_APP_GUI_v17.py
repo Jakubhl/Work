@@ -65,7 +65,7 @@ if testing:
     exe_name = "trimazkon_test.exe"
 
 app_running_status = initial_tools.check_runing_app_duplicity()
-print("already opened app status: ",app_running_status)
+print("already opened app status (initial image?): ",app_running_status)
 open_image_only = False
 if len(sys.argv) > 1 and app_running_status == True:
     used_cmd_calls = ["deleting","trigger_by_tray","run_tray","open_task_list","open_log_list","app_shutdown","edit_existing_task","settings_tray","settings_tray_del","admin_menu","installer_call","manual_ip_setting","admin_ip_setting"]
@@ -1941,25 +1941,29 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
                         # global root
                         root_existance = self.check_root_existence(root)
                         print("root_status: ",root_existance)
-
+                        already_called = False
                         if root_existance == True:
                             try:
                                 if menu.ib_running == True:
+                                    print("ib is already running")
                                     root.after(10,menu.command_landed,received_params)
+                                    already_called = True # nesmi se pouzit return...
                             except Exception as ib_run_err:
                                 print(ib_run_err)
-                                
-                            try:
-                                # if root.state() == "iconic":
-                                root.deiconify()
-                                root.update_idletasks()
-                            except Exception as e:
-                                print(e)
-                            # global menu
-                            menu = main_menu(root,hurry=True)
-                            # root.after(100,lambda: menu.menu(clear_root=True))
-                            root.after(10,menu.command_landed,received_params)
-                            # menu.menu(clear_root=True)
+                            
+                            if not already_called:
+                                try:
+                                    # if root.state() == "iconic":
+                                    print("need to deiconify the root")
+                                    root.deiconify()
+                                    root.update_idletasks()
+                                except Exception as e:
+                                    print(e)
+                                # global menu
+                                menu = main_menu(root,hurry=True)
+                                # root.after(100,lambda: menu.menu(clear_root=True))
+                                root.after(10,menu.command_landed,received_params)
+                                # menu.menu(clear_root=True)
                         else:
                             start_new_root() # spousteni pres admina, bylo potreba shodit cely processID
 
@@ -2418,8 +2422,7 @@ if not open_image_only:
                 
                 self.IB_class.IB_as_def_browser_path = params[1]
                 self.IB_class.selected_image = params[2]
-                self.IB_class.shortcut_call()
-
+                self.root.after(10,self.IB_class.shortcut_call())
 
                 # for widget in self.root.winfo_children():
                 #     widget.destroy()
@@ -2651,7 +2654,7 @@ if not open_image_only:
             self.inserted_path_history = config_data["image_browser_settings"]["path_history_list"]
             self.last_frame_dim = [0,0]
             
-            self.shortcut_call = lambda: self.start(self.IB_as_def_browser_path)
+            self.shortcut_call = lambda: self.call_from_mainloop(self.IB_as_def_browser_path)
 
             if params_given != None:
                 print("params given",params_given)
@@ -2662,6 +2665,28 @@ if not open_image_only:
                 self.settings_applied = True
             self.create_widgets()
             
+        def call_from_mainloop(self,path):
+            self.path_set.delete("0","200")
+            self.path_set.insert("0", path)
+            Tools.add_colored_line(self.console,f"Byla vložena cesta: {path}","white",None,True)
+            
+            if os.path.exists(self.default_path + self.temp_bmp_folder):
+                shutil.rmtree(self.default_path + self.temp_bmp_folder) # vycistit
+            self.increment_of_ifz_image = 0
+            try:
+                self.changable_image_num_ifz.delete("0","100")
+                self.changable_image_num_ifz.insert("0",0)
+            except Exception:
+                pass
+            if len(self.image_queue)>len(self.all_images):
+                self.image_queue = [""]*(len(self.all_images))
+                if len(self.image_queue) % 2 == 0: #nesmi byt sudé...
+                    self.image_queue.append("") #kdyztak prictu jeste jeden prvek... append
+            else:
+                self.image_queue = [""]*((self.number_of_film_images*2)+1)
+            self.converted_images = []
+            self.start(path)
+
         def call_menu(self): # Tlačítko menu (konec, návrat do menu)
             """
             Funkce čistí všechny zaplněné rámečky a funguje, jako tlačítko zpět do menu
@@ -2681,10 +2706,11 @@ if not open_image_only:
             
             try:
                 if os.path.exists(self.default_path + self.temp_bmp_folder):
-                    self.root.after(500,lambda: shutil.rmtree(self.default_path + self.temp_bmp_folder)) # vycistit
+                    # self.root.after(500,lambda: shutil.rmtree(self.default_path + self.temp_bmp_folder)) # vycistit
+                    shutil.rmtree(self.default_path + self.temp_bmp_folder) # vycistit
             except Exception as err_msg:
-                print("default path: ",self.default_path)
-                print(err_msg)
+                print("rmtree path (temp bmp): ",self.default_path)
+                print("ERROR: ",err_msg)
             menu.menu()
         
         def clear_frame(self,frame):
@@ -2926,6 +2952,7 @@ if not open_image_only:
                             if path not in self.inserted_path_history:
                                 self.inserted_path_history.insert(0,path)
                                 Tools.add_new_path_to_history(path,"image_browser_settings")
+                            self.frame_with_buttons.update_idletasks()
                             self.current_image_num.configure(text ="/" + str(len(self.all_images)))
                             self.changable_image_num.delete("0","100")
                             self.changable_image_num.insert("0", str(self.increment_of_image+1))
@@ -4049,13 +4076,9 @@ if not open_image_only:
             button_drawing.                 pack(pady = (5,0),padx =(10,0),side="left",anchor = "w")
             button_open_setting.            pack(pady = (5,0),padx =(10,10),side="left",anchor = "w")
             self.frame_with_path.           pack(pady=0,padx=0,fill="x",expand=False,side = "top")
-            self.frame_with_console =       customtkinter.CTkFrame(master=self.root,corner_radius=0)
-            self.name_or_path =             customtkinter.CTkCheckBox(master = self.frame_with_console,font=("Arial",16), text = "Název/cesta",command= lambda: self.refresh_console_setting(),corner_radius=0)
-            self.console =                  tk.Text(self.frame_with_console, wrap="none", height=0,background="black",font=("Arial",14),borderwidth=0,state=tk.DISABLED,relief="flat")
-            self.name_or_path.              pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
-            self.console.                   pack(pady = (10,0),padx =10,ipady=3,ipadx=5,anchor = "w",side="left",fill="x",expand=True)
-            self.frame_with_console.        pack(pady=0,padx=0,fill="x",expand=False,side = "top")
             self.frame_with_buttons =       customtkinter.CTkFrame(master=self.root,corner_radius=0)
+
+            # self.frame_with_console.        pack(pady=0,padx=0,fill="x",expand=False,side = "top")
             button_back  =                  customtkinter.CTkButton(master = self.frame_with_buttons, width = 30,height=button_height,text = "<", command = self.previous_image,font=larger_font,corner_radius=0)
             self.changable_image_num =      customtkinter.CTkEntry(master = self.frame_with_buttons,width=45,justify = "left",font=larger_font)
             self.changable_image_num.       delete("0","100")
@@ -4090,19 +4113,6 @@ if not open_image_only:
             reset_icon.                     bind("<Leave>",lambda e: reset_icon._image.configure(size=(smaller_icon,smaller_icon)))
             reset_icon.                     bind("<Button-1>",lambda e: self.Reset_all())
             self.manage_ifz_frame =         customtkinter.CTkFrame(master=self.frame_with_buttons,corner_radius=0,fg_color="#212121",width=0,height=button_height)
-            # ifz_label =                     customtkinter.CTkLabel(master = self.manage_ifz_frame,text = "IFZ:",justify = "left",font=("Arial",20))
-            # button_back_ifz  =              customtkinter.CTkButton(master = self.manage_ifz_frame, width = 30,height=button_height,text = "<", command = self.previous_ifz_image,font=larger_font,corner_radius=0)
-            # self.changable_image_num_ifz =  customtkinter.CTkEntry(master = self.manage_ifz_frame,width=45,justify = "left",font=larger_font)
-            # self.changable_image_num_ifz.   delete("0","100")
-            # self.changable_image_num_ifz.   insert("0",1)
-            # self.current_image_num_ifz =    customtkinter.CTkLabel(master = self.manage_ifz_frame,text = "/0",justify = "left",font=larger_font)
-            # button_next_ifz  =              customtkinter.CTkButton(master = self.manage_ifz_frame, width = 30,height=button_height,text = ">", command = self.next_ifz_image,font=larger_font,corner_radius=0)
-            # if self.ifz_located == True:
-            #     ifz_label.                      pack(pady = (10,0),padx =(15,0),anchor = "w",side="left")
-            #     button_back_ifz.                pack(pady = (10,0),padx =(5,0),anchor = "w",side="left")
-            #     self.changable_image_num_ifz.   pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
-            #     self.current_image_num_ifz.     pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
-            #     button_next_ifz.                pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
             # button_move =                   customtkinter.CTkButton(master = self.frame_with_buttons, height=button_height,text = "PŘESUNOUT", command =  lambda: self.move_image(),font=larger_font,corner_radius=0)
             move_icon =                     customtkinter.CTkLabel(master = self.frame_with_buttons,width=larger_icon,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/move_to_folder.png")),size=(smaller_icon, smaller_icon)),bg_color="#212121")
             move_icon.                      bind("<Enter>",lambda e: move_icon._image.configure(size=(larger_icon,larger_icon)))
@@ -4113,6 +4123,11 @@ if not open_image_only:
             delete_icon.                    bind("<Enter>",lambda e: delete_icon._image.configure(size=(larger_icon,larger_icon)))
             delete_icon.                    bind("<Leave>",lambda e: delete_icon._image.configure(size=(smaller_icon,smaller_icon)))
             delete_icon.                    bind("<Button-1>",lambda e: self.delete_image())
+            self.frame_with_console =       customtkinter.CTkFrame(master=self.frame_with_buttons,corner_radius=0,fg_color="#212121")
+            self.name_or_path =             customtkinter.CTkCheckBox(master = self.frame_with_console,font=("Arial",16), text = "Název/cesta:",command= lambda: self.refresh_console_setting(),corner_radius=0)
+            self.console =                  tk.Text(self.frame_with_console, wrap="none", height=0,background="black",font=("Arial",14),borderwidth=0,state=tk.DISABLED,relief="flat")
+            self.name_or_path.              pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
+            self.console.                   pack(pady = (10,0),padx =10,ipady=3,ipadx=5,anchor = "w",side="left",fill="x",expand = True)
             button_back.                    pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
             self.changable_image_num.       pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
             self.current_image_num.         pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
@@ -4130,6 +4145,7 @@ if not open_image_only:
             copy_icon.                      pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
             move_icon.                      pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
             delete_icon.                    pack(pady = (10,0),padx =(10,0),anchor = "w",side="left")
+            self.frame_with_console.        pack(pady=0,padx=(20,0),fill="x",side = "left",expand = True)
             self.frame_with_buttons.        pack(pady=0,padx=(0,0),fill="x",side = "top")
             self.background_frame =         customtkinter.CTkFrame(master=self.root,corner_radius=0)
             self.main_frame =               tk.Canvas(master=self.background_frame,bg="black",highlightthickness=0)
@@ -4155,7 +4171,7 @@ if not open_image_only:
                 ToolTip(tree," Vyhledat cestu k souboru ",self.root)
                 ToolTip(context_menu_button," Historie vložených cest ",self.root)
                 ToolTip(button_open_setting," Nastavení ",self.root,reverse=True)
-                ToolTip(button_drawing," Malování ",self.root,reverse=True)
+                ToolTip(button_drawing," Malování ",self.root)
                 ToolTip(open_path_icon," Otevřít cestu ",self.root)
                 ToolTip(save_path_icon," Uložit cestu ",self.root)
                 ToolTip(rotate_icon," Otočit obrázek o 90° (<R>) ",self.root)

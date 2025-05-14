@@ -50,6 +50,8 @@
         "copyed_dir_name": "Kop\u00edrovan\u00e9_obr\u00e1zky",
         "moved_dir_name": "P\u0159esunut\u00e9_obr\u00e1zky",
         "path_history_list": [
+            "C:/Users/jakub.hlavacek.local/Desktop/JHV/test_images/Omron/Sn\u00edmkySC01_MS500SA/",
+            "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/",
             "C:\\Users\\jakub.hlavacek.local\\Pictures/"
         ],
         "canvas_default_color": "black"
@@ -78,6 +80,8 @@
         "editable_notes": 1,
         "disk_persistent": 1,
         "auto_order_when_edit": 0,
-        "ask_to_delete": 100
+        "ask_to_delete": 100,
+        "deleted_project_bin": [],
+        "edited_project_bin": []
     }
 }

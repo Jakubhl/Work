@@ -400,12 +400,25 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - opraveno mazání temp složky (ifz)
     - nově možnost změnit barvu pozadí
     """
-        ,"\nVerze 4.3.6 (13.05.2025)"
+        ,"\nVerze 4.3.6 (14.05.2025)"
         ,
   """ 
   TRIMAZKON:
-    - možnost vypnout tooltip v nastavení
+    - Oprava: neplatná licence při automatickém spuštění 
+    neshodila aplikaci úplně
+    - od této verze je nově možnost ignorovat novou verzi
+  Katalog:
+    - oprava nové funkcionality (zobrazení detailu buňek pod 
+    kurzorem)
+    - optimalizace suboken
+    - nově možnost jakoukoliv buňku kopírovat a vložit na určené 
+    místo
+    - oprava v textboxech, nešla přepsat selection diakritikou
   Prohlížeč obrázků:
+    - defaultní cesta = systémová pro obrázky
+    - zkrácení času načtení obrázku otevřeného mimo aplikaci (<2 s)
+    - -||- když aplikace běží na pozadí (tray) (<2 s)
+    - -||- uplně shozená (<3 s)
     """
 ]
 
