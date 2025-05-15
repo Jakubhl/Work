@@ -39,7 +39,9 @@
             2024
         ],
         "to_delete_dir_name": "Ke_smazani",
-        "path_history_list": []
+        "path_history_list": [
+            "C:/Users/jakub.hlavacek.local/Pictures/Screenshots - Copy/"
+        ]
     },
     "image_browser_settings": {
         "selected_option": 2,
@@ -50,6 +52,7 @@
         "copyed_dir_name": "Kop\u00edrovan\u00e9_obr\u00e1zky",
         "moved_dir_name": "P\u0159esunut\u00e9_obr\u00e1zky",
         "path_history_list": [
+            "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/images/",
             "C:/Users/jakub.hlavacek.local/Desktop/JHV/test_images/Omron/Sn\u00edmkySC01_MS500SA/",
             "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/",
             "C:\\Users\\jakub.hlavacek.local\\Pictures/"

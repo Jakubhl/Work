@@ -57,7 +57,7 @@ exe_path = sys.executable
 exe_name = os.path.basename(exe_path)
 config_filename = "TRIMAZKON.json"
 app_name = "TRIMAZKON"
-app_version = "4.3.6"
+app_version = "4.3.7"
 loop_request = False
 root = None
 print("exe name: ",exe_name)
@@ -1729,6 +1729,16 @@ if not open_image_only:
                     print(e)
 
         @classmethod
+        def check_trial_existance(cls):
+            try:
+                key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, cls.registry_key_path, 0, winreg.KEY_READ)
+                return True
+            except FileNotFoundError:
+                return False
+            except Exception:
+                return False
+
+        @classmethod
         def store_installation_date(cls,refresh_callback):
             try:
                 key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, cls.registry_key_path)
@@ -2536,12 +2546,13 @@ if not open_image_only:
                     licence_info_status.configure(text="chyba ověření")
                 elif "EXPIRED:" in str(app_licence_validity):
                     licence_info_status.configure(text=app_licence_validity.replace("EXPIRED:","platnost vypršela:"))
-                insert_licence_btn = customtkinter.CTkButton(master = licence_info_frame, width = 200,height=40, text = "Vložit licenci", command = lambda: os.startfile(initial_path),font=("Arial",24,"bold"))
-                trial_btn = customtkinter.CTkButton(master = licence_info_frame,height=40, text = "Aktivovat trial verzi (30 dní)", command = lambda: Tools.store_installation_date(refresh_callback = self.check_licence),font=("Arial",24,"bold"))
-                refresh_licence_btn = customtkinter.CTkButton(master = licence_info_frame, width = 40,height=40, text = "🔄", command = lambda: self.check_licence(),font=(None,24))
-                insert_licence_btn.pack(pady =(7,5),padx=(15,0),side="left",anchor="w")
-                trial_btn.pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
-                refresh_licence_btn.pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
+                insert_licence_btn =    customtkinter.CTkButton(master = licence_info_frame, width = 200,height=40, text = "Vložit licenci", command = lambda: os.startfile(initial_path),font=("Arial",24,"bold"))
+                trial_btn =             customtkinter.CTkButton(master = licence_info_frame,height=40, text = "Aktivovat trial verzi (30 dní)", command = lambda: Tools.store_installation_date(refresh_callback = self.check_licence),font=("Arial",24,"bold"))
+                refresh_licence_btn =   customtkinter.CTkButton(master = licence_info_frame, width = 40,height=40, text = "🔄", command = lambda: self.check_licence(),font=(None,24))
+                insert_licence_btn.     pack(pady =(7,5),padx=(15,0),side="left",anchor="w")
+                if not Tools.check_trial_existance():
+                    trial_btn.              pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
+                refresh_licence_btn.    pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
                 self.root.after(500, lambda: Subwindows.licence_window())
             else:
                 if "Trial active" in str(app_licence_validity):
@@ -2729,9 +2740,10 @@ if not open_image_only:
             list_of_files_to_view = []
             for files in os.listdir(path):
                 files_split = files.split(".")
-                if ("."+files_split[len(files_split)-1]) in self.image_extensions:
-                    list_of_files_to_view.append(path + files)
-                    if ("."+files_split[len(files_split)-1]) == ".ifz":
+                image_extension = "."+files_split[-1].lower()
+                if image_extension in self.image_extensions:
+                    list_of_files_to_view.append(os.path.join(path, files))
+                    if image_extension == ".ifz":
                         self.ifz_located = True
             return list_of_files_to_view
 

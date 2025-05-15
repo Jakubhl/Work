@@ -53,17 +53,51 @@
         {
             "key": "path_history_list",
             "value": [
-                "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/",
                 "C:/Users/"
             ]
         },
         {
             "key": "default_language",
-            "value": "en"
-        },
+            "value": "cz"
+        }
+    ],
+    "task_list": [
         {
-            "key": "ignored_version",
-            "value": "4.4.4"
+            "name": "TRIMAZKON_del_task_1",
+            "operating_path": false,
+            "max_days": "382",
+            "files_to_keep": "1000",
+            "frequency": "12:00",
+            "more_dirs": 0,
+            "selected_option": 1,
+            "date_added": "17.03.2025 16:13:00",
+            "del_log": [
+                {
+                    "del_date": "14.05.2025 10:51:42",
+                    "files_checked": 183,
+                    "files_older": 0,
+                    "files_newer": "",
+                    "files_deleted": 0,
+                    "path_count": 2
+                },
+                {
+                    "del_date": "14.05.2025 12:00:06",
+                    "files_checked": 183,
+                    "files_older": 0,
+                    "files_newer": "",
+                    "files_deleted": 0,
+                    "path_count": 2
+                },
+                {
+                    "del_date": "15.05.2025 12:00:07",
+                    "files_checked": 183,
+                    "files_older": 0,
+                    "files_newer": "",
+                    "files_deleted": 0,
+                    "path_count": 2
+                }
+],
+            "creation_date": 0
         }
     ]
 }

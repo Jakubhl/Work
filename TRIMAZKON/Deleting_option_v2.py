@@ -492,7 +492,8 @@ class whole_deleting_function:
                     date_of_file = self.get_mod_date_of_file(path,files)
                 if date_of_file != False:
                     files_split = files.split(".")
-                    if (files_split[len(files_split)-1]) in self.supported_formats:
+                    file_extension = files_split[-1].lower()
+                    if file_extension in self.supported_formats:
                         files_checked +=1
                         if int(date_of_file) < cutoff_days:
                             older_files_checked +=1
@@ -533,7 +534,8 @@ class whole_deleting_function:
                     date_of_file = self.get_mod_date_of_file(path,files)
                 if date_of_file != False:
                     files_split = files.split(".")
-                    if (files_split[len(files_split)-1]) in self.supported_formats:
+                    file_extension = files_split[-1].lower()
+                    if file_extension in self.supported_formats:
                         files_checked +=1
                         if int(date_of_file) < cutoff_days:
                             deleted_count +=1

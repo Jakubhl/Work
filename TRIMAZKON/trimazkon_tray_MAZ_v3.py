@@ -1,6 +1,6 @@
 
 from pystray import Icon, Menu, MenuItem
-from PIL import Image, ImageDraw
+from PIL import Image
 # from openpyxl import load_workbook
 import customtkinter
 import tkinter as tk
@@ -9,8 +9,7 @@ import os
 import subprocess
 import sys
 import json
-import threading
-
+import datetime
 
 class Tools:
     @classmethod
@@ -506,6 +505,73 @@ class tray_app_service:
         except Exception:
             pass
 
+    def export_log(self,task,flag,column_names):
+        """
+        flag:
+        - xlsx
+        - txt
+        """
+        def make_table():
+            nonlocal column_names
+            table = []
+            selected_option = int(task["selected_option"])
+            more_dirs = int(task["more_dirs"])
+            to_pop_list = []
+
+            # Mark columns to exclude
+            if selected_option not in [1, 2, 4]:  # older
+                to_pop_list.append(column_names[2])
+            if selected_option != 2:  # newer
+                to_pop_list.append(column_names[3])
+            if not (more_dirs == 1 and selected_option < 3):  # subfolders
+                to_pop_list.append(column_names[5])
+
+            column_names = [col for col in column_names if col not in to_pop_list]
+            table.append(column_names)
+
+            for log in task["del_log"]:
+                row = [
+                    str(log["del_date"]),
+                    str(log["files_checked"]),
+                ]
+
+                if selected_option in [1, 2, 4]:
+                    row.append(str(log["files_older"]))
+                if selected_option == 2:
+                    row.append(str(log["files_newer"]))
+                
+                row.append(str(log["files_deleted"]))
+                
+                if more_dirs == 1 and selected_option < 3:
+                    row.append(str(log["path_count"]))
+
+                table.append(row)
+
+            print(table)
+            return table
+
+        current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+        export_filename = str(task["name"]) + f"_deletion_log_{current_date}"
+        if flag == "txt":
+            export_filename += ".txt"
+            table = make_table()
+
+            col_widths = [max(len(str(row[col])) for row in table) for col in range(len(table[0]))]
+            with open(self.initial_path+export_filename, "w", encoding="utf-8") as f:
+                for row in table:
+                    formatted_row = [
+                        str(cell).ljust(col_widths[i])  # left-align each column
+                        for i, cell in enumerate(row)
+                    ]
+                    f.write("  ".join(formatted_row) + "\n")  # two spaces between columns
+
+        else:
+            export_filename += ".xlsx"
+
+        print("save as:",export_filename)
+
+
+
     def show_task_log(self,specify_task=False,task_given = None,root_given = False,maximalized=False,toplevel = False):
         try:
             self.selected_language = Tools.read_json_config(self.initial_path,self.config_filename)["app_settings"]["default_language"]
@@ -550,6 +616,17 @@ class tray_app_service:
             files_deleted": f"Smazáno: {output_data[2]} souborů",
             path_count": f"Prohledáno: {output_data[5]} subsložek",
             """
+            def call_export_log(task,flag):
+                column_names = [date_added_label,
+                                files_checked_label,
+                                files_older_label,
+                                files_newer_label,
+                                files_deleted_label,
+                                path_count_label]
+
+                self.export_log(task,flag=flag,column_names=column_names)
+
+
             all_task_logs = task["del_log"]
             if get_log_count:
                 return len(all_task_logs)
@@ -568,33 +645,37 @@ class tray_app_service:
                 files_deleted_label = "Total deleted"
                 path_count_label = "Browsed subdirectories"
             
-            description_frame = customtkinter.CTkFrame(master=given_task_frame,corner_radius=0,fg_color="#636363")
-            description = customtkinter.CTkLabel(master=description_frame,text = "",font=("Arial",20,"bold"),justify="left",anchor="w",)
-            description.pack(pady=(0,10),padx=10,side="left")
-            description_frame.pack(pady=0,padx=0,fill="x",expand=True,side="top")
-            column_headers = customtkinter.CTkFrame(master=given_task_frame,corner_radius=0,border_width=0,height= 50)
+            description_frame =     customtkinter.CTkFrame(master=given_task_frame,corner_radius=0,fg_color="#636363")
+            export_txt_btn =        customtkinter.CTkButton(master = description_frame,text = "Export (.txt)",font=("Arial",22,"bold"),height=50,corner_radius=0,fg_color="#505050",command=lambda:call_export_log(task,flag="txt"))
+            export_xlsx_btn =       customtkinter.CTkButton(master = description_frame,text = "Export (.xlsx)",font=("Arial",22,"bold"),height=50,corner_radius=0,fg_color="#505050",command=lambda:call_export_log(task,flag="xlsx"))
+            description =           customtkinter.CTkLabel(master=description_frame,text = "",font=("Arial",20),justify="left",anchor="w",)
+            description.            pack(pady=(0,10),padx=10,side="left")
+            export_xlsx_btn.        pack(pady=(0,5),padx=(0,5),side="right",anchor="e")
+            export_txt_btn.         pack(pady=(0,5),padx=(5,5),side="right",anchor="e")
+            description_frame.      pack(pady=0,padx=0,fill="x",expand=True,side="top")
+            column_headers =        customtkinter.CTkFrame(master=given_task_frame,corner_radius=0,border_width=0,height= 50)
             headers_font = ("Arial",18,"bold")
             colum_width = 150
-            column_1 = customtkinter.CTkFrame(master=column_headers,corner_radius=0,border_width=2,border_color="#636363",height= 50,width=250)
-            column_2 = customtkinter.CTkFrame(master=column_headers,corner_radius=0,border_width=2,border_color="#636363",height= 50,width=colum_width)
-            column_3 = customtkinter.CTkFrame(master=column_headers,corner_radius=0,border_width=2,border_color="#636363",height= 50,width=colum_width)
-            column_4 = customtkinter.CTkFrame(master=column_headers,corner_radius=0,border_width=2,border_color="#636363",height= 50,width=colum_width)
-            column_5 = customtkinter.CTkFrame(master=column_headers,corner_radius=0,border_width=2,border_color="#636363",height= 50,width=colum_width)
-            column_6 = customtkinter.CTkFrame(master=column_headers,corner_radius=0,border_width=2,border_color="#636363",height= 50,width=colum_width+70)
-            param1_label = customtkinter.CTkLabel(master=column_1,text = date_added_label,font=headers_font)
-            param2_label = customtkinter.CTkLabel(master=column_2,text = files_checked_label,font=headers_font)
-            param3_label = customtkinter.CTkLabel(master=column_3,text = files_older_label,font=headers_font)
-            param4_label = customtkinter.CTkLabel(master=column_4,text = files_newer_label,font=headers_font)
-            param5_label = customtkinter.CTkLabel(master=column_5,text = files_deleted_label,font=headers_font)
-            param6_label = customtkinter.CTkLabel(master=column_6,text = path_count_label,font=headers_font)
-            param1_label.pack(pady=10,padx=10)
-            param2_label.pack(pady=10,padx=10)
-            param3_label.pack(pady=10,padx=10)
-            param4_label.pack(pady=10,padx=10)
-            param5_label.pack(pady=10,padx=10)
-            param6_label.pack(pady=10,padx=10)
-            column_1.pack(pady=0,padx=0,anchor="w",side="left") #datum
-            column_2.pack(pady=0,padx=0,anchor="w",side="left") #zkontrolovano
+            column_1 =              customtkinter.CTkFrame(master=column_headers,corner_radius=0,border_width=2,border_color="#636363",height= 50,width=250)
+            column_2 =              customtkinter.CTkFrame(master=column_headers,corner_radius=0,border_width=2,border_color="#636363",height= 50,width=colum_width)
+            column_3 =              customtkinter.CTkFrame(master=column_headers,corner_radius=0,border_width=2,border_color="#636363",height= 50,width=colum_width)
+            column_4 =              customtkinter.CTkFrame(master=column_headers,corner_radius=0,border_width=2,border_color="#636363",height= 50,width=colum_width)
+            column_5 =              customtkinter.CTkFrame(master=column_headers,corner_radius=0,border_width=2,border_color="#636363",height= 50,width=colum_width)
+            column_6 =              customtkinter.CTkFrame(master=column_headers,corner_radius=0,border_width=2,border_color="#636363",height= 50,width=colum_width+70)
+            param1_label =          customtkinter.CTkLabel(master=column_1,text = date_added_label,font=headers_font)
+            param2_label =          customtkinter.CTkLabel(master=column_2,text = files_checked_label,font=headers_font)
+            param3_label =          customtkinter.CTkLabel(master=column_3,text = files_older_label,font=headers_font)
+            param4_label =          customtkinter.CTkLabel(master=column_4,text = files_newer_label,font=headers_font)
+            param5_label =          customtkinter.CTkLabel(master=column_5,text = files_deleted_label,font=headers_font)
+            param6_label =          customtkinter.CTkLabel(master=column_6,text = path_count_label,font=headers_font)
+            param1_label.           pack(pady=10,padx=10)
+            param2_label.           pack(pady=10,padx=10)
+            param3_label.           pack(pady=10,padx=10)
+            param4_label.           pack(pady=10,padx=10)
+            param5_label.           pack(pady=10,padx=10)
+            param6_label.           pack(pady=10,padx=10)
+            column_1.               pack(pady=0,padx=0,anchor="w",side="left") #datum
+            column_2.               pack(pady=0,padx=0,anchor="w",side="left") #zkontrolovano
             if int(task["selected_option"]) == 1 or int(task["selected_option"]) == 2 or int(task["selected_option"]) == 4:
                 column_3.pack(pady=0,padx=0,anchor="w",side="left") #starsich
             if int(task["selected_option"]) == 2:
@@ -836,6 +917,8 @@ class tray_app_service:
         self.icon.run() # Run the tray icon
 
 
-# inst = tray_app_service(r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON/",Tools.resource_path('images/logo_TRIMAZKON.ico'),"jhv_MAZ.exe","config_MAZ.json")
-# inst.main()
+inst = tray_app_service(r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON/",Tools.resource_path('images/logo_TRIMAZKON.ico'),"jhv_MAZ.exe","config_MAZ.json")
+inst.show_task_log()
+
+inst.main()
 

@@ -35,7 +35,7 @@ exe_name = os.path.basename(exe_path)
 config_filename = "config_MAZ.json"
 app_name = "jhv_MAZ"
 app_version = "1.0.6"
-trimazkon_version = "4.3.6"
+trimazkon_version = "4.3.7"
 loop_request = False
 root = None
 print("exe name: ",exe_name)
@@ -1429,6 +1429,16 @@ class Tools:
             Tools.save_to_json_config(current_paths,"path_history_list")
 
     @classmethod
+    def check_trial_existance(cls):
+        try:
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, cls.registry_key_path, 0, winreg.KEY_READ)
+            return True
+        except FileNotFoundError:
+            return False
+        except Exception:
+            return False
+
+    @classmethod
     def check_licence(cls):
         global global_licence_load_error 
         check_trial = Tools.check_trial_period()
@@ -2099,7 +2109,8 @@ class main_menu:
             trial_btn = customtkinter.CTkButton(master = licence_info_frame,height=40, text = "Aktivovat trial verzi (30 dní)", command = lambda: Tools.store_installation_date(refresh_callback = self.check_licence),font=("Arial",24,"bold"))
             refresh_licence_btn = customtkinter.CTkButton(master = licence_info_frame, width = 40,height=40, text = "🔄", command = lambda: self.check_licence(),font=(None,24))
             insert_licence_btn.pack(pady =(7,5),padx=(15,0),side="left",anchor="w")
-            trial_btn.pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
+            if not Tools.check_trial_existance():
+                trial_btn.pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
             refresh_licence_btn.pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
 
             if self.selected_language == "en":

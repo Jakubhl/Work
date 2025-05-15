@@ -21,7 +21,7 @@ import json
 import tkinter.font as tkFont
 
 initial_path = ""
-testing = False
+testing = True
 
 if testing:
     customtkinter.set_appearance_mode("dark")
@@ -35,7 +35,7 @@ if testing:
     def set_zoom(zoom_factor):
         root.tk.call('tk', 'scaling', zoom_factor / 100)
         customtkinter.set_widget_scaling(zoom_factor / 100) 
-    set_zoom(100)
+    set_zoom(80)
 
 class Tools:
     config_json_filename = "TRIMAZKON.json"
@@ -2233,6 +2233,8 @@ class Catalogue_gui:
         self.opened_window = ""
         self.copy_memory = ""
         self.copy_widget_tier = None
+        self.leave_expanded_widget = None
+        self.leave_expanded_widget_tier = None
 
         self.changes_made = False
         self.optic_light_option = "optic"
@@ -2448,9 +2450,14 @@ class Catalogue_gui:
         button_strings = Catalogue_gui.get_device_strings(self.current_block_id)
         
         if button_strings [0] == "":
-            self.new_device.configure(text = button_strings[0],state = tk.DISABLED)
+            # self.new_device.configure(text = button_strings[0],state = tk.DISABLED)
+            self.new_device.configure(text = button_strings[0])
+            self.new_device.pack_forget()
+            self.new_device.master.configure(width=1,height=1)
         else:
-            self.new_device.configure(text = button_strings[0],state = tk.NORMAL)
+            # self.new_device.configure(text = button_strings[0],state = tk.NORMAL)
+            self.new_device.configure(text = button_strings[0])
+            self.new_device.pack(pady = 0, padx = (10,0),anchor="w",side="left")
         self.edit_device.configure(text = button_strings[1])
         self.del_device.configure(text = button_strings[2])
 
@@ -2465,9 +2472,11 @@ class Catalogue_gui:
             self.button_copy.configure(text = button_label)
 
         if button_strings [3] == "":
-            self.button_copy.configure(state = tk.DISABLED)
+            # self.button_copy.configure(state = tk.DISABLED)
+            self.button_copy.pack_forget()
         else:
-            self.button_copy.configure(state = tk.NORMAL)
+            # self.button_copy.configure(state = tk.NORMAL)
+            self.button_copy.pack(pady = 0, padx = (10,0),anchor="w",side="left")
 
         if self.last_selected_widget[0] != "" and self.last_selected_widget[0].winfo_exists():
             # if self.last_selected_widget[0]._border_color.lower() != "#ffff00":
@@ -2556,13 +2565,30 @@ class Catalogue_gui:
             except Exception as err:
                 print(err)
                 return False
-        
+            
+        def leave_expanded(e,widget_tier,widget):
+            # pokud někde rozliknutá, schovej:
+            if self.leave_expanded_widget == widget:
+                return
+            
+            if self.leave_expanded_widget != None:
+                try:
+                    self.switch_widget_info(e,self.leave_expanded_widget_tier,self.leave_expanded_widget)
+                except Exception as e:
+                    print("exception error: ",e)
+            
+            self.leave_expanded_widget = widget
+            self.leave_expanded_widget_tier = widget_tier
+
         def on_enter(e, widget_tier,widget):
             if not opened_window_check():
-                self.switch_widget_info(e, widget_tier,widget)
+                if self.leave_expanded_widget != widget:
+                    self.switch_widget_info(e, widget_tier,widget)
+
         def on_leave(e, widget_tier,widget):
             if not opened_window_check():
-                self.switch_widget_info(e, widget_tier,widget)
+                if self.leave_expanded_widget != widget:
+                    self.switch_widget_info(e, widget_tier,widget)
 
         if dummy_block:
             dummy_block_widget =    customtkinter.CTkFrame(master=master_widget,corner_radius=0,height=height,width =width-10,fg_color="#212121")
@@ -2578,7 +2604,7 @@ class Catalogue_gui:
                 block_name.pack(pady = 5,padx =5,expand = False,fill=fill)
             
             block_name.         bind("<Button-3>",lambda e, widget_tier=tier: self.show_context_menu(e, widget_tier))
-            block_widget.       bind("<Button-1>",lambda e, widget_tier=tier,widget = block_widget: self.select_block(e, widget_tier,widget))
+            # block_widget.       bind("<Button-1>",lambda e, widget_tier=tier,widget = block_widget: self.select_block(e, widget_tier,widget))
             block_name.         bind("<Button-1>",lambda e, widget_tier=tier,widget = block_widget: self.select_block(e, widget_tier,widget))
             # block_widget.       bind("<Button-1>",lambda e, widget_tier=tier,widget = block_name: self.switch_widget_info(e, widget_tier,widget))
             # block_name.         bind("<Button-1>",lambda e, widget_tier=tier,widget = block_name: self.switch_widget_info(e, widget_tier,widget))
@@ -2586,6 +2612,7 @@ class Catalogue_gui:
                 block_name.         bind("<Enter>",lambda e, widget_tier=tier,widget = block_name: on_enter(e, widget_tier,widget))
                 block_name.         bind("<Leave>",lambda e, widget_tier=tier,widget = block_name: on_leave(e, widget_tier,widget))
                 block_name.         bind("<Button-3>",lambda e, widget_tier=tier,widget = block_name: on_leave(e, widget_tier,widget),"+")
+                block_name.         bind("<Button-1>",lambda e, widget_tier=tier,widget = block_name: leave_expanded(e, widget_tier,widget),"+")
             else:
                 block_widget.       bind("<Button-1>",lambda e, widget_tier=tier,widget = block_name: self.switch_widget_info(e, widget_tier,widget))
                 block_name.         bind("<Button-1>",lambda e, widget_tier=tier,widget = block_name: self.switch_widget_info(e, widget_tier,widget))
@@ -3325,7 +3352,7 @@ class Catalogue_gui:
         note_label.                     pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
         import_notes_btn.               pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
         wrap_text_btn2.                 pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
-        notes_input =                   customtkinter.CTkTextbox(master = camera_frame,font=("Arial",22),corner_radius=0,width=450)
+        notes_input =                   customtkinter.CTkTextbox(master = camera_frame,font=("Arial",22),corner_radius=0,width=450,height=450)
         counter_frame_cam               .pack(pady=(10,0),padx= 3,anchor="n",expand=False,side="top")
         camera_type                     .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
         option_menu_frame_cam           .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
@@ -3399,7 +3426,7 @@ class Catalogue_gui:
         note2_label.                         pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
         import_notes2_btn.                   pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
         wrap_text_btn3.                      pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
-        notes_input2 =                       customtkinter.CTkTextbox(master = optics_frame,font=("Arial",22),width=450,height=200,corner_radius=0,wrap= "word")
+        notes_input2 =                       customtkinter.CTkTextbox(master = optics_frame,font=("Arial",22),width=450,height=450,corner_radius=0,wrap= "word")
         counter_frame_optics                .pack(pady=(10,0),padx=3,anchor="n",side = "top")
         checkbox_frame                      .pack(pady = 5, padx = 10,anchor="n",expand=False,side="top")
         optic_type                          .pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
@@ -3946,22 +3973,25 @@ class Catalogue_gui:
 
         def switch_manufacturer():
             if self.chosen_manufacturer == "Omron":
-                manufacturer_logo =             customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/keyence_logo.png")),size=(240, 50))
+                # manufacturer_logo =             customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/keyence_logo.png")),size=(240, 50))
                 self.chosen_manufacturer = "Keyence"
                 self.camera_database_pointer = 0
                 self.optics_database_pointer = 0
                 self.camera_cable_database_pointer = 0
                 self.accessory_database_pointer = 0
-                switch_manufacturer_image.configure(image = manufacturer_logo)
+                # switch_manufacturer_image.configure(image = manufacturer_logo)
+                switch_manufacturer_btn.configure(image = customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/keyence_logo.png")),size=(manuf_logo_width,manuf_logo_height)))
+
                 self.read_database()
             elif self.chosen_manufacturer == "Keyence":
-                manufacturer_logo =             customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/omron_logo.png")),size=(240, 50))
+                # manufacturer_logo =             customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/omron_logo.png")),size=(240, 50))
                 self.chosen_manufacturer = "Omron"
                 self.camera_database_pointer = 0
                 self.optics_database_pointer = 0
                 self.camera_cable_database_pointer = 0
                 self.accessory_database_pointer = 0
-                switch_manufacturer_image.configure(image = manufacturer_logo)
+                # switch_manufacturer_image.configure(image = manufacturer_logo)
+                switch_manufacturer_btn.configure(image = customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/omron_logo.png")),size=(manuf_logo_width,manuf_logo_height)))
                 self.read_database()
 
         def call_setting_window():
@@ -4046,68 +4076,115 @@ class Catalogue_gui:
         
         icon_small = 45
         icon_large = 49
+
+        def make_icon_and_text_button(master,text,icon):
+            label_large = icon_large
+            label_small = icon_small
+            icon_text_button = customtkinter.CTkLabel(master = master,
+                                                      width=label_large*2,height=label_large,
+                                                      text = text,font=("Arial",20,"bold"),
+                                                      image =customtkinter.CTkImage(PILImage.open(Tools.resource_path(f"images/{icon}.png")),size=(label_small/2,label_small/2)),
+                                                      bg_color="#212121",justify="center",compound="top")
+            icon_text_button.bind("<Enter>",lambda e: icon_text_button._image.configure(size=(label_large/2,label_large/2)))
+            icon_text_button.bind("<Leave>",lambda e: icon_text_button._image.configure(size=(label_small/2,label_small/2)))
+            return icon_text_button
+
         self.clear_frame(self.root)
         main_header =                   customtkinter.CTkFrame(master=self.root,corner_radius=0)
         main_header_left =              customtkinter.CTkFrame(master=main_header,corner_radius=0,fg_color="#212121")
-
         main_header_row0 =              customtkinter.CTkFrame(master=main_header_left,corner_radius=0,fg_color="#636363")
-
         buttons_frame =                 customtkinter.CTkFrame(master=main_header_left,corner_radius=0,fg_color="#212121")
         main_header_row1 =              customtkinter.CTkFrame(master=buttons_frame,corner_radius=0,fg_color="#212121")
         main_header_row2 =              customtkinter.CTkFrame(master=buttons_frame,corner_radius=0,fg_color="#212121")
         main_menu_button =              customtkinter.CTkButton(master = main_header_row0, width = 200,height=50,text = "MENU",command = lambda: call_menu_routine(),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
         main_menu_button                .pack(pady = (10,0),padx =(20,0),anchor = "s",side = "left")
-        self.project_name_input =       customtkinter.CTkEntry(master = main_header_row1,font=("Arial",20),width=250,height=50,placeholder_text="Název projektu",corner_radius=0)
-        new_station =                   customtkinter.CTkButton(master = main_header_row1,text = "Nová stanice",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_manage_widgets("add_line"))
-        self.new_device =               customtkinter.CTkButton(master = main_header_row1,text = "Nová kamera",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_manage_widgets("add_object"))
-        self.edit_device =              customtkinter.CTkButton(master = main_header_row1,text = "Editovat stanici",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_edit_object())
-        self.del_device =               customtkinter.CTkButton(master = main_header_row1,text = "Odebrat stanici",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_delete_object())
-        self.button_copy =              customtkinter.CTkButton(master = main_header_row1, width = 250,height=50,text="Kopírovat stanici",command =  lambda: call_copy_object(),font=("Arial",25,"bold"),corner_radius=0)
-        self.project_name_input         .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
-        new_station                     .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
-        self.new_device                 .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
-        self.edit_device                .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
-        self.del_device                 .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
-        self.button_copy                .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
-        self.project_name_input.        bind("<Key>",remaping_characters)
-        # export_button =                 customtkinter.CTkButton(master = main_header_row2,text = "Exportovat",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command=lambda:call_export_window())
-        export_button =                 customtkinter.CTkLabel(master = main_header_row2,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/export_excel.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        project_label =                 customtkinter.CTkLabel(master = main_header_row1,text = "Projekt:",font=("Arial",25,"bold"))
+        self.project_name_input =       customtkinter.CTkEntry(master = main_header_row1,font=("Arial",22),width=250,height=50,placeholder_text="Název projektu",corner_radius=0)
+        # export_button =                 customtkinter.CTkButton(master = main_header_row1,text = "Exportovat",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command=lambda:call_export_window())
+        export_button =                 customtkinter.CTkLabel(master = main_header_row1,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/export_excel.png")),size=(icon_small,icon_small)),bg_color="#212121")
         export_button.                  bind("<Enter>",lambda e: export_button._image.configure(size=(icon_large,icon_large)))
         export_button.                  bind("<Leave>",lambda e: export_button._image.configure(size=(icon_small,icon_small)))
         export_button.                  bind("<Button-1>",lambda e: call_export_window())
-        switch_manufacturer_frame =     customtkinter.CTkFrame(master = main_header_row2,corner_radius=0)
-        switch_manufacturer_btn =       customtkinter.CTkButton(master=switch_manufacturer_frame,text="Změnit výrobce:",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command=lambda:switch_manufacturer())
-        manufacturer_logo =             customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/omron_logo.png")),size=(240, 50))
-        switch_manufacturer_image =     customtkinter.CTkLabel(master = switch_manufacturer_frame,text = "",image=manufacturer_logo)
-        # save_button =                   customtkinter.CTkButton(master = main_header_row2,text = "Uložit/ Nahrát",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command=lambda:self.call_save_metadata_gui())
-        save_button =                   customtkinter.CTkLabel(master = main_header_row2,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/save_file.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        # switch_manufacturer_frame =     customtkinter.CTkFrame(master = main_header_row1,corner_radius=0)
+        # switch_manufacturer_btn =       customtkinter.CTkButton(master=switch_manufacturer_frame,text="Změnit výrobce:",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command=lambda:switch_manufacturer())
+        # manufacturer_logo =             customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/omron_logo.png")),size=(240, 50))
+        # switch_manufacturer_image =     customtkinter.CTkLabel(master = switch_manufacturer_frame,text = "",image=manufacturer_logo)
+        # save_button =                   customtkinter.CTkButton(master = main_header_row1,text = "Uložit/ Nahrát",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command=lambda:self.call_save_metadata_gui())
+        save_button =                   customtkinter.CTkLabel(master = main_header_row1,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/save_file.png")),size=(icon_small,icon_small)),bg_color="#212121")
         save_button.                    bind("<Enter>",lambda e: save_button._image.configure(size=(icon_large,icon_large)))
         save_button.                    bind("<Leave>",lambda e: save_button._image.configure(size=(icon_small,icon_small)))
         save_button.                    bind("<Button-1>",lambda e: self.call_save_metadata_gui(only_save_flag=True))
-        load_button =                   customtkinter.CTkLabel(master = main_header_row2,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/open_file.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        load_button =                   customtkinter.CTkLabel(master = main_header_row1,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/open_file.png")),size=(icon_small,icon_small)),bg_color="#212121")
         load_button.                    bind("<Enter>",lambda e: load_button._image.configure(size=(icon_large,icon_large)))
         load_button.                    bind("<Leave>",lambda e: load_button._image.configure(size=(icon_small,icon_small)))
         load_button.                    bind("<Button-1>",lambda e: self.call_save_metadata_gui())
-        # button_settings =               customtkinter.CTkButton(master = main_header_row2, width = 50,height=50,text="⚙️",command =  lambda: call_setting_window(),font=("",22),corner_radius=0)
-        button_settings =               customtkinter.CTkLabel(master = main_header_row2,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/settings.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        # button_settings =               customtkinter.CTkButton(master = main_header_row1, width = 50,height=50,text="⚙️",command =  lambda: call_setting_window(),font=("",22),corner_radius=0)
+        button_settings =               customtkinter.CTkLabel(master = main_header_row1,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/settings.png")),size=(icon_small,icon_small)),bg_color="#212121")
         button_settings.                bind("<Enter>",lambda e: button_settings._image.configure(size=(icon_large,icon_large)))
         button_settings.                bind("<Leave>",lambda e: button_settings._image.configure(size=(icon_small,icon_small)))
         button_settings.                bind("<Button-1>",lambda e: call_setting_window())
-        switch_manufacturer_btn         .pack(pady = 0, padx = 0,anchor="w",side="left")
-        switch_manufacturer_image       .pack(pady = 0, padx = (10,0),anchor="w",side="left")
-        save_button                     .pack(pady = 0, padx = (20,0),anchor="w",expand=False,side="left")
-        load_button                     .pack(pady = 0, padx = (20,0),anchor="w",expand=False,side="left")
-        export_button                   .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
-        button_settings                 .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
-        switch_manufacturer_frame       .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
+        # switch_manufacturer_image       .pack(pady = 0, padx = (10,0),anchor="w",side="left")
+        # new_station =                   customtkinter.CTkButton(master = main_header_row1,text = "Nová stanice",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_manage_widgets("add_line"))
+        new_station =                   make_icon_and_text_button(main_header_row1,"Nová stanice","green_plus")
+        new_station.                    bind("<Button-1>",lambda e: call_manage_widgets("add_line"))
+        # self.new_device =               customtkinter.CTkButton(master = main_header_row1,text = "Nová kamera",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_manage_widgets("add_object"))
+        new_device_frame =              customtkinter.CTkFrame(master=main_header_row1,corner_radius=0,fg_color="#212121")
+        self.new_device =               make_icon_and_text_button(new_device_frame,"Nová kamera","green_plus")
+        self.new_device.                bind("<Button-1>",lambda e: call_manage_widgets("add_object"))
+        self.new_device                 .pack(pady = 0, padx = (10,0),anchor="w",side="left")
+        # self.edit_device =              customtkinter.CTkButton(master = main_header_row1,text = "Editovat stanici",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_edit_object())
+        self.edit_device =              make_icon_and_text_button(main_header_row1,"Editovat stanici","edit")
+        self.edit_device.               bind("<Button-1>",lambda e: call_edit_object())
+        # self.del_device =               customtkinter.CTkButton(master = main_header_row1,text = "Odebrat stanici",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command= lambda: call_delete_object())
+        self.del_device =               make_icon_and_text_button(main_header_row1,"Odebrat stanici","delete_file")
+        self.del_device.                bind("<Button-1>",lambda e: call_delete_object())
+        # self.button_copy =              customtkinter.CTkButton(master = main_header_row1, width = 250,height=50,text="Kopírovat stanici",command =  lambda: call_copy_object(),font=("Arial",25,"bold"),corner_radius=0)
+        self.button_copy =               make_icon_and_text_button(main_header_row1,"Kopírovat stanici","copy_file")
+        self.button_copy.                bind("<Button-1>",lambda e: call_copy_object())
+
+        project_label                   .pack(pady = 0, padx = (10,0),anchor="w",side="left")
+        self.project_name_input         .pack(pady = 0, padx = (10,0),anchor="w",side="left")
+        save_button                     .pack(pady = 0, padx = (20,0),anchor="w",side="left")
+        load_button                     .pack(pady = 0, padx = (20,0),anchor="w",side="left")
+        export_button                   .pack(pady = 0, padx = (20,0),anchor="w",side="left")
+        button_settings                 .pack(pady = 0, padx = (20,0),anchor="w",side="left")
+        new_station                     .pack(pady = 0, padx = (20,0),anchor="w",side="left")
+        new_device_frame                .pack(pady = 0, padx = (0,0),anchor="w",side="left",expand=False)
+        # self.new_device                 .pack(pady = 0, padx = (10,0),anchor="w",side="left")
+        self.edit_device                .pack(pady = 0, padx = (20,0),anchor="w",side="left")
+        self.del_device                 .pack(pady = 0, padx = (20,0),anchor="w",side="left")
+        self.button_copy                .pack(pady = 0, padx = (20,0),anchor="w",side="left")
+        self.project_name_input.        bind("<Key>",remaping_characters)
+        
+
+        # switch_manufacturer_frame       .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         image_frame =                   customtkinter.CTkFrame(master=main_header,corner_radius=0,fg_color="#212121")#,fg_color="#212121")
         logo =                          customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/jhv_logo.png")),size=(300, 102))
         image_logo =                    customtkinter.CTkLabel(master = image_frame,text = "",image =logo,bg_color="#212121")
-        image_logo                      .pack(pady=15,padx=0)
+        image_logo                      .pack(pady=(15,0),padx=0)
         console_frame=                  customtkinter.CTkFrame(master=self.root,corner_radius=0)
-        self.main_console =             tk.Text(console_frame, wrap="none", height=0,background="#212121",foreground="#565B5E",font=("Arial",22),state=tk.DISABLED)
+        manuf_logo_width = 240
+        manuf_logo_height = 50
+        manuf_logo_width_small = 216
+        manuf_logo_height_small = 45
+        switch_manufacturer_label =     customtkinter.CTkLabel(master = console_frame,text = "Změnit výrobce komponentů:",font=("Arial",25,"bold"))
+        switch_manufacturer_btn =       customtkinter.CTkLabel(master = console_frame,
+                                                    width=manuf_logo_width,height=manuf_logo_height,
+                                                    text = "",font=("Arial",20,"bold"),
+                                                    image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/omron_logo.png")),size=(manuf_logo_width_small,manuf_logo_height_small)),
+                                                    bg_color="#212121",justify="center",compound="bottom")
+        switch_manufacturer_btn.        bind("<Enter>",lambda e: switch_manufacturer_btn._image.configure(size=(manuf_logo_width,manuf_logo_height)))
+        switch_manufacturer_btn.        bind("<Leave>",lambda e: switch_manufacturer_btn._image.configure(size=(manuf_logo_width_small,manuf_logo_height_small)))
+        switch_manufacturer_btn.        bind("<Button-1>",lambda e: switch_manufacturer())
+
+        console_label =                 customtkinter.CTkLabel(master = console_frame,text = " > ",font=("Arial",40,"bold"))
+        self.main_console =             tk.Text(console_frame, wrap="none", height=0,background="black",foreground="#565B5E",font=("Arial",22),state=tk.DISABLED,relief="flat")
         # self.main_console =             tk.Text(console_frame, wrap="none", height=0,background="#1a1a1a",foreground="#565B5E",font=("Arial",22),state=tk.DISABLED,relief="flat")
-        self.main_console               .pack(pady = (0,10), padx =10,anchor="w",expand=False,fill="x",side="bottom",ipady=3,ipadx=5)
+        console_label                   .pack(pady = (0,10), padx =(10,5),anchor="w",side="left")
+        self.main_console               .pack(pady = (0,10), padx =(0,10),anchor="w",expand=True,fill="x",side="left",ipady=3,ipadx=5)
+        switch_manufacturer_btn         .pack(pady = (0,10), padx = (0,30),anchor="e",side="right")
+        switch_manufacturer_label       .pack(pady = (0,10), padx = (10,5),anchor="e",side="right")
+
         column_labels =                 customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=50)
         self.project_tree =             customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
         stations_column_header =        customtkinter.CTkLabel(master = column_labels,text = "Stanice",font=("Arial",25,"bold"),bg_color="#212121",width=self.default_block_width-35,height=50)
@@ -4122,8 +4199,8 @@ class Catalogue_gui:
         accessory_column_header         .pack(pady=(15,0),padx=15,expand=False,side = "left")
         main_header_row0                .pack(pady=0,padx=0,expand=False,fill="x",side = "top",anchor="w")
         main_header_row1                .pack(pady=(0,0),padx=0,expand=False,fill="x",side = "top",anchor="w")
-        main_header_row2                .pack(pady=(10,0),padx=0,expand=False,fill="x",side = "top",anchor="w")
-        buttons_frame                   .pack(pady=0,padx=0,fill="x",side = "left",anchor="w")
+        # main_header_row2                .pack(pady=(10,0),padx=0,expand=True,fill="x",side = "top",anchor="w")
+        buttons_frame                   .pack(pady=0,padx=0,fill="x",side = "left",anchor="w",expand=True)
         image_frame                     .pack(pady=0,padx=0,side = "right",anchor="n",ipadx = 15)
         main_header_left                .pack(pady=0,padx=5,fill="both",side = "left",anchor="w",expand=True)
         main_header                     .pack(pady=0,padx=5,fill="x",side = "top",ipady = 10,ipadx = 10,anchor="w")
@@ -4164,6 +4241,22 @@ class Catalogue_gui:
                 self.root.state('zoomed')
 
         self.root.bind("<f>",lambda e: maximalize_window(e))
+
+        def unfocus_expanded(e):
+            if self.leave_expanded_widget != None:
+                x, y = self.root.winfo_pointerx(), self.root.winfo_pointery()
+                hovered_widget = self.root.winfo_containing(x, y)
+                if hovered_widget == self.leave_expanded_widget or str(hovered_widget) == str(self.leave_expanded_widget) + ".!label":
+                    return
+                try:
+                    self.switch_widget_info(e,self.leave_expanded_widget_tier,self.leave_expanded_widget)
+                    
+                except Exception as e:
+                    print("exception error: ",e)
+            
+            self.leave_expanded_widget = None
+            self.leave_expanded_widget_tier = None
+        self.root.bind("<Escape>",lambda e: unfocus_expanded(e))
         # self.root.mainloop()
 
     def make_project_widgets(self,initial = False,return_scroll = True):

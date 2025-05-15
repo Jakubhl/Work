@@ -983,13 +983,28 @@ TRIMAZKON - prohlížeč + deleting - default cesta k obrázkům
 
 10:04 AM 5/14/2025
 TRIMAZKON - prohlížeč - pokusy o optimalizaci - hotovo
+release 4.3.6
+
+8:38 AM 5/15/2025
+šla donekonečna aktivovat trial verze - hotovo
+TRIMAZKON - prohlížeč - nebere .PNG - hotovo (upraveno i v mazání)
+TRIMAZKON - Katalog - nakliknuto při hoveru neshazovat... jako u poznamek v ip setting + unofcus esc - hotovo
+TRIMAZKON - Katalog - nový vzhled tlačítek - hotovo
+TRIMAZKON - Katalog - opravit lupy v editu - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
-TRIMAZKON - Katalog - nakliknuto při hoveru neshazovat... jako u poznamek v ip setting
-TRIMAZKON - možnost exportu logu? xls, txt...
+
+TRIMAZKON - log mazání - možnost exportu logu? xls, txt...
+
+
+
+
 
 TRIMAZKON - mssql - propojit s neuronem a databází
+TRIMAZKON - mssql - upravit aktivaci trialu (check existance)
+
+
 
 ??? TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama, možná přesměrovat i edity a deletions/ uplne se zbavit excelu... ??
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)

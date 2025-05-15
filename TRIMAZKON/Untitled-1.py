@@ -127,6 +127,40 @@ import sys, os
 import struct
 import time
 from PIL import Image, ImageDraw
+
+
+from datetime import datetime
+
+def save_table_to_txt(table, task_name):
+    """
+    Saves the contents of a 2D table widget (e.g., [[CTkEntry, CTkEntry], ...])
+    to a .txt file with current date in the filename.
+
+    Parameters:
+    - table: list of lists of widgets (e.g., self.table[row][col])
+    - task_name: str, used as part of the filename
+    """
+    # Create a filename with the date
+    filename = f"{task_name}_table_export_{datetime.now().strftime('%Y-%m-%d')}.txt"
+
+    with open(filename, "w", encoding="utf-8") as f:
+        for row in table:
+            values = []
+            for cell in row:
+                values.append(str(cell))
+            f.write("\t".join(values) + "\n")
+
+    print(f"Table saved to {filename}")
+
+
+
+# Let's say self.table is a 2D list like:
+table = [
+    ["CTkEntry1", "CTkEntry2"],
+    ["CTkEntry3", "CTkEntry4"],
+]
+
+save_table_to_txt(table, task_name="task123")
  
 class WindowsBalloonTip:
     def __init__(self, title, msg,app_icon_path):
