@@ -992,19 +992,22 @@ TRIMAZKON - Katalog - nakliknuto při hoveru neshazovat... jako u poznamek v ip 
 TRIMAZKON - Katalog - nový vzhled tlačítek - hotovo
 TRIMAZKON - Katalog - opravit lupy v editu - hotovo
 
+2:48 PM 5/16/2025
+TRIMAZKON - Katalog - možnost exportu do dbo. - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
-TRIMAZKON - log mazání - možnost exportu logu? xls, txt...
+TRIMAZKON - log mazání - možnost exportu logu? xls, txt... - rozpracované
 
 
+
+TRIMAZKON - Katalog - čtení komponent z databáze
+	TRIMAZKON - Katalog - na entrywidgetech autosearch (jedno okýnko context menu pod widgetem, entrem select)
 
 
 
 TRIMAZKON - mssql - propojit s neuronem a databází
 TRIMAZKON - mssql - upravit aktivaci trialu (check existance)
-
-
 
 ??? TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama, možná přesměrovat i edity a deletions/ uplne se zbavit excelu... ??
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)

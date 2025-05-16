@@ -19,6 +19,7 @@ import pyperclip
 import copy
 import json
 import tkinter.font as tkFont
+import pyodbc
 
 initial_path = ""
 testing = True
@@ -223,6 +224,12 @@ class Tools:
         - render_mode
         - path_history_list
         - hover_info_trigger_mode
+
+        \ndb_settings\n
+        - server_history_list
+        - username_history_list
+        - db_name_list
+        - user_id
         """
         # default_labels = string_database.default_setting_database
 
@@ -266,6 +273,12 @@ class Tools:
         - render_mode
         - path_history_list
         - hover_info_trigger_mode
+
+        \ndb_settings\n
+        - server_history_list
+        - username_history_list
+        - db_name_list
+        - user_id
         """
         def get_input_data_format():
             if isinstance(input_data,list):
@@ -279,8 +292,11 @@ class Tools:
             with open(initial_path+cls.config_json_filename, "r") as file:
                 config_data = json.load(file)
 
+            if which_settings not in config_data:
+                config_data[which_settings] = {}
+
             config_data[which_settings][which_parameter] = get_input_data_format()
-                              
+
             with open(initial_path+cls.config_json_filename, "w") as file:
                 json.dump(config_data, file, indent=4)
 
@@ -329,6 +345,61 @@ class Tools:
                     path_context_menu.add_separator()
                     
             path_context_menu.tk_popup(menu_btn.winfo_rootx(),menu_btn.winfo_rooty()+40)
+
+    @classmethod
+    def make_table_for_db_export(cls,station_list,controller_list):
+        """
+        data = [
+            (1, 'Alice', 25),
+            (2, 'Bob', 30),
+            (3, 'Charlie', 22)
+        ]
+
+        """
+        table_to_return = []
+
+        current_date = datetime.now()
+        date_string = current_date.strftime("%d.%m.%Y %H:%M:%S")
+        user_id = "1111"
+
+        def get_all_cables():
+            for station in station_list:
+                for camera in station["camera_list"]:
+                    if camera["cable"] != "":
+                        table_to_return.append((user_id,station["name"],"PŘÍSLUŠENSTVÍ","OMRON","kabel ke kameře","",camera["cable"],"",camera["controller"],date_string))
+        
+        def get_all_cameras():
+            for station in station_list:
+                for camera in station["camera_list"]:
+                    table_to_return.append((user_id,station["name"],"KAMERY","OMRON","kamera","",camera["type"],"",camera["controller"],date_string))
+
+        def get_all_optics_and_lights():
+            for station in station_list:
+                for camera in station["camera_list"]:
+                    for optics in camera["optics_list"]:
+                        if not "light_status" in optics:
+                            table_to_return.append((user_id,station["name"],"OPTIKA","OMRON","objektiv","",optics["type"],optics["alternative"],camera["type"],date_string))
+                        elif int(optics["light_status"]) != 1:
+                            table_to_return.append((user_id,station["name"],"OPTIKA","OMRON","objektiv","",optics["type"],optics["alternative"],camera["type"],date_string))
+                        else:
+                            table_to_return.append((user_id,station["name"],"PŘÍSLUŠENSTVÍ","smart view","světlo","",optics["type"],optics["alternative"],camera["type"],date_string))
+
+        def get_all_controllers():
+            for controller in controller_list:
+                table_to_return.append((user_id,"","KONTROLERY","OMRON","kontroler",controller["name"],controller["type"],"","",date_string))
+                
+        def get_all_accessories():
+            for controller in controller_list:
+                for acc in controller["accessory_list"]:
+                    table_to_return.append((user_id,"","PŘÍSLUŠENSTVÍ","","příslušenství","",acc["type"],"",controller["type"],date_string))
+
+        get_all_cables()
+        get_all_cameras()
+        get_all_optics_and_lights()
+        get_all_controllers()
+        get_all_accessories()
+        print(table_to_return)
+        return table_to_return
 
 class Save_prog_metadata:
     def __init__(self,console,controller_database=[],station_list=[],project_name="",xml_file_path=""):
@@ -501,6 +572,328 @@ class Save_prog_metadata:
         return project_name
     
 class ToplevelWindow:
+    @classmethod
+    def export_to_db_window(cls,root,app_icon_path,server_connection,project_name,table_to_export,callback,main_console):
+        try:
+            cursor = server_connection.cursor()
+            cursor.execute("SELECT @@SERVERNAME")
+            current_server_name = str(cursor.fetchone()[0])
+            cursor.close()
+        except Exception as e:
+            print(e)
+            callback()
+            return
+
+        def close_window(window):
+            window.destroy()
+
+        def export_table():
+            def check_table():
+                cursor.execute(f"""
+                IF NOT EXISTS (
+                    SELECT * FROM INFORMATION_SCHEMA.TABLES
+                    WHERE TABLE_NAME = '{table_name}' AND TABLE_SCHEMA = 'dbo'
+                )
+                BEGIN
+                    CREATE TABLE [dbo].[{table_name}] (
+                        id_user INT,
+                        stanice NVARCHAR(100),
+                        sw_kategorie NVARCHAR(100),
+                        vyrobce NVARCHAR(100),
+                        hw_kategorie NVARCHAR(100),
+                        oznaceni NVARCHAR(100),
+                        typ_zarizeni NVARCHAR(100),
+                        alternativa NVARCHAR(100),
+                        master_device NVARCHAR(100),
+                        posledni_uprava NVARCHAR(100)
+                    )
+                END
+                """)
+            cursor = server_connection.cursor()
+            table_name = str(table_entry.get())
+            try:
+                cursor.execute(f"USE {str(db_name_entry.get())}")
+            except Exception as db_err:
+                Tools.add_colored_line(console,f"Nepodařilo se přepnout do databáze ({db_err})","red",None,True)
+                return
+        
+            try:
+                check_table()
+            except Exception as table_err:
+                Tools.add_colored_line(console,f"Tabulku se nepodařilo vytvořit ({table_err})","red",None,True)
+                return
+                
+            # insert_query = f"INSERT INTO {table_name} (id_user, stanice, sw_kategorie, vyrobce, hw_kategorie, oznaceni, typ_zarizeni, alternativa, master_device, posledni_uprava) VALUES (?,?,?,?,?,?,?,?,?,?)"
+            insert_query = f"""
+                INSERT INTO [dbo].[{table_name}] (
+                    id_user, stanice, sw_kategorie, vyrobce, hw_kategorie, oznaceni, 
+                    typ_zarizeni, alternativa, master_device, posledni_uprava
+                ) VALUES (?,?,?,?,?,?,?,?,?,?)
+            """
+            try:
+                cursor.executemany(insert_query, table_to_export)
+                server_connection.commit()
+                Tools.add_colored_line(main_console,f"Tabulka byla úspěšně vyexportována","green",None,True)
+                close_window(window)
+            except Exception as export_err:
+                Tools.add_colored_line(console,f"Tabulku se nepodařilo exportovat ({export_err})","red",None,True)
+            finally:
+                cursor.close()
+            # server_connection.close()
+
+        def init_fill_option_menu():
+            cursor = server_connection.cursor()
+            cursor.execute("SELECT name FROM sys.databases ORDER BY name")
+            databases = [row[0] for row in cursor.fetchall()]
+            cursor.close()
+            db_name_entry.configure(values = databases)
+            if len(databases) > 0:
+                db_name_entry.set(databases[0])
+
+        window = customtkinter.CTkToplevel(fg_color="#212121")
+        window.after(200, lambda: window.iconbitmap(app_icon_path))
+        window.title("Možnosti exportu do databáze")
+        label_column_width = 200
+        top_frame =         customtkinter.CTkFrame(master = window,corner_radius=0,fg_color="#212121")
+        server_frame =      customtkinter.CTkFrame(master = top_frame,corner_radius=0,fg_color="#212121",border_width=1)
+        server_name =       customtkinter.CTkLabel(master = server_frame,text = "Aktuální připojení:",font=("Arial",22,"bold"),width=label_column_width,anchor="w")
+        server_entry =      customtkinter.CTkLabel(master = server_frame,text = current_server_name,font=("Arial",22,"bold"),anchor="w",text_color="green")
+        server_name.        pack(pady=5,padx=5,anchor="w",side="left")
+        server_entry.       pack(pady=5,padx=(5,0),anchor="w",side="left")
+        server_frame.       pack(pady=5,padx=5,anchor="w",side="top",fill="x",expand=True)
+        db_name_frame =     customtkinter.CTkFrame(master = top_frame,corner_radius=0,fg_color="#212121",border_width=1)
+        db_name =           customtkinter.CTkLabel(master = db_name_frame,text = "Název databáze:",font=("Arial",22,"bold"),width=label_column_width,anchor="w")
+        db_name_entry =     customtkinter.CTkOptionMenu(master = db_name_frame,font=("Arial",22),dropdown_font=("Arial",22),values=[],height=50,corner_radius=0)
+        db_name.            pack(pady=5,padx=5,anchor="w",side="left")
+        db_name_entry.      pack(pady=5,padx=(5,0),anchor="w",side="left",fill="x",expand=True)
+        db_name_frame.      pack(pady=5,padx=5,anchor="w",side="top",fill="x")
+        table_frame =       customtkinter.CTkFrame(master = top_frame,corner_radius=0,fg_color="#212121",border_width=1)
+        table =             customtkinter.CTkLabel(master = table_frame,text = "Název tabulky:",font=("Arial",22,"bold"),width=label_column_width,anchor="w")
+        table_entry =       customtkinter.CTkEntry(master = table_frame,font=("Arial",22),height=50,corner_radius=0)
+        table.              pack(pady=5,padx=5,anchor="w",side="left")
+        table_entry.        pack(pady=5,padx=(5,0),anchor="w",side="left",fill="x",expand=True)
+        table_frame.        pack(pady=5,padx=5,anchor="w",side="top",fill="x")
+        uid_frame =         customtkinter.CTkFrame(master = top_frame,corner_radius=0,fg_color="#212121",border_width=1)
+        uid =               customtkinter.CTkLabel(master = uid_frame,text = "Uživatelské id:",font=("Arial",22,"bold"),width=label_column_width,anchor="w")
+        uid_entry =         customtkinter.CTkEntry(master = uid_frame,font=("Arial",22),height=50,corner_radius=0)
+        uid.                pack(pady=5,padx=5,anchor="w",side="left")
+        uid_entry.          pack(pady=5,padx=5,anchor="w",side="left",fill="x",expand=True)
+        uid_frame.          pack(pady=5,padx=5,anchor="w",side="top",fill="x")
+        top_frame.          pack(pady=(10,5),padx=5,anchor="w",side="top",fill="both",expand=True)
+        console =           tk.Text(window, wrap="none", height=0,background="#212121",font=("Arial",22),state=tk.DISABLED,foreground="#565B5E",borderwidth=3)
+        console.            pack(pady = (0,10), padx =10,anchor="w",expand=False,fill="x",side="top",ipady=3,ipadx=5)
+        button_frame =      customtkinter.CTkFrame(master = window,corner_radius=0,fg_color="#212121")
+        button_connect =    customtkinter.CTkButton(master = button_frame,text = "Exportovat",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: export_table())
+        button_close =      customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
+        button_close.       pack(pady = (0,10), padx = (5,10),side="right",anchor = "e")
+        button_connect.     pack(pady = (0,10), padx = (5,10),side="right",anchor = "e")
+        button_frame.       pack(pady=0,padx=0,anchor="w",side="top",fill="both")
+
+        init_fill_option_menu()
+
+        uid_entry.delete("0","200")
+        uid_entry.insert("0", "1111")
+        table_entry.delete("0","200")
+        table_entry.insert("0", f"{project_name}_SW_CAMERA")
+
+        root.bind("<Button-1>",lambda e: close_window(window))
+        window.update()
+        window.update_idletasks()
+        root.update_idletasks()
+        window.geometry(f"{window.winfo_width()}x{window.winfo_height()}+{root._current_width/2}+{root._current_height/2}")
+        window.after(100,window.focus_force())
+        window.focus()
+        return window
+
+    @classmethod
+    def db_login_window(cls,root,app_icon_path,db_label,callback,call_export,call_export_callback,main_console):
+        window = customtkinter.CTkToplevel(fg_color="#212121")
+        window.after(200, lambda: window.iconbitmap(app_icon_path))
+        window.title("Připojení k databázi")
+
+        def close_window(window):
+            window.destroy()
+
+        def call_server_context_menu(parameter):
+            """
+            parameter:
+            - server
+            - login
+            - db_name
+            """
+            config = Tools.read_json_config()
+            if parameter == "server":
+                history_list = config.get("db_settings", {}).get("server_history_list", [])
+                entry_widget = server_entry
+            elif parameter == "login":
+                history_list = config.get("db_settings", {}).get("username_history_list", [])
+                entry_widget = username_entry
+            elif parameter == "db_name":
+                history_list = config.get("db_settings", {}).get("db_name_list", [])
+                entry_widget = db_name_entry
+
+            print("current history: ",history_list)
+            def insert_path(server_name):
+                entry_widget.delete("0","200")
+                entry_widget.insert("0", server_name)
+
+            if len(history_list) > 0:
+                path_context_menu = tk.Menu(window,tearoff=0,fg="white",bg="#202020",activebackground="#606060")
+                for i in range(0,len(history_list)):
+                    path_context_menu.add_command(label=history_list[i], command=lambda server_name = history_list[i]: insert_path(server_name),font=("Arial",22,"bold"))
+                    if i < len(history_list)-1:
+                        path_context_menu.add_separator()
+                        
+                path_context_menu.tk_popup(entry_widget.winfo_rootx(),entry_widget.winfo_rooty()+40)
+            else:
+                Tools.add_colored_line(console,"Prozatím žádná historie","orange",None,True)
+
+        def connect_to_server():
+            def add_new_param_to_history(uid_filled=False):
+                def update_array(param,param_list):
+                    if param not in param_list:
+                        if str(param) == "":
+                            return
+                        if len(param_list) > 9:
+                            param_list.pop()
+                        param_list.insert(0,str(param))  
+
+                config = Tools.read_json_config()
+                server_history = config.get("db_settings", {}).get("server_history_list", [])
+                db_name_history = config.get("db_settings", {}).get("db_name_list", [])
+                login_history = config.get("db_settings", {}).get("username_history_list", [])
+                update_array(server_name,server_history)
+                update_array(database_name,db_name_history)
+                Tools.save_to_json_config(server_history,"db_settings","server_history_list")
+                Tools.save_to_json_config(db_name_history,"db_settings","db_name_list")
+                if uid_filled:
+                    update_array(uid,login_history)
+                    Tools.save_to_json_config(login_history,"db_settings","username_history_list")
+            
+
+            if len(str(server_entry.get()).replace(" ","")) == 0:
+                Tools.add_colored_line(console,"Zadejte název serveru","red",None,True)
+                return
+            # if len(str(db_name_entry.get()).replace(" ","")) == 0:
+            #     Tools.add_colored_line(console,"Zadejte název databáze","red",None,True)
+            #     return
+            database_name = str(db_name_entry.get())
+            server_name = str(server_entry.get())
+            
+            if str(username_entry.get()).replace(" ","") == "" or str(pwd_entry.get()).replace(" ","") == "":
+                try:
+                    conn_str = (
+                        r'DRIVER={ODBC Driver 17 for SQL Server};'
+                        rf'SERVER={server_name};'
+                        # rf'DATABASE={database_name};'
+                        r'Trusted_Connection=yes;'
+                    )
+                    conn = pyodbc.connect(conn_str)
+                    add_new_param_to_history()
+                    Tools.add_colored_line(main_console,f"Úspěšně připojeno k serveru: {server_name}","green",None,True)
+                    db_label.configure(text_color = "green",text=f"Přihlášen k: {server_name}")
+                    callback(conn)
+                    close_window(window)
+                    if call_export:
+                        call_export_callback()
+
+                except Exception as e:
+                    Tools.add_colored_line(console,f"K serveru: {server_name} se nepodařilo se připojit ({e})","red",None,True)
+                    return
+            else:
+                uid = str(username_entry.get())
+                pwd = str(pwd_entry.get())
+                try:
+                    conn_str = (
+                        r'DRIVER={ODBC Driver 17 for SQL Server};'
+                        rf'SERVER={server_name};'
+                        # rf'DATABASE={database_name};'
+                        rf"UID={uid};"
+                        rf"PWD={pwd};"
+                        r'Trusted_Connection=no;'
+                    )
+                    conn = pyodbc.connect(conn_str)
+                    add_new_param_to_history(uid_filled=True)
+                    Tools.add_colored_line(main_console,f"Úspěšně připojeno k serveru: {server_name}","green",None,True)
+                    db_label.configure(text_color = "green",text=f"Přihlášen k: {server_name}")
+                    callback(conn)
+                    close_window(window)
+                    if call_export:
+                        call_export_callback()
+                except Exception as e:
+                    Tools.add_colored_line(console,f"K serveru: {server_name} se nepodařilo se připojit ({e})","red",None,True)
+                    return
+                
+        def init_fill_entry():
+            config = Tools.read_json_config()
+            server_list = config.get("db_settings", {}).get("server_history_list", [])
+            if len(server_list)>0:
+                server_entry.delete("0","200")
+                server_entry.insert("0", server_list[0])
+            login_list = config.get("db_settings", {}).get("username_history_list", [])
+            if len(login_list)>0:
+                username_entry.delete("0","200")
+                username_entry.insert("0", login_list[0])
+            db_name_list = config.get("db_settings", {}).get("db_name_list", [])
+            if len(db_name_list)>0:
+                db_name_entry.delete("0","200")
+                db_name_entry.insert("0", db_name_list[0])
+                
+        label_column_width = 200
+        top_frame =         customtkinter.CTkFrame(master = window,corner_radius=0,fg_color="#212121")
+        server_frame =      customtkinter.CTkFrame(master = top_frame,corner_radius=0,fg_color="#212121",border_width=1)
+        server_name =       customtkinter.CTkLabel(master = server_frame,text = "Název serveru:",font=("Arial",22,"bold"),width=label_column_width,anchor="w")
+        context_menu_button = customtkinter.CTkButton(master = server_frame, width = 50,height=50, text = "V",font=("Arial",20,"bold"),corner_radius=0,fg_color="#505050")
+        server_entry =      customtkinter.CTkEntry(master = server_frame,font=("Arial",22),height=50,corner_radius=0)
+        server_name.        pack(pady=5,padx=5,anchor="w",side="left")
+        server_entry.       pack(pady=5,padx=(5,0),anchor="w",side="left",fill="x",expand=True)
+        context_menu_button.pack(pady=5,padx=(0,5),anchor="w",side="left")
+        server_frame.       pack(pady=5,padx=5,anchor="w",side="top",fill="x",expand=True)
+        db_name_frame =     customtkinter.CTkFrame(master = top_frame,corner_radius=0,fg_color="#212121",border_width=1)
+        db_name =           customtkinter.CTkLabel(master = db_name_frame,text = "Název databáze:",font=("Arial",22,"bold"),width=label_column_width,anchor="w")
+        db_name_entry =     customtkinter.CTkEntry(master = db_name_frame,font=("Arial",22),height=50,corner_radius=0)
+        db_context =        customtkinter.CTkButton(master = db_name_frame, width = 50,height=50, text = "V",font=("Arial",20,"bold"),corner_radius=0,fg_color="#505050")
+        db_name.            pack(pady=5,padx=5,anchor="w",side="left")
+        db_name_entry.      pack(pady=5,padx=(5,0),anchor="w",side="left",fill="x",expand=True)
+        db_context.         pack(pady=5,padx=(0,5),anchor="w",side="left")
+        db_name_frame.      pack(pady=5,padx=5,anchor="w",side="top",fill="x")
+        login_frame =       customtkinter.CTkFrame(master = top_frame,corner_radius=0,fg_color="#212121",border_width=1)
+        username =          customtkinter.CTkLabel(master = login_frame,text = "Login:",font=("Arial",22,"bold"),width=label_column_width,anchor="w")
+        username_entry =    customtkinter.CTkEntry(master = login_frame,font=("Arial",22),height=50,corner_radius=0)
+        username_context =  customtkinter.CTkButton(master = login_frame, width = 50,height=50, text = "V",font=("Arial",20,"bold"),corner_radius=0,fg_color="#505050")
+        username.           pack(pady=5,padx=5,anchor="w",side="left")
+        username_entry.     pack(pady=5,padx=(5,0),anchor="w",side="left",fill="x",expand=True)
+        username_context.   pack(pady=5,padx=(0,5),anchor="w",side="left")
+        login_frame.        pack(pady=5,padx=5,anchor="w",side="top",fill="x")
+        pwd_frame =         customtkinter.CTkFrame(master = top_frame,corner_radius=0,fg_color="#212121",border_width=1)
+        pwd =               customtkinter.CTkLabel(master = pwd_frame,text = "Heslo:",font=("Arial",22,"bold"),width=label_column_width,anchor="w")
+        pwd_entry =         customtkinter.CTkEntry(master = pwd_frame,font=("Arial",22),height=50,corner_radius=0)
+        pwd.                pack(pady=5,padx=5,anchor="w",side="left")
+        pwd_entry.          pack(pady=5,padx=5,anchor="w",side="left",fill="x",expand=True)
+        pwd_frame.          pack(pady=5,padx=5,anchor="w",side="top",fill="x")
+        top_frame.          pack(pady=(10,5),padx=5,anchor="w",side="top",fill="both",expand=True)
+        console =           tk.Text(window, wrap="none", height=0,background="#212121",font=("Arial",22),state=tk.DISABLED,foreground="#565B5E",borderwidth=3)
+        console.            pack(pady = (0,10), padx =10,anchor="w",expand=False,fill="x",side="top",ipady=3,ipadx=5)
+        button_frame =      customtkinter.CTkFrame(master = window,corner_radius=0,fg_color="#212121")
+        button_connect =    customtkinter.CTkButton(master = button_frame,text = "Připojit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: connect_to_server())
+        button_close =      customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
+        button_close.       pack(pady = (0,10), padx = (5,10),side="right",anchor = "e")
+        button_connect.     pack(pady = (0,10), padx = (5,10),side="right",anchor = "e")
+        button_frame.       pack(pady=0,padx=0,anchor="w",side="top",fill="both")
+        context_menu_button.bind("<Button-1>", lambda e: call_server_context_menu("server"))
+        db_context.         bind("<Button-1>", lambda e: call_server_context_menu("db_name"))
+        username_context.   bind("<Button-1>", lambda e: call_server_context_menu("login"))
+        init_fill_entry()
+
+        root.bind("<Button-1>",lambda e: close_window(window))
+        window.update()
+        window.update_idletasks()
+        root.update_idletasks()
+        window.geometry(f"{window.winfo_width()}x{window.winfo_height()}+{root._current_width/2}+{root._current_height/2}")
+        window.after(100,window.focus_force())
+        window.focus()
+        return window
+
     @classmethod
     def save_prog_options_window(cls,
                                  root,
@@ -2235,6 +2628,7 @@ class Catalogue_gui:
         self.copy_widget_tier = None
         self.leave_expanded_widget = None
         self.leave_expanded_widget_tier = None
+        self.current_db_connection = None
 
         self.changes_made = False
         self.optic_light_option = "optic"
@@ -4074,6 +4468,44 @@ class Catalogue_gui:
                                                                     str(self.project_name_input.get())
                                                                     )
         
+        def call_db_login_window(call_export=False):
+            def db_callback(connection):
+                self.current_db_connection = connection
+            def call_export_callback():
+                call_db_export()
+            self.opened_window = ToplevelWindow.db_login_window(self.root,
+                                                                self.app_icon_path,
+                                                                db_label,
+                                                                db_callback,
+                                                                call_export,
+                                                                call_export_callback,
+                                                                self.main_console
+                                                                )
+            
+        def call_db_export():
+            if self.current_db_connection == None:
+                call_db_login_window(call_export = True)
+                return
+            # cursor = self.current_db_connection.cursor()
+            # cursor.execute("SELECT FUNKCNI_TEXT FROM [525_SW_PNEU]")
+            # for row in cursor.fetchall():
+            #     print(row[0])  # Nebo: print(row[0])
+            # print(len(cursor.fetchall()))
+            table_to_export = Tools.make_table_for_db_export(self.station_list,self.controller_object_list)
+            if len(table_to_export) == 0:
+                Tools.add_colored_line(self.main_console,f"Není co exportovat","red",None,True)
+                return
+            
+            def login_error():
+                call_db_login_window(call_export = True)
+            self.opened_window = ToplevelWindow.export_to_db_window(self.root,
+                                                                    self.app_icon_path,
+                                                                    self.current_db_connection,
+                                                                    self.project_name_input.get(),
+                                                                    table_to_export,
+                                                                    login_error,
+                                                                    self.main_console
+                                                                    )
         icon_small = 45
         icon_large = 49
 
@@ -4095,7 +4527,7 @@ class Catalogue_gui:
         main_header_row0 =              customtkinter.CTkFrame(master=main_header_left,corner_radius=0,fg_color="#636363")
         buttons_frame =                 customtkinter.CTkFrame(master=main_header_left,corner_radius=0,fg_color="#212121")
         main_header_row1 =              customtkinter.CTkFrame(master=buttons_frame,corner_radius=0,fg_color="#212121")
-        main_header_row2 =              customtkinter.CTkFrame(master=buttons_frame,corner_radius=0,fg_color="#212121")
+        # main_header_row2 =              customtkinter.CTkFrame(master=buttons_frame,corner_radius=0,fg_color="#212121")
         main_menu_button =              customtkinter.CTkButton(master = main_header_row0, width = 200,height=50,text = "MENU",command = lambda: call_menu_routine(),font=("Arial",25,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
         main_menu_button                .pack(pady = (10,0),padx =(20,0),anchor = "s",side = "left")
         project_label =                 customtkinter.CTkLabel(master = main_header_row1,text = "Projekt:",font=("Arial",25,"bold"))
@@ -4105,11 +4537,6 @@ class Catalogue_gui:
         export_button.                  bind("<Enter>",lambda e: export_button._image.configure(size=(icon_large,icon_large)))
         export_button.                  bind("<Leave>",lambda e: export_button._image.configure(size=(icon_small,icon_small)))
         export_button.                  bind("<Button-1>",lambda e: call_export_window())
-        # switch_manufacturer_frame =     customtkinter.CTkFrame(master = main_header_row1,corner_radius=0)
-        # switch_manufacturer_btn =       customtkinter.CTkButton(master=switch_manufacturer_frame,text="Změnit výrobce:",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command=lambda:switch_manufacturer())
-        # manufacturer_logo =             customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/omron_logo.png")),size=(240, 50))
-        # switch_manufacturer_image =     customtkinter.CTkLabel(master = switch_manufacturer_frame,text = "",image=manufacturer_logo)
-        # save_button =                   customtkinter.CTkButton(master = main_header_row1,text = "Uložit/ Nahrát",font=("Arial",25,"bold"),width=250,height=50,corner_radius=0,command=lambda:self.call_save_metadata_gui())
         save_button =                   customtkinter.CTkLabel(master = main_header_row1,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/save_file.png")),size=(icon_small,icon_small)),bg_color="#212121")
         save_button.                    bind("<Enter>",lambda e: save_button._image.configure(size=(icon_large,icon_large)))
         save_button.                    bind("<Leave>",lambda e: save_button._image.configure(size=(icon_small,icon_small)))
@@ -4118,6 +4545,10 @@ class Catalogue_gui:
         load_button.                    bind("<Enter>",lambda e: load_button._image.configure(size=(icon_large,icon_large)))
         load_button.                    bind("<Leave>",lambda e: load_button._image.configure(size=(icon_small,icon_small)))
         load_button.                    bind("<Button-1>",lambda e: self.call_save_metadata_gui())
+        db_export =                     customtkinter.CTkLabel(master = main_header_row1,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/db_upload.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        db_export.                      bind("<Enter>",lambda e: db_export._image.configure(size=(icon_large,icon_large)))
+        db_export.                      bind("<Leave>",lambda e: db_export._image.configure(size=(icon_small,icon_small)))
+        db_export.                      bind("<Button-1>",lambda e: call_db_export())
         # button_settings =               customtkinter.CTkButton(master = main_header_row1, width = 50,height=50,text="⚙️",command =  lambda: call_setting_window(),font=("",22),corner_radius=0)
         button_settings =               customtkinter.CTkLabel(master = main_header_row1,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/settings.png")),size=(icon_small,icon_small)),bg_color="#212121")
         button_settings.                bind("<Enter>",lambda e: button_settings._image.configure(size=(icon_large,icon_large)))
@@ -4139,24 +4570,32 @@ class Catalogue_gui:
         self.del_device =               make_icon_and_text_button(main_header_row1,"Odebrat stanici","delete_file")
         self.del_device.                bind("<Button-1>",lambda e: call_delete_object())
         # self.button_copy =              customtkinter.CTkButton(master = main_header_row1, width = 250,height=50,text="Kopírovat stanici",command =  lambda: call_copy_object(),font=("Arial",25,"bold"),corner_radius=0)
-        self.button_copy =               make_icon_and_text_button(main_header_row1,"Kopírovat stanici","copy_file")
-        self.button_copy.                bind("<Button-1>",lambda e: call_copy_object())
+        self.button_copy =              make_icon_and_text_button(main_header_row1,"Kopírovat stanici","copy_file")
+        self.button_copy.               bind("<Button-1>",lambda e: call_copy_object())
 
-        project_label                   .pack(pady = 0, padx = (10,0),anchor="w",side="left")
-        self.project_name_input         .pack(pady = 0, padx = (10,0),anchor="w",side="left")
-        save_button                     .pack(pady = 0, padx = (20,0),anchor="w",side="left")
-        load_button                     .pack(pady = 0, padx = (20,0),anchor="w",side="left")
-        export_button                   .pack(pady = 0, padx = (20,0),anchor="w",side="left")
-        button_settings                 .pack(pady = 0, padx = (20,0),anchor="w",side="left")
-        new_station                     .pack(pady = 0, padx = (20,0),anchor="w",side="left")
-        new_device_frame                .pack(pady = 0, padx = (0,0),anchor="w",side="left",expand=False)
-        # self.new_device                 .pack(pady = 0, padx = (10,0),anchor="w",side="left")
-        self.edit_device                .pack(pady = 0, padx = (20,0),anchor="w",side="left")
-        self.del_device                 .pack(pady = 0, padx = (20,0),anchor="w",side="left")
-        self.button_copy                .pack(pady = 0, padx = (20,0),anchor="w",side="left")
+        db_login =                      customtkinter.CTkLabel(master = main_header_row1,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/login.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        db_login.                       bind("<Enter>",lambda e: db_login._image.configure(size=(icon_large,icon_large)))
+        db_login.                       bind("<Leave>",lambda e: db_login._image.configure(size=(icon_small,icon_small)))
+        db_label =                      customtkinter.CTkLabel(master = main_header_row1,text = "Nepřihlášen",font=("Arial",25,"bold"),text_color="red")
+        db_login.                       bind("<Button-1>",lambda e: call_db_login_window())
+
+        project_label.                  pack(pady = 0, padx = (10,0),anchor="w",side="left")
+        self.project_name_input.        pack(pady = 0, padx = (10,0),anchor="w",side="left")
+        save_button.                    pack(pady = 0, padx = (20,0),anchor="w",side="left")
+        load_button.                    pack(pady = 0, padx = (20,0),anchor="w",side="left")
+        db_export.                      pack(pady = 0, padx = (20,0),anchor="w",side="left")
+        export_button.                  pack(pady = 0, padx = (15,0),anchor="w",side="left")
+        button_settings.                pack(pady = 0, padx = (20,0),anchor="w",side="left")
+        new_station.                    pack(pady = 0, padx = (20,0),anchor="w",side="left")
+        new_device_frame.               pack(pady = 0, padx = (0,0),anchor="w",side="left",expand=False)
+        # self.new_device.               pack(pady = 0, padx = (10,0),anchor="w",side="left")
+        self.edit_device.               pack(pady = 0, padx = (20,0),anchor="w",side="left")
+        self.del_device.                pack(pady = 0, padx = (20,0),anchor="w",side="left")
+        self.button_copy.               pack(pady = 0, padx = (20,0),anchor="w",side="left")
+        db_label.                       pack(pady = 0, padx = (0,20),anchor="e",side="right")
+        db_login.                       pack(pady = 0, padx = (0,10),anchor="e",side="right")
         self.project_name_input.        bind("<Key>",remaping_characters)
         
-
         # switch_manufacturer_frame       .pack(pady = 0, padx = (10,0),anchor="w",expand=False,side="left")
         image_frame =                   customtkinter.CTkFrame(master=main_header,corner_radius=0,fg_color="#212121")#,fg_color="#212121")
         logo =                          customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/jhv_logo.png")),size=(300, 102))
@@ -4210,10 +4649,12 @@ class Catalogue_gui:
         self.make_project_widgets(initial = initial)
         Tools.add_colored_line(self.main_console,self.download_database_console_input[0],self.download_database_console_input[1],None,True)
         if self.show_tooltip == "ano":
-            Catalogue_gui.ToolTip(export_button," Exporovat projekt ",self.root,None)
-            Catalogue_gui.ToolTip(button_settings," Nastavení ",self.root,None)
-            Catalogue_gui.ToolTip(save_button," Uložit projekt ",self.root,None)
-            Catalogue_gui.ToolTip(load_button," Nahrát projekt ",self.root,None)
+            Catalogue_gui.ToolTip(export_button," Exporovat projekt ",self.root)
+            Catalogue_gui.ToolTip(db_export," Exporovat projekt do databáze ",self.root)
+            Catalogue_gui.ToolTip(button_settings," Nastavení ",self.root)
+            Catalogue_gui.ToolTip(save_button," Uložit projekt ",self.root)
+            Catalogue_gui.ToolTip(load_button," Nahrát projekt ",self.root)
+            Catalogue_gui.ToolTip(db_login," Přihlásit do databáze ",self.root)
 
         def show_initial_context_menu(event):
             if len(self.station_list) == 0:   

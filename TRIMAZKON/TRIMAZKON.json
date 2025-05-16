@@ -86,5 +86,13 @@
         "ask_to_delete": 100,
         "deleted_project_bin": [],
         "edited_project_bin": []
+    },
+    "db_settings": {
+        "server_history_list": [
+            "NTB0327\\SQLEXPRESS"
+        ],
+        "db_name_list": [
+            "JHV_CM"
+        ]
     }
 }
