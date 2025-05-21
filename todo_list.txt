@@ -999,10 +999,15 @@ TRIMAZKON - Katalog - možnost exportu do dbo. - hotovo
 TRIMAZKON -Katalog - optimalizace search context menus - hotovo
 TRIMAZKON - Katalog - na entrywidgetech autosearch (jedno okýnko context menu pod widgetem, entrem select) - hotovo
 TRIMAZKON - Katalog - autosearch - ověřit přítomnost v databázi - hotovo
+
+7:24 AM 5/21/2025
+TRIMAZKON - log mazání - možnost exportu logu? xls, txt... - otestováno - hotovo
+
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
-TRIMAZKON - log mazání - možnost exportu logu? xls, txt... - rozpracované
+
 
 
 

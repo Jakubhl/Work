@@ -25,7 +25,7 @@ import wmi
 import winreg
 import pyperclip
 
-testing = False
+testing = True
 
 
 global_recources_load_error = False
@@ -3881,6 +3881,13 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
 
         recources_path = self.text_file_data[0]
         if recources_path != False and recources_path != "/":
+            try:
+                if recources_path == "C:/Users/":
+                    from pathlib import Path
+                    IMG_DIR = Path.home() / "Pictures"
+                    recources_path = str(IMG_DIR)
+            except Exception as defpatherr:
+                print(defpatherr)
             self.path_set.delete("0","200")
             self.path_set.insert("0", str(recources_path))
             if self.selected_language == "en":

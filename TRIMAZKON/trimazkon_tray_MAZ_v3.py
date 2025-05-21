@@ -10,6 +10,7 @@ import subprocess
 import sys
 import json
 import datetime
+from openpyxl import Workbook
 
 class Tools:
     @classmethod
@@ -532,18 +533,18 @@ class tray_app_service:
             for log in task["del_log"]:
                 row = [
                     str(log["del_date"]),
-                    str(log["files_checked"]),
+                    int(log["files_checked"]),
                 ]
 
                 if selected_option in [1, 2, 4]:
-                    row.append(str(log["files_older"]))
+                    row.append(int(log["files_older"]))
                 if selected_option == 2:
-                    row.append(str(log["files_newer"]))
+                    row.append(int(log["files_newer"]))
                 
-                row.append(str(log["files_deleted"]))
+                row.append(int(log["files_deleted"]))
                 
                 if more_dirs == 1 and selected_option < 3:
-                    row.append(str(log["path_count"]))
+                    row.append(int(log["path_count"]))
 
                 table.append(row)
 
@@ -552,22 +553,42 @@ class tray_app_service:
 
         current_date = datetime.datetime.now().strftime("%Y-%m-%d")
         export_filename = str(task["name"]) + f"_deletion_log_{current_date}"
+        table = make_table()
+        if len(table) == 0:
+            return
+
         if flag == "txt":
             export_filename += ".txt"
-            table = make_table()
+
 
             col_widths = [max(len(str(row[col])) for row in table) for col in range(len(table[0]))]
             with open(self.initial_path+export_filename, "w", encoding="utf-8") as f:
+                i = 0
                 for row in table:
+                    if i == 1 and len(table) > 1:
+                        f.write("-" * (sum(col_widths) + 2 * (len(col_widths) - 1)) + "\n")
                     formatted_row = [
                         str(cell).ljust(col_widths[i])  # left-align each column
                         for i, cell in enumerate(row)
                     ]
                     f.write("  ".join(formatted_row) + "\n")  # two spaces between columns
+                    i+=1
 
         else:
             export_filename += ".xlsx"
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "Exported deletion log"
+            for row in table:
+                ws.append(row)
+            for col in ws.columns:
+                max_length = max(len(str(cell.value)) if cell.value is not None else 0 for cell in col)
+                col_letter = col[0].column_letter
+                ws.column_dimensions[col_letter].width = max_length + 2
 
+            wb.save(self.initial_path + export_filename)
+
+        os.startfile(self.initial_path+export_filename)
         print("save as:",export_filename)
 
 
@@ -917,8 +938,8 @@ class tray_app_service:
         self.icon.run() # Run the tray icon
 
 
-inst = tray_app_service(r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON/",Tools.resource_path('images/logo_TRIMAZKON.ico'),"jhv_MAZ.exe","config_MAZ.json")
-inst.show_task_log()
+# inst = tray_app_service(r"C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\TRIMAZKON/",Tools.resource_path('images/logo_TRIMAZKON.ico'),"jhv_MAZ.exe","config_MAZ.json")
+# inst.show_task_log()
 
-inst.main()
+# inst.main()
 

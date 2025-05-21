@@ -53,6 +53,7 @@
         {
             "key": "path_history_list",
             "value": [
+                "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/",
                 "C:/Users/"
             ]
         },
@@ -64,13 +65,13 @@
     "task_list": [
         {
             "name": "TRIMAZKON_del_task_1",
-            "operating_path": false,
-            "max_days": "382",
+            "operating_path": "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/",
+            "max_days": "440",
             "files_to_keep": "1000",
             "frequency": "12:00",
             "more_dirs": 0,
             "selected_option": 1,
-            "date_added": "17.03.2025 16:13:00",
+            "date_added": "14.05.2025 10:51:35",
             "del_log": [
                 {
                     "del_date": "14.05.2025 10:51:42",
@@ -95,8 +96,124 @@
                     "files_newer": "",
                     "files_deleted": 0,
                     "path_count": 2
+                },
+                {
+                    "del_date": "16.05.2025 12:00:07",
+                    "files_checked": 184,
+                    "files_older": 0,
+                    "files_newer": "",
+                    "files_deleted": 0,
+                    "path_count": 2
+                },
+                {
+                    "del_date": "20.05.2025 12:00:05",
+                    "files_checked": 184,
+                    "files_older": 0,
+                    "files_newer": "",
+                    "files_deleted": 0,
+                    "path_count": 2
                 }
-],
+            ],
+            "creation_date": 0
+        },
+        {
+            "name": "TRIMAZKON_del_task_2",
+            "operating_path": "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/",
+            "max_days": "447",
+            "files_to_keep": "1000",
+            "frequency": "12:00",
+            "more_dirs": 1,
+            "selected_option": 2,
+            "date_added": "21.05.2025 07:38:48",
+            "del_log": [
+                {
+                    "del_date": "21.05.2025 07:39:07",
+                    "files_checked": 191,
+                    "files_older": 0,
+                    "files_newer": 191,
+                    "files_deleted": 0,
+                    "path_count": 2
+                },
+                {
+                    "del_date": "21.05.2025 07:43:27",
+                    "files_checked": 191,
+                    "files_older": 0,
+                    "files_newer": 191,
+                    "files_deleted": 0,
+                    "path_count": 2
+                }
+            ],
+            "creation_date": 0
+        },
+        {
+            "name": "TRIMAZKON_del_task_3",
+            "operating_path": "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/",
+            "max_days": "447",
+            "files_to_keep": "1000",
+            "frequency": "12:00",
+            "more_dirs": 0,
+            "selected_option": 2,
+            "date_added": "21.05.2025 07:38:54",
+            "del_log": [
+                {
+                    "del_date": "21.05.2025 07:39:20",
+                    "files_checked": 184,
+                    "files_older": 0,
+                    "files_newer": 184,
+                    "files_deleted": 0,
+                    "path_count": 2
+                },
+                {
+                    "del_date": "21.05.2025 07:43:39",
+                    "files_checked": 184,
+                    "files_older": 0,
+                    "files_newer": 184,
+                    "files_deleted": 0,
+                    "path_count": 2
+                }
+            ],
+            "creation_date": 0
+        },
+        {
+            "name": "TRIMAZKON_del_task_4",
+            "operating_path": "C:/Users/jakub.hlavacek.local/Desktop/JHV/mazani_test/",
+            "max_days": "447",
+            "files_to_keep": "1000",
+            "frequency": "12:00",
+            "more_dirs": 0,
+            "selected_option": 3,
+            "date_added": "21.05.2025 07:40:30",
+            "del_log": [
+                {
+                    "del_date": "21.05.2025 07:43:46",
+                    "files_checked": 3,
+                    "files_older": "",
+                    "files_newer": "",
+                    "files_deleted": 0,
+                    "path_count": ""
+                }
+            ],
+            "creation_date": 0
+        },
+        {
+            "name": "TRIMAZKON_del_task_5",
+            "operating_path": "C:/Users/jakub.hlavacek.local/Desktop/JHV/mazani_test/",
+            "max_days": "400",
+            "files_to_keep": "10",
+            "frequency": "12:00",
+            "more_dirs": 0,
+            "selected_option": 4,
+            "date_added": "21.05.2025 07:43:09",
+            "del_log": [
+                {
+                    "del_date": "21.05.2025 07:43:57",
+                    "files_checked": 5,
+                    "files_older": 1,
+                    "files_newer": "",
+                    "files_deleted": 0,
+                    "path_count": ""
+                }
+            ],
             "creation_date": 0
         }
     ]
