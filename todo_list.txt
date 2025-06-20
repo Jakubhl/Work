@@ -1010,11 +1010,18 @@ ________________________________________________________________________________
 
 
 
-
 TRIMAZKON - Katalog - čtení komponent z databáze ???
 
+TRIMAZKON - katalog - kabely je potřeba řešit zvlášť... kabely ke kontroleru, kamerám
+	- možnost přidat příslušenství ke každé kameře
+	- ke každé optice/ světlu
+	- vždy připsat na konec textboxu
+	- příslušenství musí být smazatelné - hotovo
+	- zkontrolovat při ukládání jestli v entry není něco, co nebylo přidáno
+	- 
 
-
+tlačítko přehled všech příslušenství? - zobrazí vrtikálně
+TRIMAZKON - Katalog - možnost zobrazení vertikálně?
 
 TRIMAZKON - mssql - propojit s neuronem a databází
 TRIMAZKON - mssql - upravit aktivaci trialu (check existance)

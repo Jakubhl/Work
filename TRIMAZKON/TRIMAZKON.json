@@ -89,10 +89,15 @@
     },
     "db_settings": {
         "server_history_list": [
+            "NEURON-SERVER\\SQLEXPRESS",
             "NTB0327\\SQLEXPRESS"
         ],
         "db_name_list": [
+            "Artikly_JHV_new",
             "JHV_CM"
+        ],
+        "username_history_list": [
+            "sa"
         ]
     }
 }

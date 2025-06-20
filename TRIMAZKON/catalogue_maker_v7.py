@@ -574,24 +574,50 @@ class Save_prog_metadata:
         return project_name
 
 class FakeContextMenu(customtkinter.CTkScrollableFrame):
-    def __init__(self, parent, values, command=None, **kwargs):
+    def __init__(self, parent, values, command=None, del_option = False, del_cmd = None, **kwargs):
         super().__init__(parent, **kwargs)
         self.command = command
+        self.del_cmd = del_cmd
+        self.del_option = del_option
         self.buttons = []
         self.one_button_height = 50
         self._scrollbar.configure(width=30)
         self._scrollbar.configure(corner_radius=10)
-
-        for val in values:
-            btn = customtkinter.CTkButton(self, text=str(val), font=("Arial", 20), fg_color="transparent", hover_color="gray25",
-                                command=lambda v=val: self.on_select(v))
-            btn.pack(fill="x", pady=2,expand=True)
-            self.one_button_height = btn._current_height
-            self.buttons.append(btn)
+        if self.del_option:
+            icon_small = 22
+            icon_large = 25
+            for val in values:
+                row_frame = customtkinter.CTkFrame(self,corner_radius=0)
+                btn = customtkinter.CTkButton(row_frame, text=str(val), font=("Arial", 20), fg_color="transparent", hover_color="gray25",
+                                    command=lambda v=val: self.on_select(v))
+                # del_btn = customtkinter.CTkButton(row_frame, text="delete", font=("Arial", 20), fg_color="transparent", hover_color="gray25",
+                #                     command=lambda v=val: self.on_select(v))
+                
+                del_btn = customtkinter.CTkLabel(row_frame,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/delete_file.png")),size=(icon_small,icon_small)),bg_color="#212121")
+                del_btn.bind("<Button-1>",lambda e, v=val: self.deletion(v))
+                del_btn.bind("<Enter>", lambda e, b=del_btn: b._image.configure(size=(icon_large, icon_large)))
+                del_btn.bind("<Leave>", lambda e, b=del_btn: b._image.configure(size=(icon_small, icon_small)))
+                btn.pack(fill="x",pady=2,side="left",expand = True)
+                del_btn.pack(fill="x",pady=2,padx=10,side="left",expand=False)
+                row_frame.pack(fill="x",side="top")
+                self.one_button_height = btn._current_height
+                self.buttons.append(btn)
+                self.buttons.append(del_btn)
+        else:
+            for val in values:
+                btn = customtkinter.CTkButton(self, text=str(val), font=("Arial", 20), fg_color="transparent", hover_color="gray25",
+                                    command=lambda v=val: self.on_select(v))
+                btn.pack(fill="x", pady=2,expand=True)
+                self.one_button_height = btn._current_height
+                self.buttons.append(btn)
 
     def on_select(self, value):
         if self.command:
             self.command(value)
+
+    def deletion(self, value):
+        if self.del_cmd:
+            self.del_cmd(value)
 
 class ToplevelWindow:
     @classmethod
@@ -3064,7 +3090,6 @@ class Catalogue_gui:
             if controller_ip != "" and controller_ip != "192.168.000.000":
                 context_menu.add_separator()
                 context_menu.add_command(label="Kopírovat IP adresu",font=("Arial",22,"bold"), command=lambda: pyperclip.copy(controller_ip))
-                
             if controller_username != "":
                 context_menu.add_separator()
                 context_menu.add_command(label="Kopírovat uživ. jméno",font=("Arial",22,"bold"), command=lambda: pyperclip.copy(controller_username))
@@ -3751,7 +3776,7 @@ class Catalogue_gui:
             textbox_widget.delete("0.0","end")
             textbox_widget.insert("0.0",wrapped_text)
 
-        def manage_option_menu(e,values,entry_widget,mirror=None,auto_search_call=False):
+        def manage_option_menu(e,values,entry_widget,mirror=None,auto_search_call=False,acc_list = False):
             def on_item_selected(value):
                 # if auto_search_call:
                 entry_widget.delete(0,200)
@@ -3759,6 +3784,13 @@ class Catalogue_gui:
                 # else:
                 #     entry_widget.set(str(value))
                 window.destroy()
+
+            def remove_row(value):
+                print(value)
+                to_remove = self.temp_station_list[station_index]["camera_list"][camera_index]["acc_list"].index(str(value))
+                self.temp_station_list[station_index]["camera_list"][camera_index]["acc_list"].pop(to_remove)
+                window.destroy()
+                self.root.after(0,lambda: show_acc(e,"camera"))
 
             if len(values) == 0:
                 return
@@ -3783,7 +3815,12 @@ class Catalogue_gui:
             window = customtkinter.CTkToplevel(child_root)
             window.overrideredirect(True)
             window.configure(bg="black")
-            listbox = FakeContextMenu(window, values, command=on_item_selected, width=max_width_px)
+            if acc_list:
+                max_width_px += 100
+                listbox = FakeContextMenu(window, values, command=on_item_selected, width=max_width_px, del_option=True,del_cmd=remove_row)
+            else:
+                listbox = FakeContextMenu(window, values, command=on_item_selected, width=max_width_px)
+
             listbox.pack(fill="both",expand=True)
             child_root.bind("<Button-1>", lambda e: window.destroy(), "+")
 
@@ -3809,6 +3846,7 @@ class Catalogue_gui:
             - lights
             - lights_alternative
             - cables
+            - acc
             """
             if self.autosearch_menu != None:
                 self.autosearch_menu.destroy()
@@ -3832,6 +3870,9 @@ class Catalogue_gui:
             elif which_item == "cables":
                 entry_widget = cam_cable_menu
                 database = self.whole_camera_cable_database
+            elif which_item == "acc":
+                entry_widget = cam_acc_menu
+                database = self.whole_accessory_database
 
             entry_widget.update_idletasks()
             currently_inserted = str(entry_widget.get()).strip().lower()
@@ -3848,6 +3889,56 @@ class Catalogue_gui:
             found_itemss = sorted(found_itemss)
             # print(found_itemss)
             manage_option_menu(e,found_itemss,entry_widget,auto_search_call=True)
+
+        def add_acc(device):
+            """
+            device:
+            - camera
+            - optics
+            """
+            if device == "camera":
+                device_obj = self.temp_station_list[station_index]["camera_list"][camera_index]
+                entry_widget = cam_acc_menu
+            else:
+                device_obj = self.temp_station_list[station_index]["camera_list"][camera_index]
+                entry_widget = cam_acc_menu
+
+            acc_item = str(entry_widget.get())
+
+            # if not hasattr(self.temp_station_list[station_index]["camera_list"][camera_index], 'acc_list'):
+            #     self.temp_station_list[station_index]["camera_list"][camera_index]["acc_list"] = []
+            device_obj.setdefault("acc_list", [])
+
+            if not acc_item in device_obj["acc_list"]:
+                if not acc_item in self.whole_accessory_database:
+                    entry_widget.configure(fg_color = "#bd1931",border_color = "red")
+                    return "db_error"
+                else:
+                    entry_widget.configure(fg_color = "#343638",border_color = "#565B5E")
+                    if acc_item.replace(" ","") != "":
+                        device_obj["acc_list"].append(acc_item)
+
+        def show_acc(e,device):
+            """
+            device:
+            - camera
+            - optics
+            """
+            print(self.temp_station_list[station_index]["camera_list"][camera_index])
+            
+            if device == "camera":
+                device_obj = self.temp_station_list[station_index]["camera_list"][camera_index]
+                entry_widget = cam_acc_menu
+            else:
+                device_obj = self.temp_station_list[station_index]["camera_list"][camera_index]
+                entry_widget = cam_acc_menu
+
+            current_acc_list = []
+            device_obj.setdefault("acc_list", [])
+            current_acc_list = device_obj["acc_list"]
+            print("current acc list",current_acc_list)
+            if len(current_acc_list) > 0:
+                manage_option_menu(e,current_acc_list,entry_widget,acc_list=True)  
 
         child_root = customtkinter.CTkToplevel()
         icon_small = 45
@@ -3909,6 +4000,33 @@ class Catalogue_gui:
         cable_search.               pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
         cam_cable_menu.             bind("<KeyRelease>",lambda e: autosearch_engine(e,"cables"))
 
+        cam_acc =                 customtkinter.CTkLabel(master = camera_frame,text = "Příslušenství ke kameře:",font=("Arial",22,"bold"))
+        option_menu_frame_cam_acc =   customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
+        cam_acc_menu =            customtkinter.CTkEntry(master = option_menu_frame_cam_acc,font=("Arial",22),height=50,corner_radius=0)
+        cam_acc_search =              customtkinter.CTkLabel(master = option_menu_frame_cam_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        cam_acc_search.               bind("<Enter>",lambda e: cam_acc_search._image.configure(size=(icon_large,icon_large)))
+        cam_acc_search.               bind("<Leave>",lambda e: cam_acc_search._image.configure(size=(icon_small,icon_small)))
+        cam_acc_search.               bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_accessory_database,cam_acc_menu))
+        cam_acc_menu.             pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
+        cam_acc_search.               pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+        cam_acc_menu.             bind("<KeyRelease>",lambda e: autosearch_engine(e,"acc"))
+
+        # cam_acc_show_menu =            customtkinter.CTkEntry(master = option_menu_frame_cam_acc,font=("Arial",22),height=50,corner_radius=0)
+        cam_acc_add =              customtkinter.CTkLabel(master = option_menu_frame_cam_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/green_plus.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        cam_acc_add.               bind("<Enter>",lambda e: cam_acc_add._image.configure(size=(icon_large,icon_large)))
+        cam_acc_add.               bind("<Leave>",lambda e: cam_acc_add._image.configure(size=(icon_small,icon_small)))
+        cam_acc_add.               bind("<Button-1>",lambda e: add_acc("camera"))
+        # cam_acc_menu.             pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
+        cam_acc_add.               pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+        # cam_acc_menu.             bind("<KeyRelease>",lambda e: autosearch_engine(e,"acc"))
+
+        cam_acc_show =              customtkinter.CTkLabel(master = option_menu_frame_cam_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/show.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        cam_acc_show.               bind("<Enter>",lambda e: cam_acc_show._image.configure(size=(icon_large,icon_large)))
+        cam_acc_show.               bind("<Leave>",lambda e: cam_acc_show._image.configure(size=(icon_small,icon_small)))
+        cam_acc_show.               bind("<Button-1>",lambda e: show_acc(e,"camera"))
+        # cam_acc_menu.             pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
+        cam_acc_show.               pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+
         controller =                customtkinter.CTkLabel(master = camera_frame,text = "Kontroler:",font=("Arial",22,"bold"))
         controller_frame =          customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
         controller_entry =          customtkinter.CTkOptionMenu(master = controller_frame,font=("Arial",22),dropdown_font=("Arial",22),width=280,height=50,values=self.custom_controller_drop_list,corner_radius=0,fg_color="#212121",command=controller_opt_menu_color)
@@ -3928,6 +4046,8 @@ class Catalogue_gui:
         option_menu_frame_cam.      pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
         cam_cable.                  pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
         option_menu_frame_cable.    pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
+        cam_acc.                    pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
+        option_menu_frame_cam_acc.  pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
         controller.                 pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
         controller_frame.           pack(pady = 0, padx = 3,anchor="w",expand=False,side="top",fill="x")
         new_controller.             pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
@@ -4217,6 +4337,8 @@ class Catalogue_gui:
             Catalogue_gui.ToolTip(wrap_text_btn," Zarovnat text na rozměr buňky ",child_root,subwindow_status=True)
             Catalogue_gui.ToolTip(wrap_text_btn2," Zarovnat text na rozměr buňky ",child_root,subwindow_status=True)
             Catalogue_gui.ToolTip(wrap_text_btn3," Zarovnat text na rozměr buňky ",child_root,subwindow_status=True,reverse=True)
+            Catalogue_gui.ToolTip(cam_acc_show," Zobrazit navolený seznam ",child_root,subwindow_status=True)
+            Catalogue_gui.ToolTip(cam_acc_add," Přidat příslušenství ",child_root,subwindow_status=True)
 
         child_root.update()
         child_root.update_idletasks()
