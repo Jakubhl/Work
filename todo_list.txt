@@ -1003,6 +1003,17 @@ TRIMAZKON - Katalog - autosearch - ověřit přítomnost v databázi - hotovo
 7:24 AM 5/21/2025
 TRIMAZKON - log mazání - možnost exportu logu? xls, txt... - otestováno - hotovo
 
+10:22 AM 6/23/2025
+TRIMAZKON - Katalog - čtení komponent z databáze ??? - hotovo
+TRIMAZKON - Katalog - přidat výrobce cognex... - hotovo
+TRIMAZKON - Katalog - okamžitý dotaz na připojení + tlačítko pracovat offline - hotovo
+TRIMAZKON - Katalog - hover zobrazuje description uz pri vybirani z nabidky - hotovo
+TRIMAZKON - katalog - kabely je potřeba řešit zvlášť... kabely ke kontroleru, kamerám - hotovo
+	- možnost přidat příslušenství ke každé kameře - hotovo
+	- ke každé optice/ světlu - hotovo
+	- vždy připsat na konec textboxu - hotovo
+	- příslušenství musí být smazatelné - hotovo
+	- zkontrolovat při ukládání jestli v entry není něco, co nebylo přidáno - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -1010,18 +1021,19 @@ ________________________________________________________________________________
 
 
 
-TRIMAZKON - Katalog - čtení komponent z databáze ???
+TRIMAZKON - Katalog - upravit kusovník podle accessories ke kamere a optice
 
-TRIMAZKON - katalog - kabely je potřeba řešit zvlášť... kabely ke kontroleru, kamerám
-	- možnost přidat příslušenství ke každé kameře
-	- ke každé optice/ světlu
-	- vždy připsat na konec textboxu
-	- příslušenství musí být smazatelné - hotovo
-	- zkontrolovat při ukládání jestli v entry není něco, co nebylo přidáno
-	- 
+TRIMAZKON - Katalog - chybí kabely v kusovníku? - přidat pod příslušenství
+
+
+
+
 
 tlačítko přehled všech příslušenství? - zobrazí vrtikálně
 TRIMAZKON - Katalog - možnost zobrazení vertikálně?
+
+
+
 
 TRIMAZKON - mssql - propojit s neuronem a databází
 TRIMAZKON - mssql - upravit aktivaci trialu (check existance)

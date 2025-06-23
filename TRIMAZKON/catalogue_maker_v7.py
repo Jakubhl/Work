@@ -13,6 +13,7 @@ from datetime import datetime
 from tkinter import filedialog
 import os
 import xml.etree.ElementTree as ET
+import db_read_catalogue as read_database
 # import sharepoint_download as download_database
 import sys
 import pyperclip
@@ -574,13 +575,15 @@ class Save_prog_metadata:
         return project_name
 
 class FakeContextMenu(customtkinter.CTkScrollableFrame):
-    def __init__(self, parent, values, command=None, del_option = False, del_cmd = None, **kwargs):
+    def __init__(self, parent, values, values2=[], mirror = False, command=None, del_option = False, del_cmd = None, **kwargs):
         super().__init__(parent, **kwargs)
         self.command = command
+        self.parent = parent
         self.del_cmd = del_cmd
         self.del_option = del_option
         self.buttons = []
         self.one_button_height = 50
+        width = kwargs.get("width")
         self._scrollbar.configure(width=30)
         self._scrollbar.configure(corner_radius=10)
         if self.del_option:
@@ -603,21 +606,36 @@ class FakeContextMenu(customtkinter.CTkScrollableFrame):
                 self.one_button_height = btn._current_height
                 self.buttons.append(btn)
                 self.buttons.append(del_btn)
+
         else:
+            note_index = 0
             for val in values:
                 btn = customtkinter.CTkButton(self, text=str(val), font=("Arial", 20), fg_color="transparent", hover_color="gray25",
                                     command=lambda v=val: self.on_select(v))
                 btn.pack(fill="x", pady=2,expand=True)
                 self.one_button_height = btn._current_height
                 self.buttons.append(btn)
+                try:
+                    wrapped_text = Tools.make_wrapping(values2[note_index])
+                    if mirror:
+                        Catalogue_gui.ToolTip(btn," "+wrapped_text+" ",parent.master,subwindow_status=True,in_listbox=True,reverse=True,listbox_width=width-50)
+                    else:
+                        Catalogue_gui.ToolTip(btn," "+wrapped_text+" ",parent.master,subwindow_status=True,in_listbox=True)
+
+                    # Catalogue_gui.ToolTip(btn," "+values2[note_index]+" ",root,subwindow_status=True,in_listbox=True)
+                except Exception as eee:
+                    pass
+                    # print("tooltip window error: ",eee)
+                note_index +=1
+
 
     def on_select(self, value):
         if self.command:
-            self.command(value)
-
+            self.parent.master.after(100, lambda: self.command(value))
     def deletion(self, value):
         if self.del_cmd:
-            self.del_cmd(value)
+            # self.del_cmd(value)
+            self.parent.master.after(100, lambda: self.del_cmd(value))
 
 class ToplevelWindow:
     @classmethod
@@ -690,6 +708,9 @@ class ToplevelWindow:
             # server_connection.close()
 
         def init_fill_option_menu():
+            """
+            seznam dostupných databází
+            """
             cursor = server_connection.cursor()
             cursor.execute("SELECT name FROM sys.databases ORDER BY name")
             databases = [row[0] for row in cursor.fetchall()]
@@ -754,7 +775,7 @@ class ToplevelWindow:
         return window
 
     @classmethod
-    def db_login_window(cls,root,app_icon_path,db_label,callback,call_export,call_export_callback,main_console):
+    def db_login_window(cls,root,app_icon_path,db_label,callback,call_export,call_export_callback,main_console,initial=False):
         window = customtkinter.CTkToplevel(fg_color="#212121")
         window.after(200, lambda: window.iconbitmap(app_icon_path))
         window.title("Připojení k databázi")
@@ -804,7 +825,10 @@ class ToplevelWindow:
                             return
                         if len(param_list) > 9:
                             param_list.pop()
-                        param_list.insert(0,str(param))  
+                        param_list.insert(0,str(param))
+                    else:
+                        param_list.pop(param_list.index(param))
+                        param_list.insert(0,str(param))
 
                 config = Tools.read_json_config()
                 server_history = config.get("db_settings", {}).get("server_history_list", [])
@@ -833,7 +857,7 @@ class ToplevelWindow:
                     conn_str = (
                         r'DRIVER={ODBC Driver 17 for SQL Server};'
                         rf'SERVER={server_name};'
-                        # rf'DATABASE={database_name};'
+                        rf'DATABASE={database_name};'
                         r'Trusted_Connection=yes;'
                     )
                     conn = pyodbc.connect(conn_str)
@@ -855,7 +879,7 @@ class ToplevelWindow:
                     conn_str = (
                         r'DRIVER={ODBC Driver 17 for SQL Server};'
                         rf'SERVER={server_name};'
-                        # rf'DATABASE={database_name};'
+                        rf'DATABASE={database_name};'
                         rf"UID={uid};"
                         rf"PWD={pwd};"
                         r'Trusted_Connection=no;'
@@ -863,7 +887,7 @@ class ToplevelWindow:
                     conn = pyodbc.connect(conn_str)
                     add_new_param_to_history(uid_filled=True)
                     Tools.add_colored_line(main_console,f"Úspěšně připojeno k serveru: {server_name}","green",None,True)
-                    db_label.configure(text_color = "green",text=f"Přihlášen k: {server_name}")
+                    db_label.configure(text_color = "green",text=f"Přihlášen k: {server_name} (DB: {database_name})")
                     callback(conn)
                     close_window(window)
                     if call_export:
@@ -886,7 +910,11 @@ class ToplevelWindow:
             if len(db_name_list)>0:
                 db_name_entry.delete("0","200")
                 db_name_entry.insert("0", db_name_list[0])
-                
+
+        def work_offline():
+            callback("offline")
+            close_window(window)
+
         label_column_width = 200
         top_frame =         customtkinter.CTkFrame(master = window,corner_radius=0,fg_color="#212121")
         server_frame =      customtkinter.CTkFrame(master = top_frame,corner_radius=0,fg_color="#212121",border_width=1)
@@ -923,10 +951,12 @@ class ToplevelWindow:
         console =           tk.Text(window, wrap="none", height=0,background="#212121",font=("Arial",22),state=tk.DISABLED,foreground="#565B5E",borderwidth=3)
         console.            pack(pady = (0,10), padx =10,anchor="w",expand=False,fill="x",side="top",ipady=3,ipadx=5)
         button_frame =      customtkinter.CTkFrame(master = window,corner_radius=0,fg_color="#212121")
+        button_offline =    customtkinter.CTkButton(master = button_frame,text = "Pracovat offline",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: work_offline())
         button_connect =    customtkinter.CTkButton(master = button_frame,text = "Připojit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: connect_to_server())
         button_close =      customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
         button_close.       pack(pady = (0,10), padx = (5,10),side="right",anchor = "e")
         button_connect.     pack(pady = (0,10), padx = (5,10),side="right",anchor = "e")
+        button_offline.     pack(pady = (0,10), padx = (5,10),side="right",anchor = "e")
         button_frame.       pack(pady=0,padx=0,anchor="w",side="top",fill="both")
         context_menu_button.bind("<Button-1>", lambda e: call_server_context_menu("server"))
         db_context.         bind("<Button-1>", lambda e: call_server_context_menu("db_name"))
@@ -934,12 +964,24 @@ class ToplevelWindow:
         init_fill_entry()
 
         root.bind("<Button-1>",lambda e: close_window(window))
-        window.update()
-        window.update_idletasks()
         root.update_idletasks()
-        window.geometry(f"{window.winfo_width()}x{window.winfo_height()}+{root._current_width/2}+{root._current_height/2}")
-        window.after(100,window.focus_force())
-        window.focus()
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+
+        window.update_idletasks()
+        window.update()
+        root.update_idletasks()
+        window_width = window.winfo_width()
+        window_height = window.winfo_height()
+        print(window_width,window_height)
+        x = (screen_width - window_width) // 2
+        y = (screen_height - window_height) // 2
+        print(x,y)
+
+        window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        # window.geometry(f"+{x}+{y}")
+        window.after(10, window.focus_force)
+        # window.focus()
         return window
 
     @classmethod
@@ -1997,7 +2039,7 @@ class ToplevelWindow:
                 event.widget.insert(tk.INSERT, 'ř')
                 return "break"  # Stop the event from inserting the original character
 
-        def manage_option_menu(e,values,entry_widget,mirror=None,auto_search_call=False):
+        def manage_option_menu(e,values,values2,entry_widget,mirror=False,auto_search_call=False):
             def on_item_selected(value):
                 # if auto_search_call:
                 entry_widget.delete(0,200)
@@ -2005,8 +2047,8 @@ class ToplevelWindow:
                 # else:
                 #     entry_widget.set(str(value))
                 context_window.destroy()
-
             if len(values) == 0:
+                print("prazdne pole")
                 return
 
             screen_x = window.winfo_pointerx()
@@ -2029,7 +2071,7 @@ class ToplevelWindow:
             context_window = customtkinter.CTkToplevel(window)
             context_window.overrideredirect(True)
             context_window.configure(bg="black")
-            listbox = FakeContextMenu(context_window, values, command=on_item_selected, width=max_width_px)
+            listbox = FakeContextMenu(context_window, values,values2=values2,mirror=mirror,command=on_item_selected, width=max_width_px)
             listbox.pack(fill="both",expand=True)
             window.bind("<Button-1>", lambda e: context_window.destroy(), "+")
 
@@ -2059,25 +2101,32 @@ class ToplevelWindow:
             if which_item == "controller":
                 entry_widget = controller_entry
                 database = self.controller_database
+                notes_database = self.controller_notes_database
+                mirror = False
             elif which_item == "accessory":
                 entry_widget = hw_type_entry
                 database = self.whole_accessory_database
+                notes_database = self.accessory_notes_database
+                mirror=True
 
             entry_widget.update_idletasks()
             currently_inserted = str(entry_widget.get()).strip().lower()
             if len(str(currently_inserted))==0:
                 return
-            found_itemss = []
+            found_items = []
+            found_items_notes = []
 
             for items in database:
                 item_str = str(items).lower()
                 if currently_inserted in str(item_str):
                 # if item_str.startswith(currently_inserted):
-                    found_itemss.append(str(items))
+                    found_items.append(str(items))
+                    found_items_notes.append(notes_database[database.index(str(items))])
 
-            found_itemss = sorted(found_itemss)
-            # print(found_itemss)
-            manage_option_menu(e,found_itemss,entry_widget,auto_search_call=True)
+            found_items = sorted(found_items)
+            # print(found_items)
+
+            manage_option_menu(e,found_items,found_items_notes,entry_widget,mirror=mirror,auto_search_call=True)
 
         icon_small = 45
         icon_large = 49
@@ -2090,7 +2139,7 @@ class ToplevelWindow:
         controller_search =         customtkinter.CTkLabel(master = controller_select_frame,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
         controller_search.          bind("<Enter>",lambda e: controller_search._image.configure(size=(icon_large,icon_large)))
         controller_search.          bind("<Leave>",lambda e: controller_search._image.configure(size=(icon_small,icon_small)))
-        controller_search.          bind("<Button-1>",lambda e: manage_option_menu(e,self.controller_database,controller_entry))
+        controller_search.          bind("<Button-1>",lambda e: manage_option_menu(e,self.controller_database,self.controller_notes_database,controller_entry))
         controller_name =           customtkinter.CTkLabel(master = controller_frame,text = "Název (interní označení): ",font=("Arial",22,"bold"))
         controller_name_entry =     customtkinter.CTkEntry(master = controller_frame,font=("Arial",22),corner_radius=0,height=50)
         controller_color =          customtkinter.CTkButton(master = controller_frame,corner_radius=0,text="Podbarvení kontroleru",font=("Arial",22,"bold"),height=50,command=lambda:switch_color(),border_width=3)
@@ -2148,7 +2197,7 @@ class ToplevelWindow:
         acc_search =                customtkinter.CTkLabel(master = option_menu_frame_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
         acc_search.                 bind("<Enter>",lambda e: acc_search._image.configure(size=(icon_large,icon_large)))
         acc_search.                 bind("<Leave>",lambda e: acc_search._image.configure(size=(icon_small,icon_small)))
-        acc_search.                 bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_accessory_database,hw_type_entry))
+        acc_search.                 bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_accessory_database,self.accessory_notes_database,hw_type_entry,mirror=True))
         hw_type_entry.              pack(pady = 5, padx = (5,0),anchor="w",side="left",fill="x",expand = True)
         acc_search.                 pack(pady = 5, padx = (5,0),anchor="w",side="left")
         note3_label_frame =         customtkinter.CTkFrame(master = accessory_frame,corner_radius=0,fg_color="#212121")
@@ -2570,6 +2619,11 @@ class Fill_details:
         if cable != "" and not cable in str(camera["description"]):
             detail_info_cam = detail_info_cam + "Kabel: " + str(camera["cable"])+ "\n\n"
         detail_info_cam += str(camera["description"])
+        if "acc_list" in camera:
+            if len(camera["acc_list"]) >0:
+                detail_info_cam += "\n\nPříslušenství ke kameře:\n"
+                for items in camera["acc_list"]:
+                    detail_info_cam += str(items) + "\n"
 
         return [detail_info_cam,controller_fill]
     
@@ -2580,6 +2634,12 @@ class Fill_details:
             detail_info = "Alternativa: " + str(optics["alternative"]) + "\n\n"
             
         detail_info += str(optics["description"])
+
+        if "acc_list" in optics:
+            if len(optics["acc_list"]) >0:
+                detail_info += "\n\nPříslušenství k optice:\n"
+                for items in optics["acc_list"]:
+                    detail_info += str(items) + "\n"
         return detail_info
     
     @classmethod
@@ -2591,11 +2651,13 @@ class Fill_details:
 
 class Catalogue_gui:
     class ToolTip:
-        def __init__(self, widget, text, root,unbind=False,subwindow_status=False,reverse=False):
+        def __init__(self, widget, text, root,unbind=False,subwindow_status=False,reverse=False,in_listbox=False,listbox_width=0):
             self.widget = widget
             self.text = text
             self.root = root
             self.tip_window = None
+            self.listbox_width = listbox_width
+            self.in_listbox = in_listbox
             self.subwindow_status = subwindow_status
             self.reverse = reverse
             if unbind:
@@ -2657,9 +2719,17 @@ class Catalogue_gui:
                 if self.subwindow_status:
                     if self.reverse:
                         tip_window_width = self.tip_window._current_width
-                        self.tip_window.place_configure(x=local_x-tip_window_width,y = local_y)
+                        if self.in_listbox:
+                            self.tip_window.place_configure(x=local_x-tip_window_width-self.listbox_width,y = local_y)
+                        else:
+                            self.tip_window.place_configure(x=local_x-tip_window_width,y = local_y)
+
                     else:
-                        self.tip_window.place_configure(x=local_x,y = local_y)
+                        tip_window_height = self.tip_window._current_height
+                        if self.in_listbox:
+                            self.tip_window.place_configure(x=local_x+30,y = local_y-tip_window_height)
+                        else:
+                            self.tip_window.place_configure(x=local_x,y = local_y)
                 else:
                     if self.reverse:
                         tip_window_width = self.tip_window._current_width
@@ -2674,16 +2744,19 @@ class Catalogue_gui:
         def really_leaving(self,e,widget):
             if self.tip_window == None:
                 return
+            try:
+                x = widget.winfo_width()-1
+                y = widget.winfo_height()-1
+                if (e.x < 1 or e.x > x) or (e.y < 1 or e.y > y):
+                    try:
+                        self.root.after(0,self.tip_window.destroy)
+                        # self.tip_window.destroy()
+                    except Exception as e2:
+                        print("error2")
+                    self.tip_window = None
+            except Exception:
+                self.root.after(0,self.tip_window.destroy)
 
-            x = widget.winfo_width()-1
-            y = widget.winfo_height()-1
-            if (e.x < 1 or e.x > x) or (e.y < 1 or e.y > y):
-                try:
-                    self.root.after(0,self.tip_window.destroy)
-                    # self.tip_window.destroy()
-                except Exception as e2:
-                    print("error2")
-                self.tip_window = None
     
     @classmethod
     def get_device_strings(cls,widget_tier):
@@ -2755,6 +2828,8 @@ class Catalogue_gui:
         self.controller_object_list = []
         self.custom_controller_drop_list = [""]
         self.chosen_manufacturer = "Omron"
+        self.manufacturers = ["Omron", "Keyence", "Cognex"]
+        self.current_manufacturer_index = 0
         self.last_selected_widget = ["",""]
         self.controller_database = []
         self.controller_notes_database = []
@@ -2790,7 +2865,7 @@ class Catalogue_gui:
         self.last_scroll_position = 0.0
         self.widget_list = [] #lists of every widget by station
         self.last_path_to_images = None
-        self.read_database()
+        # self.read_database()
         self.create_main_widgets(initial=True)
 
     def close_window(self,window):
@@ -2805,6 +2880,38 @@ class Catalogue_gui:
             return False
 
     def read_database(self):
+        if self.current_db_connection == "offline":
+            self.read_database_excel()
+            return
+        if self.chosen_manufacturer == "Omron":
+            manufacturer = "OMR"
+        elif self.chosen_manufacturer == "Keyence":
+            manufacturer = "KEY"
+        elif self.chosen_manufacturer == "Cognex":
+            manufacturer = "COG"
+
+        all_found_producs = read_database.find_camera_products_db(self.current_db_connection,manufacturer)
+        # print(all_found_producs["camera_list"])
+        def fill_lists(list_type,list_notes,db_list):
+            list_type.clear()
+            list_notes.clear()
+            for items in db_list:
+                list_type.append(items["type"])
+                list_notes.append(items["description"])
+
+        targets = [
+            (self.whole_camera_type_database, self.camera_notes_database, "camera_list"),
+            (self.whole_optics_database, self.optics_notes_database, "optics_list"),
+            (self.whole_camera_cable_database, self.cable_notes_database, "cable_list"),
+            (self.whole_light_database, self.light_notes_database, "light_list"),
+            (self.whole_accessory_database, self.accessory_notes_database, "acc_list"),
+            (self.controller_database, self.controller_notes_database, "controller_list"),
+        ]
+
+        for list_type, list_notes, key in targets:
+            fill_lists(list_type, list_notes, all_found_producs.get(key, []))
+
+    def read_database_excel(self):
         """
         Stahuje aktuální databázi do adresáře
         - 1. controller_database, controller_notes_database
@@ -3395,6 +3502,9 @@ class Catalogue_gui:
         """
         
         def save_changes(no_window_shut = False):
+            """
+            Pokud chybí nějaké povinné pole - zčervená
+            """
             db_error_found = False
             if object == "station" or all_parameters:
                 self.temp_station_list[station_index]["name"] = new_name.get()
@@ -3404,7 +3514,7 @@ class Catalogue_gui:
             if object == "camera" or all_parameters:
                 camera_item = str(camera_type_entry.get())
                 self.temp_station_list[station_index]["camera_list"][camera_index]["type"] = camera_item
-                if not camera_item in self.whole_camera_type_database:
+                if not camera_item in self.whole_camera_type_database and camera_item.replace(" ","") != "":
                     camera_type_entry.configure(fg_color = "#bd1931",border_color = "red")
                     # return "db_error"
                     db_error_found = True
@@ -3423,7 +3533,7 @@ class Catalogue_gui:
                 self.temp_station_list[station_index]["camera_list"][camera_index]["controller_index"] = controller_index
                 cable_item = str(cam_cable_menu.get())
                 self.temp_station_list[station_index]["camera_list"][camera_index]["cable"] = cable_item
-                if not cable_item in self.whole_camera_cable_database:
+                if not cable_item in self.whole_camera_cable_database and cable_item.replace(" ","") != "":
                     cam_cable_menu.configure(fg_color = "#bd1931",border_color = "red")
                     # return "db_error"
                     db_error_found = True
@@ -3437,7 +3547,7 @@ class Catalogue_gui:
                 optic_type = str(optic_type_entry.get())
                 if len(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"]) > 0:
                     self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"] = optic_type
-                    if not optic_type in self.whole_optics_database and not optic_type in self.whole_light_database:
+                    if not optic_type in self.whole_optics_database and not optic_type in self.whole_light_database and optic_type.replace(" ","") != "":
                         optic_type_entry.configure(fg_color = "#bd1931",border_color = "red")
                         db_error_found = True
                         # return "db_error"
@@ -3446,7 +3556,7 @@ class Catalogue_gui:
 
                     alternative_item = str(alternative_entry.get())
                     self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"] = alternative_item
-                    if not alternative_item in self.whole_optics_database and not alternative_item in self.whole_light_database:
+                    if not alternative_item in self.whole_optics_database and not alternative_item in self.whole_light_database and alternative_item.replace(" ","") != "":
                         alternative_entry.configure(fg_color = "#bd1931",border_color = "red")
                         db_error_found = True
                         # return "db_error"
@@ -3456,6 +3566,20 @@ class Catalogue_gui:
                     self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"] = filtered_description
             if db_error_found:
                 return "db_error"
+            
+            cam_acc = str(cam_acc_menu.get())
+            cam = self.temp_station_list[station_index]["camera_list"][camera_index]
+            if cam_acc:
+                acc_list = cam.setdefault("acc_list", [])
+                if cam_acc not in acc_list and cam_acc in self.whole_accessory_database:
+                    acc_list.append(cam_acc)
+            opt_acc = str(opt_acc_menu.get())
+
+            opt = self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]
+            if opt_acc:
+                acc_list = opt.setdefault("acc_list", [])
+                if opt_acc not in acc_list and opt_acc in self.whole_accessory_database:
+                    acc_list.append(opt_acc)
             
             if not no_window_shut:
                 self.station_list = copy.deepcopy(self.temp_station_list)
@@ -3711,8 +3835,8 @@ class Catalogue_gui:
                 optics_checkbox.deselect()
                 optic_search.unbind("<Button-1>")
                 alternative_search.unbind("<Button-1>")
-                optic_search.bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_light_database,optic_type_entry,mirror=True))
-                alternative_search.bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_light_database,alternative_entry,mirror=True))
+                optic_search.bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_light_database,optic_type_entry,mirror=True,values2=self.optics_notes_database))
+                alternative_search.bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_light_database,alternative_entry,mirror=True,values2=self.optics_notes_database))
 
             else:
                 self.optic_light_option = "optic"
@@ -3726,8 +3850,8 @@ class Catalogue_gui:
                 optics_checkbox.select()
                 optic_search.unbind("<Button-1>")
                 alternative_search.unbind("<Button-1>")
-                optic_search.bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_optics_database,optic_type_entry,mirror=True))
-                alternative_search.bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_optics_database,alternative_entry,mirror=True))
+                optic_search.bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_optics_database,optic_type_entry,mirror=True,values2=self.optics_notes_database))
+                alternative_search.bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_optics_database,alternative_entry,mirror=True,values2=self.optics_notes_database))
 
         def remaping_characters(event):
             remap = {
@@ -3776,7 +3900,7 @@ class Catalogue_gui:
             textbox_widget.delete("0.0","end")
             textbox_widget.insert("0.0",wrapped_text)
 
-        def manage_option_menu(e,values,entry_widget,mirror=None,auto_search_call=False,acc_list = False):
+        def manage_option_menu(e,values,entry_widget,values2 = [],mirror=None,auto_search_call=False,acc_list = False, add_button = None,device = ""):
             def on_item_selected(value):
                 # if auto_search_call:
                 entry_widget.delete(0,200)
@@ -3790,7 +3914,8 @@ class Catalogue_gui:
                 to_remove = self.temp_station_list[station_index]["camera_list"][camera_index]["acc_list"].index(str(value))
                 self.temp_station_list[station_index]["camera_list"][camera_index]["acc_list"].pop(to_remove)
                 window.destroy()
-                self.root.after(0,lambda: show_acc(e,"camera"))
+                # self.root.after(0,lambda e: show_acc(event_e,"camera"))
+                show_acc(e,device)
 
             if len(values) == 0:
                 return
@@ -3799,12 +3924,17 @@ class Catalogue_gui:
             screen_y = child_root.winfo_pointery()
             parent_x = child_root.winfo_rootx()+e.x
             parent_y = child_root.winfo_rooty()+e.y
-            x = screen_x - parent_x +entry_widget.winfo_width()
-            y = screen_y - parent_y +entry_widget.winfo_height()
+            x = screen_x - parent_x + entry_widget.winfo_width()
+            y = screen_y - parent_y + entry_widget.winfo_height()
 
             if auto_search_call:
                 screen_x = entry_widget.winfo_rootx()
                 screen_y = entry_widget.winfo_rooty() + entry_widget.winfo_height()+5
+
+            if acc_list:
+                if add_button != None:
+                    screen_x = add_button.winfo_rootx()
+                    screen_y = add_button.winfo_rooty() + add_button.winfo_height()+5
 
             font = tkFont.Font(family="Arial", size=20)
             max_width_px = 40
@@ -3819,8 +3949,9 @@ class Catalogue_gui:
                 max_width_px += 100
                 listbox = FakeContextMenu(window, values, command=on_item_selected, width=max_width_px, del_option=True,del_cmd=remove_row)
             else:
-                listbox = FakeContextMenu(window, values, command=on_item_selected, width=max_width_px)
-
+                # listbox = FakeContextMenu(window, values, command=on_item_selected, width=max_width_px)
+                listbox = FakeContextMenu(window, values, values2,mirror=mirror, command=on_item_selected, width=max_width_px)
+                
             listbox.pack(fill="both",expand=True)
             child_root.bind("<Button-1>", lambda e: window.destroy(), "+")
 
@@ -3847,6 +3978,7 @@ class Catalogue_gui:
             - lights_alternative
             - cables
             - acc
+            - acc_opt
             """
             if self.autosearch_menu != None:
                 self.autosearch_menu.destroy()
@@ -3855,40 +3987,52 @@ class Catalogue_gui:
             if which_item == "camera":
                 entry_widget = camera_type_entry
                 database = self.whole_camera_type_database
+                notes_database = self.camera_notes_database
             elif which_item == "optics":
                 entry_widget = optic_type_entry
                 database = self.whole_optics_database
+                notes_database = self.optics_notes_database
             elif which_item == "optics_alternative":
                 entry_widget = alternative_entry
                 database = self.whole_optics_database
+                notes_database = self.optics_notes_database
             elif which_item == "lights":
                 entry_widget = optic_type_entry
                 database = self.whole_light_database
+                notes_database = self.light_notes_database
             elif which_item == "lights_alternative":
                 entry_widget = alternative_entry
                 database = self.whole_light_database
+                notes_database = self.light_notes_database
             elif which_item == "cables":
                 entry_widget = cam_cable_menu
                 database = self.whole_camera_cable_database
+                notes_database = self.cable_notes_database
             elif which_item == "acc":
                 entry_widget = cam_acc_menu
                 database = self.whole_accessory_database
+                notes_database = self.accessory_notes_database
+            elif which_item == "acc_opt":
+                entry_widget = opt_acc_menu
+                database = self.whole_accessory_database
+                notes_database = self.accessory_notes_database
 
             entry_widget.update_idletasks()
             currently_inserted = str(entry_widget.get()).strip().lower()
             if len(str(currently_inserted))==0:
                 return
             found_itemss = []
-
+            found_items_notes = []
             for items in database:
                 item_str = str(items).lower()
                 if currently_inserted in str(item_str):
                 # if item_str.startswith(currently_inserted):
                     found_itemss.append(str(items))
+                    found_items_notes.append(notes_database[database.index(str(items))])
 
             found_itemss = sorted(found_itemss)
             # print(found_itemss)
-            manage_option_menu(e,found_itemss,entry_widget,auto_search_call=True)
+            manage_option_menu(e,found_itemss,entry_widget,found_items_notes,auto_search_call=True)
 
         def add_acc(device):
             """
@@ -3900,8 +4044,8 @@ class Catalogue_gui:
                 device_obj = self.temp_station_list[station_index]["camera_list"][camera_index]
                 entry_widget = cam_acc_menu
             else:
-                device_obj = self.temp_station_list[station_index]["camera_list"][camera_index]
-                entry_widget = cam_acc_menu
+                device_obj = self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]
+                entry_widget = opt_acc_menu
 
             acc_item = str(entry_widget.get())
 
@@ -3929,16 +4073,18 @@ class Catalogue_gui:
             if device == "camera":
                 device_obj = self.temp_station_list[station_index]["camera_list"][camera_index]
                 entry_widget = cam_acc_menu
+                add_button = cam_acc_show
             else:
-                device_obj = self.temp_station_list[station_index]["camera_list"][camera_index]
-                entry_widget = cam_acc_menu
+                device_obj = self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]
+                entry_widget = opt_acc_menu
+                add_button = opt_acc_show
 
             current_acc_list = []
             device_obj.setdefault("acc_list", [])
             current_acc_list = device_obj["acc_list"]
             print("current acc list",current_acc_list)
             if len(current_acc_list) > 0:
-                manage_option_menu(e,current_acc_list,entry_widget,acc_list=True)  
+                manage_option_menu(e,current_acc_list,entry_widget,acc_list=True,add_button = add_button,device=device)
 
         child_root = customtkinter.CTkToplevel()
         icon_small = 45
@@ -3984,7 +4130,7 @@ class Catalogue_gui:
         camera_search =             customtkinter.CTkLabel(master = option_menu_frame_cam,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
         camera_search.              bind("<Enter>",lambda e: camera_search._image.configure(size=(icon_large,icon_large)))
         camera_search.              bind("<Leave>",lambda e: camera_search._image.configure(size=(icon_small,icon_small)))
-        camera_search.              bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_camera_type_database,camera_type_entry))
+        camera_search.              bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_camera_type_database,camera_type_entry,values2=self.camera_notes_database))
         camera_type_entry.          pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
         camera_search.              pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
         camera_type_entry.          bind("<KeyRelease>",lambda e: autosearch_engine(e,"camera"))
@@ -3995,36 +4141,32 @@ class Catalogue_gui:
         cable_search =              customtkinter.CTkLabel(master = option_menu_frame_cable,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
         cable_search.               bind("<Enter>",lambda e: cable_search._image.configure(size=(icon_large,icon_large)))
         cable_search.               bind("<Leave>",lambda e: cable_search._image.configure(size=(icon_small,icon_small)))
-        cable_search.               bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_camera_cable_database,cam_cable_menu))
+        cable_search.               bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_camera_cable_database,cam_cable_menu,self.cable_notes_database))
         cam_cable_menu.             pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
         cable_search.               pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
         cam_cable_menu.             bind("<KeyRelease>",lambda e: autosearch_engine(e,"cables"))
 
-        cam_acc =                 customtkinter.CTkLabel(master = camera_frame,text = "Příslušenství ke kameře:",font=("Arial",22,"bold"))
-        option_menu_frame_cam_acc =   customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
-        cam_acc_menu =            customtkinter.CTkEntry(master = option_menu_frame_cam_acc,font=("Arial",22),height=50,corner_radius=0)
-        cam_acc_search =              customtkinter.CTkLabel(master = option_menu_frame_cam_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
-        cam_acc_search.               bind("<Enter>",lambda e: cam_acc_search._image.configure(size=(icon_large,icon_large)))
-        cam_acc_search.               bind("<Leave>",lambda e: cam_acc_search._image.configure(size=(icon_small,icon_small)))
-        cam_acc_search.               bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_accessory_database,cam_acc_menu))
-        cam_acc_menu.             pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
-        cam_acc_search.               pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
-        cam_acc_menu.             bind("<KeyRelease>",lambda e: autosearch_engine(e,"acc"))
+        cam_acc =                   customtkinter.CTkLabel(master = camera_frame,text = "Příslušenství ke kameře:",font=("Arial",22,"bold"))
+        option_menu_frame_cam_acc = customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
+        cam_acc_menu =              customtkinter.CTkEntry(master = option_menu_frame_cam_acc,font=("Arial",22),height=50,corner_radius=0)
+        cam_acc_search =            customtkinter.CTkLabel(master = option_menu_frame_cam_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        cam_acc_search.             bind("<Enter>",lambda e: cam_acc_search._image.configure(size=(icon_large,icon_large)))
+        cam_acc_search.             bind("<Leave>",lambda e: cam_acc_search._image.configure(size=(icon_small,icon_small)))
+        cam_acc_search.             bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_accessory_database,cam_acc_menu,self.accessory_notes_database))
+        cam_acc_menu.               pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
+        cam_acc_search.             pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+        cam_acc_menu.               bind("<KeyRelease>",lambda e: autosearch_engine(e,"acc"))
 
-        # cam_acc_show_menu =            customtkinter.CTkEntry(master = option_menu_frame_cam_acc,font=("Arial",22),height=50,corner_radius=0)
-        cam_acc_add =              customtkinter.CTkLabel(master = option_menu_frame_cam_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/green_plus.png")),size=(icon_small,icon_small)),bg_color="#212121")
-        cam_acc_add.               bind("<Enter>",lambda e: cam_acc_add._image.configure(size=(icon_large,icon_large)))
-        cam_acc_add.               bind("<Leave>",lambda e: cam_acc_add._image.configure(size=(icon_small,icon_small)))
-        cam_acc_add.               bind("<Button-1>",lambda e: add_acc("camera"))
-        # cam_acc_menu.             pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
-        cam_acc_add.               pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
-        # cam_acc_menu.             bind("<KeyRelease>",lambda e: autosearch_engine(e,"acc"))
+        cam_acc_add =               customtkinter.CTkLabel(master = option_menu_frame_cam_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/green_plus.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        cam_acc_add.                bind("<Enter>",lambda e: cam_acc_add._image.configure(size=(icon_large,icon_large)))
+        cam_acc_add.                bind("<Leave>",lambda e: cam_acc_add._image.configure(size=(icon_small,icon_small)))
+        cam_acc_add.                bind("<Button-1>",lambda e: add_acc("camera"))
+        cam_acc_add.                pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
 
         cam_acc_show =              customtkinter.CTkLabel(master = option_menu_frame_cam_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/show.png")),size=(icon_small,icon_small)),bg_color="#212121")
         cam_acc_show.               bind("<Enter>",lambda e: cam_acc_show._image.configure(size=(icon_large,icon_large)))
         cam_acc_show.               bind("<Leave>",lambda e: cam_acc_show._image.configure(size=(icon_small,icon_small)))
         cam_acc_show.               bind("<Button-1>",lambda e: show_acc(e,"camera"))
-        # cam_acc_menu.             pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
         cam_acc_show.               pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
 
         controller =                customtkinter.CTkLabel(master = camera_frame,text = "Kontroler:",font=("Arial",22,"bold"))
@@ -4078,7 +4220,7 @@ class Catalogue_gui:
         optic_search =              customtkinter.CTkLabel(master = option_menu_frame_optic,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
         optic_search.               bind("<Enter>",lambda e: optic_search._image.configure(size=(icon_large,icon_large)))
         optic_search.               bind("<Leave>",lambda e: optic_search._image.configure(size=(icon_small,icon_small)))
-        optic_search.               bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_optics_database,optic_type_entry,mirror=True))
+        optic_search.               bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_optics_database,optic_type_entry,mirror=True,values2=self.optics_notes_database))
         optic_type_entry.           pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
         optic_search.               pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
         optic_type_entry.           bind("<KeyRelease>",lambda e: autosearch_engine(e,"optics"))
@@ -4089,10 +4231,31 @@ class Catalogue_gui:
         alternative_search =        customtkinter.CTkLabel(master = option_menu_frame_alternative,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
         alternative_search.         bind("<Enter>",lambda e: alternative_search._image.configure(size=(icon_large,icon_large)))
         alternative_search.         bind("<Leave>",lambda e: alternative_search._image.configure(size=(icon_small,icon_small)))
-        alternative_search.         bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_optics_database,alternative_entry,mirror=True))
+        alternative_search.         bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_optics_database,alternative_entry,mirror=True,values2=self.optics_notes_database))
         alternative_entry.          pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
         alternative_search.         pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
         alternative_entry.          bind("<KeyRelease>",lambda e: autosearch_engine(e,"optics_alternative"))
+
+        opt_acc =                   customtkinter.CTkLabel(master = optics_frame,text = "Příslušenství k optice:",font=("Arial",22,"bold"))
+        option_menu_frame_opt_acc = customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
+        opt_acc_menu =              customtkinter.CTkEntry(master = option_menu_frame_opt_acc,font=("Arial",22),height=50,corner_radius=0)
+        opt_acc_search =            customtkinter.CTkLabel(master = option_menu_frame_opt_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        opt_acc_search.             bind("<Enter>",lambda e: opt_acc_search._image.configure(size=(icon_large,icon_large)))
+        opt_acc_search.             bind("<Leave>",lambda e: opt_acc_search._image.configure(size=(icon_small,icon_small)))
+        opt_acc_search.             bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_accessory_database,opt_acc_menu,mirror=True,values2=self.accessory_notes_database))
+        opt_acc_menu.               pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
+        opt_acc_search.             pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+        opt_acc_menu.               bind("<KeyRelease>",lambda e: autosearch_engine(e,"acc_opt"))
+        opt_acc_add =               customtkinter.CTkLabel(master = option_menu_frame_opt_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/green_plus.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        opt_acc_add.                bind("<Enter>",lambda e: opt_acc_add._image.configure(size=(icon_large,icon_large)))
+        opt_acc_add.                bind("<Leave>",lambda e: opt_acc_add._image.configure(size=(icon_small,icon_small)))
+        opt_acc_add.                bind("<Button-1>",lambda e: add_acc("optics"))
+        opt_acc_add.                pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+        opt_acc_show =              customtkinter.CTkLabel(master = option_menu_frame_opt_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/show.png")),size=(icon_small,icon_small)),bg_color="#212121")
+        opt_acc_show.               bind("<Enter>",lambda e: opt_acc_show._image.configure(size=(icon_large,icon_large)))
+        opt_acc_show.               bind("<Leave>",lambda e: opt_acc_show._image.configure(size=(icon_small,icon_small)))
+        opt_acc_show.               bind("<Button-1>",lambda e: show_acc(e,"optics"))
+        opt_acc_show.               pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
         
         note2_label_frame =         customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
         note2_label =               customtkinter.CTkLabel(master = note2_label_frame,text = "Poznámky:",font=("Arial",22,"bold"))
@@ -4108,6 +4271,8 @@ class Catalogue_gui:
         option_menu_frame_optic.    pack(pady = (5,0), padx = 10,anchor="w",expand=False,side="top",fill="x")
         alternative_type.           pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
         option_menu_frame_alternative.pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
+        opt_acc.                    pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
+        option_menu_frame_opt_acc.  pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
         note2_label_frame.          pack(pady = 0, padx = 3,anchor="w",expand=False,side="top",fill="x")
         notes_input2.               pack(pady = 5, padx = 10,expand=True,side="top",fill="both")
         notes_input2.               bind("<Key>",remaping_characters)
@@ -4338,7 +4503,9 @@ class Catalogue_gui:
             Catalogue_gui.ToolTip(wrap_text_btn2," Zarovnat text na rozměr buňky ",child_root,subwindow_status=True)
             Catalogue_gui.ToolTip(wrap_text_btn3," Zarovnat text na rozměr buňky ",child_root,subwindow_status=True,reverse=True)
             Catalogue_gui.ToolTip(cam_acc_show," Zobrazit navolený seznam ",child_root,subwindow_status=True)
-            Catalogue_gui.ToolTip(cam_acc_add," Přidat příslušenství ",child_root,subwindow_status=True)
+            Catalogue_gui.ToolTip(opt_acc_show," Zobrazit navolený seznam ",child_root,subwindow_status=True,reverse=True)
+            Catalogue_gui.ToolTip(cam_acc_add," Přidat zvolené příslušenství ",child_root,subwindow_status=True)
+            Catalogue_gui.ToolTip(opt_acc_add," Přidat zvolené příslušenství ",child_root,subwindow_status=True,reverse=True)
 
         child_root.update()
         child_root.update_idletasks()
@@ -4642,28 +4809,24 @@ class Catalogue_gui:
                 Tools.add_colored_line(self.main_console,f"Nejprve zvolte zařízení pro odebrání","red",None,True)
 
         def switch_manufacturer():
-            if self.chosen_manufacturer == "Omron":
-                # manufacturer_logo =             customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/keyence_logo.png")),size=(240, 50))
-                self.chosen_manufacturer = "Keyence"
-                self.camera_database_pointer = 0
-                self.optics_database_pointer = 0
-                self.camera_cable_database_pointer = 0
-                self.accessory_database_pointer = 0
-                # switch_manufacturer_image.configure(image = manufacturer_logo)
-                switch_manufacturer_btn.configure(image = customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/keyence_logo.png")),size=(manuf_logo_width,manuf_logo_height)))
+            self.manufacturer_logos = {
+                "Omron": Tools.resource_path("images/omron_logo.png"),
+                "Keyence": Tools.resource_path("images/keyence_logo.png"),
+                "Cognex": Tools.resource_path("images/cognex_logo.jpg")
+            }
 
-                self.read_database()
-            elif self.chosen_manufacturer == "Keyence":
-                # manufacturer_logo =             customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/omron_logo.png")),size=(240, 50))
-                self.chosen_manufacturer = "Omron"
-                self.camera_database_pointer = 0
-                self.optics_database_pointer = 0
-                self.camera_cable_database_pointer = 0
-                self.accessory_database_pointer = 0
-                # switch_manufacturer_image.configure(image = manufacturer_logo)
-                switch_manufacturer_btn.configure(image = customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/omron_logo.png")),size=(manuf_logo_width,manuf_logo_height)))
-                self.read_database()
+            self.current_manufacturer_index = (self.current_manufacturer_index + 1) % len(self.manufacturers)
+            self.chosen_manufacturer = self.manufacturers[self.current_manufacturer_index]
+            self.camera_database_pointer = 0
+            self.optics_database_pointer = 0
+            self.camera_cable_database_pointer = 0
+            self.accessory_database_pointer = 0
+            logo_path = self.manufacturer_logos[self.chosen_manufacturer]
+            logo_image = customtkinter.CTkImage(PILImage.open(logo_path), size=(manuf_logo_width, manuf_logo_height))
+            switch_manufacturer_btn.configure(image=logo_image)
 
+            self.read_database()
+            
         def call_setting_window():
             def apply_changes_callback(input_data):
                 if input_data[0] == "open_all_cmd":
@@ -4747,6 +4910,14 @@ class Catalogue_gui:
         def call_db_login_window(call_export=False):
             def db_callback(connection):
                 self.current_db_connection = connection
+                if connection == "offline":
+                    self.read_database_excel()
+                    return
+                try:
+                    self.read_database()
+                except Exception as e:
+                    print(e)
+
             def call_export_callback():
                 call_db_export()
             self.opened_window = ToplevelWindow.db_login_window(self.root,
@@ -4902,7 +5073,9 @@ class Catalogue_gui:
         column_labels.                  pack(pady=0,padx=5,fill="x",expand=False,side = "top")
         self.project_tree.              pack(pady=5,padx=5,fill="both",expand=True,side = "top")
         self.make_project_widgets(initial = initial)
-        Tools.add_colored_line(self.main_console,self.download_database_console_input[0],self.download_database_console_input[1],None,True)
+        call_db_login_window()
+
+        # Tools.add_colored_line(self.main_console,self.download_database_console_input[0],self.download_database_console_input[1],None,True)
         if self.show_tooltip == "ano":
             Catalogue_gui.ToolTip(export_button," Exporovat projekt ",self.root)
             Catalogue_gui.ToolTip(db_export," Exporovat projekt do databáze ",self.root)
