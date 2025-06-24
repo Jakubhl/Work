@@ -64,10 +64,11 @@
         "catalogue_filename": "Katalog_kamerov\u00e9ho_vybaven\u00ed",
         "metadata_filename": "_metadata_catalogue",
         "subwindow_behav": 0,
-        "default_export_suffix": "xlsx",
+        "default_export_suffix": "xlsm",
         "default_path": "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/",
         "render_mode": "fast",
         "path_history_list": [
+            "C:/Users/jakub.hlavacek.local/Desktop/test/",
             "C:/Users/jakub.hlavacek.local/Downloads/",
             "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/temp/",
             "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/"

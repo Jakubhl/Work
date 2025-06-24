@@ -320,6 +320,11 @@ class Tools:
             # current_paths.append(str(new_path))
             current_paths.insert(0,str(new_path))
             Tools.save_to_json_config(current_paths,which_settings,"path_history_list")
+        else:
+            #jinak přesuň na začátek
+            current_paths.pop(current_paths.index(new_path))
+            current_paths.insert(0,str(new_path))
+            Tools.save_to_json_config(current_paths,which_settings,"path_history_list")
     
     @classmethod
     def call_path_context_menu(cls,master,entry_widget,menu_btn,items_given = False,combine_path_items=False,given_path=None):
@@ -445,8 +450,19 @@ class Save_prog_metadata:
                                 for optic in cam_value:
                                     optic_element = ET.SubElement(optics, "optic")
                                     for opt_key, opt_value in optic.items():
-                                        opt_child = ET.SubElement(optic_element, opt_key)
-                                        opt_child.text = str(opt_value)  # Ensure value is a string
+                                        if opt_key == "acc_list":
+                                            opt_acc = ET.SubElement(optic_element, "acc_list")
+                                            for item in opt_value:
+                                                item_element = ET.SubElement(opt_acc, "acc")  # nebo "item", podle tebe
+                                                item_element.text = str(item)
+                                        else:
+                                            opt_child = ET.SubElement(optic_element, opt_key)
+                                            opt_child.text = str(opt_value)  # Ensure value is a string
+                            elif cam_key == "acc_list":
+                                cam_acc = ET.SubElement(camera_element, "acc_list")
+                                for item in cam_value:
+                                    item_element = ET.SubElement(cam_acc, "acc")
+                                    item_element.text = str(item)
                             else:
                                 cam_child = ET.SubElement(camera_element, cam_key)
                                 cam_child.text = str(cam_value)  # Ensure value is a string
@@ -530,12 +546,19 @@ class Save_prog_metadata:
                                 for optic in cam_child.findall("optic"):
                                     optic_data = {}
                                     for opt_child in optic:
-                                        if opt_child.text is not None:
-                                            optic_data[opt_child.tag] = opt_child.text
+                                        if opt_child.tag == "acc_list":
+                                            acc_list = [acc_elem.text for acc_elem in opt_child.findall("acc")]
+                                            optic_data["acc_list"] = acc_list
                                         else:
-                                            optic_data[opt_child.tag] = ""
+                                            if opt_child.text is not None:
+                                                optic_data[opt_child.tag] = opt_child.text
+                                            else:
+                                                optic_data[opt_child.tag] = ""
                                     optics_list.append(optic_data)
                                 camera_data[cam_child.tag] = optics_list
+                            elif cam_child.tag == "acc_list":
+                                acc_list = [acc_elem.text for acc_elem in cam_child.findall("acc")]
+                                camera_data["acc_list"] = acc_list
                             else:
                                 if cam_child.text is not None:
                                     camera_data[cam_child.tag] = cam_child.text
@@ -956,7 +979,8 @@ class ToplevelWindow:
         button_close =      customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
         button_close.       pack(pady = (0,10), padx = (5,10),side="right",anchor = "e")
         button_connect.     pack(pady = (0,10), padx = (5,10),side="right",anchor = "e")
-        button_offline.     pack(pady = (0,10), padx = (5,10),side="right",anchor = "e")
+        if initial:
+            button_offline.     pack(pady = (0,10), padx = (5,10),side="right",anchor = "e")
         button_frame.       pack(pady=0,padx=0,anchor="w",side="top",fill="both")
         context_menu_button.bind("<Button-1>", lambda e: call_server_context_menu("server"))
         db_context.         bind("<Button-1>", lambda e: call_server_context_menu("db_name"))
@@ -2577,11 +2601,20 @@ class Insert_image:
 
 class Fill_details:
     @classmethod
+    def line_handler(cls,input_string):
+        rows_splitted = input_string.split("\n")
+        cleaned_rows = [row for row in rows_splitted if row.strip()]
+        output_string=""
+        for rows in cleaned_rows:
+            output_string += rows + "\n"
+        return output_string.rstrip("\n")
+
+    @classmethod
     def station(cls,station):
         detail_info = ""
         detail_info = str(station["inspection_description"])
 
-        return detail_info
+        return Fill_details.line_handler(detail_info)
     
     @classmethod
     def controller(cls,controller):
@@ -2594,7 +2627,7 @@ class Fill_details:
             detail_info = detail_info + "\nJméno: " + str(controller["username"])
         if not str(controller["password"]) == "":
             detail_info = detail_info + "\nHeslo: " + str(controller["password"])
-        return detail_info
+        return Fill_details.line_handler(detail_info)
     
     @classmethod
     def camera(cls,camera):
@@ -2614,18 +2647,18 @@ class Fill_details:
             except Exception as e:
                 print(f"chyba pri nastavovani barvy kontroleru pri exportu: {e}")
                 pass
+        detail_info_cam += str(camera["description"])
 
         cable = str(camera["cable"])
         if cable != "" and not cable in str(camera["description"]):
-            detail_info_cam = detail_info_cam + "Kabel: " + str(camera["cable"])+ "\n\n"
-        detail_info_cam += str(camera["description"])
+            detail_info_cam = detail_info_cam + "\nKabel:\n" + str(camera["cable"])+ "\n\n"
         if "acc_list" in camera:
             if len(camera["acc_list"]) >0:
                 detail_info_cam += "\n\nPříslušenství ke kameře:\n"
                 for items in camera["acc_list"]:
                     detail_info_cam += str(items) + "\n"
 
-        return [detail_info_cam,controller_fill]
+        return [Fill_details.line_handler(detail_info_cam),controller_fill]
     
     @classmethod
     def optics(cls,optics):
@@ -2640,14 +2673,14 @@ class Fill_details:
                 detail_info += "\n\nPříslušenství k optice:\n"
                 for items in optics["acc_list"]:
                     detail_info += str(items) + "\n"
-        return detail_info
+        return Fill_details.line_handler(detail_info)
     
     @classmethod
     def accessory(cls,accessory):
         detail_info = ""
         detail_info = str(accessory["description"])
 
-        return detail_info
+        return Fill_details.line_handler(detail_info)
 
 class Catalogue_gui:
     class ToolTip:
@@ -2757,7 +2790,6 @@ class Catalogue_gui:
             except Exception:
                 self.root.after(0,self.tip_window.destroy)
 
-    
     @classmethod
     def get_device_strings(cls,widget_tier):
         device_string_mapping = {
@@ -3835,8 +3867,8 @@ class Catalogue_gui:
                 optics_checkbox.deselect()
                 optic_search.unbind("<Button-1>")
                 alternative_search.unbind("<Button-1>")
-                optic_search.bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_light_database,optic_type_entry,mirror=True,values2=self.optics_notes_database))
-                alternative_search.bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_light_database,alternative_entry,mirror=True,values2=self.optics_notes_database))
+                optic_search.bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_light_database,optic_type_entry,mirror=True,values2=self.light_notes_database))
+                alternative_search.bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_light_database,alternative_entry,mirror=True,values2=self.light_notes_database))
 
             else:
                 self.optic_light_option = "optic"
@@ -3901,6 +3933,10 @@ class Catalogue_gui:
             textbox_widget.insert("0.0",wrapped_text)
 
         def manage_option_menu(e,values,entry_widget,values2 = [],mirror=None,auto_search_call=False,acc_list = False, add_button = None,device = ""):
+            """
+            - při použití jako autosearch engine (acc_list = False) není třeba device
+            - když i deletion (show funkce - oko) musí se definovat device
+            """
             def on_item_selected(value):
                 # if auto_search_call:
                 entry_widget.delete(0,200)
@@ -3910,9 +3946,15 @@ class Catalogue_gui:
                 window.destroy()
 
             def remove_row(value):
-                print(value)
-                to_remove = self.temp_station_list[station_index]["camera_list"][camera_index]["acc_list"].index(str(value))
-                self.temp_station_list[station_index]["camera_list"][camera_index]["acc_list"].pop(to_remove)
+                print("device: ",device, value)
+                # try:
+                if device == "camera":
+                    to_remove = self.temp_station_list[station_index]["camera_list"][camera_index]["acc_list"].index(str(value))
+                    self.temp_station_list[station_index]["camera_list"][camera_index]["acc_list"].pop(to_remove)
+                elif device == "optics":
+                    to_remove = self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["acc_list"].index(str(value))
+                    self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["acc_list"].pop(to_remove)
+
                 window.destroy()
                 # self.root.after(0,lambda e: show_acc(event_e,"camera"))
                 show_acc(e,device)
@@ -3984,38 +4026,21 @@ class Catalogue_gui:
                 self.autosearch_menu.destroy()
                 self.autosearch_menu = None
 
-            if which_item == "camera":
-                entry_widget = camera_type_entry
-                database = self.whole_camera_type_database
-                notes_database = self.camera_notes_database
-            elif which_item == "optics":
-                entry_widget = optic_type_entry
-                database = self.whole_optics_database
-                notes_database = self.optics_notes_database
-            elif which_item == "optics_alternative":
-                entry_widget = alternative_entry
-                database = self.whole_optics_database
-                notes_database = self.optics_notes_database
-            elif which_item == "lights":
-                entry_widget = optic_type_entry
-                database = self.whole_light_database
-                notes_database = self.light_notes_database
-            elif which_item == "lights_alternative":
-                entry_widget = alternative_entry
-                database = self.whole_light_database
-                notes_database = self.light_notes_database
-            elif which_item == "cables":
-                entry_widget = cam_cable_menu
-                database = self.whole_camera_cable_database
-                notes_database = self.cable_notes_database
-            elif which_item == "acc":
-                entry_widget = cam_acc_menu
-                database = self.whole_accessory_database
-                notes_database = self.accessory_notes_database
-            elif which_item == "acc_opt":
-                entry_widget = opt_acc_menu
-                database = self.whole_accessory_database
-                notes_database = self.accessory_notes_database
+            item_config = {
+                "camera": (camera_type_entry, self.whole_camera_type_database, self.camera_notes_database),
+                "optics": (optic_type_entry, self.whole_optics_database, self.optics_notes_database),
+                "optics_alternative": (alternative_entry, self.whole_optics_database, self.optics_notes_database),
+                "lights": (optic_type_entry, self.whole_light_database, self.light_notes_database),
+                "lights_alternative": (alternative_entry, self.whole_light_database, self.light_notes_database),
+                "cables": (cam_cable_menu, self.whole_camera_cable_database, self.cable_notes_database),
+                "acc": (cam_acc_menu, self.whole_accessory_database, self.accessory_notes_database),
+                "acc_opt": (opt_acc_menu, self.whole_accessory_database, self.accessory_notes_database),
+            }
+
+            if which_item in item_config:
+                entry_widget, database, notes_database = item_config[which_item]
+            else:
+                raise ValueError(f"Unknown item type: {which_item}")
 
             entry_widget.update_idletasks()
             currently_inserted = str(entry_widget.get()).strip().lower()
@@ -4115,7 +4140,6 @@ class Catalogue_gui:
         new_description.            bind("<Key>",remaping_characters)
 
         # KAMERY ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        
         camera_frame =              customtkinter.CTkFrame(master = child_root,corner_radius=0,border_width=3)
         counter_frame_cam =         customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
         button_prev_cam =           customtkinter.CTkButton(master = counter_frame_cam,text = "<",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: previous_camera())
@@ -4198,7 +4222,6 @@ class Catalogue_gui:
         notes_input.                bind("<Key>",remaping_characters)
 
         # OPTIKA --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
         if "" in self.optics_database:
             self.optics_database.pop(self.optics_database.index(""))
         optics_frame =              customtkinter.CTkFrame(master = child_root,corner_radius=0,border_width=3)
@@ -4362,10 +4385,9 @@ class Catalogue_gui:
                 if str(self.temp_station_list[station_index]["camera_list"][camera_index]["cable"]) in self.whole_camera_cable_database:
                     cam_cable_menu.delete(0,300)
                     cam_cable_menu.insert(0,str(self.temp_station_list[station_index]["camera_list"][camera_index]["cable"]))
-
-                
                 notes_input.delete("1.0",tk.END)
                 notes_input.insert("1.0",str(self.temp_station_list[station_index]["camera_list"][camera_index]["description"]))
+                cam_acc_menu.delete(0,300)
             except TypeError as typeerr_msg:
                 print("ERROR: ",typeerr_msg)
                 camera_index = 0
@@ -4387,6 +4409,7 @@ class Catalogue_gui:
                         cam_cable_menu.insert(0,str(self.temp_station_list[station_index]["camera_list"][camera_index]["cable"]))
                     notes_input.delete("1.0",tk.END)
                     notes_input.insert("1.0",str(self.temp_station_list[station_index]["camera_list"][camera_index]["description"]))
+                    cam_acc_menu.delete(0,300)
             except IndexError:
                 camera_index = 0
                 # bypass aby vychazeli indexy... neni osetřeno proti nule (kamer nebo objektivů) skoro nikde
@@ -4422,6 +4445,7 @@ class Catalogue_gui:
                     alternative_entry.delete(0,300)
                 notes_input2.delete("1.0",tk.END)
                 notes_input2.insert("1.0",str(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"]))
+                opt_acc_menu.delete(0,300)
             except TypeError:
                 optics_index = 0
                 optic_type = str(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"])
@@ -4453,6 +4477,7 @@ class Catalogue_gui:
                         alternative_entry.delete(0,300)
                     notes_input2.delete("1.0",tk.END)
                     notes_input2.insert("1.0",str(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"]))
+                    opt_acc_menu.delete(0,300)
             except Exception:
                 optics_index = 0
 
@@ -4907,7 +4932,7 @@ class Catalogue_gui:
                                                                     str(self.project_name_input.get())
                                                                     )
         
-        def call_db_login_window(call_export=False):
+        def call_db_login_window(call_export=False,initial=False):
             def db_callback(connection):
                 self.current_db_connection = connection
                 if connection == "offline":
@@ -4926,7 +4951,8 @@ class Catalogue_gui:
                                                                 db_callback,
                                                                 call_export,
                                                                 call_export_callback,
-                                                                self.main_console
+                                                                self.main_console,
+                                                                initial
                                                                 )
             
         def call_db_export():
@@ -5073,7 +5099,7 @@ class Catalogue_gui:
         column_labels.                  pack(pady=0,padx=5,fill="x",expand=False,side = "top")
         self.project_tree.              pack(pady=5,padx=5,fill="both",expand=True,side = "top")
         self.make_project_widgets(initial = initial)
-        call_db_login_window()
+        call_db_login_window(initial=True)
 
         # Tools.add_colored_line(self.main_console,self.download_database_console_input[0],self.download_database_console_input[1],None,True)
         if self.show_tooltip == "ano":
@@ -5896,7 +5922,7 @@ class Save_excel:
                     item_found = True
                     break
 
-            if not item_found:
+            if not item_found and device != "":
                 self.inventory_list[str(device_list)].append({"name": device,"count":1})
         
         light_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
@@ -5915,6 +5941,11 @@ class Save_excel:
                 ws[excel_cell] = ""
             for cameras in stations["camera_list"]:
                 write_to_inventory("camera_list",cameras["type"])
+                write_to_inventory("accessory_list",cameras["cable"])
+                if "acc_list" in cameras:
+                    for cam_acc in cameras["acc_list"]:
+                        write_to_inventory("accessory_list",cam_acc)
+
                 excel_cell = cameras["excel_position"]
                 ws[excel_cell] = cameras["type"]
                 if str(cameras["controller_color"]) != "":
@@ -5931,6 +5962,9 @@ class Save_excel:
                     ws[excel_cell] = ""
                 for optics in cameras["optics_list"]:
                     excel_cell = optics["excel_position"]
+                    if "acc_list" in optics:
+                        for opt_acc in optics["acc_list"]:
+                            write_to_inventory("accessory_list",opt_acc)
                     try:
                         ws[excel_cell] = optics["type"]
                         if "light_status" in optics:
@@ -6057,10 +6091,9 @@ class Save_excel:
 
     def fill_xlsx_column(self,wb):
         def get_string_rows(input_string):
-            rows_splitted = []
             rows_splitted = input_string.split("\n")
-            # cleaned_data = [x for x in rows_splitted if x]
-            return len(rows_splitted)
+            cleaned_rows = [row for row in rows_splitted if row.strip()]
+            return len(cleaned_rows)
 
         def calculate_new_cell_height(max_rows,line_to_be_expanded:int):
             height_of_one_row = 15

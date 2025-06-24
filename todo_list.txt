@@ -1015,22 +1015,27 @@ TRIMAZKON - katalog - kabely je potřeba řešit zvlášť... kabely ke kontrole
 	- příslušenství musí být smazatelné - hotovo
 	- zkontrolovat při ukládání jestli v entry není něco, co nebylo přidáno - hotovo
 
+11:45 AM 6/24/2025
+TRIMAZKON - Katalog - chybí kabely v kusovníku? - přidat pod příslušenství - hotovo
+TRIMAZKON - Katalog - upravit kusovník podle accessories ke kamere a optice - hotovo
+neclearuje se entry v sekci kamer - hotovo
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 
 
+TRIMAZKON - Katalog - Přidat speciální komponent - misto zcervenani zkusit najit v databazi
 
-TRIMAZKON - Katalog - upravit kusovník podle accessories ke kamere a optice
+TRIMAZKON - Katalog - filtr, kabel by mohli mít vlastní checkbox u optiky
 
-TRIMAZKON - Katalog - chybí kabely v kusovníku? - přidat pod příslušenství
+
 
 
 
 
 
 tlačítko přehled všech příslušenství? - zobrazí vrtikálně
-TRIMAZKON - Katalog - možnost zobrazení vertikálně?
+TRIMAZKON - Katalog - možnost zobrazení vertikálně? (nedává smysl)
 
 
 
