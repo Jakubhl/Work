@@ -2880,6 +2880,10 @@ class Catalogue_gui:
         self.accessory_database = [["no data"]]
         self.accessory_notes_database = []
         self.whole_accessory_database = []
+        self.whole_filter_database = []
+        self.filter_notes_database = []
+        self.whole_light_cable_database = []
+        self.light_cable_notes_database = []
         self.last_xml_filename = ""
         self.last_path_input = ""
         self.last_controller_index = 0
@@ -2938,6 +2942,8 @@ class Catalogue_gui:
             (self.whole_light_database, self.light_notes_database, "light_list"),
             (self.whole_accessory_database, self.accessory_notes_database, "acc_list"),
             (self.controller_database, self.controller_notes_database, "controller_list"),
+            (self.whole_light_cable_database, self.light_cable_notes_database, "light_cable_list"),
+            (self.whole_filter_database, self.filter_notes_database, "filter_list"),
         ]
 
         for list_type, list_notes, key in targets:
@@ -3537,6 +3543,23 @@ class Catalogue_gui:
             """
             Pokud chybí nějaké povinné pole - zčervená
             """
+            def server_db_part_presence(part):
+                try:
+                    status = read_database.Tools.find_unknown(self.current_db_connection,part)
+                    print("db_status: ",status)
+                    if status == "ok":
+                        Tools.add_colored_line(window_console,f"Položka: {part} byla nalezena v nevyfiltrované databázi","green",None,True)
+                        return True
+                    elif status == "ng":
+                        Tools.add_colored_line(window_console,f"Položka: {part} nebyla nalezena ani v nevyfiltrované databázi","red",None,True)
+                        return False
+                    else:
+                        # Tools.add_colored_line(window_console,f"Bylo nalezeno několik výskytů: {part} v nevyfiltrované databázi: {status}","red",None,True)
+                        Tools.add_colored_line(window_console,f"Bylo nalezeno několik výskytů: {part} v nevyfiltrované databázi, celkem: {len(status)}, zkuste konkrétněji","red",None,True)
+                        return False
+                except Exception:
+                    return False
+
             db_error_found = False
             if object == "station" or all_parameters:
                 self.temp_station_list[station_index]["name"] = new_name.get()
@@ -3545,13 +3568,14 @@ class Catalogue_gui:
 
             if object == "camera" or all_parameters:
                 camera_item = str(camera_type_entry.get())
-                self.temp_station_list[station_index]["camera_list"][camera_index]["type"] = camera_item
-                if not camera_item in self.whole_camera_type_database and camera_item.replace(" ","") != "":
+                # self.temp_station_list[station_index]["camera_list"][camera_index]["type"] = camera_item
+                if not camera_item in self.whole_camera_type_database and camera_item.replace(" ","") != "" and not server_db_part_presence(camera_item):
                     camera_type_entry.configure(fg_color = "#bd1931",border_color = "red")
                     # return "db_error"
                     db_error_found = True
                 else:
                     camera_type_entry.configure(fg_color = "#343638",border_color = "#565B5E")
+                    self.temp_station_list[station_index]["camera_list"][camera_index]["type"] = camera_item
 
                 self.temp_station_list[station_index]["camera_list"][camera_index]["controller"] = controller_entry.get()
                 current_controller = controller_entry.get()
@@ -3564,13 +3588,14 @@ class Catalogue_gui:
                             break
                 self.temp_station_list[station_index]["camera_list"][camera_index]["controller_index"] = controller_index
                 cable_item = str(cam_cable_menu.get())
-                self.temp_station_list[station_index]["camera_list"][camera_index]["cable"] = cable_item
-                if not cable_item in self.whole_camera_cable_database and cable_item.replace(" ","") != "":
+                # self.temp_station_list[station_index]["camera_list"][camera_index]["cable"] = cable_item
+                if not cable_item in self.whole_camera_cable_database and cable_item.replace(" ","") != "" and not server_db_part_presence(cable_item):
                     cam_cable_menu.configure(fg_color = "#bd1931",border_color = "red")
                     # return "db_error"
                     db_error_found = True
                 else:
                     cam_cable_menu.configure(fg_color = "#343638",border_color = "#565B5E")
+                    self.temp_station_list[station_index]["camera_list"][camera_index]["cable"] = cable_item
 
                 filtered_description = Tools.make_wrapping(str(notes_input.get("1.0", tk.END)))
                 self.temp_station_list[station_index]["camera_list"][camera_index]["description"] = filtered_description
@@ -3578,22 +3603,26 @@ class Catalogue_gui:
             if object == "optics" or "camera" or all_parameters:
                 optic_type = str(optic_type_entry.get())
                 if len(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"]) > 0:
-                    self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"] = optic_type
-                    if not optic_type in self.whole_optics_database and not optic_type in self.whole_light_database and optic_type.replace(" ","") != "":
+                    # self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"] = optic_type
+                    database_list = [self.whole_filter_database,self.whole_light_cable_database,self.whole_light_database,self.whole_optics_database]
+                    if not any(optic_type in sublist for sublist in database_list) and optic_type.replace(" ","") != "" and not server_db_part_presence(optic_type):
                         optic_type_entry.configure(fg_color = "#bd1931",border_color = "red")
                         db_error_found = True
                         # return "db_error"
                     else:
                         optic_type_entry.configure(fg_color = "#343638",border_color = "#565B5E")
+                        self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"] = optic_type
 
                     alternative_item = str(alternative_entry.get())
-                    self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"] = alternative_item
-                    if not alternative_item in self.whole_optics_database and not alternative_item in self.whole_light_database and alternative_item.replace(" ","") != "":
+                    # self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"] = alternative_item
+                    if not any(alternative_item in sublist for sublist in database_list) and alternative_item.replace(" ","") != "" and not server_db_part_presence(alternative_item):
                         alternative_entry.configure(fg_color = "#bd1931",border_color = "red")
                         db_error_found = True
                         # return "db_error"
                     else:
                         alternative_entry.configure(fg_color = "#343638",border_color = "#565B5E")
+                        self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"] = alternative_item
+
                     filtered_description = Tools.make_wrapping(str(notes_input2.get("1.0", tk.END)))
                     self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"] = filtered_description
             if db_error_found:
@@ -3790,13 +3819,29 @@ class Catalogue_gui:
             controller_entry.set(new_drop_option)
             controller_opt_menu_color("",only_color=new_controller["color"])
             child_root.focus_force()
+        
+        def unselect_checkboxes():
+            checkbox_list = [optics_checkbox,light_checkbox,light_cable_checkbox,filter_checkbox]
+            for chckbxs in checkbox_list:
+                chckbxs.deselect()
 
         def import_notes(which):
             """
             - camera (Kontroler, Kamera, Kabel)
-            - optics (Objektiv, Alternativní)
+            - optics (Objektiv, Alternativní) - stejne pro: light_cable, filter, light
             - accessory
             """
+            def make_string(notes_list,type_list):
+                notes_string = ""
+                if current_optics != "":
+                    optic_notes = str(notes_list[type_list.index(current_optics)])
+                    if optic_notes !="":
+                        notes_string = notes_string + "Objektiv - popis: " + optic_notes + "\n\n"
+                if current_alternative != "":
+                    alternative_notes = str(notes_list[type_list.index(current_alternative)])
+                    if alternative_notes != "":
+                        notes_string = notes_string + "Alternativní - popis: " + alternative_notes + "\n\n"
+
             if which == "camera":
                 current_camera = camera_type_entry.get()
                 current_cable = cam_cable_menu.get()
@@ -3816,15 +3861,16 @@ class Catalogue_gui:
             elif which == "optics":
                 current_optics = optic_type_entry.get()
                 current_alternative = alternative_entry.get()
-                notes_string = ""
-                if current_optics != "":
-                    optic_notes = str(self.optics_notes_database[self.whole_optics_database.index(current_optics)])
-                    if optic_notes !="":
-                        notes_string = notes_string + "Objektiv - popis: " + optic_notes + "\n\n"
-                if current_alternative != "":
-                    alternative_notes = str(self.optics_notes_database[self.whole_optics_database.index(current_alternative)])
-                    if alternative_notes != "":
-                        notes_string = notes_string + "Alternativní - popis: " + alternative_notes + "\n\n"
+                targets = [
+                    (optics_checkbox,self.whole_optics_database,self.optics_notes_database),
+                    (light_checkbox,self.whole_light_database,self.light_notes_database),
+                    (light_cable_checkbox,self.whole_light_cable_database,self.light_cable_notes_database),
+                    (filter_checkbox,self.whole_filter_database,self.filter_notes_database),
+                ]
+                for checkbox, type_list, notes_list in targets:
+                    if checkbox.get() == 1:
+                        notes_string = make_string(notes_list,type_list)
+                        break
                 
                 notes_input2.delete("1.0",tk.END)
                 notes_input2.insert("1.0",notes_string)
@@ -3848,42 +3894,39 @@ class Catalogue_gui:
             else:
                 controller_entry.configure(fg_color = str(only_color))
 
-        def optics_lights_switch(reverse = False):
-            if reverse:
-                if self.optic_light_option == "optic":
-                    self.optic_light_option = "light"
-                else:
-                    self.optic_light_option = "optic"
-
-            if self.optic_light_option == "optic":
-                self.optic_light_option = "light"
-                optic_type.configure(text = "Typ světla:")
+        def optics_lights_switch(which_checkbox="",which_refresh=None):
+            """
+            which_refresh, which_checkbox:
+            - optic
+            - light
+            - filter
+            - cable
+            """
+            def manage_entries(autosearch_str,autosearch_alt_str,type_database,notes_database):
                 optic_type_entry.   unbind("<KeyRelease>")
                 alternative_entry.  unbind("<KeyRelease>")
-                optic_type_entry.   bind("<KeyRelease>",lambda e: autosearch_engine(e,"lights"))
-                alternative_entry.  bind("<KeyRelease>",lambda e: autosearch_engine(e,"lights_alternative"))
+                optic_type_entry.   bind("<KeyRelease>",lambda e: autosearch_engine(e,autosearch_str))
+                alternative_entry.  bind("<KeyRelease>",lambda e: autosearch_engine(e,autosearch_alt_str))
+                optic_search.       unbind("<Button-1>")
+                alternative_search. unbind("<Button-1>")
+                optic_search.       bind("<Button-1>",lambda e: manage_option_menu(e,type_database,optic_type_entry,mirror=True,values2=notes_database))
+                alternative_search. bind("<Button-1>",lambda e: manage_option_menu(e,type_database,alternative_entry,mirror=True,values2=notes_database))
 
-                light_checkbox.select()
-                optics_checkbox.deselect()
-                optic_search.unbind("<Button-1>")
-                alternative_search.unbind("<Button-1>")
-                optic_search.bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_light_database,optic_type_entry,mirror=True,values2=self.light_notes_database))
-                alternative_search.bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_light_database,alternative_entry,mirror=True,values2=self.light_notes_database))
+            targets = [
+                ("optic",self.whole_optics_database,self.optics_notes_database,"Typ objektivu:",optics_checkbox,"optics","optics_alternative"),
+                ("light",self.whole_light_database,self.light_notes_database,"Typ světla:",light_checkbox,"lights","lights_alternative"),
+                ("filter",self.whole_filter_database,self.filter_notes_database,"Typ filtru:",filter_checkbox,"filter","filter_alternative"),
+                ("cable",self.whole_light_cable_database,self.light_cable_notes_database,"Typ kabelu:",light_cable_checkbox,"light_cable","light_cable_alternative"),
+            ]
 
-            else:
-                self.optic_light_option = "optic"
-                optic_type.configure(text = "Typ objektivu:")
-                optic_type_entry.   unbind("<KeyRelease>")
-                alternative_entry.  unbind("<KeyRelease>")
-                optic_type_entry.   bind("<KeyRelease>",lambda e: autosearch_engine(e,"optics"))
-                alternative_entry.  bind("<KeyRelease>",lambda e: autosearch_engine(e,"optics_alternative"))
-
-                light_checkbox.deselect()
-                optics_checkbox.select()
-                optic_search.unbind("<Button-1>")
-                alternative_search.unbind("<Button-1>")
-                optic_search.bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_optics_database,optic_type_entry,mirror=True,values2=self.optics_notes_database))
-                alternative_search.bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_optics_database,alternative_entry,mirror=True,values2=self.optics_notes_database))
+            for device, type_list, notes_list, label, checkbox_widget, autosearch_str, autosearch_alt_str in targets:
+                if device == which_checkbox or device == which_refresh:
+                    self.optic_light_option = device
+                    optic_type.configure(text = label)
+                    unselect_checkboxes()
+                    checkbox_widget.select()
+                    manage_entries(autosearch_str,autosearch_alt_str,type_list,notes_list)
+                    break
 
         def remaping_characters(event):
             remap = {
@@ -3946,7 +3989,6 @@ class Catalogue_gui:
                 window.destroy()
 
             def remove_row(value):
-                print("device: ",device, value)
                 # try:
                 if device == "camera":
                     to_remove = self.temp_station_list[station_index]["camera_list"][camera_index]["acc_list"].index(str(value))
@@ -4021,6 +4063,10 @@ class Catalogue_gui:
             - cables
             - acc
             - acc_opt
+            - light_cable
+            - light_cable_alternative
+            - filter
+            - filter_alternative
             """
             if self.autosearch_menu != None:
                 self.autosearch_menu.destroy()
@@ -4035,6 +4081,10 @@ class Catalogue_gui:
                 "cables": (cam_cable_menu, self.whole_camera_cable_database, self.cable_notes_database),
                 "acc": (cam_acc_menu, self.whole_accessory_database, self.accessory_notes_database),
                 "acc_opt": (opt_acc_menu, self.whole_accessory_database, self.accessory_notes_database),
+                "light_cable": (optic_type_entry, self.whole_light_cable_database, self.light_cable_notes_database),
+                "light_cable_alternative": (alternative_entry, self.whole_light_cable_database, self.light_cable_notes_database),
+                "filter": (optic_type_entry, self.whole_filter_database, self.filter_notes_database),
+                "filter_alternative": (alternative_entry, self.whole_filter_database, self.filter_notes_database),
             }
 
             if which_item in item_config:
@@ -4115,7 +4165,8 @@ class Catalogue_gui:
         icon_small = 45
         icon_large = 49
         # STANICE ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        station_frame =             customtkinter.CTkFrame(master = child_root,corner_radius=0,border_width=3)
+        window_main_frame =         customtkinter.CTkFrame(master = child_root,corner_radius=0,fg_color="#212121")
+        station_frame =             customtkinter.CTkFrame(master = window_main_frame,corner_radius=0,border_width=3)
         station_name_label =        customtkinter.CTkLabel(master = station_frame,text = "Název stanice:",font=("Arial",22,"bold"))
         name_frame =                customtkinter.CTkFrame(master = station_frame,corner_radius=0)
         button_prev_st =            customtkinter.CTkButton(master = name_frame,text = "<",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: previous_station())
@@ -4140,7 +4191,7 @@ class Catalogue_gui:
         new_description.            bind("<Key>",remaping_characters)
 
         # KAMERY ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        camera_frame =              customtkinter.CTkFrame(master = child_root,corner_radius=0,border_width=3)
+        camera_frame =              customtkinter.CTkFrame(master = window_main_frame,corner_radius=0,border_width=3)
         counter_frame_cam =         customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
         button_prev_cam =           customtkinter.CTkButton(master = counter_frame_cam,text = "<",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: previous_camera())
         counter_cam =               customtkinter.CTkLabel(master = counter_frame_cam,text = "0/0",font=("Arial",22,"bold"))
@@ -4224,7 +4275,7 @@ class Catalogue_gui:
         # OPTIKA --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         if "" in self.optics_database:
             self.optics_database.pop(self.optics_database.index(""))
-        optics_frame =              customtkinter.CTkFrame(master = child_root,corner_radius=0,border_width=3)
+        optics_frame =              customtkinter.CTkFrame(master = window_main_frame,corner_radius=0,border_width=3)
         counter_frame_optics =      customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
         button_prev_opt =           customtkinter.CTkButton(master = counter_frame_optics,text = "<",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: previous_optic())
         counter_opt =               customtkinter.CTkLabel(master = counter_frame_optics,text = "0/0",font=("Arial",22,"bold"))
@@ -4233,10 +4284,14 @@ class Catalogue_gui:
         counter_opt.                pack(pady = 0, padx = (5,0),anchor="w",side="left")
         self.button_next_opt.       pack(pady = 0, padx = (5,0),anchor="w",side="left")
         checkbox_frame =            customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
-        light_checkbox =            customtkinter.CTkCheckBox(master = checkbox_frame, text = "Světla",font=("Arial",22,"bold"),command=lambda:optics_lights_switch())
-        optics_checkbox =           customtkinter.CTkCheckBox(master = checkbox_frame, text = "Objektivy",font=("Arial",22,"bold"),command=lambda:optics_lights_switch())
+        light_checkbox =            customtkinter.CTkCheckBox(master = checkbox_frame, text = "Světla",font=("Arial",22,"bold"),command=lambda:optics_lights_switch("light"))
+        optics_checkbox =           customtkinter.CTkCheckBox(master = checkbox_frame, text = "Objektivy",font=("Arial",22,"bold"),command=lambda:optics_lights_switch("optic"))
+        filter_checkbox =           customtkinter.CTkCheckBox(master = checkbox_frame, text = "Filtry/\nkroužky",font=("Arial",22,"bold"),command=lambda:optics_lights_switch("filter"))
+        light_cable_checkbox =      customtkinter.CTkCheckBox(master = checkbox_frame, text = "Další\nkabely",font=("Arial",22,"bold"),command=lambda:optics_lights_switch("cable"))
         light_checkbox.             pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
         optics_checkbox.            pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
+        filter_checkbox.            pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
+        light_cable_checkbox.       pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
         optic_type =                customtkinter.CTkLabel(master = optics_frame,text = "Typ objektivu:",font=("Arial",22,"bold"))
         option_menu_frame_optic =   customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
         optic_type_entry =          customtkinter.CTkEntry(master = option_menu_frame_optic,font=("Arial",22),height=50,corner_radius=0)
@@ -4299,7 +4354,7 @@ class Catalogue_gui:
         note2_label_frame.          pack(pady = 0, padx = 3,anchor="w",expand=False,side="top",fill="x")
         notes_input2.               pack(pady = 5, padx = 10,expand=True,side="top",fill="both")
         notes_input2.               bind("<Key>",remaping_characters)
-        optics_lights_switch(reverse = True)
+        optics_lights_switch(which_refresh=self.optic_light_option)
 
         def refresh_counters():
             nonlocal station_index
@@ -4365,6 +4420,10 @@ class Catalogue_gui:
             nonlocal camera_index
             nonlocal optics_index
             nonlocal accessory_index
+            database_list = [(self.whole_filter_database,"filter",filter_checkbox),
+                             (self.whole_light_database,"light",light_checkbox),
+                             (self.whole_light_cable_database,"cable",light_cable_checkbox),
+                             (self.whole_optics_database,"optic",optics_checkbox)]
             new_name.delete(0,300)
             new_name.insert(0,str(self.temp_station_list[station_index]["name"]))
             new_description.delete("0.0","end")
@@ -4377,24 +4436,25 @@ class Catalogue_gui:
                     cam_cable_menu.delete(0,300)
                     notes_input.delete("1.0",tk.END)
 
-                if str(self.temp_station_list[station_index]["camera_list"][camera_index]["type"]) in self.whole_camera_type_database:
-                    camera_type_entry.delete(0,300)
-                    camera_type_entry.insert(0,str(self.temp_station_list[station_index]["camera_list"][camera_index]["type"]))
+                camera_type_entry.delete(0,300)
+                # if str(self.temp_station_list[station_index]["camera_list"][camera_index]["type"]) in self.whole_camera_type_database:
+                camera_type_entry.insert(0,str(self.temp_station_list[station_index]["camera_list"][camera_index]["type"]))
                 if str(self.temp_station_list[station_index]["camera_list"][camera_index]["controller"]) in self.custom_controller_drop_list:
                     controller_entry.set(str(self.temp_station_list[station_index]["camera_list"][camera_index]["controller"]))
-                if str(self.temp_station_list[station_index]["camera_list"][camera_index]["cable"]) in self.whole_camera_cable_database:
-                    cam_cable_menu.delete(0,300)
-                    cam_cable_menu.insert(0,str(self.temp_station_list[station_index]["camera_list"][camera_index]["cable"]))
+                cam_cable_menu.delete(0,300)
+                # if str(self.temp_station_list[station_index]["camera_list"][camera_index]["cable"]) in self.whole_camera_cable_database:
+                cam_cable_menu.insert(0,str(self.temp_station_list[station_index]["camera_list"][camera_index]["cable"]))
                 notes_input.delete("1.0",tk.END)
                 notes_input.insert("1.0",str(self.temp_station_list[station_index]["camera_list"][camera_index]["description"]))
                 cam_acc_menu.delete(0,300)
             except TypeError as typeerr_msg:
-                print("ERROR: ",typeerr_msg)
+                # print("ERROR: ",typeerr_msg)
                 camera_index = 0
                 if len(self.temp_station_list[station_index]["camera_list"]) > 0:
-                    if str(self.temp_station_list[station_index]["camera_list"][camera_index]["type"]) in self.whole_camera_type_database:
-                        camera_type_entry.delete(0,300)
-                        camera_type_entry.insert(0,str(self.temp_station_list[station_index]["camera_list"][camera_index]["type"]))
+                    camera_type_entry.delete(0,300)
+
+                    # if str(self.temp_station_list[station_index]["camera_list"][camera_index]["type"]) in self.whole_camera_type_database:
+                    camera_type_entry.insert(0,str(self.temp_station_list[station_index]["camera_list"][camera_index]["type"]))
                     if self.last_controller_index < len(self.custom_controller_drop_list)-1:
                         controller_entry.set(self.custom_controller_drop_list[self.last_controller_index])
                     
@@ -4403,10 +4463,10 @@ class Catalogue_gui:
                         controller_entry.set(self.custom_controller_drop_list[assigned_controller_index])
                     except Exception:
                         pass
-                    
-                    if str(self.temp_station_list[station_index]["camera_list"][camera_index]["cable"]) in self.whole_camera_cable_database:
-                        cam_cable_menu.delete(0,300)
-                        cam_cable_menu.insert(0,str(self.temp_station_list[station_index]["camera_list"][camera_index]["cable"]))
+
+                    cam_cable_menu.delete(0,300)
+                    # if str(self.temp_station_list[station_index]["camera_list"][camera_index]["cable"]) in self.whole_camera_cable_database:
+                    cam_cable_menu.insert(0,str(self.temp_station_list[station_index]["camera_list"][camera_index]["cable"]))
                     notes_input.delete("1.0",tk.END)
                     notes_input.insert("1.0",str(self.temp_station_list[station_index]["camera_list"][camera_index]["description"]))
                     cam_acc_menu.delete(0,300)
@@ -4420,29 +4480,48 @@ class Catalogue_gui:
             try:
                 optic_type = str(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"])
                 optic_alternative = str(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"])
-                if optic_type in self.whole_optics_database:
-                    if light_checkbox.get() != 1:
-                        optics_lights_switch(reverse=True)
-                    else:
-                        optics_lights_switch()
-                    optic_type_entry.delete(0,300)
-                    optic_type_entry.insert(0,optic_type)
+                optic_type_entry.delete(0,300)
+                for database, device, checkbox in database_list:
+                    if optic_type in database:
+                        if checkbox.get() == 1:
+                            optics_lights_switch(which_refresh=device)
+                        else:
+                            optics_lights_switch(device)
+                        optic_type_entry.insert(0,optic_type)
 
-                elif optic_type in self.whole_light_database:
-                    if light_checkbox.get() == 1:
-                        optics_lights_switch(reverse=True)
+                    if optic_alternative in database:
+                        alternative_entry.delete(0,300)
+                        alternative_entry.insert(0,optic_alternative)
                     else:
-                        optics_lights_switch()
-                    optic_type_entry.delete(0,300)
-                    optic_type_entry.insert(0,optic_type)
-                else:
-                    optic_type_entry.delete(0,300)
+                        alternative_entry.delete(0,300)
 
-                if optic_alternative in self.whole_optics_database or optic_alternative in self.whole_light_database:
-                    alternative_entry.delete(0,300)
-                    alternative_entry.insert(0,optic_alternative)
-                else:
-                    alternative_entry.delete(0,300)
+            
+
+                # if optic_type in self.whole_optics_database:
+                #     if light_checkbox.get() != 1:
+                #         optics_lights_switch(which_refresh=self.optic_light_option)
+                #     else:
+                #         optics_lights_switch("optic")
+                #     optic_type_entry.delete(0,300)
+                #     optic_type_entry.insert(0,optic_type)
+
+                # elif optic_type in self.whole_light_database:
+                #     if light_checkbox.get() == 1:
+                #         optics_lights_switch(which_refresh=self.optic_light_option)
+                #     else:
+                #         optics_lights_switch("light")
+                #     optic_type_entry.delete(0,300)
+                #     optic_type_entry.insert(0,optic_type)
+                # else:
+                #     optic_type_entry.delete(0,300)
+
+                # if optic_alternative in self.whole_optics_database or optic_alternative in self.whole_light_database:
+                #     alternative_entry.delete(0,300)
+                #     alternative_entry.insert(0,optic_alternative)
+                # else:
+                #     alternative_entry.delete(0,300)
+
+
                 notes_input2.delete("1.0",tk.END)
                 notes_input2.insert("1.0",str(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"]))
                 opt_acc_menu.delete(0,300)
@@ -4451,30 +4530,44 @@ class Catalogue_gui:
                 optic_type = str(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"])
                 optic_alternative = str(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"])
                 if len(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"]) > 0:
-                    if optic_type in self.whole_optics_database:
-                        if light_checkbox.get() != 1:
-                            optics_lights_switch(reverse=True)
+                    optic_type_entry.delete(0,300)
+                    for database, device, checkbox in database_list:
+                        if optic_type in database:
+                            if checkbox.get() == 1:
+                                optics_lights_switch(which_refresh=device)
+                            else:
+                                optics_lights_switch(device)
+                            optic_type_entry.insert(0,optic_type)
+
+                        if optic_alternative in database:
+                            alternative_entry.delete(0,300)
+                            alternative_entry.insert(0,optic_alternative)
                         else:
-                            optics_lights_switch()
-                        optic_type_entry.delete(0,300)
-                        optic_type_entry.insert(0,optic_type)
+                            alternative_entry.delete(0,300)
+                    # if optic_type in self.whole_optics_database:
+                    #     if light_checkbox.get() != 1:
+                    #         optics_lights_switch(which_refresh=self.optic_light_option)
+                    #     else:
+                    #         optics_lights_switch("optic")
+                    #     optic_type_entry.delete(0,300)
+                    #     optic_type_entry.insert(0,optic_type)
 
                     
-                    elif optic_type in self.whole_light_database:
-                        if light_checkbox.get() == 1:
-                            optics_lights_switch(reverse=True)
-                        else:
-                            optics_lights_switch()
-                        optic_type_entry.delete(0,300)
-                        optic_type_entry.insert(0,optic_type)
-                    else:
-                        optic_type_entry.delete(0,300)
+                    # elif optic_type in self.whole_light_database:
+                    #     if light_checkbox.get() == 1:
+                    #         optics_lights_switch(which_refresh=self.optic_light_option)
+                    #     else:
+                    #         optics_lights_switch("light")
+                    #     optic_type_entry.delete(0,300)
+                    #     optic_type_entry.insert(0,optic_type)
+                    # else:
+                    #     optic_type_entry.delete(0,300)
 
-                    if optic_alternative in self.whole_optics_database or optic_alternative in self.whole_light_database:
-                        alternative_entry.delete(0,300)
-                        alternative_entry.insert(0,optic_alternative)
-                    else:
-                        alternative_entry.delete(0,300)
+                    # if optic_alternative in self.whole_optics_database or optic_alternative in self.whole_light_database:
+                    #     alternative_entry.delete(0,300)
+                    #     alternative_entry.insert(0,optic_alternative)
+                    # else:
+                    #     alternative_entry.delete(0,300)
                     notes_input2.delete("1.0",tk.END)
                     notes_input2.insert("1.0",str(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"]))
                     opt_acc_menu.delete(0,300)
@@ -4486,8 +4579,10 @@ class Catalogue_gui:
             controller_opt_menu_color(controller_entry.get())
 
         initial_prefill()
-        button_frame =  customtkinter.CTkFrame(master = child_root,corner_radius=0)
-        button_frame    .pack(pady = 0, padx = 0,fill="x",anchor="s",expand=False,side="bottom")
+        bottom_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        window_console = tk.Text(bottom_frame, wrap="none", height=1,background="#212121",font=("Arial",22),state=tk.DISABLED,foreground="#565B5E",borderwidth=3)
+        button_frame = customtkinter.CTkFrame(master = bottom_frame,corner_radius=0)
+        window_console.pack(pady = (0,5), padx =5,anchor="w",expand=True,fill="x",side="top",ipady=3,ipadx=5)           
         x = self.root.winfo_rootx()
         y = self.root.winfo_rooty()
         one_segment_width = 450
@@ -4519,6 +4614,9 @@ class Catalogue_gui:
         button_exit =   customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(child_root))
         button_exit     .pack(pady = 10, padx = (5,10),anchor="e",expand=False,side="right")
         button_save     .pack(pady = 10, padx = 5,anchor="e",expand=False,side="right")
+        button_frame    .pack(pady = 0, padx = 0,fill="x",anchor="s",expand=False,side="top")
+        window_main_frame.pack(pady = 0, padx = 0,fill="x",side="top")
+        bottom_frame    .pack(pady = 0, padx = 0,fill="x",side="top")
 
         if self.default_subwindow_status == 1:
             child_root.state('zoomed')

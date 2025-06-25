@@ -27,7 +27,9 @@ class Tools:
         """
         - hledá podle search_list převedené na lower
         - a nebere nic co má v ban_list
+        - LEPŠÍ DĚLAT ROVNOU V SQL
         """
+        ban_list.append("NEPOUŽÍVAT")
         result = []
         for item in data:
             value = str(item.get(key_search, "")).lower()
@@ -62,7 +64,29 @@ class Tools:
             if part_obj not in filtered_part_list:
                 filtered_part_list.append(part_obj)
         return filtered_part_list
+    
+    @classmethod
+    def find_unknown(cls,conn,part):
+        """
+        hledá jestli není v ostré databázi
+        """
+        cursor = conn.cursor()
+        sql = """
+        SELECT typenr
+        FROM dbo.tblPart
+        WHERE typenr LIKE ?
+        """
+        cursor.execute(sql, f"%{part}%")  # % pro LIKE
+        found_products = []
+        for row in cursor.fetchall():
+            found_products.append(row)
 
+        if len(found_products) == 1:
+            return "ok"
+        elif len(found_products) == 0:
+            return "ng"
+        elif len(found_products) > 1:
+            return found_products
 
 # def call_store_procedure():
 #     # Volání uložené procedury s parametry
@@ -143,36 +167,103 @@ def find_camera_products_db(conn,manufacturer):
     
     db_all_producs_sorted = get_camera_products(found_products)
 
-    sql2 = """
+    sql_get_lights = r"""
     SELECT description1, description2, description3, typenr
     FROM dbo.tblPart
-    WHERE description1 LIKE ?
-    OR description1 LIKE ?
-    OR description1 LIKE ?
+    WHERE (
+        description1 LIKE '%osv%'
+        OR description1 LIKE '%low angle%'
+        OR description1 LIKE '%light%'
+    )
+    AND description1 NOT LIKE '%curtain%'
+    AND description1 NOT LIKE '%prosv%'
+    AND description1 NOT LIKE '%kabel%'
+    AND description1 NOT LIKE '%držák%'
+    AND description1 NOT LIKE '%filtr%'
+    AND description1 NOT LIKE '%signal%'
+    AND description1 NOT LIKE '%signálk%'
+    AND description1 NOT LIKE '%indic%'
+    AND description1 NOT LIKE '%safety%'
+    AND description1 NOT LIKE '%for light%'
+    AND description1 NOT LIKE '%for ringlight%'
+    AND description1 NOT LIKE '%sensor%'
+    AND description1 NOT LIKE '%for LED%'
+    AND description1 NOT LIKE '%integrov%'
+    AND description1 NOT LIKE '%lightened%'
+    AND description1 NOT LIKE '%lightning%'
+    AND description1 NOT LIKE '%lightw%'
+    AND description1 NOT LIKE '%kamen%'
+    AND description1 NOT LIKE '%NEPOUŽÍVAT%'
     """
-    cursor.execute(sql2, (r'%osv%', r'%svet%', r'%svět%'))
-
+    cursor.execute(sql_get_lights)
     found_lights = []
     for row in cursor.fetchall():
         found_lights.append(row)
-        print(found_lights)
 
     filtered_part_list = Tools.filer_part_list(found_lights)
-    all_light_list = Tools.find_list(filtered_part_list, ["osv","svet","svět"], ["prosv","kabel","držák","filtr","světelný ","světle ","senzor","závěs","podsvět","modul","závora","integrované"])
-    combined = db_all_producs_sorted["light_list"] + all_light_list
+    # all_light_list = Tools.find_list(filtered_part_list, ["osv","svet","svět"], ["prosv","kabel","držák","filtr","světelný ","světle ","senzor","závěs","podsvět","modul","závora","integrované"])
+    combined = db_all_producs_sorted["light_list"] + filtered_part_list
     db_all_producs_sorted["light_list"] = sorted(combined, key=lambda x: x["type"])
 
+    sql_get_filters = r"""
+    SELECT description1, description2, description3, typenr
+    FROM dbo.tblPart
+    WHERE (
+        description1 LIKE '%Polarizing%'
+        OR description1 LIKE '%Lens prote%'
+        OR description1 LIKE '%extension ri%'
+    )
+    AND description1 NOT LIKE '%závora%'
+    AND description1 NOT LIKE '%NEPOUŽÍVAT%'
 
-    return db_all_producs_sorted
+    """
+    cursor.execute(sql_get_filters)
+    found_filters = []
+    for row in cursor.fetchall():
+        found_filters.append(row)
+    filtered_part_list = Tools.filer_part_list(found_filters)
+    db_all_producs_sorted["filter_list"] = sorted(filtered_part_list, key=lambda x: x["type"])
+
+
+    sql_get_cables = r"""
+    SELECT description1, description2, description3, typenr, manufacturer
+    FROM dbo.tblPart
+    WHERE (
+        description1 LIKE '%reader cabl%'
+        OR description1 LIKE '%camera cable%'
+        OR description1 LIKE '%cable for camera%'
+        OR description1 LIKE '%light cable%'
+        OR description1 LIKE '%cable for light%'
+        OR description1 LIKE '%kabel pro osv%'
+        OR description1 LIKE '%přívodní kabel%'
+        OR description1 LIKE '%kabel pro LED%'
+        OR (description1 LIKE '%kabel s konekto%' AND manufacturer LIKE '%BAL%')
+    )
+    AND description1 NOT LIKE '%NEPOUŽÍVAT%'
+    AND description1 NOT LIKE '%curtain%'
+    """
+    cursor.execute(sql_get_cables)
+    found_cables = []
+    for row in cursor.fetchall():
+        found_cables.append(row)
+    filtered_part_list = Tools.filer_part_list(found_cables)
+    db_all_producs_sorted["light_cable_list"] = sorted(filtered_part_list, key=lambda x: x["type"])
     
-    # conn.close()
+    
+    return db_all_producs_sorted
 
+
+#TESTING------------------------------------------------------------------------------
 # try:
 #     conn = pyodbc.connect(conn_str)
 #     print("Připojeno k databázi!")
 
 #     # read_column("STANICE","[525_SW_PNEU]")
-#     find_camera_products_db(conn,"OMR")
+#     output = find_camera_products_db(conn,"OMR")
+#     # print(output["light_list"])
+#     # print(output["filter_list"])
+#     # print(output["light_cable_list"])
+#     conn.close()
 
 # except Exception as e:
 #     print("Chyba při připojení:", e)
