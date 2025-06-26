@@ -49,7 +49,7 @@ class initial_tools:
         else:
             return path
 
-testing = False
+testing = True
 
 global_recources_load_error = False
 global_licence_load_error = False
@@ -81,7 +81,7 @@ if not open_image_only:
     import Sorting_option_v5 as Trideni
     import Deleting_option_v2 as Deleting
     import Converting_option_v3 as Converting
-    import catalogue_maker_v5 as Catalogue
+    import catalogue_maker_v7 as Catalogue
     import sharepoint_download as download_database
     import IP_setting_v6 as IP_setting
     import trimazkon_tray_v5 as trimazkon_tray
@@ -2461,7 +2461,7 @@ if not open_image_only:
             app_licence_validity = Tools.check_licence()
             menu.menu(clear_root=True)
 
-        def menu(self,initial=False,catalogue_downloaded = False,zoom_disable = False,clear_root = False): # Funkce spouští základní menu při spuštění aplikace (MAIN)
+        def menu(self,initial=False,catalogue_call = False,zoom_disable = False,clear_root = False): # Funkce spouští základní menu při spuštění aplikace (MAIN)
             """
             Funkce spouští základní menu při spuštění aplikace (MAIN)
 
@@ -2476,7 +2476,7 @@ if not open_image_only:
             if self.config_data["app_settings"]["maximalized"]  == "ano":
                 self.root.after(0, lambda:self.root.state('zoomed')) # max zoom, porad v okne
                 
-            if self.config_data["app_settings"]["app_zoom_checkbox"]  == "ne" and initial: # pokud není využito nastavení windows
+            if self.config_data["app_settings"]["app_zoom_checkbox"]  == "ne" and (initial or catalogue_call): # pokud není využito nastavení windows
                 try:
                     root.after(0, lambda: Tools.set_zoom(int(self.config_data["app_settings"]["app_zoom"]),root))
                 except Exception as e:
@@ -7554,6 +7554,7 @@ if not open_image_only:
                 self.database_downloaded = True 
             config_data = Tools.read_json_config()
             self.database_filename = str(config_data["catalogue_settings"]["database_filename"])
+            self.zoom_factor = config_data["app_settings"]["app_zoom"]
             # self.default_excel_filename = config_data["catalogue_settings"]["catalogue_filename"]
             # self.default_xml_file_name = config_data["catalogue_settings"]["metadata_filename"]
             # self.default_subwindow_status = config_data["catalogue_settings"]["subwindow_behav"]
@@ -7571,7 +7572,7 @@ if not open_image_only:
             # Tools.save_to_json_config(data_to_save[4],"catalogue_settings","default_export_suffix")
             # Tools.save_to_json_config(data_to_save[5],"catalogue_settings","default_path")
             # Tools.save_to_json_config(data_to_save[6],"catalogue_settings","render_mode")
-            menu.menu()
+            menu.menu(catalogue_call=True)
 
         def create_catalogue_maker_widgets(self):
             if root.wm_state() == "zoomed":

@@ -366,48 +366,58 @@ class Tools:
         """
         table_to_return = []
 
+        def add_row(station_name, category, brand, item_type, name, typenr, alt_typenr, master_device, date):
+            table_to_return.append((user_id, station_name, category, brand, item_type, name, typenr, alt_typenr, master_device, date))
+
         current_date = datetime.now()
         date_string = current_date.strftime("%d.%m.%Y %H:%M:%S")
         user_id = "1111"
 
-        def get_all_cables():
-            for station in station_list:
-                for camera in station["camera_list"]:
-                    if camera["cable"] != "":
-                        table_to_return.append((user_id,station["name"],"PŘÍSLUŠENSTVÍ","OMRON","kabel ke kameře","",camera["cable"],"",camera["controller"],date_string))
-        
-        def get_all_cameras():
-            for station in station_list:
-                for camera in station["camera_list"]:
-                    table_to_return.append((user_id,station["name"],"KAMERY","OMRON","kamera","",camera["type"],"",camera["controller"],date_string))
+        for station in station_list:
+            station_name = station["name"]
+            for camera in station["camera_list"]:
+                controller = camera["controller"]
 
-        def get_all_optics_and_lights():
-            for station in station_list:
-                for camera in station["camera_list"]:
-                    for optics in camera["optics_list"]:
-                        if not "light_status" in optics:
-                            table_to_return.append((user_id,station["name"],"OPTIKA","OMRON","objektiv","",optics["type"],optics["alternative"],camera["type"],date_string))
-                        elif int(optics["light_status"]) != 1:
-                            table_to_return.append((user_id,station["name"],"OPTIKA","OMRON","objektiv","",optics["type"],optics["alternative"],camera["type"],date_string))
-                        else:
-                            table_to_return.append((user_id,station["name"],"PŘÍSLUŠENSTVÍ","smart view","světlo","",optics["type"],optics["alternative"],camera["type"],date_string))
-
-        def get_all_controllers():
-            for controller in controller_list:
-                table_to_return.append((user_id,"","KONTROLERY","OMRON","kontroler",controller["name"],controller["type"],"","",date_string))
+                # Kabel ke kameře
+                if camera["cable"]:
+                    add_row(station_name, "PŘÍSLUŠENSTVÍ", "OMRON", "kabel ke kameře", "", camera["cable"], "", controller, date_string)
                 
-        def get_all_accessories():
-            for controller in controller_list:
-                for acc in controller["accessory_list"]:
-                    table_to_return.append((user_id,"","PŘÍSLUŠENSTVÍ","","příslušenství","",acc["type"],"",controller["type"],date_string))
+                if "acc_list" in camera:
+                    for cam_acc in camera["acc_list"]:
+                        add_row(station_name, "PŘÍSLUŠENSTVÍ KE KAMEŘE", "xxx", "popis", "", cam_acc, "", controller, date_string)
 
-        get_all_cables()
-        get_all_cameras()
-        get_all_optics_and_lights()
-        get_all_controllers()
-        get_all_accessories()
-        print(table_to_return)
+                # Kamera
+                add_row(station_name, "KAMERY", "OMRON", "kamera", "", camera["type"], "", controller, date_string)
+
+                # Optika a světla
+                for optics in camera["optics_list"]:
+                    optics_type = optics["type"]
+                    alternative = optics.get("alternative", "")
+                    light_status = optics.get("light_status")
+
+                    if "acc_list" in optics:
+                        for opt_acc in optics["acc_list"]:
+                            add_row(station_name, "PŘÍSLUŠENSTVÍ K OBJEKTIVU/ SVĚTLU", "xxx", "popis", "", opt_acc, "", camera["type"], date_string)
+
+                    if light_status is None or int(light_status) != 1:
+                        add_row(station_name, "OPTIKA", "OMRON", "objektiv", "", optics_type, alternative, camera["type"], date_string)
+                    else:
+                        add_row(station_name, "PŘÍSLUŠENSTVÍ", "smart view", "světlo", "", optics_type, alternative, camera["type"], date_string)
+
+        # Kontrolery
+        for controller in controller_list:
+            add_row("", "KONTROLERY", "OMRON", "kontroler", controller["name"], controller["type"], "", "", date_string)
+
+            # Příslušenství ke kontroleru
+            for acc in controller["accessory_list"]:
+                add_row("", "PŘÍSLUŠENSTVÍ", "", "příslušenství", "", acc["type"], "", controller["type"], date_string)
+
         return table_to_return
+    
+    @classmethod
+    def set_zoom(cls,zoom_factor,root_given):
+        root_given.tk.call('tk', 'scaling', zoom_factor / 100)
+        customtkinter.set_widget_scaling(zoom_factor / 100) 
 
 class Save_prog_metadata:
     def __init__(self,console,controller_database=[],station_list=[],project_name="",xml_file_path=""):
@@ -2815,6 +2825,7 @@ class Catalogue_gui:
                 initial_path_given):
         
         self.root = root
+        Tools.set_zoom(80,self.root)
         global initial_path
         initial_path = initial_path_given
         self.download_status = download_status
@@ -2915,7 +2926,7 @@ class Catalogue_gui:
         else:
             return False
 
-    def read_database(self):
+    def read_database(self,switch_manufacturer=False):
         if self.current_db_connection == "offline":
             self.read_database_excel()
             return
@@ -2926,7 +2937,7 @@ class Catalogue_gui:
         elif self.chosen_manufacturer == "Cognex":
             manufacturer = "COG"
 
-        all_found_producs = read_database.find_camera_products_db(self.current_db_connection,manufacturer)
+        all_found_producs = read_database.find_camera_products_db(self.current_db_connection,manufacturer,not_initial=switch_manufacturer)
         # print(all_found_producs["camera_list"])
         def fill_lists(list_type,list_notes,db_list):
             list_type.clear()
@@ -2934,7 +2945,7 @@ class Catalogue_gui:
             for items in db_list:
                 list_type.append(items["type"])
                 list_notes.append(items["description"])
-
+        
         targets = [
             (self.whole_camera_type_database, self.camera_notes_database, "camera_list"),
             (self.whole_optics_database, self.optics_notes_database, "optics_list"),
@@ -2947,7 +2958,11 @@ class Catalogue_gui:
         ]
 
         for list_type, list_notes, key in targets:
+            if switch_manufacturer:
+                if key == "filter_list" or key == "light_cable_list":
+                    continue
             fill_lists(list_type, list_notes, all_found_producs.get(key, []))
+            print(key)
 
     def read_database_excel(self):
         """
@@ -3539,27 +3554,27 @@ class Catalogue_gui:
         - optics
         """
         
+        def server_db_part_presence(part):
+            try:
+                status = read_database.Tools.find_unknown(self.current_db_connection,part)
+                print("db_status: ",status)
+                if status == "ok":
+                    Tools.add_colored_line(window_console,f"Položka: {part} byla nalezena v nevyfiltrované databázi","green",None,True)
+                    return True
+                elif status == "ng":
+                    Tools.add_colored_line(window_console,f"Položka: {part} nebyla nalezena ani v nevyfiltrované databázi","red",None,True)
+                    return False
+                else:
+                    # Tools.add_colored_line(window_console,f"Bylo nalezeno několik výskytů: {part} v nevyfiltrované databázi: {status}","red",None,True)
+                    Tools.add_colored_line(window_console,f"Bylo nalezeno několik výskytů: {part} v nevyfiltrované databázi, celkem: {len(status)}, zkuste konkrétněji","red",None,True)
+                    return False
+            except Exception:
+                return False
+
         def save_changes(no_window_shut = False):
             """
             Pokud chybí nějaké povinné pole - zčervená
             """
-            def server_db_part_presence(part):
-                try:
-                    status = read_database.Tools.find_unknown(self.current_db_connection,part)
-                    print("db_status: ",status)
-                    if status == "ok":
-                        Tools.add_colored_line(window_console,f"Položka: {part} byla nalezena v nevyfiltrované databázi","green",None,True)
-                        return True
-                    elif status == "ng":
-                        Tools.add_colored_line(window_console,f"Položka: {part} nebyla nalezena ani v nevyfiltrované databázi","red",None,True)
-                        return False
-                    else:
-                        # Tools.add_colored_line(window_console,f"Bylo nalezeno několik výskytů: {part} v nevyfiltrované databázi: {status}","red",None,True)
-                        Tools.add_colored_line(window_console,f"Bylo nalezeno několik výskytů: {part} v nevyfiltrované databázi, celkem: {len(status)}, zkuste konkrétněji","red",None,True)
-                        return False
-                except Exception:
-                    return False
-
             db_error_found = False
             if object == "station" or all_parameters:
                 self.temp_station_list[station_index]["name"] = new_name.get()
@@ -4129,7 +4144,7 @@ class Catalogue_gui:
             device_obj.setdefault("acc_list", [])
 
             if not acc_item in device_obj["acc_list"]:
-                if not acc_item in self.whole_accessory_database:
+                if not acc_item in self.whole_accessory_database and not server_db_part_presence(acc_item):
                     entry_widget.configure(fg_color = "#bd1931",border_color = "red")
                     return "db_error"
                 else:
@@ -4615,8 +4630,8 @@ class Catalogue_gui:
         button_exit     .pack(pady = 10, padx = (5,10),anchor="e",expand=False,side="right")
         button_save     .pack(pady = 10, padx = 5,anchor="e",expand=False,side="right")
         button_frame    .pack(pady = 0, padx = 0,fill="x",anchor="s",expand=False,side="top")
-        window_main_frame.pack(pady = 0, padx = 0,fill="x",side="top")
-        bottom_frame    .pack(pady = 0, padx = 0,fill="x",side="top")
+        window_main_frame.pack(pady = 0, padx = 0,fill="both",side="top",expand=True)
+        bottom_frame    .pack(pady = 0, padx = 0,fill="x",side="top",expand=False)
 
         if self.default_subwindow_status == 1:
             child_root.state('zoomed')
@@ -4948,7 +4963,7 @@ class Catalogue_gui:
             logo_image = customtkinter.CTkImage(PILImage.open(logo_path), size=(manuf_logo_width, manuf_logo_height))
             switch_manufacturer_btn.configure(image=logo_image)
 
-            self.read_database()
+            self.read_database(switch_manufacturer=True)
             
         def call_setting_window():
             def apply_changes_callback(input_data):

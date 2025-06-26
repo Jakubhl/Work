@@ -76,12 +76,13 @@ class Tools:
         FROM dbo.tblPart
         WHERE typenr LIKE ?
         """
-        cursor.execute(sql, f"%{part}%")  # % pro LIKE
+        cursor.execute(sql, f"{part}")  # % pro LIKE
         found_products = []
         for row in cursor.fetchall():
             found_products.append(row)
 
         if len(found_products) == 1:
+            print(found_products)
             return "ok"
         elif len(found_products) == 0:
             return "ng"
@@ -151,7 +152,7 @@ def get_camera_products(list_given):
     return db_all_producs_sorted
 
 
-def find_camera_products_db(conn,manufacturer):
+def find_camera_products_db(conn,manufacturer,not_initial = True):
     cursor = conn.cursor()
 
     sql = """
@@ -166,6 +167,7 @@ def find_camera_products_db(conn,manufacturer):
         found_products.append(row)
     
     db_all_producs_sorted = get_camera_products(found_products)
+
 
     sql_get_lights = r"""
     SELECT description1, description2, description3, typenr
@@ -204,7 +206,11 @@ def find_camera_products_db(conn,manufacturer):
     # all_light_list = Tools.find_list(filtered_part_list, ["osv","svet","svět"], ["prosv","kabel","držák","filtr","světelný ","světle ","senzor","závěs","podsvět","modul","závora","integrované"])
     combined = db_all_producs_sorted["light_list"] + filtered_part_list
     db_all_producs_sorted["light_list"] = sorted(combined, key=lambda x: x["type"])
+    # db_all_producs_sorted["all_lights_list"] = filtered_part_list
 
+    if not_initial:
+        return db_all_producs_sorted
+    
     sql_get_filters = r"""
     SELECT description1, description2, description3, typenr
     FROM dbo.tblPart

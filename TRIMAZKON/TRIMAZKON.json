@@ -1,6 +1,6 @@
 {
     "app_settings": {
-        "default_path": "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/",
+        "default_path": "C:/Users/",
         "maximalized": "ano",
         "show_changelog": "ne",
         "app_zoom": 80,
@@ -39,9 +39,7 @@
             2024
         ],
         "to_delete_dir_name": "Ke_smazani",
-        "path_history_list": [
-            "C:/Users/jakub.hlavacek.local/Pictures/Screenshots - Copy/"
-        ]
+        "path_history_list": []
     },
     "image_browser_settings": {
         "selected_option": 2,
@@ -52,9 +50,6 @@
         "copyed_dir_name": "Kop\u00edrovan\u00e9_obr\u00e1zky",
         "moved_dir_name": "P\u0159esunut\u00e9_obr\u00e1zky",
         "path_history_list": [
-            "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/images/",
-            "C:/Users/jakub.hlavacek.local/Desktop/JHV/test_images/Omron/Sn\u00edmkySC01_MS500SA/",
-            "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/",
             "C:\\Users\\jakub.hlavacek.local\\Pictures/"
         ],
         "canvas_default_color": "black"
@@ -64,13 +59,10 @@
         "catalogue_filename": "Katalog_kamerov\u00e9ho_vybaven\u00ed",
         "metadata_filename": "_metadata_catalogue",
         "subwindow_behav": 0,
-        "default_export_suffix": "xlsm",
-        "default_path": "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/",
+        "default_export_suffix": "xlsx",
+        "default_path": "C:/Users/",
         "render_mode": "fast",
         "path_history_list": [
-            "C:/Users/jakub.hlavacek.local/Desktop/test/",
-            "C:/Users/jakub.hlavacek.local/Downloads/",
-            "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/temp/",
             "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/"
         ],
         "hover_info_trigger_mode": "1"
@@ -90,12 +82,10 @@
     },
     "db_settings": {
         "server_history_list": [
-            "NTB0327\\SQLEXPRESS",
-            "NEURON-SERVER\\SQLEXPRESS"
+            "NTB0327\\SQLEXPRESS"
         ],
         "db_name_list": [
-            "Artikly_JHV_new",
-            "JHV_CM"
+            "Artikly_JHV_new"
         ],
         "username_history_list": [
             "sa"

@@ -1026,13 +1026,23 @@ TRIMAZKON - Katalog - filtr od různých výrobců - samostatná pole - hotovo
 TRIMAZKON - Katalog - filtr, kabel by mohli mít vlastní checkbox u optiky - hotovo
 TRIMAZKON - Katalog - Přidat speciální komponent - misto zcervenani zkusit najit ručně zadaný v databazi - hotovo
 
+12:35 PM 6/26/2025
+TRIMAZKON - Katalog - hledat v databázi nenalezená příslušenství - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
+TRIMAZKON - tlačítko aktivovat trial do okna upozornění licence?
 
 
+TRIMAZKON - Katalog - export do databázové tabulky
+	- navázat na objekt:
+		- typ = type_nr
+		- kategorie
+		- vyrobce
+		- popis
+	- dohledat to až při vytváření tabulky??
 
-tlačítko přehled všech příslušenství? - zobrazí vrtikálně
-TRIMAZKON - Katalog - možnost zobrazení vertikálně? (nedává smysl)
+TRIMAZKON - Katalog - při přepínání výrobců nečíst znovu stejné databáze u filtrů atd. - jak u combined světel?
 
 
 TRIMAZKON - mssql - propojit s neuronem a databází
