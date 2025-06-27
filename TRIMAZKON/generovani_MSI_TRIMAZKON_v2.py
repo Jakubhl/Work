@@ -65,8 +65,8 @@ msi_data = {"Shortcut": shortcut_table,}
 # Setup configuration
 setup(
     name="TRIMAZKON",
-    version="4.3.6",
-    description="TRIMAZKON v_4.3.6",
+    version="4.3.7",
+    description="TRIMAZKON v_4.3.7",
     executables=[whole_app_exe,jhv_MAZ_exe,ip_set_exe],
     # executables=[whole_app_exe],
     options={
@@ -77,7 +77,7 @@ setup(
         },
         "bdist_msi": {
             "upgrade_code": "{12345678-1234-5678-1234-567812345678}",  # Unique GUID
-            "product_code": "{EEEE5555-FFFF-0436-GGGG-7777HHHH8888}",  # NEW every version
+            "product_code": "{EEEE5555-FFFF-0437-GGGG-7777HHHH8888}",  # NEW every version
             "add_to_path": True,  # Do not add to system PATH
             "data": msi_data,
         },            

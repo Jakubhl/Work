@@ -56,11 +56,13 @@ python generovani_MSI_TRIMAZKON_v2.py bdist_msi
 
 ORCA:
 - import tabulek .idt: Binary, Control, ControlEvent, CustomAction, Dialog, InstallExecuteSequence, InstallUISequence, Property, Shortcut
-- podmínky, co nainstalovat přes tabulky component:
-INSTALL_OPTION1 = "1" trimazkon all
+- u importu tabulek nastavit každou na Replace
+
+- podmínky, co nainstalovat přes tabulky Component:
+INSTALL_OPTION1 = "1" trimazkon all + convert application
 INSTALL_OPTION2 = "1" jhv_ip
 INSTALL_OPTION3 = "1" jhv_MAZ
-- nezapomenout na product code - aby instalace odstranila starou verzi
+- nezapomenout na product code v property - aby instalace odstranila starou verzi
 
 
 

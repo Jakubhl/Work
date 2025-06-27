@@ -15,6 +15,9 @@ change_log_list = ["Verze 1.0.0 (21.01.2025)",
     """ 
     - oprava mezer v cestě pro task scheduler
     - nově přímá editace zavedeného úkolu\n"""
+    "\nVerze 1.0.7 (27.06.2025)",
+    """ 
+    - nově možnost exportu logu mazání do .xls, .txt\n"""
 ]
 
 

@@ -3,7 +3,7 @@
         "default_path": "C:/Users/",
         "maximalized": "ano",
         "show_changelog": "ne",
-        "app_zoom": 80,
+        "app_zoom": 100,
         "app_zoom_checkbox": "ano",
         "tray_icon_startup": "ne",
         "default_language": "cz",
@@ -43,13 +43,16 @@
     },
     "image_browser_settings": {
         "selected_option": 2,
-        "zoom_step": 30,
-        "movement_step": 40,
+        "zoom_step": 20,
+        "movement_step": 30,
         "show_image_film": "ano",
         "image_film_count": 6,
         "copyed_dir_name": "Kop\u00edrovan\u00e9_obr\u00e1zky",
         "moved_dir_name": "P\u0159esunut\u00e9_obr\u00e1zky",
         "path_history_list": [
+            "C:/Users/jakub.hlavacek.local/Desktop/JHV/Omron/Skoleni/01 Barva/OK/",
+            "C:/Users/jakub.hlavacek.local/Desktop/JHV/Omron/Skoleni/01 Barva/NG/",
+            "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/",
             "C:\\Users\\jakub.hlavacek.local\\Pictures/"
         ],
         "canvas_default_color": "black"

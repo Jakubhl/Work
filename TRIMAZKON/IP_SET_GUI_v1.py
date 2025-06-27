@@ -176,10 +176,14 @@ class Subwindows:
         return selected_option
 
     @classmethod
-    def licence_window(cls,language_given="cz"):
+    def licence_window(cls,check_licence_callback,language_given="cz"):
         def close_prompt(child_root):
             child_root.grab_release()
             child_root.destroy()
+
+        def activate_trial():
+            Tools.store_installation_date(refresh_callback = check_licence_callback)
+            close_prompt(child_root)
 
         user_HWID = Tools.get_volume_serial()
         prompt_message1 = f"Nemáte platnou licenci pro spuštění aplikace {app_name}."
@@ -219,13 +223,17 @@ class Subwindows:
         button_frame =      customtkinter.CTkFrame(master = child_root,corner_radius=0)
         button_copy =       customtkinter.CTkButton(master = button_frame,text = "Kopírovat HWID",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: pyperclip.copy(str(user_HWID)))
         button_close =      customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+        trial_btn =         customtkinter.CTkButton(master = button_frame,text = "Aktivovat trial verzi (30 dní)",height=50,corner_radius=0, command = lambda: activate_trial(),font=("Arial",24,"bold"))
         button_close.       pack(pady = 5, padx = (0,10),anchor="e",side="right")
         button_copy.        pack(pady = 5, padx = 10,anchor="e",side="right")
+        if not Tools.check_trial_existance():
+            trial_btn.      pack(pady =5,padx=(0,0),anchor="e",side="right")
         button_frame.       pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
 
         if language_given == "en":
             button_close.configure(text = "Close")
             button_copy.configure(text = "Copy HWID")
+            trial_btn.configure(text = "Activate trial version (30 days)")
         child_root.update()
         child_root.update_idletasks()
         # child_root.geometry("800x260")
@@ -1733,7 +1741,7 @@ class main_menu:
             if not Tools.check_trial_existance():
                 trial_btn.pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
             refresh_licence_btn.pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
-            self.root.after(500, lambda: Subwindows.licence_window())
+            self.root.after(500, lambda: Subwindows.licence_window(self.check_licence))
         else:
             if "Trial active" in str(app_licence_validity):
                 validity_string = str(app_licence_validity)
@@ -1762,7 +1770,7 @@ class main_menu:
         if self.run_as_admin and not global_licence_load_error:
             self.root.after(1000, lambda: Subwindows.call_again_as_admin("admin_menu","Upozornění","Aplikace vyžaduje práva pro nastavení aut. spouštění na pozadí\n     - možné změnit v nastavení\n\nPřejete si znovu spustit aplikaci, jako administrátor?"))
         
-        if initial:
+        if initial and not global_licence_load_error:
             self.call_ip_manager()
         try:
             root.protocol("WM_DELETE_WINDOW", lambda: self.on_closing())

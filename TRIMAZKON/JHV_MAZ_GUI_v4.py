@@ -34,7 +34,7 @@ exe_path = sys.executable
 exe_name = os.path.basename(exe_path)
 config_filename = "config_MAZ.json"
 app_name = "jhv_MAZ"
-app_version = "1.0.6"
+app_version = "1.0.7"
 trimazkon_version = "4.3.7"
 loop_request = False
 root = None
@@ -125,11 +125,15 @@ class Subwindows:
         return selected_option
 
     @classmethod
-    def licence_window(cls,language_given="cz"):
+    def licence_window(cls,check_licence_callback,language_given="cz"):
         def close_prompt(child_root):
             child_root.grab_release()
             child_root.destroy()
 
+        def activate_trial():
+            Tools.store_installation_date(refresh_callback = check_licence_callback)
+            close_prompt(child_root)
+            
         user_HWID = Tools.get_volume_serial()
         prompt_message1 = "Nemáte platnou licenci pro spuštění aplikace jhv_MAZ."
         prompt_message2 = f"Váš HWID:"
@@ -167,13 +171,17 @@ class Subwindows:
         button_frame =      customtkinter.CTkFrame(master = child_root,corner_radius=0)
         button_copy =       customtkinter.CTkButton(master = button_frame,text = "Kopírovat HWID",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: pyperclip.copy(str(user_HWID)))
         button_close =      customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+        trial_btn =         customtkinter.CTkButton(master = button_frame,text = "Aktivovat trial verzi (30 dní)",height=50,corner_radius=0, command = lambda: activate_trial(),font=("Arial",24,"bold"))
         button_close.       pack(pady = 5, padx = (0,10),anchor="e",side="right")
         button_copy.        pack(pady = 5, padx = 10,anchor="e",side="right")
+        if not Tools.check_trial_existance():
+            trial_btn.      pack(pady =5,padx=(0,0),anchor="e",side="right")
         button_frame.       pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
 
         if language_given == "en":
             button_close.configure(text = "Close")
             button_copy.configure(text = "Copy HWID")
+            trial_btn.configure(text = "Activate trial version (30 days)")
         child_root.update()
         child_root.update_idletasks()
         # child_root.geometry("800x260")
@@ -2117,7 +2125,7 @@ class main_menu:
                 licence_info_status.configure(text=app_licence_validity)
                 insert_licence_btn.configure(text="Insert license")
                 trial_btn.configure(text="Activate trial version (30 days)")
-            self.root.after(500, lambda: Subwindows.licence_window(self.selected_language))
+            self.root.after(500, lambda: Subwindows.licence_window(self.check_licence,self.selected_language))
         else:
             if initial:
                 check_version = threading.Thread(target=Tools.check_for_new_app_version,

@@ -1029,9 +1029,13 @@ TRIMAZKON - Katalog - Přidat speciální komponent - misto zcervenani zkusit na
 12:35 PM 6/26/2025
 TRIMAZKON - Katalog - hledat v databázi nenalezená příslušenství - hotovo
 
-_________________________________________________________________________________todo:_____________________________________________________________________________________________
+8:27 AM 6/27/2025
+Optimalizace pohlížeče obrázků - nepoblikává
+v novém okně - změna velikosti hodně optimalizovaná
+TRIMAZKON - tlačítko aktivovat trial do okna upozornění licence? - hotovo
+release 4.3.7
 
-TRIMAZKON - tlačítko aktivovat trial do okna upozornění licence?
+_________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
 TRIMAZKON - Katalog - export do databázové tabulky
@@ -1042,11 +1046,10 @@ TRIMAZKON - Katalog - export do databázové tabulky
 		- popis
 	- dohledat to až při vytváření tabulky??
 
-TRIMAZKON - Katalog - při přepínání výrobců nečíst znovu stejné databáze u filtrů atd. - jak u combined světel?
 
 
-TRIMAZKON - mssql - propojit s neuronem a databází
-TRIMAZKON - mssql - upravit aktivaci trialu (check existance)
+
+
 
 ??? TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama, možná přesměrovat i edity a deletions/ uplne se zbavit excelu... ??
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
@@ -1055,8 +1058,6 @@ TRIMAZKON - mssql - upravit aktivaci trialu (check existance)
 nová konzole:
 console_frame, wrap="none", height=0,background="#212121",font=("Arial",22),state=tk.DISABLED,foreground="#565B5E",borderwidth=3
 pack(pady = (0,10), padx =10,anchor="w",expand=False,fill="x",side="top",ipady=3,ipadx=5
-
-
 
 
 

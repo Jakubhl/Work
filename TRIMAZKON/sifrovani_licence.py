@@ -91,7 +91,7 @@ def check_licence():
         print("Chyba ověření licence!", e)
 
 # generate_rsa_keys()
-# make_licence("B841925X0SNLM7S") #kingspan když je tam zasunutej disk
+# make_licence("B841925X0SNLM7S") #kingspan když je tam zasunutej disk - spatne, uz si overuje jestli je na danem mediu windows
 # make_licence("0025_3848_41A1_B7DF") #kingspan
 # make_licence("E823_8FA6_BF53_0001_001B_444A_4876_94E7") #asus ntb
 # make_licence("E823_8FA6_BF53_0001_001B_444A_48F0_774B") #honza ntb

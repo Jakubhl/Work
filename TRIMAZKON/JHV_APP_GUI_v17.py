@@ -188,10 +188,14 @@ if not open_image_only:
             return selected_option
 
         @classmethod
-        def licence_window(cls,language_given="cz"):
+        def licence_window(cls,check_licence_callback,language_given="cz"):
             def close_prompt(child_root):
                 child_root.grab_release()
                 child_root.destroy()
+
+            def activate_trial():
+                Tools.store_installation_date(refresh_callback = check_licence_callback)
+                close_prompt(child_root)
 
             user_HWID = Tools.get_volume_serial()
             prompt_message1 = f"Nemáte platnou licenci pro spuštění aplikace {app_name}."
@@ -231,13 +235,17 @@ if not open_image_only:
             button_frame =      customtkinter.CTkFrame(master = child_root,corner_radius=0)
             button_close =      customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
             button_copy =       customtkinter.CTkButton(master = button_frame,text = "Kopírovat HWID",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: pyperclip.copy(str(user_HWID)))
+            trial_btn =         customtkinter.CTkButton(master = button_frame,text = "Aktivovat trial verzi (30 dní)",height=50,corner_radius=0, command = lambda: activate_trial(),font=("Arial",24,"bold"))
             button_close.       pack(pady = 5, padx = (0,10),anchor="e",side="right")
             button_copy.        pack(pady = 5, padx = 10,anchor="e",side="right")
+            if not Tools.check_trial_existance():
+                trial_btn.      pack(pady =5,padx=(0,0),anchor="e",side="right")
             button_frame.       pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
 
             if language_given == "en":
                 button_close.configure(text = "Close")
                 button_copy.configure(text = "Copy HWID")
+                trial_btn.configure(text = "Activate trial version (30 days)")
             child_root.update()
             child_root.update_idletasks()
             # child_root.geometry("800x260")
@@ -1680,7 +1688,26 @@ if not open_image_only:
                 print(f"error with zoom scaling: {e}")
             
             root.tk.call('tk', 'scaling', zoom_factor / 100)
-    
+
+        @classmethod
+        def get_windows_app_zoom(cls):
+            user32 = ctypes.windll.user32
+            user32.SetProcessDPIAware()  # Make sure the process is DPI aware
+            hdc = user32.GetDC(0)
+            dpi = ctypes.windll.gdi32.GetDeviceCaps(hdc, 88)  # 88 is the index for LOGPIXELSX
+            # return dpi
+            dpi_mapping = [
+                (96,100),
+                (120,125),
+                (144,150)
+            ]
+            for dpis, zoom_factors in dpi_mapping:
+                if dpi == dpis:
+                    return zoom_factors
+            #případ jiného dpi = default:
+            print("nastavení zoomu podle windows selhalo")
+            return 100
+                
         @classmethod
         def terminate_pid(cls,pid:int):
             print("pid to terminate: ",pid)
@@ -2473,12 +2500,21 @@ if not open_image_only:
                 self.clear_frames()
 
             self.ib_running = False
+            if catalogue_call:
+                self.config_data = Tools.read_json_config()
+
             if self.config_data["app_settings"]["maximalized"]  == "ano":
                 self.root.after(0, lambda:self.root.state('zoomed')) # max zoom, porad v okne
                 
             if self.config_data["app_settings"]["app_zoom_checkbox"]  == "ne" and (initial or catalogue_call): # pokud není využito nastavení windows
                 try:
-                    root.after(0, lambda: Tools.set_zoom(int(self.config_data["app_settings"]["app_zoom"]),root))
+                    self.root.after(0, lambda: Tools.set_zoom(int(self.config_data["app_settings"]["app_zoom"]),self.root))
+                except Exception as e:
+                    print("error with menu scaling")
+            elif catalogue_call:
+                try:
+                    zoom_based_on_dpi = Tools.get_windows_app_zoom()
+                    self.root.after(0, lambda: Tools.set_zoom(zoom_based_on_dpi,self.root))
                 except Exception as e:
                     print("error with menu scaling")
 
@@ -2553,7 +2589,7 @@ if not open_image_only:
                 if not Tools.check_trial_existance():
                     trial_btn.              pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
                 refresh_licence_btn.    pack(pady =(7,5),padx=(5,0),side="left",anchor="w")
-                self.root.after(500, lambda: Subwindows.licence_window())
+                self.root.after(500, lambda: Subwindows.licence_window(self.check_licence))
             else:
                 if "Trial active" in str(app_licence_validity):
                     validity_string = str(app_licence_validity)
@@ -2664,7 +2700,8 @@ if not open_image_only:
             self.loaded_image_status = True
             self.inserted_path_history = config_data["image_browser_settings"]["path_history_list"]
             self.last_frame_dim = [0,0]
-            
+            self.rotated_image = None
+            self.resize_job = False
             self.shortcut_call = lambda: self.call_from_mainloop(self.IB_as_def_browser_path)
 
             if params_given != None:
@@ -3039,7 +3076,8 @@ if not open_image_only:
             width = whole_app_width
             # self.frame_with_path.update_idletasks()
             # self.image_film_frame.update_idletasks()
-            self.main_frame.update_idletasks()
+            # self.main_frame.update_idletasks()
+
             # height = whole_app_height-self.frame_with_path._current_height-30
             canvas_height = self.main_frame.winfo_height()
             # if self.image_film == True:
@@ -3110,7 +3148,7 @@ if not open_image_only:
                 new_width = new_width * zoom
                 self.previous_zoom = zoom
             
-            self.main_frame.update()
+            # self.main_frame.update()
             self.zoom_grow_x = max(new_width-self.previous_width,self.previous_width-new_width)
             self.zoom_grow_y = max(new_height-self.previous_height,self.previous_height-new_height)
             self.previous_height = new_height
@@ -3118,7 +3156,7 @@ if not open_image_only:
 
             return [new_width, new_height]
         
-        def view_image(self,increment_of_image,direct_path = None,only_refresh=None,reset = False,reload_buffer = False,only_next_ifz = False,in_new_window=False): # Samotné zobrazení obrázku
+        def view_image(self,increment_of_image,direct_path = None,only_refresh=None,reset = False,reload_buffer = False,only_next_ifz = False,in_new_window=False,zoom_call=False): # Samotné zobrazení obrázku
             """
             Samotné zobrazení obrázku
 
@@ -3287,18 +3325,20 @@ if not open_image_only:
                 else:
                     image_to_show = direct_path
 
-                try:
-                    with Image.open(image_to_show) as opened_image:
-                        rotated_image = opened_image.rotate(self.rotation_angle,expand=True)
-                        width,height = rotated_image.size
-                    self.main_frame.delete("error_message")
+                if not zoom_call and not in_new_window:
+                    try:
+                        with Image.open(image_to_show) as opened_image:
+                            self.rotated_image = opened_image.rotate(self.rotation_angle,expand=True)
+                            width,height = self.rotated_image.size
+                        self.main_frame.delete("error_message")
+                    
 
-                except Exception as e:
-                    error_message = f"Obrázek:\n{image_to_show}\nje poškozený"
-                    print(error_message)
-                    if not in_new_window:
-                        rotated_image, width, height = corrupted_image_handling(error_message)
-                        # return error_message
+                    except Exception as e:
+                        error_message = f"Obrázek:\n{image_to_show}\nje poškozený"
+                        print(error_message)
+                        if not in_new_window:
+                            self.rotated_image, width, height = corrupted_image_handling(error_message)
+                            # return error_message
 
                 if in_new_window:
                     def resize_image(event, label, original_image,frame_given = False):
@@ -3316,10 +3356,14 @@ if not open_image_only:
 
                         resized_image = original_image.resize((int(dimensions[0]),int(dimensions[1])))
                         photo = ImageTk.PhotoImage(resized_image)
+                        if not label.winfo_exists():
+                            if label.winfo_toplevel().winfo_exists():
+                                label.winfo_toplevel().destroy()
+                            return
                         label.configure(image=photo)
                         label.image = photo  # Keep a reference to avoid garbage collect
                         self.last_frame_dim = [frame_dim[0],frame_dim[1]]
-                    
+
                     child_root = customtkinter.CTkToplevel()
                     child_root.after(200, lambda: child_root.iconbitmap(app_icon))
                     if self.ifz_located:
@@ -3329,25 +3373,42 @@ if not open_image_only:
                     
                     child_root.title(image_to_show)
                     with Image.open(image_to_show) as opened_image:
-                        rotated_image = opened_image.rotate(self.rotation_angle,expand=True)
-                    photo = ImageTk.PhotoImage(rotated_image)
+                        new_window_image = opened_image.rotate(self.rotation_angle,expand=True)
+                    photo = ImageTk.PhotoImage(new_window_image)
                     label = customtkinter.CTkLabel(child_root, image=photo, text="")
                     label.pack(fill="both", expand=True)
                     label.image = photo
-                    child_root.bind("<Configure>", lambda event, window_label = label, window_image = rotated_image: resize_image(event, window_label, window_image))
-                    child_root.update()
-                    child_root.update_idletasks()
+
+                    def on_resize(event,window_label,window_image):
+                        if self.resize_job:
+                            event.widget.after_cancel(self.resize_job)
+
+                        self.resize_job = event.widget.after(150, lambda: resize_image(event, window_label, window_image))
+
+                        # resize_image(event, self.label, self.new_window_image)
+
+                    # def resize_image(event):
+                        # Tady voláš to, co jsi původně dával do lambda funkce
+
+
+                    # child_root.bind("<Configure>", lambda event, window_label = label, window_image = new_window_image: resize_image(event, window_label, window_image))
+                    child_root.bind("<Configure>", lambda event, window_label = label, window_image = new_window_image: on_resize(event,window_label,window_image))
+                    # child_root.update()
+                    # child_root.update_idletasks()
                     child_root.geometry(f"1200x800+{300}+{300}")
-                    resize_image([1200,800], label, rotated_image,frame_given=True)
-                    child_root.after(100,child_root.focus_force())
+                    resize_image([1200,800], label, new_window_image,frame_given=True)
+                    child_root.after(100,child_root.focus_force)
                     self.loaded_image_status = True
                     return
                 
+                width,height = self.rotated_image.size
                 dimensions = self.calc_current_format(width,height)
-                resized = rotated_image.resize(size=(int(dimensions[0]),int(dimensions[1])))
+                resized = self.rotated_image.resize(size=(int(dimensions[0]),int(dimensions[1])))
                 self.image_dimensions = (int(dimensions[0]),int(dimensions[1]))
                 self.tk_image = ImageTk.PhotoImage(resized)
-                self.main_frame.itemconfig(self.main_image, image=self.tk_image)
+                # if not self.main_frame.find_withtag("lower"):
+
+                    # self.main_frame.itemconfig(self.main_image, image=self.tk_image)
                 if self.main_frame.winfo_exists(): # kdyz se prepina do menu a bezi sekvence
                     try:
                         current_coords = self.main_frame.coords(self.main_image)
@@ -3365,10 +3426,16 @@ if not open_image_only:
                         x_coords, y_coords = self.last_coords
                         self.settings_applied = False
 
-                    self.main_frame.update_idletasks()
-                    self.main_frame.delete("lower")
-                    self.main_image = self.main_frame.create_image(x_coords, y_coords,anchor=tk.NW, image=self.tk_image,tag = "lower")
-                    self.main_frame.tag_lower(self.main_image)
+                    # self.main_frame.update_idletasks()
+                    # only repositioning:
+                    if self.main_frame.find_withtag("lower"):
+                        self.main_frame.coords(self.main_image, x_coords, y_coords)
+                        self.main_frame.itemconfig(self.main_image, image=self.tk_image)
+                    else:
+                        print("recreating image")
+                        self.main_frame.delete("lower")
+                        self.main_image = self.main_frame.create_image(x_coords, y_coords,anchor=tk.NW, image=self.tk_image,tag = "lower")
+                        self.main_frame.tag_lower(self.main_image)
                     self.last_coords = (x_coords,y_coords)
                     # self.main_frame.update()
 
@@ -3376,7 +3443,7 @@ if not open_image_only:
                         # run_background = threading.Thread(target=make_image_strip, args=(rotated_image,),daemon = True)
                         # run_background = threading.Thread(target=make_image_strip, args=(rotated_image,))
                         # run_background.start()
-                        make_image_strip(rotated_image)
+                        make_image_strip(self.rotated_image)
 
             self.loaded_image_status = True
 
@@ -3534,7 +3601,7 @@ if not open_image_only:
                 calculated_time = 2000-speed*2000 # 1% dela necele 2 sekundy, 100%, nula sekund, maximalni vykon
                 self.next_image()
                 if self.state != "stop":
-                    self.main_frame.update_idletasks()
+                    # self.main_frame.update_idletasks()
                     # if self.ifz_located and int(calculated_time) < 200:
                     #     calculated_time = 200
                     # if int(calculated_time) < 20:
@@ -3569,9 +3636,9 @@ if not open_image_only:
                 if self.ifz_located == True:
                     if len(self.converted_images) != 0:
                         center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
-                        self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],True,reset=True)
+                        self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],True,reset=True,zoom_call=True)
                 else:
-                    self.view_image(self.increment_of_image,None,True,reset=True)
+                    self.view_image(self.increment_of_image,None,True,reset=True,zoom_call=True)
 
         def copy_image(self,path): # Tlačítko Kopír., zkopíruje daný obrázek do složky v dané cestě
             """
@@ -4328,7 +4395,7 @@ if not open_image_only:
             def mouse_wheel1(e): # priblizovat
                 direction = -e.delta
 
-                self.main_frame.update_idletasks()
+                # self.main_frame.update_idletasks()
                 self.zoom_slider.update_idletasks()
                 frame_dim = self.get_frame_dimensions()
                 frame_width = frame_dim[0]
@@ -4368,10 +4435,10 @@ if not open_image_only:
                 if len(self.all_images) != 0: # update zobrazeni
                     if self.ifz_located == True:
                         center_image_index = int((len(self.image_queue)-1)/2) * self.ifz_count
-                        self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],True)
+                        self.view_image(None,self.converted_images[center_image_index + self.increment_of_ifz_image],True,zoom_call=True)
                         #self.view_image(None,self.converted_images[self.increment_of_ifz_image])  
                     else:
-                        self.view_image(self.increment_of_image,None,True)
+                        self.view_image(self.increment_of_image,None,True,zoom_call=True)
             
             def mouse_wheel2(e): # posouvat obrazky
                 direction = -e.delta
@@ -4528,12 +4595,16 @@ if not open_image_only:
             """
             Smaže widgets na daném framu
             """
+
             try:
                 children = frame.winfo_children()
             except Exception:
                 return
             for widget in children:
-                widget.destroy()
+                try:
+                    widget.destroy()
+                except Exception:
+                    continue
 
         def maximalized(self): # Nastavení základního spouštění (v okně/ maximalizované)
             option = self.checkbox_maximalized.get()
@@ -4578,9 +4649,9 @@ if not open_image_only:
                 Tools.save_to_json_config("ne","sort_conv_settings","sorting_safe_mode")
 
         def refresh_main_window(self):
-            self.clear_frame(self.root)
-            self.clear_frame(self.current_root)
             self.current_root.destroy()
+            self.clear_frame(self.root)
+            # self.clear_frame(self.current_root)
             if self.spec_location == "image_browser":
                 Image_browser(root=self.root,path_given=self.path_to_remember,params_given=self.ib_last_params)
             elif self.spec_location == "converting_option":
@@ -4931,22 +5002,24 @@ if not open_image_only:
                 app_zoom_percent.configure(text = str(int(*args)) + " %")
 
             def windows_zoom_setting():
-                def get_screen_dpi():
-                    user32 = ctypes.windll.user32
-                    user32.SetProcessDPIAware()  # Make sure the process is DPI aware
-                    hdc = user32.GetDC(0)
-                    dpi = ctypes.windll.gdi32.GetDeviceCaps(hdc, 88)  # 88 is the index for LOGPIXELSX
-                    return dpi
+                # def get_screen_dpi():
+                #     user32 = ctypes.windll.user32
+                #     user32.SetProcessDPIAware()  # Make sure the process is DPI aware
+                #     hdc = user32.GetDC(0)
+                #     dpi = ctypes.windll.gdi32.GetDeviceCaps(hdc, 88)  # 88 is the index for LOGPIXELSX
+                #     return dpi
 
                 if checkbox_app_zoom.get() == 1:
                     Tools.save_to_json_config("ano","app_settings","app_zoom_checkbox")
-                    current_dpi = get_screen_dpi()
-                    if current_dpi == 96:
-                        Tools.set_zoom(100,root)
-                    elif current_dpi == 120:
-                        Tools.set_zoom(125,root)
-                    elif current_dpi == 144:
-                        Tools.set_zoom(150,root)
+                    # current_dpi = get_screen_dpi()
+                    # if current_dpi == 96:
+                    #     Tools.set_zoom(100,root)
+                    # elif current_dpi == 120:
+                    #     Tools.set_zoom(125,root)
+                    # elif current_dpi == 144:
+                    #     Tools.set_zoom(150,root)
+                    windows_zoom = Tools.get_windows_app_zoom()
+                    Tools.set_zoom(windows_zoom,root)
                     app_zoom_slider.configure(state = "disabled",button_color = "gray50",button_hover_color = "gray50")
                 else:
                     app_zoom_slider.configure(state = "normal",button_color = "#3a7ebf",button_hover_color = "#3a7ebf")
@@ -5068,13 +5141,13 @@ if not open_image_only:
                 self.path_set =             customtkinter.CTkEntry(     master = second_option_frame,width=845,height=40,font=("Arial",20),placeholder_text="")
                 button_save5 =              customtkinter.CTkButton(    master = second_option_frame,width=100,height=40, text = "Uložit", command = lambda: save_path(),font=("Arial",22,"bold"))
                 button_explorer =           customtkinter.CTkButton(    master = second_option_frame,width=40,height=40, text = "...", command = lambda: call_browseDirectories(),font=("Arial",22,"bold"))
-                del_history_label =         customtkinter.CTkLabel(master = second_option_frame,height=40,text = "Výběr skupiny historie cest (vložená cesta se ukládá pod zvolenou kategorii):",justify = "left",font=("Arial",22,"bold"))
-                context_menu_button2  =     customtkinter.CTkButton(master = second_option_frame, width = 100,height=40, text = "Náhled",font=("Arial",20,"bold"),corner_radius=0)
+                del_history_label =         customtkinter.CTkLabel(     master = second_option_frame,height=40,text = "Výběr skupiny historie cest (vložená cesta se ukládá pod zvolenou kategorii):",justify = "left",font=("Arial",22,"bold"))
+                context_menu_button2  =     customtkinter.CTkButton(    master = second_option_frame, width = 100,height=40, text = "Náhled",font=("Arial",20,"bold"),corner_radius=0)
                 drop_down_options =         customtkinter.CTkOptionMenu(master = second_option_frame,width=350,height=40,values=path_history_options,font=("Arial",20),corner_radius=0)
-                del_path_history =          customtkinter.CTkButton(master = second_option_frame,height=40, text = "Smazat historii", command = lambda: call_delete_path_history(),font=("Arial",22,"bold"),corner_radius=0)
+                del_path_history =          customtkinter.CTkButton(    master = second_option_frame,height=40, text = "Smazat historii", command = lambda: call_delete_path_history(),font=("Arial",22,"bold"),corner_radius=0)
                 default_path_insert_console=customtkinter.CTkLabel(     master = second_option_frame,height=40,text ="",justify = "left",font=("Arial",22),text_color="white")
                 console_frame =             customtkinter.CTkFrame(     master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1,fg_color="black")
-                main_console =              customtkinter.CTkLabel(master = console_frame,height=20,text = str(main_console_text),text_color=str(main_console_text_color),justify = "left",font=("Arial",22))
+                main_console =              customtkinter.CTkLabel(     master = console_frame,height=20,text = str(main_console_text),text_color=str(main_console_text_color),justify = "left",font=("Arial",22))
                 if self.windowed:
                     save_frame =            customtkinter.CTkFrame(     master = self.bottom_frame_default_path,height=50,corner_radius=0,border_width=1)
                     save_changes_button =   customtkinter.CTkButton(master = save_frame,width=150,height=40, text = "Aplikovat/ načíst změny", command = lambda: self.refresh_main_window(),font=("Arial",22,"bold"))

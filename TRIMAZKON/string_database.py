@@ -420,6 +420,32 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - -||- když aplikace běží na pozadí (tray) (<2 s)
     - -||- uplně shozená (<3 s)
     """
+        ,"\nVerze 4.3.7 (27.06.2025)"
+        ,
+  """ 
+  Katalog:
+    - hover funkcionalita - nakliknutá buňka zůstane otevřená
+    - nová vizualizace tlačítek
+    - propojení s databází - čtení produktů z eplan db
+      a export do db
+    - optimalizace kontextových nabídek + scrollbar
+    - hover na řádkách v kontext menu zobrazí tooltip s popisem
+    - nově autosearch na entry widgetech
+    - ověřování přítomnosti zařízení ve filtrované db, pokud
+      chybí -> hledá v celé db
+    - přidán výrobce cognex
+    - dotaz o připojení do db a možnost pracovat offline (excel)
+    - kabely, filtry, kroužky - zvlášť od všech výrobců
+    - nově možnost přidávat příslušenství rovnou pod kameru
+      a optiku/ světlo
+    - oprava kusovníku při exportu - chyběly kabely ke kameře
+  Prohlížeč obrázků:
+    - bylo to case-sensitive na suffix - opraveno
+    - optimalizace zoomování - nerozhazuje obraz + rychlejší
+    - optimalizace obr. otevřeného v novém okně
+  TRIMAZKON - mazání:
+    - nově možnost exportu logu mazání do .xls, .txt 
+    """
 ]
 
 

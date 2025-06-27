@@ -25,7 +25,7 @@ import time
 import threading
 
 initial_path = ""
-testing = True
+testing = False
 
 if testing:
     customtkinter.set_appearance_mode("dark")
