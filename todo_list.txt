@@ -1034,6 +1034,11 @@ Optimalizace pohlížeče obrázků - nepoblikává
 v novém okně - změna velikosti hodně optimalizovaná
 TRIMAZKON - tlačítko aktivovat trial do okna upozornění licence? - hotovo
 release 4.3.7
+- oprava špatného scalingu podle dpi z katalogu
+
+8:02 AM 6/30/2025
+Nejde katalog přes system path - hotovo
+
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -1050,6 +1055,11 @@ TRIMAZKON - Katalog - export do databázové tabulky
 
 
 
+TRIMAZKON - Katalog - duplicity list ověřovat při exportu do DB !!!
+	když vlkádání manuálně a několik výskytů - přehodit do autosearch i s poznámkami - kvůlu duplicitám typenr
+	- to co se vybere v kontext menu - rovnou uložit id do duplicity listu
+	- když se zadá manuálně - a jsou duplicity - požadavek o konkrétnější zápis - dát na výběr ze stejných typenr doplněnymi o poznámky v kontext.
+
 
 ??? TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama, možná přesměrovat i edity a deletions/ uplne se zbavit excelu... ??
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
@@ -1058,6 +1068,31 @@ TRIMAZKON - Katalog - export do databázové tabulky
 nová konzole:
 console_frame, wrap="none", height=0,background="#212121",font=("Arial",22),state=tk.DISABLED,foreground="#565B5E",borderwidth=3
 pack(pady = (0,10), padx =10,anchor="w",expand=False,fill="x",side="top",ipady=3,ipadx=5
+
+
+
+
+INDEX:
+index = next(
+    (i for i, cam in enumerate(self.whole_camera_type_database)
+     if cam["type"] == current_camera),
+    None
+)
+
+OVEROVANI pritomnosti:
+if not any(cam["type"] == current_camera for cam in self.whole_camera_type_database):
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

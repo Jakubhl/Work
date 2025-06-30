@@ -1,5 +1,4 @@
 
-import pyodbc
 
 conn_str = (
     r'DRIVER={ODBC Driver 17 for SQL Server};'
@@ -42,7 +41,7 @@ class Tools:
         return sorted(result, key=lambda x: x["type"])
     
     @classmethod
-    def filer_part_list(cls,list_given):
+    def filter_part_list(cls,list_given):
         """
         list_given:
         - 0 = description1
@@ -113,7 +112,7 @@ def get_camera_products(list_given):
     """
     - světla jsou od různých výrobců, stejně tak i kabely
     """
-    filtered_part_list = Tools.filer_part_list(list_given)
+    filtered_part_list = Tools.filter_part_list(list_given)
     
     def get_accessories(database_list):
         whole_list = filtered_part_list
@@ -202,7 +201,7 @@ def find_camera_products_db(conn,manufacturer,not_initial = True):
     for row in cursor.fetchall():
         found_lights.append(row)
 
-    filtered_part_list = Tools.filer_part_list(found_lights)
+    filtered_part_list = Tools.filter_part_list(found_lights)
     # all_light_list = Tools.find_list(filtered_part_list, ["osv","svet","svět"], ["prosv","kabel","držák","filtr","světelný ","světle ","senzor","závěs","podsvět","modul","závora","integrované"])
     combined = db_all_producs_sorted["light_list"] + filtered_part_list
     db_all_producs_sorted["light_list"] = sorted(combined, key=lambda x: x["type"])
@@ -227,7 +226,7 @@ def find_camera_products_db(conn,manufacturer,not_initial = True):
     found_filters = []
     for row in cursor.fetchall():
         found_filters.append(row)
-    filtered_part_list = Tools.filer_part_list(found_filters)
+    filtered_part_list = Tools.filter_part_list(found_filters)
     db_all_producs_sorted["filter_list"] = sorted(filtered_part_list, key=lambda x: x["type"])
 
 
@@ -252,7 +251,7 @@ def find_camera_products_db(conn,manufacturer,not_initial = True):
     found_cables = []
     for row in cursor.fetchall():
         found_cables.append(row)
-    filtered_part_list = Tools.filer_part_list(found_cables)
+    filtered_part_list = Tools.filter_part_list(found_cables)
     db_all_producs_sorted["light_cable_list"] = sorted(filtered_part_list, key=lambda x: x["type"])
     
     
@@ -260,6 +259,7 @@ def find_camera_products_db(conn,manufacturer,not_initial = True):
 
 
 #TESTING------------------------------------------------------------------------------
+# import pyodbc
 # try:
 #     conn = pyodbc.connect(conn_str)
 #     print("Připojeno k databázi!")
