@@ -1039,6 +1039,12 @@ release 4.3.7
 8:02 AM 6/30/2025
 Nejde katalog přes system path - hotovo
 
+1:13 PM 7/2/2025
+TRIMAZKON - Katalog - duplicity list ověřovat při exportu do DB !!! - hotovo
+	když vlkádání manuálně a několik výskytů - přehodit do autosearch i s poznámkami - kvůlu duplicitám typenr
+	- to co se vybere v kontext menu - rovnou uložit id do duplicity listu
+	- když se zadá manuálně - a jsou duplicity - požadavek o konkrétnější zápis - dát na výběr ze stejných typenr doplněnymi o poznámky v kontext.
+	- pokud je hledana soucast v duplicity listu - force select by kontext. menu aby obsahovala v dict
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -1054,11 +1060,6 @@ TRIMAZKON - Katalog - export do databázové tabulky
 
 
 
-
-TRIMAZKON - Katalog - duplicity list ověřovat při exportu do DB !!!
-	když vlkádání manuálně a několik výskytů - přehodit do autosearch i s poznámkami - kvůlu duplicitám typenr
-	- to co se vybere v kontext menu - rovnou uložit id do duplicity listu
-	- když se zadá manuálně - a jsou duplicity - požadavek o konkrétnější zápis - dát na výběr ze stejných typenr doplněnymi o poznámky v kontext.
 
 
 ??? TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama, možná přesměrovat i edity a deletions/ uplne se zbavit excelu... ??

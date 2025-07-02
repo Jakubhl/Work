@@ -23,7 +23,7 @@ import tkinter.font as tkFont
 import pyodbc
 
 initial_path = ""
-testing = True
+testing = False
 
 if testing:
     customtkinter.set_appearance_mode("dark")
@@ -461,8 +461,13 @@ class Save_prog_metadata:
                                         if opt_key == "acc_list":
                                             opt_acc = ET.SubElement(optic_element, "acc_list")
                                             for item in opt_value:
-                                                item_element = ET.SubElement(opt_acc, "acc")  # nebo "item", podle tebe
-                                                item_element.text = str(item)
+                                                item_element = ET.SubElement(opt_acc, "acc")
+                                                if isinstance(item, dict):
+                                                    for sub_key, sub_val in item.items():
+                                                        sub_element = ET.SubElement(item_element, sub_key)
+                                                        sub_element.text = str(sub_val)
+                                                else:
+                                                    item_element.text = str(item)
                                         else:
                                             opt_child = ET.SubElement(optic_element, opt_key)
                                             opt_child.text = str(opt_value)  # Ensure value is a string
@@ -470,7 +475,12 @@ class Save_prog_metadata:
                                 cam_acc = ET.SubElement(camera_element, "acc_list")
                                 for item in cam_value:
                                     item_element = ET.SubElement(cam_acc, "acc")
-                                    item_element.text = str(item)
+                                    if isinstance(item, dict):
+                                        for sub_key, sub_val in item.items():
+                                            sub_element = ET.SubElement(item_element, sub_key)
+                                            sub_element.text = str(sub_val)
+                                    else:
+                                        item_element.text = str(item)
                             else:
                                 cam_child = ET.SubElement(camera_element, cam_key)
                                 cam_child.text = str(cam_value)  # Ensure value is a string
@@ -539,9 +549,22 @@ class Save_prog_metadata:
     def read_stations_xml(self,file_path):
         tree = ET.parse(file_path)
         root = tree.getroot()
+        def parse_acc_list(acc_list_elem):
+            acc_list = []
+            for acc_elem in acc_list_elem.findall("acc"):
+                if list(acc_elem):  # má podprvky (např. <type>, <id>)
+                    acc_data = {}
+                    for acc_child in acc_elem:
+                        acc_data[acc_child.tag] = acc_child.text or ""
+                    acc_list.append(acc_data)
+                elif acc_elem.text:
+                    acc_list.append(acc_elem.text)
+            return acc_list
+
+
         stations = []
-        station_list = root.find("station_list")
-        for station in station_list.findall("station"):
+
+        for station in root.find("station_list").findall("station"):
             station_data = {}
             for child in station:
                 if child.tag == "camera_list":
@@ -555,40 +578,32 @@ class Save_prog_metadata:
                                     optic_data = {}
                                     for opt_child in optic:
                                         if opt_child.tag == "acc_list":
-                                            acc_list = [acc_elem.text for acc_elem in opt_child.findall("acc")]
+                                            acc_list = parse_acc_list(opt_child)
                                             optic_data["acc_list"] = acc_list
                                         else:
-                                            if opt_child.text is not None:
-                                                optic_data[opt_child.tag] = opt_child.text
-                                            else:
-                                                optic_data[opt_child.tag] = ""
+                                            optic_data[opt_child.tag] = opt_child.text or ""
                                     optics_list.append(optic_data)
                                 camera_data[cam_child.tag] = optics_list
+
                             elif cam_child.tag == "acc_list":
-                                acc_list = [acc_elem.text for acc_elem in cam_child.findall("acc")]
+                                acc_list = parse_acc_list(cam_child)
                                 camera_data["acc_list"] = acc_list
+
                             else:
-                                if cam_child.text is not None:
-                                    camera_data[cam_child.tag] = cam_child.text
-                                else:
-                                    camera_data[cam_child.tag] = ""
+                                camera_data[cam_child.tag] = cam_child.text or ""
                         camera_list.append(camera_data)
                     station_data[child.tag] = camera_list
-                
+
                 elif child.tag == "image_list":
                     image_list = []
                     for image in child.findall("image"):
                         if image.text is not None:
                             image_list.append(image.text)
                     station_data[child.tag] = image_list
-                    
-                else:
-                    if child.text is not None:
-                        station_data[child.tag] = child.text
-                    else:
-                        station_data[child.tag] = ""
 
-                         
+                else:
+                    station_data[child.tag] = child.text or ""
+
             stations.append(station_data)
         return stations
 
@@ -1808,7 +1823,7 @@ class ToplevelWindow:
         window.focus_force()
         return window
 
-    def __init__(self,root,controller_databases = [[],[]],callback = None,custom_controller_database = [],accessory_databases=[[],[],[]],changes_check = False):
+    def __init__(self,root,controller_databases = [[],[]],callback = None,custom_controller_database = [],accessory_databases=[[],[],[]],changes_check = False,current_db_connection=None):
         self.controller_database = controller_databases[0]
         self.controller_notes_database = controller_databases[1]
         self.custom_controller_database = custom_controller_database
@@ -1816,6 +1831,8 @@ class ToplevelWindow:
         self.whole_accessory_database = accessory_databases[1]
         self.accessory_notes_database = accessory_databases[2]
         self.changes_check = changes_check
+        self.duplicity_list = []
+        self.current_db_connection = current_db_connection
         self.root = root
         self.callback_function = callback
         self.x = self.root.winfo_rootx()
@@ -1887,18 +1904,71 @@ class ToplevelWindow:
         - accessory list, příslušenství ke kontroleru
         - poznámky ke kontroleru
         """
+        def server_db_part_presence(part,entry_given=None):
+            try:
+                status = read_database.Tools.find_unknown(self.current_db_connection,part)
+                print("db_status: ",status)
+                if status == "ok":
+                    Tools.add_colored_line(window_console,f"Položka: {part} byla nalezena v nevyfiltrované databázi","green",None,True)
+                    return True
+                elif status == "ng":
+                    Tools.add_colored_line(window_console,f"Položka: {part} nebyla nalezena ani v nevyfiltrované databázi","red",None,True)
+                    return False
+                else:
+                    # Tools.add_colored_line(window_console,f"Bylo nalezeno několik výskytů: {part} v nevyfiltrované databázi: {status}","red",None,True)
+                    Tools.add_colored_line(window_console,f"Bylo nalezeno několik výskytů: {part} v nevyfiltrované databázi, celkem: {len(status)}, zkuste konkrétněji","red",None,True)
+                    if len(status) < 30:
+                        print(status)
+
+                        all_type_list = []
+                        for items in status:
+                            all_type_list.append(items["type"])
+
+                        # když jsou si rovny všechny typy = duplicity
+                        if all(x == all_type_list[0] for x in all_type_list):
+                            self.duplicity_list.append(all_type_list[0])
+
+                            targets = [
+                                (self.controller_database, self.controller_notes_database, controller_entry),
+                                (self.whole_accessory_database, self.accessory_notes_database, hw_type_entry),
+                            ]
+
+                            for type_db, notes_db, widget_entry in targets:
+                                if widget_entry == entry_given:
+                                    for items in status:
+                                        type_db.append({"type":items["type"],"id":items["id"]})
+                                        notes_db.append(items["description"])
+                                    break
+                            entry_given.event_generate("<KeyRelease>")
+                    return False
+            except Exception:
+                return False
+
         def save_contoller():
             db_error_found = False
+            duplicity_id=None
             save_status = save_changes()
             if save_status == "db_error":
                 db_error_found = True
-            if controller_entry.get() not in self.controller_database:
+            controller_entered = controller_entry.get()
+            if  not any(cont["type"] == controller_entered for cont in self.controller_database) and controller_entered.replace(" ","") != "" and not server_db_part_presence(controller_entered,controller_entry):
                 controller_entry.configure(fg_color = "#bd1931",border_color = "red")
-                return
-            elif db_error_found:
-                return
+                db_error_found = True
             else:
                 controller_entry.configure(fg_color = "#343638",border_color = "#565B5E")
+                #nasledujici blok je nutný aby uživatel vybral z duplicit konkrétní id... podle popisu
+                if controller_entered in self.duplicity_list:
+                    if ids_on_entry[controller_entry][1] == controller_entered:
+                        duplicity_id = ids_on_entry[controller_entry][0]
+                    else:
+                        Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
+                        controller_entry.event_generate("<KeyRelease>")
+                        controller_entry.configure(fg_color = "#bd1931",border_color = "red")
+                        db_error_found = True
+
+            if db_error_found:
+                return "db_error"
+
             notes = notes_input.get("1.0", tk.END)
             notes = Tools.make_wrapping(notes)
             try:
@@ -1906,7 +1976,7 @@ class ToplevelWindow:
             except Exception:
                 color_chosen = ""
             print("chosen color: ",color_chosen)
-            output = [controller_entry.get(),controller_name_entry.get(),color_chosen,IP_adress_entry.get(),username_entry.get(),password_entry.get(),controller["accessory_list"],notes]
+            output = [controller_entry.get(),controller_name_entry.get(),color_chosen,IP_adress_entry.get(),username_entry.get(),password_entry.get(),controller["accessory_list"],notes,duplicity_id]
             close_window(window)
             self.callback_function(output)
 
@@ -1972,33 +2042,99 @@ class ToplevelWindow:
             notes = str(notes_input3.get("0.0", tk.END))
             notes = Tools.make_wrapping(notes)
             accessory_item = str(hw_type_entry.get())
+            db_error_found = False
 
-            if accessory_item not in self.whole_accessory_database:
+            if  not any(acc["type"] == accessory_item for acc in self.whole_accessory_database) and accessory_item.replace(" ","") != "" and not server_db_part_presence(accessory_item,hw_type_entry):
                 hw_type_entry.configure(fg_color = "#bd1931",border_color = "red")
-                return "db_error"
+                db_error_found = True
             else:
                 hw_type_entry.configure(fg_color = "#343638",border_color = "#565B5E")
-            try:
-                # if accessory_item != "":
-                controller["accessory_list"][accessory_index]["type"] = accessory_item
-                controller["accessory_list"][accessory_index]["description"] = notes
-                # elif accessory_item == "" and len(controller["accessory_list"])==1:
-                #     controller["accessory_list"] = []
+                #nasledujici blok je nutný aby uživatel vybral z duplicit konkrétní id... podle popisu
+                if accessory_item in self.duplicity_list:
+                    if ids_on_entry[hw_type_entry][1] == accessory_item:
+                        duplicity_id = ids_on_entry[hw_type_entry][0]
+                        try:
+                            controller["accessory_list"][accessory_index]["type"] = accessory_item
+                            controller["accessory_list"][accessory_index]["description"] = notes
+                            controller["accessory_list"][accessory_index]["duplicity_id"] = duplicity_id
+                        except IndexError:
+                            if accessory_item != "" and notes != "\n":
+                                new_accessory = {
+                                "type": accessory_item,
+                                "description":notes,
+                                "duplicity_id":duplicity_id,
+                                }
+                                controller["accessory_list"].append(new_accessory)
+                        except TypeError: # pokud je jako index vložen None
+                            if accessory_item != "" and notes != "\n":
+                                new_accessory = {
+                                "type": accessory_item,
+                                "description":notes,
+                                "duplicity_id":duplicity_id,
+                                }
+                                controller["accessory_list"].append(new_accessory)
 
-            except IndexError:
-                if accessory_item != "" and notes != "\n":
-                    new_accessory = {
-                    "type": accessory_item,
-                    "description":notes,
-                    }
-                    controller["accessory_list"].append(new_accessory)
-            except TypeError: # pokud je jako index vložen None
-                if accessory_item != "" and notes != "\n":
-                    new_accessory = {
-                    "type": accessory_item,
-                    "description":notes,
-                    }
-                    controller["accessory_list"].append(new_accessory)
+                    else:
+                        Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
+                        hw_type_entry.event_generate("<KeyRelease>")
+                        hw_type_entry.configure(fg_color = "#bd1931",border_color = "red")
+                        db_error_found = True
+
+                else:
+                    try:
+                        if "duplicity_id" in controller["accessory_list"][accessory_index]:
+                            del controller["accessory_list"][accessory_index]["duplicity_id"]
+                    except Exception as ee:
+                        print(ee)
+                        pass
+                    try:
+                        controller["accessory_list"][accessory_index]["type"] = accessory_item
+                        controller["accessory_list"][accessory_index]["description"] = notes
+                    except IndexError:
+                        if accessory_item != "" and notes != "\n":
+                            new_accessory = {
+                            "type": accessory_item,
+                            "description":notes,
+                            }
+                            controller["accessory_list"].append(new_accessory)
+                    except TypeError: # pokud je jako index vložen None
+                        if accessory_item != "" and notes != "\n":
+                            new_accessory = {
+                            "type": accessory_item,
+                            "description":notes,
+                            }
+                            controller["accessory_list"].append(new_accessory)
+
+
+            if db_error_found:
+                return "db_error"
+
+            # if accessory_item not in self.whole_accessory_database:
+            #     hw_type_entry.configure(fg_color = "#bd1931",border_color = "red")
+            #     return "db_error"
+            # else:
+            #     hw_type_entry.configure(fg_color = "#343638",border_color = "#565B5E")
+            # try:
+            #     # if accessory_item != "":
+            #     controller["accessory_list"][accessory_index]["type"] = accessory_item
+            #     controller["accessory_list"][accessory_index]["description"] = notes
+            #     # elif accessory_item == "" and len(controller["accessory_list"])==1:
+            #     #     controller["accessory_list"] = []
+
+            # except IndexError:
+            #     if accessory_item != "" and notes != "\n":
+            #         new_accessory = {
+            #         "type": accessory_item,
+            #         "description":notes,
+            #         }
+            #         controller["accessory_list"].append(new_accessory)
+            # except TypeError: # pokud je jako index vložen None
+            #     if accessory_item != "" and notes != "\n":
+            #         new_accessory = {
+            #         "type": accessory_item,
+            #         "description":notes,
+            #         }
+            #         controller["accessory_list"].append(new_accessory)
             
             # print("acc_list --------- ",controller["accessory_list"])
 
@@ -2048,7 +2184,13 @@ class ToplevelWindow:
             if operation == "controller":
                 current_controller = controller_entry.get()
                 if current_controller != "":
-                    controller_notes = str(self.controller_notes_database[self.controller_database.index(current_controller)])
+                    cont_index = next(
+                        (i for i, opt in enumerate(self.controller_database)
+                        if opt["type"] == current_controller),
+                        None
+                    )
+                    if cont_index != None:
+                        controller_notes = str(self.controller_notes_database[cont_index])
                     if controller_notes != "":
                         notes_string = notes_string + controller_notes + "\n\n"
                 notes_input.delete("1.0",tk.END)
@@ -2056,7 +2198,13 @@ class ToplevelWindow:
             else:
                 current_accessory = hw_type_entry.get()
                 if current_accessory != "":
-                    notes_string = notes_string + str(self.accessory_notes_database[self.whole_accessory_database.index(current_accessory)])
+                    acc_index = next(
+                        (i for i, opt in enumerate(self.whole_accessory_database)
+                        if opt["type"] == current_accessory),
+                        None
+                    )
+                    if acc_index != None:
+                        notes_string = notes_string + str(self.accessory_notes_database[acc_index])
                 notes_input3.delete("1.0",tk.END)
                 notes_input3.insert("1.0",notes_string)
 
@@ -2075,10 +2223,11 @@ class ToplevelWindow:
             def on_item_selected(value):
                 # if auto_search_call:
                 entry_widget.delete(0,200)
-                entry_widget.insert(0,str(value))
-                # else:
-                #     entry_widget.set(str(value))
+                entry_widget.insert(0,str(value["type"]))
+                ids_on_entry[entry_widget][0] = value["id"]
+                ids_on_entry[entry_widget][1] = value["type"]
                 context_window.destroy()
+
             if len(values) == 0:
                 print("prazdne pole")
                 return
@@ -2087,17 +2236,18 @@ class ToplevelWindow:
             screen_y = window.winfo_pointery()
             parent_x = window.winfo_rootx()+e.x
             parent_y = window.winfo_rooty()+e.y
-            x = screen_x - parent_x +entry_widget.winfo_width()
-            y = screen_y - parent_y +entry_widget.winfo_height()
+            x = screen_x - parent_x + entry_widget.winfo_width()
+            y = screen_y - parent_y + entry_widget.winfo_height()
 
             if auto_search_call:
+                mirror = False
                 screen_x = entry_widget.winfo_rootx()
                 screen_y = entry_widget.winfo_rooty() + entry_widget.winfo_height()+5
 
             font = tkFont.Font(family="Arial", size=20)
             max_width_px = 40
             try:
-                max_width_px = max(font.measure(str(val)) for val in values) + 40  # Add some padding
+                max_width_px = max(font.measure(str(val["type"])) for val in values) + 40  # Add some padding
             except Exception as e:
                 pass
             context_window = customtkinter.CTkToplevel(window)
@@ -2152,12 +2302,16 @@ class ToplevelWindow:
                 item_str = str(items).lower()
                 if currently_inserted in str(item_str):
                 # if item_str.startswith(currently_inserted):
-                    found_items.append(str(items))
-                    found_items_notes.append(notes_database[database.index(str(items))])
+                    found_items.append(items)
+                    index = next(
+                        (i for i, itms in enumerate(database)
+                        if itms["id"] == items["id"]),
+                        None
+                    )
+                    found_items_notes.append(notes_database[index])
 
-            found_items = sorted(found_items)
-            # print(found_items)
-
+            print(found_items)
+            found_items = sorted(found_items, key=lambda x: x["type"])
             manage_option_menu(e,found_items,found_items_notes,entry_widget,mirror=mirror,auto_search_call=True)
 
         icon_small = 45
@@ -2193,7 +2347,7 @@ class ToplevelWindow:
         controller_select_frame.    pack(pady = 5, padx = 10,anchor="w",side="top",fill="x")
         controller_name.            pack(pady=(10,0),padx=10,side = "top",anchor = "w")
         controller_name_entry.      pack(pady=(10,0),padx=10,side = "top",anchor = "w",fill ="x")
-        controller_color.           pack(pady=0,padx=10,side =      "top",anchor = "w",fill="x")
+        controller_color.           pack(pady=0,padx=10,side = "top",anchor = "w",fill="x")
         IP_adress.                  pack(pady=(10,0),padx=10,side = "top",anchor = "w")
         IP_adress_entry.            pack(pady=(10,0),padx=10,side = "top",anchor = "w",fill ="x")
         username.                   pack(pady=(10,0),padx=10,side = "top",anchor = "w")
@@ -2249,13 +2403,21 @@ class ToplevelWindow:
         accessory_frame.            pack(pady = 0, padx = 0,fill="both",expand = True,anchor="n",side="left",ipady = 3,ipadx = 3)
         main_frame.                 pack(pady = 0, padx = 0,fill="both",expand = True,anchor="n",side="top")
         bottom_frame =              customtkinter.CTkFrame(master=window,corner_radius=0,fg_color="#212121")
-        button_save =               customtkinter.CTkButton(master = bottom_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: save_contoller())
-        button_exit =               customtkinter.CTkButton(master = bottom_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
+        button_frame =              customtkinter.CTkFrame(master = bottom_frame,corner_radius=0)
+        button_save =               customtkinter.CTkButton(master = button_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: save_contoller())
+        button_exit =               customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(window))
+        window_console =            tk.Text(bottom_frame, wrap="none", height=1,background="#212121",font=("Arial",22),state=tk.DISABLED,foreground="#565B5E",borderwidth=3)
+        window_console              .pack(pady = (0,5), padx =5,anchor="w",expand=True,fill="x",side="top",ipady=3,ipadx=5)           
         button_exit.                pack(pady=10,padx=(5,10),side = "right",anchor="e")
         button_save.                pack(pady=10,padx=5,side = "right",anchor="e")
+        button_frame                .pack(pady = 0, padx = 0,fill="x",anchor="s",expand=False,side="top")
         bottom_frame.               pack(pady = 0, padx = 0,fill="x",anchor="s",side="bottom")
         notes_input3.               bind("<Key>",remaping_characters)
         hw_type_entry.              bind("<KeyRelease>",lambda e: autosearch_engine(e,"accessory"))
+        ids_on_entry = {
+            controller_entry:[0,""],
+            hw_type_entry:[0,""],
+        }
 
         if edit:
             IP_adress_entry.insert(0,str(current_ip))
@@ -2312,21 +2474,21 @@ class ToplevelWindow:
             nonlocal accessory_index
 
             try:
-                if str(controller["accessory_list"][accessory_index]["type"]) in self.whole_accessory_database:
-                    hw_type_entry.delete(0,300)
-                    hw_type_entry.insert(0,str(controller["accessory_list"][accessory_index]["type"]))
-                else:
-                    hw_type_entry.delete(0,300)
+                # if str(controller["accessory_list"][accessory_index]["type"]) in self.whole_accessory_database:
+                hw_type_entry.delete(0,300)
+                hw_type_entry.insert(0,str(controller["accessory_list"][accessory_index]["type"]))
+                # else:
+                #     hw_type_entry.delete(0,300)
                 notes_input3.delete("1.0",tk.END)
                 notes_input3.insert("1.0",str(controller["accessory_list"][accessory_index]["description"]))
             except TypeError: # pokud je v indexu None - defaultně nastavit index na nulu:
                 try:
                     accessory_index = 0
-                    if str(controller["accessory_list"][accessory_index]["type"]) in self.whole_accessory_database:
-                        hw_type_entry.delete(0,300)
-                        hw_type_entry.insert(0,str(controller["accessory_list"][accessory_index]["type"]))
-                    else:
-                        hw_type_entry.delete(0,300)
+                    # if str(controller["accessory_list"][accessory_index]["type"]) in self.whole_accessory_database:
+                    hw_type_entry.delete(0,300)
+                    hw_type_entry.insert(0,str(controller["accessory_list"][accessory_index]["type"]))
+                    # else:
+                        # hw_type_entry.delete(0,300)
                     notes_input3.delete("1.0",tk.END)
                     notes_input3.insert("1.0",str(controller["accessory_list"][accessory_index]["description"]))
                 except IndexError: #případ, že není accessory
@@ -2664,7 +2826,7 @@ class Fill_details:
             if len(camera["acc_list"]) >0:
                 detail_info_cam += "\n\nPříslušenství ke kameře:\n"
                 for items in camera["acc_list"]:
-                    detail_info_cam += str(items) + "\n"
+                    detail_info_cam += str(items["type"]) + "\n"
 
         return [Fill_details.line_handler(detail_info_cam),controller_fill]
     
@@ -2680,7 +2842,7 @@ class Fill_details:
             if len(optics["acc_list"]) >0:
                 detail_info += "\n\nPříslušenství k optice:\n"
                 for items in optics["acc_list"]:
-                    detail_info += str(items) + "\n"
+                    detail_info += str(items["type"]) + "\n"
         return Fill_details.line_handler(detail_info)
     
     @classmethod
@@ -3584,6 +3746,7 @@ class Catalogue_gui:
                         for items in status:
                             all_type_list.append(items["type"])
 
+                        # když jsou si rovny všechny typy = duplicity
                         if all(x == all_type_list[0] for x in all_type_list):
                             self.duplicity_list.append(all_type_list[0])
 
@@ -3601,8 +3764,9 @@ class Catalogue_gui:
                                 if widget_entry == entry_given:
                                     for items in status:
                                         type_db.append({"type":items["type"],"id":items["id"]})
-                                        self.camera_notes_database.append(items["description"])
+                                        notes_db.append(items["description"])
                                     break
+                            entry_given.event_generate("<KeyRelease>")
                     return False
             except Exception:
                 return False
@@ -3627,27 +3791,21 @@ class Catalogue_gui:
                     db_error_found = True
                 else:
                     camera_type_entry.configure(fg_color = "#343638",border_color = "#565B5E")
-                    self.temp_station_list[station_index]["camera_list"][camera_index]["type"] = camera_item
-
-
-
-
-                    if camera_item not in self.duplicity_list:
-                        if "cam_id" in self.temp_station_list[station_index]["camera_list"][camera_index]:
-                            del self.temp_station_list[station_index]["camera_list"][camera_index]["cam_id"]
-                    else:
+                    #nasledujici blok je nutný aby uživatel vybral z duplicit konkrétní id... podle popisu
+                    if camera_item in self.duplicity_list:
                         if ids_on_entry[camera_type_entry][1] == camera_item:
                             self.temp_station_list[station_index]["camera_list"][camera_index]["cam_id"] = ids_on_entry[camera_type_entry][0]
+                            self.temp_station_list[station_index]["camera_list"][camera_index]["type"] = camera_item
 
                         elif "cam_id" not in self.temp_station_list[station_index]["camera_list"][camera_index]:
                             Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
                             camera_type_entry.event_generate("<KeyRelease>")
                             camera_type_entry.configure(fg_color = "#bd1931",border_color = "red")
                             db_error_found = True
-
-
-
-
+                    else:
+                        if "cam_id" in self.temp_station_list[station_index]["camera_list"][camera_index]:
+                            del self.temp_station_list[station_index]["camera_list"][camera_index]["cam_id"] # pokud zaměnín za typ, co není duplicitní!
+                        self.temp_station_list[station_index]["camera_list"][camera_index]["type"] = camera_item
 
                 self.temp_station_list[station_index]["camera_list"][camera_index]["controller"] = controller_entry.get()
                 current_controller = controller_entry.get()
@@ -3662,14 +3820,26 @@ class Catalogue_gui:
                 cable_item = str(cam_cable_menu.get())
                 # self.temp_station_list[station_index]["camera_list"][camera_index]["cable"] = cable_item
                 # if not cable_item in self.whole_camera_cable_database and cable_item.replace(" ","") != "" and not server_db_part_presence(cable_item):
-                if not any(cab["type"] == cable_item for cab in self.whole_camera_cable_database) and cable_item.replace(" ","") != "" and not server_db_part_presence(cable_item):
+                if not any(cab["type"] == cable_item for cab in self.whole_camera_cable_database) and cable_item.replace(" ","") != "" and not server_db_part_presence(cable_item,cam_cable_menu):
                     cam_cable_menu.configure(fg_color = "#bd1931",border_color = "red")
                     # return "db_error"
                     db_error_found = True
                 else:
                     cam_cable_menu.configure(fg_color = "#343638",border_color = "#565B5E")
-                    self.temp_station_list[station_index]["camera_list"][camera_index]["cable"] = cable_item
-                    self.temp_station_list[station_index]["camera_list"][camera_index]["cab_id"] = ids_on_entry[cam_cable_menu][0]
+                    if cable_item in self.duplicity_list:
+                        if ids_on_entry[cam_cable_menu][1] == cable_item:
+                            self.temp_station_list[station_index]["camera_list"][camera_index]["cab_id"] = ids_on_entry[cam_cable_menu][0]
+                            self.temp_station_list[station_index]["camera_list"][camera_index]["cable"] = cable_item
+
+                        elif "cab_id" not in self.temp_station_list[station_index]["camera_list"][camera_index]:
+                            Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
+                            cam_cable_menu.event_generate("<KeyRelease>")
+                            cam_cable_menu.configure(fg_color = "#bd1931",border_color = "red")
+                            db_error_found = True
+                    else:
+                        if "cab_id" in self.temp_station_list[station_index]["camera_list"][camera_index]:
+                            del self.temp_station_list[station_index]["camera_list"][camera_index]["cab_id"] # pokud zaměnín za typ, co není duplicitní!
+                        self.temp_station_list[station_index]["camera_list"][camera_index]["cable"] = cable_item
 
                 filtered_description = Tools.make_wrapping(str(notes_input.get("1.0", tk.END)))
                 self.temp_station_list[station_index]["camera_list"][camera_index]["description"] = filtered_description
@@ -3680,57 +3850,115 @@ class Catalogue_gui:
                     # self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"] = optic_type
                     database_list = [self.whole_filter_database,self.whole_light_cable_database,self.whole_light_database,self.whole_optics_database]
                     # if not any(optic_type in sublist for sublist in database_list) and optic_type.replace(" ","") != "" and not server_db_part_presence(optic_type):
-                    if not any(any(item["type"] == optic_type for item in sublist) for sublist in database_list) and optic_type.replace(" ","") != "" and not server_db_part_presence(optic_type):
+                    if not any(any(item["type"] == optic_type for item in sublist) for sublist in database_list) and optic_type.replace(" ","") != "" and not server_db_part_presence(optic_type,optic_type_entry):
                     
                         optic_type_entry.configure(fg_color = "#bd1931",border_color = "red")
                         db_error_found = True
                         # return "db_error"
                     else:
                         optic_type_entry.configure(fg_color = "#343638",border_color = "#565B5E")
-                        self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"] = optic_type
-                        self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["opt_id"] = ids_on_entry[optic_type_entry][0]
+                        if optic_type in self.duplicity_list:
+                            if ids_on_entry[optic_type_entry][1] == optic_type:
+                                self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["opt_id"] = ids_on_entry[optic_type_entry][0]
+                                self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"] = optic_type
+                            elif "opt_id" not in self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]:
+                                Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
+                                optic_type_entry.event_generate("<KeyRelease>")
+                                optic_type_entry.configure(fg_color = "#bd1931",border_color = "red")
+                                db_error_found = True
+                        else:
+                            if "opt_id" in self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]:
+                                del self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["opt_id"] # pokud zaměnín za typ, co není duplicitní!
+                            self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"] = optic_type
 
                     alternative_item = str(alternative_entry.get())
-                    # self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"] = alternative_item
-                    # if not any(alternative_item in sublist for sublist in database_list) and alternative_item.replace(" ","") != "" and not server_db_part_presence(alternative_item):
-                    if not any(any(item["type"] == alternative_item for item in sublist) for sublist in database_list) and alternative_item.replace(" ","") != "" and not server_db_part_presence(alternative_item):
+                    if not any(any(item["type"] == alternative_item for item in sublist) for sublist in database_list) and alternative_item.replace(" ","") != "" and not server_db_part_presence(alternative_item,alternative_entry):
                         alternative_entry.configure(fg_color = "#bd1931",border_color = "red")
                         db_error_found = True
                         # return "db_error"
                     else:
                         alternative_entry.configure(fg_color = "#343638",border_color = "#565B5E")
-                        self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"] = alternative_item
-                        self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alt_id"] = ids_on_entry[alternative_entry][0]
-                        
+                        if alternative_item in self.duplicity_list:
+                            if ids_on_entry[alternative_entry][1] == alternative_item:
+                                self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alt_id"] = ids_on_entry[alternative_entry][0]
+                                self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"] = alternative_item
+                            elif "alt_id" not in self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]:
+                                Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
+                                alternative_entry.event_generate("<KeyRelease>")
+                                alternative_entry.configure(fg_color = "#bd1931",border_color = "red")
+                                db_error_found = True
+                        else:
+                            if "alt_id" in self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]:
+                                del self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alt_id"] # pokud zaměnín za typ, co není duplicitní!
+                            self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"] = alternative_item
 
                     filtered_description = Tools.make_wrapping(str(notes_input2.get("1.0", tk.END)))
                     self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"] = filtered_description
-            if db_error_found:
-                return "db_error"
-            
-            # Uložení pro případ, že se zapomene dát přidat a je to v entry
+
+
             cam_acc = str(cam_acc_menu.get())
             cam = self.temp_station_list[station_index]["camera_list"][camera_index]
             if cam_acc:
                 acc_list = cam.setdefault("acc_list", [])
-                # if cam_acc not in acc_list and cam_acc in self.whole_accessory_database:
-                if cam_acc not in acc_list and any(acc["type"] == cam_acc for acc in self.whole_accessory_database):
-                    acc_list.append({"type":cam_acc,
-                                     "id":ids_on_entry[cam_acc_menu][0]})
+                if not any(acc["type"] == cam_acc for acc in self.whole_accessory_database) and not server_db_part_presence(cam_acc,cam_acc_menu):
+                    cam_acc_menu.configure(fg_color = "#bd1931",border_color = "red")
+                    db_error_found = True
+                    # return "db_error"
                 else:
-                    if server_db_part_presence(cam_acc):
-                        print("pokuston")
-
-
+                    cam_acc_menu.configure(fg_color = "#343638",border_color = "#565B5E")
+                    if cam_acc in self.duplicity_list:
+                        if ids_on_entry[cam_acc_menu][1] == cam_acc:
+                            acc_list.append({"type":cam_acc,
+                                            "id":ids_on_entry[cam_acc_menu][0]})
+                            
+                        else:
+                            Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
+                            cam_acc_menu.event_generate("<KeyRelease>")
+                            cam_acc_menu.configure(fg_color = "#bd1931",border_color = "red")
+                            db_error_found = True
+                    else:
+                        index = next(
+                            (i for i, acc in enumerate(self.whole_accessory_database)
+                            if acc["type"] == cam_acc),
+                            None
+                        )
+                        acc_list.append({"type":cam_acc,
+                                        "id":self.whole_accessory_database[index]})
+                        
             opt_acc = str(opt_acc_menu.get())
             opt = self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]
             if opt_acc:
                 acc_list = opt.setdefault("acc_list", [])
-                # if opt_acc not in acc_list and opt_acc in self.whole_accessory_database:
-                if opt_acc not in acc_list and any(acc["type"] == opt_acc for acc in self.whole_accessory_database):
-                    acc_list.append({"type":opt_acc,
-                                     "id":ids_on_entry[opt_acc_menu][0]})
+                if not any(acc["type"] == opt_acc for acc in self.whole_accessory_database) and not server_db_part_presence(opt_acc,opt_acc_menu):
+                    opt_acc_menu.configure(fg_color = "#bd1931",border_color = "red")
+                    db_error_found = True
+                    # return "db_error"
+                else:
+                    opt_acc_menu.configure(fg_color = "#343638",border_color = "#565B5E")
+                    if opt_acc in self.duplicity_list:
+                        if ids_on_entry[opt_acc_menu][1] == opt_acc:
+                            acc_list.append({"type":opt_acc,
+                                            "id":ids_on_entry[opt_acc_menu][0]})
+                        else:
+                            Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
+                            opt_acc_menu.event_generate("<KeyRelease>")
+                            opt_acc_menu.configure(fg_color = "#bd1931",border_color = "red")
+                            db_error_found = True
+                    else:
+                        index = next(
+                            (i for i, acc in enumerate(self.whole_accessory_database)
+                            if acc["type"] == opt_acc),
+                            None
+                        )
+                        acc_list.append({"type":opt_acc,
+                                        "id":self.whole_accessory_database[index]})
+
+            if db_error_found:
+                return "db_error"
             
+            Tools.add_colored_line(window_console,"","green",None,True)
+            # Uložení pro případ, že se zapomene dát přidat a je to v entry
+
             for key in ids_on_entry:
                 ids_on_entry[key] = [0, ""]
 
@@ -3903,6 +4131,9 @@ class Catalogue_gui:
                 "accessory_list": new_controller_data[6],
                 "notes": new_controller_data[7],
             }
+            if new_controller_data[8] != None:
+                new_controller["duplicity_id"] = new_controller_data[8]
+            
             print("Nový kontroler------ ",new_controller)
             self.controller_object_list.append(new_controller)
             new_drop_option = f"{new_controller['name']} ({new_controller['type']})"
@@ -3998,7 +4229,7 @@ class Catalogue_gui:
                 notes_input2.insert("1.0",str(notes_string))
 
         def call_new_controller_gui():
-            window = ToplevelWindow(self.root,[self.controller_database,self.controller_notes_database],callback_new_controller,self.controller_object_list,[self.accessory_database,self.whole_accessory_database,self.accessory_notes_database])
+            window = ToplevelWindow(self.root,[self.controller_database,self.controller_notes_database],callback_new_controller,self.controller_object_list,[self.accessory_database,self.whole_accessory_database,self.accessory_notes_database],current_db_connection=self.current_db_connection)
             self.opened_window = window.new_controller_window(child_root)
 
         def controller_opt_menu_color(*args,only_color = False):
@@ -4116,10 +4347,10 @@ class Catalogue_gui:
             def remove_row(value):
                 # try:
                 if device == "camera":
-                    to_remove = self.temp_station_list[station_index]["camera_list"][camera_index]["acc_list"].index(str(value))
+                    to_remove = self.temp_station_list[station_index]["camera_list"][camera_index]["acc_list"].index(value)
                     self.temp_station_list[station_index]["camera_list"][camera_index]["acc_list"].pop(to_remove)
                 elif device == "optics":
-                    to_remove = self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["acc_list"].index(str(value))
+                    to_remove = self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["acc_list"].index(value)
                     self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["acc_list"].pop(to_remove)
 
                 window.destroy()
@@ -4745,6 +4976,8 @@ class Catalogue_gui:
             self.controller_object_list[controller_index]["password"] = new_controller_data[5]
             self.controller_object_list[controller_index]["accessory_list"] = new_controller_data[6]
             self.controller_object_list[controller_index]["notes"] = new_controller_data[7]
+            if new_controller_data[8] != None:
+                self.controller_object_list[controller_index]["duplicity_id"] = new_controller_data[8]
             # refresh dropdownlist:
             self.custom_controller_drop_list = []
             for controllers in self.controller_object_list:
@@ -4789,13 +5022,13 @@ class Catalogue_gui:
             accessory_index = 0
             if current_acc_count > 0:
                 accessory_index = current_acc_count-1
-            window = ToplevelWindow(self.root,[self.controller_database,self.controller_notes_database],callback_edited_controller,self.controller_object_list,[self.accessory_database,self.whole_accessory_database,self.accessory_notes_database])
+            window = ToplevelWindow(self.root,[self.controller_database,self.controller_notes_database],callback_edited_controller,self.controller_object_list,[self.accessory_database,self.whole_accessory_database,self.accessory_notes_database],current_db_connection=self.current_db_connection)
             self.opened_window = window.new_controller_window(childroot=None,controller=self.controller_object_list[controller_index],edit=True,accessory_index=accessory_index)
 
         elif len(widget_tier) == 9: # xxxxc0101-xxxxc9999 prislusenstvi kontoleru
             controller_index = int(widget_tier[5:7])
             accessory_index = int(widget_tier[7:9])
-            window = ToplevelWindow(self.root,[self.controller_database,self.controller_notes_database],callback_edited_controller,self.controller_object_list,[self.accessory_database,self.whole_accessory_database,self.accessory_notes_database])
+            window = ToplevelWindow(self.root,[self.controller_database,self.controller_notes_database],callback_edited_controller,self.controller_object_list,[self.accessory_database,self.whole_accessory_database,self.accessory_notes_database],current_db_connection=self.current_db_connection)
             self.opened_window = window.new_controller_window(childroot=None,controller=self.controller_object_list[controller_index],edit=True,accessory_index = accessory_index,only_accessory=True)
 
     def export_to_excel(self,path_with_name,favourite_format,path_inserted):
@@ -6131,7 +6364,7 @@ class Save_excel:
                 write_to_inventory("accessory_list",cameras["cable"])
                 if "acc_list" in cameras:
                     for cam_acc in cameras["acc_list"]:
-                        write_to_inventory("accessory_list",cam_acc)
+                        write_to_inventory("accessory_list",cam_acc["type"])
 
                 excel_cell = cameras["excel_position"]
                 ws[excel_cell] = cameras["type"]
@@ -6151,7 +6384,7 @@ class Save_excel:
                     excel_cell = optics["excel_position"]
                     if "acc_list" in optics:
                         for opt_acc in optics["acc_list"]:
-                            write_to_inventory("accessory_list",opt_acc)
+                            write_to_inventory("accessory_list",opt_acc["type"])
                     try:
                         ws[excel_cell] = optics["type"]
                         if "light_status" in optics:

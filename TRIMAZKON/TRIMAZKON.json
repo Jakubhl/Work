@@ -3,7 +3,7 @@
         "default_path": "C:/Users/",
         "maximalized": "ano",
         "show_changelog": "ne",
-        "app_zoom": 100,
+        "app_zoom": 80,
         "app_zoom_checkbox": "ano",
         "tray_icon_startup": "ne",
         "default_language": "cz",
@@ -66,6 +66,7 @@
         "default_path": "C:/Users/",
         "render_mode": "fast",
         "path_history_list": [
+            "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/temp/",
             "C:/Users/jakub.hlavacek.local/Desktop/JHV/Work/TRIMAZKON/"
         ],
         "hover_info_trigger_mode": "1"

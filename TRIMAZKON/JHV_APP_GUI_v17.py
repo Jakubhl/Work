@@ -81,7 +81,7 @@ if not open_image_only:
     import Sorting_option_v5 as Trideni
     import Deleting_option_v2 as Deleting
     import Converting_option_v3 as Converting
-    import catalogue_maker_v7 as Catalogue
+    import catalogue_maker_v8_id_dictionary as Catalogue
     import sharepoint_download as download_database
     import IP_setting_v6 as IP_setting
     import trimazkon_tray_v5 as trimazkon_tray

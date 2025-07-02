@@ -12,7 +12,7 @@ include_files = [
 
 # Define the base
 base = "Win32GUI" if sys.platform == "win32" else None  # Hide console for GUI apps
-base = None
+# base = None
 
 
 # Define the executable
