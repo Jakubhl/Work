@@ -266,8 +266,9 @@ class Subwindows:
                     Tools.add_colored_line(console,"New installer download failed","red",font=("Arial",22),delete_line=True)
                 else:
                     Tools.add_colored_line(console,output,"red",font=("Arial",22),delete_line=True)
-            msi_path = f"{initial_path}Installers/{wanted_installer}"
-            call_installer(msi_path)
+            # msi_path = f"{initial_path}Installers/{wanted_installer}"
+            msi_path = f"Installers/{wanted_installer}"
+            call_installer(Tools.resource_path(msi_path))
             child_root.after(1000,lambda: Tools.terminate_pid(os.getpid())) #vypnout thread i s tray aplikací
 
         def ignore_version():
@@ -1359,7 +1360,7 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
                                 print(e)
                             # global menu
                             menu = main_menu(root)
-                            root.after(100,lambda: menu.menu(clear_root=True))
+                            root.after(100,lambda: menu.menu(clear_root=True,force_check_version=True))
                             # menu.menu(clear_root=True)
                         else:
                             start_new_root() # spousteni pres admina, bylo potreba shodit cely processID
@@ -1655,7 +1656,7 @@ class main_menu:
         app_licence_validity = Tools.check_licence()
         menu.menu(clear_root=True)
 
-    def menu(self,initial=False,catalogue_downloaded = False,zoom_disable = False,clear_root = False): # Funkce spouští základní menu při spuštění aplikace (MAIN)
+    def menu(self,initial=False,catalogue_downloaded = False,zoom_disable = False,clear_root = False,force_check_version=False): # Funkce spouští základní menu při spuštění aplikace (MAIN)
         """
         Funkce spouští základní menu při spuštění aplikace (MAIN)
 
@@ -1750,7 +1751,7 @@ class main_menu:
                 licence_info_status.configure(text=f"{validity_string}")
             else:
                 licence_info_status.configure(text=f"platná do {app_licence_validity}")
-            if initial:
+            if initial or force_check_version:
                 def check_version_routine():
                     check_version = threading.Thread(target=Tools.check_for_new_app_version,)
                     check_version.start()

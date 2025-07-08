@@ -692,8 +692,11 @@ if not open_image_only:
                         Tools.add_colored_line(console,"New installer download failed","red",delete_line=True)
                     else:
                         Tools.add_colored_line(console,output,"red",delete_line=True)
-                msi_path = f"{initial_path}Installers/{wanted_installer}"
-                call_installer(msi_path)
+                # msi_path = f"{initial_path}Installers/{wanted_installer}"
+                msi_path = f"Installers/{wanted_installer}"
+                print("msi path: ",msi_path)
+                call_installer(Tools.resource_path(msi_path))
+
                 child_root.after(1000,lambda: Tools.terminate_pid(os.getpid())) #vypnout thread i s tray aplikací
 
             def ignore_version():
@@ -1943,7 +1946,7 @@ class system_pipeline_communication: # vytvoření pipeline serveru s pipe názv
                                 print(e)
                             # global menu
                             menu = main_menu(root)
-                            root.after(100,lambda: menu.menu(clear_root=True))
+                            root.after(100,lambda: menu.menu(clear_root=True,force_check_version=True))
                             # menu.menu(clear_root=True)
                         else:
                             start_new_root() # spousteni pres admina, bylo potreba shodit cely processID
@@ -2168,6 +2171,7 @@ if not open_image_only:
                 root.withdraw()
             loop_request = True
 
+        # spuštění aplikace přes system tray nabídku
         elif sys.argv[1] == "trigger_by_tray":
             load_gui = False
             loop_request = False
@@ -2488,7 +2492,7 @@ if not open_image_only:
             app_licence_validity = Tools.check_licence()
             menu.menu(clear_root=True)
 
-        def menu(self,initial=False,catalogue_call = False,zoom_disable = False,clear_root = False): # Funkce spouští základní menu při spuštění aplikace (MAIN)
+        def menu(self,initial=False,catalogue_call = False,zoom_disable = False,clear_root = False,force_check_version = False): # Funkce spouští základní menu při spuštění aplikace (MAIN)
             """
             Funkce spouští základní menu při spuštění aplikace (MAIN)
 
@@ -2599,7 +2603,7 @@ if not open_image_only:
                 else:
                     licence_info_status.configure(text=f"platná do {app_licence_validity}")
 
-                if initial and not testing:
+                if (initial and not testing) or force_check_version:
                     check_version = threading.Thread(target=Tools.check_for_new_app_version,)
                     self.root.after(500,check_version.start)
 

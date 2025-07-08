@@ -1046,6 +1046,13 @@ TRIMAZKON - Katalog - duplicity list ověřovat při exportu do DB !!! - hotovo
 	- když se zadá manuálně - a jsou duplicity - požadavek o konkrétnější zápis - dát na výběr ze stejných typenr doplněnymi o poznámky v kontext.
 	- pokud je hledana soucast v duplicity listu - force select by kontext. menu aby obsahovala v dict
 
+8:08 AM 7/7/2025
+TRIMAZKON - Katalog - potřeba dodělat aby se neukladalo vyplněne okno accessory do pole když už jsem ho přidal - hotovo
+
+9:52 AM 7/8/2025
+TRIMAZKON - nezeptá se to na aktualizace když se to spíná přes scheduler - hotovo
+TRIMAZKON - neshodí to aplikaci a nespustí installer, když je to spuštěno přes system - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -1057,8 +1064,7 @@ TRIMAZKON - Katalog - export do databázové tabulky
 		- popis
 	- dohledat to až při vytváření tabulky??
 
-
-
+TRIMAZKON - Katalog - nefunguje předvyplňování v initial prefill když přepínám kamery
 
 
 
@@ -1066,12 +1072,12 @@ TRIMAZKON - Katalog - export do databázové tabulky
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
 ??? návod na trimazkon
 
+
+
+
 nová konzole:
 console_frame, wrap="none", height=0,background="#212121",font=("Arial",22),state=tk.DISABLED,foreground="#565B5E",borderwidth=3
 pack(pady = (0,10), padx =10,anchor="w",expand=False,fill="x",side="top",ipady=3,ipadx=5
-
-
-
 
 INDEX:
 index = next(
