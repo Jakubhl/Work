@@ -1848,6 +1848,7 @@ if not open_image_only:
 
             print("version list: ",version_list_int)
             if len(version_list_int) == 0:
+                print("nebylo nic nalezeno nebo chyba čtení = up to date")
                 return "up to date"
             max_sharepoint_version = max(version_list_int)
             if current_app_version < max_sharepoint_version:

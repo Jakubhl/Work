@@ -1066,7 +1066,9 @@ TRIMAZKON - Katalog - export do databázové tabulky
 
 TRIMAZKON - Katalog - nefunguje předvyplňování v initial prefill když přepínám kamery
 
+TRIMAZKON - Katalog - vyřešit duplicity při add_acc
 
+TRIMAZKON - Katalog - přidat ochranu proti prázdným vstupům u všecho
 
 ??? TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama, možná přesměrovat i edity a deletions/ uplne se zbavit excelu... ??
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)

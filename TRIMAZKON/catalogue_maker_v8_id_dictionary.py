@@ -3764,7 +3764,6 @@ class Catalogue_gui:
                                 (optics_entry_db_type, optics_entry_db_notes, optic_type_entry),
                                 (optics_entry_db_type, optics_entry_db_notes, alternative_entry),
                                 (self.whole_camera_cable_database, self.cable_notes_database, cam_cable_menu),
-                                # (self.whole_light_database, self.light_notes_database, "light_list"),
                                 (self.whole_accessory_database, self.accessory_notes_database, cam_acc_menu),
                                 (self.whole_accessory_database, self.accessory_notes_database, opt_acc_menu),
                             ]
@@ -3786,25 +3785,16 @@ class Catalogue_gui:
             """
             Pokud chybí nějaké povinné pole - zčervená
             """
-            # def handle_duplicities():
             db_error_found = False
 
             def check_data_to_save(entry_input,place_to_save,entry_widget,duplicity_id_name,database_given,ids_on_entry_given,object_name="type",selected_db_list_opt = None):
                 nonlocal db_error_found
-
-                # if optics:
-                #     static_db_presence = optics_static_db_presence
-                # else:
-                    
                 static_db_presence = any(item["type"] == entry_input for item in database_given)
-
-                print("static db presence: ",static_db_presence)
-
 
                 if self.current_db_connection == "offline":
                     place_to_save[object_name] = entry_input
 
-                elif not static_db_presence and entry_input.replace(" ","") != "" and not server_db_part_presence(entry_input,entry_widget,selected_db_list_opt):
+                elif (not static_db_presence or entry_input.replace(" ","") == "") and not server_db_part_presence(entry_input,entry_widget,selected_db_list_opt):
                     entry_widget.configure(fg_color = "#bd1931",border_color = "red")
                     db_error_found = True
                 else:
@@ -3841,29 +3831,7 @@ class Catalogue_gui:
                                    ids_on_entry,
                                    "type")
 
-                # if not any(cam["type"] == camera_item for cam in self.whole_camera_type_database) and camera_item.replace(" ","") != "" and not server_db_part_presence(camera_item,camera_type_entry):
-                #     camera_type_entry.configure(fg_color = "#bd1931",border_color = "red")
-                #     db_error_found = True
-                # else:
-                #     camera_type_entry.configure(fg_color = "#343638",border_color = "#565B5E")
-                #     #nasledujici blok je nutný aby uživatel vybral z duplicit konkrétní id... podle popisu
-                #     if camera_item in self.duplicity_list:
-                #         if ids_on_entry[camera_type_entry][1] == camera_item:
-                #             self.temp_station_list[station_index]["camera_list"][camera_index]["cam_id"] = ids_on_entry[camera_type_entry][0]
-                #             self.temp_station_list[station_index]["camera_list"][camera_index]["type"] = camera_item
-
-                #         elif "cam_id" not in self.temp_station_list[station_index]["camera_list"][camera_index]:
-                #             Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
-                #             camera_type_entry.event_generate("<KeyRelease>")
-                #             camera_type_entry.configure(fg_color = "#bd1931",border_color = "red")
-                #             db_error_found = True
-                #     else:
-                #         if "cam_id" in self.temp_station_list[station_index]["camera_list"][camera_index]:
-                #             del self.temp_station_list[station_index]["camera_list"][camera_index]["cam_id"] # pokud zaměnín za typ, co není duplicitní!
-                #         self.temp_station_list[station_index]["camera_list"][camera_index]["type"] = camera_item
-
                 self.temp_station_list[station_index]["camera_list"][camera_index]["controller"] = controller_entry.get()
-
                 current_controller = controller_entry.get()
                 controller_index = None
                 if str(current_controller).replace(" ","") != "":
@@ -3885,29 +3853,6 @@ class Catalogue_gui:
                                    "cable")
 
 
-                # self.temp_station_list[station_index]["camera_list"][camera_index]["cable"] = cable_item
-                # if not cable_item in self.whole_camera_cable_database and cable_item.replace(" ","") != "" and not server_db_part_presence(cable_item):
-                # if not any(cab["type"] == cable_item for cab in self.whole_camera_cable_database) and cable_item.replace(" ","") != "" and not server_db_part_presence(cable_item,cam_cable_menu):
-                #     cam_cable_menu.configure(fg_color = "#bd1931",border_color = "red")
-                #     # return "db_error"
-                #     db_error_found = True
-                # else:
-                #     cam_cable_menu.configure(fg_color = "#343638",border_color = "#565B5E")
-                #     if cable_item in self.duplicity_list:
-                #         if ids_on_entry[cam_cable_menu][1] == cable_item:
-                #             self.temp_station_list[station_index]["camera_list"][camera_index]["cab_id"] = ids_on_entry[cam_cable_menu][0]
-                #             self.temp_station_list[station_index]["camera_list"][camera_index]["cable"] = cable_item
-
-                #         elif "cab_id" not in self.temp_station_list[station_index]["camera_list"][camera_index]:
-                #             Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
-                #             cam_cable_menu.event_generate("<KeyRelease>")
-                #             cam_cable_menu.configure(fg_color = "#bd1931",border_color = "red")
-                #             db_error_found = True
-                #     else:
-                #         if "cab_id" in self.temp_station_list[station_index]["camera_list"][camera_index]:
-                #             del self.temp_station_list[station_index]["camera_list"][camera_index]["cab_id"] # pokud zaměnín za typ, co není duplicitní!
-                #         self.temp_station_list[station_index]["camera_list"][camera_index]["cable"] = cable_item
-
                 filtered_description = Tools.make_wrapping(str(notes_input.get("1.0", tk.END)))
                 self.temp_station_list[station_index]["camera_list"][camera_index]["description"] = filtered_description
                 
@@ -3924,8 +3869,6 @@ class Catalogue_gui:
                             selected_db = dbs
                             db_list = [dbs,db_notes]
 
-                    # condition_output_o = any(any(item["type"] == optic_type for item in sublist) for sublist in database_list)
-
                     check_data_to_save(optic_type,
                                    self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index],
                                    optic_type_entry,
@@ -3935,31 +3878,8 @@ class Catalogue_gui:
                                    object_name="type",
                                    selected_db_list_opt=db_list)
                     
-                    # if not any(optic_type in sublist for sublist in database_list) and optic_type.replace(" ","") != "" and not server_db_part_presence(optic_type):
-                    # if self.current_db_connection == "offline":
-                    #     self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"] = optic_type
-                    # elif not any(any(item["type"] == optic_type for item in sublist) for sublist in database_list) and optic_type.replace(" ","") != "" and not server_db_part_presence(optic_type,optic_type_entry):
-                    #     optic_type_entry.configure(fg_color = "#bd1931",border_color = "red")
-                    #     db_error_found = True
-                    #     # return "db_error"
-                    # else:
-                    #     optic_type_entry.configure(fg_color = "#343638",border_color = "#565B5E")
-                    #     if optic_type in self.duplicity_list:
-                    #         if ids_on_entry[optic_type_entry][1] == optic_type:
-                    #             self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["opt_id"] = ids_on_entry[optic_type_entry][0]
-                    #             self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"] = optic_type
-                    #         elif "opt_id" not in self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]:
-                    #             Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
-                    #             optic_type_entry.event_generate("<KeyRelease>")
-                    #             optic_type_entry.configure(fg_color = "#bd1931",border_color = "red")
-                    #             db_error_found = True
-                    #     else:
-                    #         if "opt_id" in self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]:
-                    #             del self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["opt_id"] # pokud zaměnín za typ, co není duplicitní!
-                    #         self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"] = optic_type
 
                     alternative_item = str(alternative_entry.get())
-                    # condition_output = any(any(item["type"] == alternative_item for item in sublist) for sublist in database_list)
                     check_data_to_save(alternative_item,
                                    self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index],
                                    alternative_entry,
@@ -3969,102 +3889,55 @@ class Catalogue_gui:
                                    object_name="alternative",
                                    selected_db_list_opt=db_list)
 
-                    # if self.current_db_connection == "offline":
-                    #     self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"] = alternative_item
-
-                    # elif not any(any(item["type"] == alternative_item for item in sublist) for sublist in database_list) and alternative_item.replace(" ","") != "" and not server_db_part_presence(alternative_item,alternative_entry):
-                    #     alternative_entry.configure(fg_color = "#bd1931",border_color = "red")
-                    #     db_error_found = True
-                    #     # return "db_error"
-                    # else:
-                    #     alternative_entry.configure(fg_color = "#343638",border_color = "#565B5E")
-                    #     if alternative_item in self.duplicity_list:
-                    #         if ids_on_entry[alternative_entry][1] == alternative_item:
-                    #             self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alt_id"] = ids_on_entry[alternative_entry][0]
-                    #             self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"] = alternative_item
-                    #         elif "alt_id" not in self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]:
-                    #             Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
-                    #             alternative_entry.event_generate("<KeyRelease>")
-                    #             alternative_entry.configure(fg_color = "#bd1931",border_color = "red")
-                    #             db_error_found = True
-                    #     else:
-                    #         if "alt_id" in self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]:
-                    #             del self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alt_id"] # pokud zaměnín za typ, co není duplicitní!
-                    #         self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["alternative"] = alternative_item
-
                     filtered_description = Tools.make_wrapping(str(notes_input2.get("1.0", tk.END)))
                     self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"] = filtered_description
 
-            # když se neklikne na tlačítko přidat, tak se provádí kontrola
-            cam_acc = str(cam_acc_menu.get())
+            # Uložení pro případ, že se zapomene dát přidat a je to v entry (když se neklikne na tlačítko přidat, tak se provádí kontrola):
+            def check_acc_entry(device,entry_widget):
+                nonlocal db_error_found
+                acc_given = str(entry_widget.get())
+                if acc_given:
+                    acc_list = device.setdefault("acc_list", [])
+                    if not any(acc["type"] == acc_given for acc in self.whole_accessory_database) and not server_db_part_presence(acc_given,entry_widget):
+                        entry_widget.configure(fg_color = "#bd1931",border_color = "red")
+                        db_error_found = True
+                    else:
+                        entry_widget.configure(fg_color = "#343638",border_color = "#565B5E")
+                        if acc_given in self.duplicity_list:
+                            if ids_on_entry[entry_widget][1] == acc_given:
+                                if not any(acc["type"] == acc_given for acc in acc_list):
+                                    acc_list.append({"type":acc_given,
+                                                    "id":ids_on_entry[entry_widget][0]})
+                                
+                            else:
+                                Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
+                                entry_widget.event_generate("<KeyRelease>")
+                                entry_widget.configure(fg_color = "#bd1931",border_color = "red")
+                                db_error_found = True
+                        else:
+                            index = next(
+                                (i for i, acc in enumerate(self.whole_accessory_database)
+                                if acc["type"] == acc_given),
+                                None
+                            )
+                            if not any(acc["type"] == acc_given for acc in acc_list):
+                                acc_list.append({"type":acc_given,
+                                                "id":self.whole_accessory_database[index]})
+
+
             cam = self.temp_station_list[station_index]["camera_list"][camera_index]
-            if cam_acc:
-                acc_list = cam.setdefault("acc_list", [])
-                if not any(acc["type"] == cam_acc for acc in self.whole_accessory_database) and not server_db_part_presence(cam_acc,cam_acc_menu):
-                    cam_acc_menu.configure(fg_color = "#bd1931",border_color = "red")
-                    db_error_found = True
-                    # return "db_error"
-                else:
-                    cam_acc_menu.configure(fg_color = "#343638",border_color = "#565B5E")
-                    if cam_acc in self.duplicity_list:
-                        if ids_on_entry[cam_acc_menu][1] == cam_acc:
-                            if not any(acc["type"] == cam_acc for acc in acc_list):
-                                acc_list.append({"type":cam_acc,
-                                                "id":ids_on_entry[cam_acc_menu][0]})
-                            
-                        else:
-                            Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
-                            cam_acc_menu.event_generate("<KeyRelease>")
-                            cam_acc_menu.configure(fg_color = "#bd1931",border_color = "red")
-                            db_error_found = True
-                    else:
-                        index = next(
-                            (i for i, acc in enumerate(self.whole_accessory_database)
-                            if acc["type"] == cam_acc),
-                            None
-                        )
-                        if not any(acc["type"] == cam_acc for acc in acc_list):
-                            acc_list.append({"type":cam_acc,
-                                            "id":self.whole_accessory_database[index]})
+            check_acc_entry(cam,cam_acc_menu)
                         
-            opt_acc = str(opt_acc_menu.get())
             opt = self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]
-            if opt_acc:
-                acc_list = opt.setdefault("acc_list", [])
-                if not any(acc["type"] == opt_acc for acc in self.whole_accessory_database) and not server_db_part_presence(opt_acc,opt_acc_menu):
-                    opt_acc_menu.configure(fg_color = "#bd1931",border_color = "red")
-                    db_error_found = True
-                    # return "db_error"
-                else:
-                    opt_acc_menu.configure(fg_color = "#343638",border_color = "#565B5E")
-                    if opt_acc in self.duplicity_list:
-                        if ids_on_entry[opt_acc_menu][1] == opt_acc:
-                            if not any(acc["type"] == opt_acc for acc in acc_list):
-                                acc_list.append({"type":opt_acc,
-                                                "id":ids_on_entry[opt_acc_menu][0]})
-                        else:
-                            Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
-                            opt_acc_menu.event_generate("<KeyRelease>")
-                            opt_acc_menu.configure(fg_color = "#bd1931",border_color = "red")
-                            db_error_found = True
-                    else:
-                        index = next(
-                            (i for i, acc in enumerate(self.whole_accessory_database)
-                            if acc["type"] == opt_acc),
-                            None
-                        )
-                        if not any(acc["type"] == opt_acc for acc in acc_list):
-                            acc_list.append({"type":opt_acc,
-                                            "id":self.whole_accessory_database[index]})
+            check_acc_entry(opt,opt_acc_menu)
 
             if db_error_found:
                 return "db_error"
             
             Tools.add_colored_line(window_console,"","green",None,True)
-            # Uložení pro případ, že se zapomene dát přidat a je to v entry
 
-            # for key in ids_on_entry:
-            #     ids_on_entry[key] = [0, ""]
+            for key in ids_on_entry:
+                ids_on_entry[key] = [0, ""]
 
             if not no_window_shut:
                 self.station_list = copy.deepcopy(self.temp_station_list)
@@ -4575,7 +4448,7 @@ class Catalogue_gui:
             # print(found_itemss)
             manage_option_menu(e,found_itemss,entry_widget,found_items_notes,auto_search_call=True)
 
-        def add_acc(device):
+        def add_acc(e,device):
             """
             device:
             - camera
@@ -4589,18 +4462,37 @@ class Catalogue_gui:
                 entry_widget = opt_acc_menu
 
             acc_item = str(entry_widget.get())
-            acc_item_id = ids_on_entry[entry_widget][0]
             device_obj.setdefault("acc_list", [])
+            if acc_item:
+                acc_list = device_obj["acc_list"]
+                if not any(acc["type"] == acc_item for acc in acc_list):
+                    if (not any(acc["type"] == acc_item for acc in self.whole_accessory_database) or acc_item.replace(" ","") == "") and not server_db_part_presence(acc_item,entry_widget):
+                        entry_widget.configure(fg_color = "#bd1931",border_color = "red")
+                        return "db_error"
+                    else:
+                        entry_widget.configure(fg_color = "#343638",border_color = "#565B5E")
+                        if acc_item in self.duplicity_list:
+                            if ids_on_entry[entry_widget][1] == acc_item:
+                                if not any(acc["type"] == acc_item for acc in acc_list):
+                                    acc_list.append({"type":acc_item,
+                                                    "id":ids_on_entry[entry_widget][0]})
+                                
+                            else:
+                                Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
+                                # entry_widget.event_generate("<KeyRelease>")
+                                autosearch_engine(e,"acc")
 
-            if not acc_item in device_obj["acc_list"]:
-                if not any(acc["type"] == acc_item for acc in self.whole_accessory_database) and not server_db_part_presence(acc_item):
-                    entry_widget.configure(fg_color = "#bd1931",border_color = "red")
-                    return "db_error"
-                else:
-                    entry_widget.configure(fg_color = "#343638",border_color = "#565B5E")
-                    if acc_item.replace(" ","") != "":
-                        device_obj["acc_list"].append({"type":acc_item,
-                                                       "id":acc_item_id})
+                                entry_widget.configure(fg_color = "#bd1931",border_color = "red")
+                                # db_error_found = True
+                        else:
+                            index = next(
+                                (i for i, acc in enumerate(self.whole_accessory_database)
+                                if acc["type"] == acc_item),
+                                None
+                            )
+                            if not any(acc["type"] == acc_item for acc in acc_list):
+                                acc_list.append({"type":acc_item,
+                                                "id":self.whole_accessory_database[index]})
 
         def show_acc(e,device):
             """
@@ -4700,7 +4592,7 @@ class Catalogue_gui:
         cam_acc_add =               customtkinter.CTkLabel(master = option_menu_frame_cam_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/green_plus.png")),size=(icon_small,icon_small)),bg_color="#212121")
         cam_acc_add.                bind("<Enter>",lambda e: cam_acc_add._image.configure(size=(icon_large,icon_large)))
         cam_acc_add.                bind("<Leave>",lambda e: cam_acc_add._image.configure(size=(icon_small,icon_small)))
-        cam_acc_add.                bind("<Button-1>",lambda e: add_acc("camera"))
+        cam_acc_add.                bind("<Button-1>",lambda e: add_acc(e,"camera"))
         cam_acc_add.                pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
 
         cam_acc_show =              customtkinter.CTkLabel(master = option_menu_frame_cam_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/show.png")),size=(icon_small,icon_small)),bg_color="#212121")
@@ -4792,7 +4684,7 @@ class Catalogue_gui:
         opt_acc_add =               customtkinter.CTkLabel(master = option_menu_frame_opt_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/green_plus.png")),size=(icon_small,icon_small)),bg_color="#212121")
         opt_acc_add.                bind("<Enter>",lambda e: opt_acc_add._image.configure(size=(icon_large,icon_large)))
         opt_acc_add.                bind("<Leave>",lambda e: opt_acc_add._image.configure(size=(icon_small,icon_small)))
-        opt_acc_add.                bind("<Button-1>",lambda e: add_acc("optics"))
+        opt_acc_add.                bind("<Button-1>",lambda e: add_acc(e,"optics"))
         opt_acc_add.                pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
         opt_acc_show =              customtkinter.CTkLabel(master = option_menu_frame_opt_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/show.png")),size=(icon_small,icon_small)),bg_color="#212121")
         opt_acc_show.               bind("<Enter>",lambda e: opt_acc_show._image.configure(size=(icon_large,icon_large)))

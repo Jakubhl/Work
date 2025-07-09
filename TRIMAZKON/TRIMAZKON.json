@@ -74,7 +74,7 @@
     "ip_settings": {
         "default_ip_interface": 2,
         "favorite_ip_window_status": 1,
-        "disk_or_ip_window": 0,
+        "disk_or_ip_window": 1,
         "default_window_size": 1,
         "init_disk_refresh": 1,
         "editable_notes": 1,
@@ -82,7 +82,9 @@
         "auto_order_when_edit": 0,
         "ask_to_delete": 100,
         "deleted_project_bin": [],
-        "edited_project_bin": []
+        "edited_project_bin": [],
+        "deleted_project_bin_disk": [],
+        "edited_project_bin_disk": []
     },
     "db_settings": {
         "server_history_list": [
