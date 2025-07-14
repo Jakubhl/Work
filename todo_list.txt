@@ -1053,6 +1053,14 @@ TRIMAZKON - Katalog - potřeba dodělat aby se neukladalo vyplněne okno accesso
 TRIMAZKON - nezeptá se to na aktualizace když se to spíná přes scheduler - hotovo
 TRIMAZKON - neshodí to aplikaci a nespustí installer, když je to spuštěno přes system - hotovo
 
+8:59 AM 7/14/2025
+TRIMAZKON - Katalog - přidat ochranu proti prázdným vstupům u všeho - hotovo
+TRIMAZKON - Katalog - nefunguje předvyplňování v initial prefill když přepínám kamery - hotovo
+TRIMAZKON - Katalog - vyřešit duplicity při add_acc u všech checkboxů - hotovo
+TRIMAZKON - Katalog - u acc, když chci přidat dvakrát stejný produkt, kde musím vybírat id - u duplicit vždy id u add acc... - hotovo
+TRIMAZKON - Katalog - vyřešit callback při vybírání z kontext nabídky duplicit - hotovo
+TRIMAZKON - Katalog - vyřešit, že to zůstane červené když selectnu duplicitu - hotovo
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -1064,11 +1072,11 @@ TRIMAZKON - Katalog - export do databázové tabulky
 		- popis
 	- dohledat to až při vytváření tabulky??
 
-TRIMAZKON - Katalog - nefunguje předvyplňování v initial prefill když přepínám kamery
 
-TRIMAZKON - Katalog - vyřešit duplicity při add_acc
+TRIMAZKON - Katalog - dodělat funkcionalitu poznámek u duplicitních acc
+TRIMAZKON - Katalog - hledání indexu přidat do tools...
 
-TRIMAZKON - Katalog - přidat ochranu proti prázdným vstupům u všecho
+
 
 ??? TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama, možná přesměrovat i edity a deletions/ uplne se zbavit excelu... ??
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)

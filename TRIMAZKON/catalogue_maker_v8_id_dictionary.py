@@ -632,6 +632,8 @@ class FakeContextMenu(customtkinter.CTkScrollableFrame):
         width = kwargs.get("width")
         self._scrollbar.configure(width=30)
         self._scrollbar.configure(corner_radius=10)
+        
+        note_index = 0
         if self.del_option:
             icon_small = 22
             icon_large = 25
@@ -639,9 +641,6 @@ class FakeContextMenu(customtkinter.CTkScrollableFrame):
                 row_frame = customtkinter.CTkFrame(self,corner_radius=0)
                 btn = customtkinter.CTkButton(row_frame, text=str(val["type"]), font=("Arial", 20), fg_color="transparent", hover_color="gray25",
                                     command=lambda v=val: self.on_select(v))
-                # del_btn = customtkinter.CTkButton(row_frame, text="delete", font=("Arial", 20), fg_color="transparent", hover_color="gray25",
-                #                     command=lambda v=val: self.on_select(v))
-                
                 del_btn = customtkinter.CTkLabel(row_frame,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/delete_file.png")),size=(icon_small,icon_small)),bg_color="#212121")
                 del_btn.bind("<Button-1>",lambda e, v=val: self.deletion(v))
                 del_btn.bind("<Enter>", lambda e, b=del_btn: b._image.configure(size=(icon_large, icon_large)))
@@ -652,9 +651,14 @@ class FakeContextMenu(customtkinter.CTkScrollableFrame):
                 self.one_button_height = btn._current_height
                 self.buttons.append(btn)
                 self.buttons.append(del_btn)
+                try:
+                    wrapped_text = Tools.make_wrapping(values2[note_index])
+                    Catalogue_gui.ToolTip(btn," "+wrapped_text+" ",parent.master,subwindow_status=True,in_listbox=True,reverse=True,listbox_width=width-70)
+                except Exception as eee:
+                    pass
+                note_index +=1
 
         else:
-            note_index = 0
             for val in values:
                 btn = customtkinter.CTkButton(self, text=str(val["type"]), font=("Arial", 20), fg_color="transparent", hover_color="gray25",
                                     command=lambda v=val: self.on_select(v))
@@ -667,11 +671,8 @@ class FakeContextMenu(customtkinter.CTkScrollableFrame):
                         Catalogue_gui.ToolTip(btn," "+wrapped_text+" ",parent.master,subwindow_status=True,in_listbox=True,reverse=True,listbox_width=width-50)
                     else:
                         Catalogue_gui.ToolTip(btn," "+wrapped_text+" ",parent.master,subwindow_status=True,in_listbox=True)
-
-                    # Catalogue_gui.ToolTip(btn," "+values2[note_index]+" ",root,subwindow_status=True,in_listbox=True)
                 except Exception as eee:
                     pass
-                    # print("tooltip window error: ",eee)
                 note_index +=1
 
 
@@ -3794,7 +3795,7 @@ class Catalogue_gui:
                 if self.current_db_connection == "offline":
                     place_to_save[object_name] = entry_input
 
-                elif (not static_db_presence or entry_input.replace(" ","") == "") and not server_db_part_presence(entry_input,entry_widget,selected_db_list_opt):
+                elif not static_db_presence and entry_input.replace(" ","") != "" and not server_db_part_presence(entry_input,entry_widget,selected_db_list_opt):
                     entry_widget.configure(fg_color = "#bd1931",border_color = "red")
                     db_error_found = True
                 else:
@@ -3898,31 +3899,32 @@ class Catalogue_gui:
                 acc_given = str(entry_widget.get())
                 if acc_given:
                     acc_list = device.setdefault("acc_list", [])
-                    if not any(acc["type"] == acc_given for acc in self.whole_accessory_database) and not server_db_part_presence(acc_given,entry_widget):
-                        entry_widget.configure(fg_color = "#bd1931",border_color = "red")
-                        db_error_found = True
-                    else:
-                        entry_widget.configure(fg_color = "#343638",border_color = "#565B5E")
-                        if acc_given in self.duplicity_list:
-                            if ids_on_entry[entry_widget][1] == acc_given:
+                    if not any(acc["type"] == acc_given for acc in acc_list): # pokud je už v listu nechci znovu ověřovat duplicity - nikdy by to nepustilo dál
+                        if not any(acc["type"] == acc_given for acc in self.whole_accessory_database) and not server_db_part_presence(acc_given,entry_widget):
+                            entry_widget.configure(fg_color = "#bd1931",border_color = "red")
+                            db_error_found = True
+                        else:
+                            entry_widget.configure(fg_color = "#343638",border_color = "#565B5E")
+                            if acc_given in self.duplicity_list:
+                                if ids_on_entry[entry_widget][1] == acc_given:
+                                    if not any(acc["type"] == acc_given for acc in acc_list):
+                                        acc_list.append({"type":acc_given,
+                                                        "id":ids_on_entry[entry_widget][0]})
+                                    
+                                else:
+                                    Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
+                                    entry_widget.event_generate("<KeyRelease>")
+                                    entry_widget.configure(fg_color = "#bd1931",border_color = "red")
+                                    db_error_found = True
+                            else:
+                                index = next(
+                                    (i for i, acc in enumerate(self.whole_accessory_database)
+                                    if acc["type"] == acc_given),
+                                    None
+                                )
                                 if not any(acc["type"] == acc_given for acc in acc_list):
                                     acc_list.append({"type":acc_given,
-                                                    "id":ids_on_entry[entry_widget][0]})
-                                
-                            else:
-                                Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
-                                entry_widget.event_generate("<KeyRelease>")
-                                entry_widget.configure(fg_color = "#bd1931",border_color = "red")
-                                db_error_found = True
-                        else:
-                            index = next(
-                                (i for i, acc in enumerate(self.whole_accessory_database)
-                                if acc["type"] == acc_given),
-                                None
-                            )
-                            if not any(acc["type"] == acc_given for acc in acc_list):
-                                acc_list.append({"type":acc_given,
-                                                "id":self.whole_accessory_database[index]})
+                                                    "id":self.whole_accessory_database[index]})
 
 
             cam = self.temp_station_list[station_index]["camera_list"][camera_index]
@@ -4305,20 +4307,25 @@ class Catalogue_gui:
             textbox_widget.delete("0.0","end")
             textbox_widget.insert("0.0",wrapped_text)
 
-        def manage_option_menu(e,values,entry_widget,values2 = [],mirror=None,auto_search_call=False,acc_list = False, add_button = None,device = ""):
+        def manage_option_menu(e,values,entry_widget,values2 = [],mirror=None,auto_search_call=False,acc_list = False, add_button = None,device = "",item_given_as=""):
             """
             - při použití jako autosearch engine (acc_list = False) není třeba device
             - když i deletion (show funkce - oko) musí se definovat device
             """
             def on_item_selected(value):
-                # if auto_search_call:
                 entry_widget.delete(0,200)
                 entry_widget.insert(0,str(value["type"]))
                 ids_on_entry[entry_widget][0] = value["id"]
                 ids_on_entry[entry_widget][1] = value["type"]
-                # else:
-                #     entry_widget.set(str(value))
                 print("selected item id: ",value["id"])
+
+                if item_given_as == "acc":
+                    print("the acc is here")
+                    # cam_acc_add.event_generate("<Button-1>")
+                    add_acc(e,entry_widget,"camera")
+                else:
+                    # opt_acc_add.event_generate("<Button-1>")
+                    add_acc(e,entry_widget,"optics")
                 window.destroy()
 
             def remove_row(value):
@@ -4364,10 +4371,10 @@ class Catalogue_gui:
             window.configure(bg="black")
             if acc_list:
                 max_width_px += 100
-                listbox = FakeContextMenu(window, values, command=on_item_selected, width=max_width_px, del_option=True,del_cmd=remove_row)
+                listbox = FakeContextMenu(window, values, values2, command=on_item_selected, width=max_width_px, del_option=True,del_cmd=remove_row)
             else:
                 # listbox = FakeContextMenu(window, values, command=on_item_selected, width=max_width_px)
-                listbox = FakeContextMenu(window, values, values2,mirror=mirror, command=on_item_selected, width=max_width_px)
+                listbox = FakeContextMenu(window, values, values2, mirror=mirror, command=on_item_selected, width=max_width_px)
                 
             listbox.pack(fill="both",expand=True)
             child_root.bind("<Button-1>", lambda e: window.destroy(), "+")
@@ -4446,9 +4453,9 @@ class Catalogue_gui:
 
             found_itemss = sorted(found_itemss, key=lambda x: x["type"])
             # print(found_itemss)
-            manage_option_menu(e,found_itemss,entry_widget,found_items_notes,auto_search_call=True)
+            manage_option_menu(e,found_itemss,entry_widget,found_items_notes,auto_search_call=True,item_given_as=which_item)
 
-        def add_acc(e,device):
+        def add_acc(e,entry_widget,device):
             """
             device:
             - camera
@@ -4456,43 +4463,56 @@ class Catalogue_gui:
             """
             if device == "camera":
                 device_obj = self.temp_station_list[station_index]["camera_list"][camera_index]
-                entry_widget = cam_acc_menu
+                # entry_widget = cam_acc_menu
             else:
                 device_obj = self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]
-                entry_widget = opt_acc_menu
+                # entry_widget = opt_acc_menu
 
             acc_item = str(entry_widget.get())
             device_obj.setdefault("acc_list", [])
             if acc_item:
                 acc_list = device_obj["acc_list"]
-                if not any(acc["type"] == acc_item for acc in acc_list):
-                    if (not any(acc["type"] == acc_item for acc in self.whole_accessory_database) or acc_item.replace(" ","") == "") and not server_db_part_presence(acc_item,entry_widget):
-                        entry_widget.configure(fg_color = "#bd1931",border_color = "red")
-                        return "db_error"
-                    else:
-                        entry_widget.configure(fg_color = "#343638",border_color = "#565B5E")
-                        if acc_item in self.duplicity_list:
-                            if ids_on_entry[entry_widget][1] == acc_item:
-                                if not any(acc["type"] == acc_item for acc in acc_list):
-                                    acc_list.append({"type":acc_item,
-                                                    "id":ids_on_entry[entry_widget][0]})
-                                
-                            else:
-                                Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
-                                # entry_widget.event_generate("<KeyRelease>")
-                                autosearch_engine(e,"acc")
-
-                                entry_widget.configure(fg_color = "#bd1931",border_color = "red")
-                                # db_error_found = True
-                        else:
+                # if not any(acc["type"] == acc_item for acc in acc_list):
+                if not any(acc["type"] == acc_item for acc in self.whole_accessory_database) and acc_item.replace(" ","") != "" and not server_db_part_presence(acc_item,entry_widget):
+                    entry_widget.configure(fg_color = "#bd1931",border_color = "red")
+                    return "db_error"
+                else:
+                    entry_widget.configure(fg_color = "#343638",border_color = "#565B5E")
+                    if acc_item in self.duplicity_list:
+                        if ids_on_entry[entry_widget][1] == acc_item:
+                            # if not any(acc["type"] == acc_item for acc in acc_list):
                             index = next(
                                 (i for i, acc in enumerate(self.whole_accessory_database)
-                                if acc["type"] == acc_item),
+                                if acc["id"] == ids_on_entry[entry_widget][0]),
                                 None
                             )
-                            if not any(acc["type"] == acc_item for acc in acc_list):
-                                acc_list.append({"type":acc_item,
-                                                "id":self.whole_accessory_database[index]})
+                            acc_list.append({"type":acc_item,
+                                            "id":ids_on_entry[entry_widget][0],
+                                            "notes":self.accessory_notes_database[index]})
+                            
+                            for key in ids_on_entry:
+                                ids_on_entry[key] = [0, ""]
+                            
+                        else:
+                            Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
+                            # entry_widget.event_generate("<KeyRelease>")
+                            if device == "camera":
+                                autosearch_engine(e,"acc")
+                            else:
+                                autosearch_engine(e,"acc_opt")
+
+                            entry_widget.configure(fg_color = "#bd1931",border_color = "red")
+                            # db_error_found = True
+                    else:
+                        index = next(
+                            (i for i, acc in enumerate(self.whole_accessory_database)
+                            if acc["type"] == acc_item),
+                            None
+                        )
+                        # if not any(acc["type"] == acc_item for acc in acc_list):
+                        acc_list.append({"type":acc_item,
+                                         "id":self.whole_accessory_database[index],
+                                         "notes":self.accessory_notes_database[index]})
 
         def show_acc(e,device):
             """
@@ -4512,11 +4532,14 @@ class Catalogue_gui:
                 add_button = opt_acc_show
 
             current_acc_list = []
+            current_acc_notes_list = []
             device_obj.setdefault("acc_list", [])
             current_acc_list = device_obj["acc_list"]
             print("current acc list",current_acc_list)
+            for accsrs in current_acc_list:
+                current_acc_notes_list.append(accsrs["notes"])
             if len(current_acc_list) > 0:
-                manage_option_menu(e,current_acc_list,entry_widget,acc_list=True,add_button = add_button,device=device)
+                manage_option_menu(e,current_acc_list,entry_widget,current_acc_notes_list,acc_list=True,add_button = add_button,device=device)
 
         child_root = customtkinter.CTkToplevel()
         icon_small = 45
@@ -4592,7 +4615,8 @@ class Catalogue_gui:
         cam_acc_add =               customtkinter.CTkLabel(master = option_menu_frame_cam_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/green_plus.png")),size=(icon_small,icon_small)),bg_color="#212121")
         cam_acc_add.                bind("<Enter>",lambda e: cam_acc_add._image.configure(size=(icon_large,icon_large)))
         cam_acc_add.                bind("<Leave>",lambda e: cam_acc_add._image.configure(size=(icon_small,icon_small)))
-        cam_acc_add.                bind("<Button-1>",lambda e: add_acc(e,"camera"))
+        # cam_acc_add.                bind("<Button-1>",lambda e, entry_widget = cam_acc_menu: add_acc(e,entry_widget,"camera"))
+        cam_acc_add.                bind("<Button-1>",lambda e: add_acc(e,cam_acc_menu,"camera"))
         cam_acc_add.                pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
 
         cam_acc_show =              customtkinter.CTkLabel(master = option_menu_frame_cam_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/show.png")),size=(icon_small,icon_small)),bg_color="#212121")
@@ -4684,7 +4708,8 @@ class Catalogue_gui:
         opt_acc_add =               customtkinter.CTkLabel(master = option_menu_frame_opt_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/green_plus.png")),size=(icon_small,icon_small)),bg_color="#212121")
         opt_acc_add.                bind("<Enter>",lambda e: opt_acc_add._image.configure(size=(icon_large,icon_large)))
         opt_acc_add.                bind("<Leave>",lambda e: opt_acc_add._image.configure(size=(icon_small,icon_small)))
-        opt_acc_add.                bind("<Button-1>",lambda e: add_acc(e,"optics"))
+        opt_acc_add.                bind("<Button-1>",lambda e: add_acc(e,opt_acc_menu,"optics"))
+        # opt_acc_add.                bind("<Button-1>",lambda e, entry_widget = opt_acc_menu: add_acc(e,entry_widget,"optics"))
         opt_acc_add.                pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
         opt_acc_show =              customtkinter.CTkLabel(master = option_menu_frame_opt_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/show.png")),size=(icon_small,icon_small)),bg_color="#212121")
         opt_acc_show.               bind("<Enter>",lambda e: opt_acc_show._image.configure(size=(icon_large,icon_large)))
