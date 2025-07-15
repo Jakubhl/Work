@@ -3727,7 +3727,14 @@ class Catalogue_gui:
         - optics
         """
         
-        def server_db_part_presence(part,entry_given=None,selected_db_list_opt= None):
+        def server_db_part_presence(part,entry_given=None,selected_db_list_opt= None,id_defined_status=False):
+            """
+            Vrací True:
+            - celá server db obsahuje jeden výskyt part
+            - nebo už bylo vybráno jedno id z několika výskytů part
+            \nVrací False:
+            - je nalezeno několik výskytů part nebo vůbec žádná (a chyby)
+            """
             try:
                 status = read_database.Tools.find_unknown(self.current_db_connection,part)
                 print("db_status: ",status)
@@ -3742,6 +3749,8 @@ class Catalogue_gui:
                     Tools.add_colored_line(window_console,f"Bylo nalezeno několik výskytů: {part} v nevyfiltrované databázi, celkem: {len(status)}, zkuste konkrétněji","red",None,True)
                     if len(status) < 30:
                         # print(status)
+                        if id_defined_status:
+                            return True
 
                         all_type_list = []
                         for items in status:
@@ -3788,31 +3797,33 @@ class Catalogue_gui:
             """
             db_error_found = False
 
-            def check_data_to_save(entry_input,place_to_save,entry_widget,duplicity_id_name,database_given,ids_on_entry_given,object_name="type",selected_db_list_opt = None):
+            def check_data_to_save(entry_input,place_to_save,entry_widget,duplicity_id_name,database_given,object_name="type",selected_db_list_opt = None):
                 nonlocal db_error_found
-                static_db_presence = any(item["type"] == entry_input for item in database_given)
+                id_defined_status=False
+                if duplicity_id_name in place_to_save:
+                    id_defined_status = True
 
+                static_db_presence = any(item["type"] == entry_input for item in database_given)
                 if self.current_db_connection == "offline":
                     place_to_save[object_name] = entry_input
-
-                elif not static_db_presence and entry_input.replace(" ","") != "" and not server_db_part_presence(entry_input,entry_widget,selected_db_list_opt):
+                elif not static_db_presence and entry_input.replace(" ","") != "" and not server_db_part_presence(entry_input,entry_widget,selected_db_list_opt,id_defined_status):
                     entry_widget.configure(fg_color = "#bd1931",border_color = "red")
                     db_error_found = True
                 else:
                     entry_widget.configure(fg_color = "#343638",border_color = "#565B5E")
                     #nasledujici blok je nutný aby uživatel vybral z duplicit konkrétní id... podle popisu
                     if entry_input in self.duplicity_list:
-                        if ids_on_entry_given[entry_widget][1] == entry_input:
-                            place_to_save[duplicity_id_name] = ids_on_entry_given[entry_widget][0]
+                        if ids_on_entry[entry_widget][1] == entry_input:
+                            place_to_save[duplicity_id_name] = ids_on_entry[entry_widget][0]
                             place_to_save[object_name] = entry_input
 
-                        elif duplicity_id_name not in place_to_save:
+                        elif not id_defined_status:
                             Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení: {entry_input} - vyberte konkrétní přes kontextové menu","red",None,True)
                             entry_widget.event_generate("<KeyRelease>")
                             entry_widget.configure(fg_color = "#bd1931",border_color = "red")
                             db_error_found = True
                     else:
-                        if duplicity_id_name in place_to_save:
+                        if id_defined_status:
                             del place_to_save[duplicity_id_name] # pokud zaměnín za typ, co není duplicitní!
                         place_to_save[object_name] = entry_input
                 
@@ -3829,7 +3840,6 @@ class Catalogue_gui:
                                    camera_type_entry,
                                    "cam_id",
                                    self.whole_camera_type_database,
-                                   ids_on_entry,
                                    "type")
 
                 self.temp_station_list[station_index]["camera_list"][camera_index]["controller"] = controller_entry.get()
@@ -3850,7 +3860,6 @@ class Catalogue_gui:
                                    cam_cable_menu,
                                    "cab_id",
                                    self.whole_camera_cable_database,
-                                   ids_on_entry,
                                    "cable")
 
 
@@ -3875,7 +3884,6 @@ class Catalogue_gui:
                                    optic_type_entry,
                                    "opt_id",
                                    selected_db,
-                                   ids_on_entry,
                                    object_name="type",
                                    selected_db_list_opt=db_list)
                     
@@ -3886,7 +3894,6 @@ class Catalogue_gui:
                                    alternative_entry,
                                    "alt_id",
                                    selected_db,
-                                   ids_on_entry,
                                    object_name="alternative",
                                    selected_db_list_opt=db_list)
 

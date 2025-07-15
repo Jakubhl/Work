@@ -1076,6 +1076,8 @@ TRIMAZKON - Katalog - export do databázové tabulky
 TRIMAZKON - Katalog - dodělat funkcionalitu poznámek u duplicitních acc
 TRIMAZKON - Katalog - hledání indexu přidat do tools...
 
+TRIMAZKON - Katalog - nejde přidat kameru???
+
 
 
 ??? TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama, možná přesměrovat i edity a deletions/ uplne se zbavit excelu... ??
