@@ -1061,6 +1061,11 @@ TRIMAZKON - Katalog - u acc, když chci přidat dvakrát stejný produkt, kde mu
 TRIMAZKON - Katalog - vyřešit callback při vybírání z kontext nabídky duplicit - hotovo
 TRIMAZKON - Katalog - vyřešit, že to zůstane červené když selectnu duplicitu - hotovo
 
+3:27 PM 7/16/2025
+TRIMAZKON - Katalog - nejde přidat kameru??? - hotovo
+TRIMAZKON - Katalog - hledání indexu přidat do tools... - hotovo
+
+
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
 
@@ -1073,10 +1078,12 @@ TRIMAZKON - Katalog - export do databázové tabulky
 	- dohledat to až při vytváření tabulky??
 
 
-TRIMAZKON - Katalog - dodělat funkcionalitu poznámek u duplicitních acc
-TRIMAZKON - Katalog - hledání indexu přidat do tools...
+TRIMAZKON - Katalog - dodělat funkcionalitu poznámek u duplicitních acc u controlleru
+TRIMAZKON - Katalog - dodělat u controlleru ukládání stejným způsobem jako u kamery a optiky
 
-TRIMAZKON - Katalog - nejde přidat kameru???
+
+
+
 
 
 
