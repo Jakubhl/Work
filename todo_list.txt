@@ -1065,6 +1065,13 @@ TRIMAZKON - Katalog - vyřešit, že to zůstane červené když selectnu duplic
 TRIMAZKON - Katalog - nejde přidat kameru??? - hotovo
 TRIMAZKON - Katalog - hledání indexu přidat do tools... - hotovo
 
+11:31 AM 7/21/2025
+TRIMAZKON - Katalog - opravit - add accessory maže historii vybraných id - hotovo
+
+12:42 PM 7/28/2025
+odstraněna chyba duplicit - nulování  ids_on_entry + initial_prefill chování duplicit, (blokovalo to ukládání do ids_on_entry v check_server_presence)
+TRIMAZKON - Katalog - entry na název projektu bere focus - hotovo
+
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -1078,11 +1085,12 @@ TRIMAZKON - Katalog - export do databázové tabulky
 	- dohledat to až při vytváření tabulky??
 
 
+
+TRIMAZKON - Katalog - opravit autosearch při db_erroru
+
+
 TRIMAZKON - Katalog - dodělat funkcionalitu poznámek u duplicitních acc u controlleru
 TRIMAZKON - Katalog - dodělat u controlleru ukládání stejným způsobem jako u kamery a optiky
-
-
-
 
 
 
