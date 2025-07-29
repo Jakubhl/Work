@@ -18,6 +18,10 @@ change_log_list = ["Verze 1.0.0 (21.01.2025)",
     "\nVerze 1.0.7 (27.06.2025)",
     """ 
     - nově možnost exportu logu mazání do .xls, .txt\n"""
+    "\nVerze 1.0.8 (29.07.2025)",
+    """ 
+    - Při redukci novějších souborů (možnost 2.) mazání postupuje 
+    od nejstarších\n"""
 ]
 
 

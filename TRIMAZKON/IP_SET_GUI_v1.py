@@ -54,7 +54,7 @@ exe_name = os.path.basename(exe_path)
 config_filename = "jhv_IP.json"
 app_name = "jhv_IP"
 app_version = "1.0.2"
-trimazkon_version = "4.3.7"
+trimazkon_version = "4.3.8"
 loop_request = False
 root = None
 print("exe name: ",exe_name)
@@ -1511,7 +1511,7 @@ load_gui=True
 
 print("SYSTEM: ",sys.argv)
 if len(sys.argv) > 1:
-    if global_licence_load_error: # jen když je spouštěno přes cmd, neuzavirej smycku...
+    if global_licence_load_error and sys.argv[1] != "installer_call": # jen když je spouštěno přes cmd, neuzavirej smycku...
         load_gui = False
         loop_request = False
 

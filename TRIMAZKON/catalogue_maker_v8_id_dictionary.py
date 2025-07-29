@@ -23,7 +23,7 @@ import tkinter.font as tkFont
 import pyodbc
 
 initial_path = ""
-testing = True
+testing = False
 
 if testing:
     customtkinter.set_appearance_mode("dark")

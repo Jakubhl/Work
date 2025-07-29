@@ -57,7 +57,7 @@ exe_path = sys.executable
 exe_name = os.path.basename(exe_path)
 config_filename = "TRIMAZKON.json"
 app_name = "TRIMAZKON"
-app_version = "4.3.7"
+app_version = "4.3.8"
 loop_request = False
 root = None
 print("exe name: ",exe_name)
@@ -2148,7 +2148,7 @@ if not open_image_only:
 
     print("SYSTEM: ",sys.argv)
     if len(sys.argv) > 1:
-        if global_licence_load_error: # jen když je spouštěno přes cmd, neuzavirej smycku...
+        if global_licence_load_error and sys.argv[1] != "installer_call": # jen když je spouštěno přes cmd, neuzavirej smycku...
             load_gui = False
             loop_request = False
 

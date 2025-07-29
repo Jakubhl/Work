@@ -34,8 +34,8 @@ exe_path = sys.executable
 exe_name = os.path.basename(exe_path)
 config_filename = "config_MAZ.json"
 app_name = "jhv_MAZ"
-app_version = "1.0.7"
-trimazkon_version = "4.3.7"
+app_version = "1.0.8"
+trimazkon_version = "4.3.8"
 loop_request = False
 root = None
 print("exe name: ",exe_name)
@@ -1833,7 +1833,7 @@ load_gui=True
 print("SYSTEM: ",sys.argv)
 if len(sys.argv) > 1: # kontrola tady, aby se znovu nedefinovala classa windowsballoontip, řve to...
     print("received: ",sys.argv[1])
-    if global_licence_load_error: # jen když je spouštěno přes cmd, neuzavirej smycku...
+    if global_licence_load_error and sys.argv[1] != "installer_call": # jen když je spouštěno přes cmd, neuzavirej smycku...
         load_gui = False
         loop_request = False
 
@@ -1884,7 +1884,6 @@ if len(sys.argv) > 1: # kontrola tady, aby se znovu nedefinovala classa windowsb
         pipeline_duplex_instance.call_checking(f"Shutdown application",[])
 
     elif sys.argv[1] == "edit_existing_task":
-
         load_gui = False
         loop_request = False
         pipeline_duplex_instance = system_pipeline_communication(exe_name,no_server=True)
@@ -3864,8 +3863,8 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         self.console =          tk.Text(bottom_frame, wrap="word",background="black",font=("Arial",16),state=tk.DISABLED,relief="flat")
         execution_btn_frame.    pack(pady =3,padx=3,side = "top",anchor="n")
         self.console.           pack(pady =0,padx=(10,0),side = "left",fill="both",expand=True)
-        bottom_frame .          pack(pady =0,padx=0,side = "top",fill="both",expand=False)
-        header_frame.           pack(pady=0,padx=0,fill="x",side = "top")
+        bottom_frame .          pack(pady =0,padx=0,side = "top",fill="both",expand=True)
+        header_frame.           pack(pady=0,padx=0,fill="both",side = "top",expand=True)
         self.selected(option=1)
         self.options1.select()
 

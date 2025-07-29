@@ -522,6 +522,7 @@ class whole_deleting_function:
             else:
                 return []
         if option == 1:
+            file_list_to_be_sorted = []
             # pokud jsou všechny starší vydej varování - a zruš:
             min_file_age = check_min_file_age(path)
             if min_file_age != []:
@@ -548,15 +549,34 @@ class whole_deleting_function:
                                 os.remove(path + files)
                         else:
                             newer_files_checked +=1
-                            if newer_files_checked > self.files_to_keep:
-                                deleted_count +=1
-                                if self.testing_mode == True:
-                                    #print(f"Mazání: {path + files}")
-                                    if not self.only_analyze:
-                                        self.make_dir(self.to_delete_folder,path)
-                                        shutil.move(path + files , path + self.to_delete_folder + '/' + files)
-                                if self.testing_mode == False:
-                                    os.remove(path + files)
+                            #///////////////////////////////////////////////////// 7/29/2025 //////////////////////////////////////////////////////////////////
+                            # Přidáno sortování novějších obrázků podle datumu, aby se při redukci novějších mazalo od nejstarších
+                            file_list_to_be_sorted.append({"file":files,
+                                                           "date":int(date_of_file)})
+            if newer_files_checked > self.files_to_keep:
+                files_to_be_deleted = newer_files_checked - self.files_to_keep
+                file_list_to_be_sorted.sort(key=lambda x: x["date"])
+
+                for i in range(0,files_to_be_deleted):
+                    deleted_count +=1
+                    if self.testing_mode == True:
+                        #print(f"Mazání: {path + files}")
+                        if not self.only_analyze:
+                            self.make_dir(self.to_delete_folder,path)
+                            shutil.move(path + file_list_to_be_sorted[i]["file"], path + self.to_delete_folder + '/' + file_list_to_be_sorted[i]["file"])
+                    if self.testing_mode == False:
+                        os.remove(path + file_list_to_be_sorted[i]["file"])
+
+                #///////////////////////////////////////////////////// 7/29/2025 //////////////////////////////////////////////////////////////////
+                            # if newer_files_checked > self.files_to_keep:
+                                # deleted_count +=1
+                                # if self.testing_mode == True:
+                                #     #print(f"Mazání: {path + files}")
+                                #     if not self.only_analyze:
+                                #         self.make_dir(self.to_delete_folder,path)
+                                #         shutil.move(path + files , path + self.to_delete_folder + '/' + files)
+                                # if self.testing_mode == False:
+                                #     os.remove(path + files)
         
         #mazani potencionalne prazdne slozky
         number_of_files = 0
