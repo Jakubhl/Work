@@ -446,6 +446,21 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
   TRIMAZKON - mazání:
     - nově možnost exportu logu mazání do .xls, .txt 
     """
+        ,"\nVerze 4.3.8 (30.07.2025)"
+        ,
+  """ 
+  TRIMAZKON msi
+    - oprava okamžitého spouštění po instalaci
+    - autoupdate - neshodilo to aplikaci a nespustilo 
+    instaler přes system path - opraveno
+  Katalog:
+    - oprava při spuštění přes system path
+    - scaling mezi menu a katalog - oprava
+    - Ochrana proti duplicitám v db - volení id
+  TRIMAZKON - mazání:
+    - redukce novějších souborů nově seřazuje od nejstarších 
+    (původně podle windows)
+    """
 ]
 
 

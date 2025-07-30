@@ -1,0 +1,6 @@
+Dialog_	Control_	Action	Condition
+s72	s50	s50	s255
+ControlCondition	Dialog_	Control_	Action	Condition
+Window_with_checkboxes	Install_all_checkbox	Disable	1
+Window_with_checkboxes	Install_ip_set_checkbox	Disable	1
+Window_with_checkboxes	Install_jhv_MAZ_checkbox	Disable	1

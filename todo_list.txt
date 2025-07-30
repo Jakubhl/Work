@@ -1069,8 +1069,15 @@ TRIMAZKON - Katalog - hledání indexu přidat do tools... - hotovo
 TRIMAZKON - Katalog - opravit - add accessory maže historii vybraných id - hotovo
 
 12:42 PM 7/28/2025
-odstraněna chyba duplicit - nulování  ids_on_entry + initial_prefill chování duplicit, (blokovalo to ukládání do ids_on_entry v check_server_presence)
+TRIMAZKON - Katalog - odstraněna chyba duplicit - nulování  ids_on_entry + initial_prefill chování duplicit, (blokovalo to ukládání do ids_on_entry v check_server_presence)
 TRIMAZKON - Katalog - entry na název projektu bere focus - hotovo
+
+12:13 PM 7/29/2025
+TRIMAZKON - Když není licence a je spuštěno hned po instalaci, nešlo to přes cmd - hotovo
+TRIMAZKON - mazání - redukce novějších souborů nově seřazuje od nejstarších (původně podle windows) - hotovo
+
+12:24 PM 7/30/2025
+release verze 4.3.8
 
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
