@@ -1079,6 +1079,13 @@ TRIMAZKON - mazání - redukce novějších souborů nově seřazuje od nejstar�
 12:24 PM 7/30/2025
 release verze 4.3.8
 
+12:59 PM 8/7/2025
+TRIMAZKON - Katalog - opravit autosearch při db_erroru - hotovo
+TRIMAZKON - Katalog - dodělat funkcionalitu poznámek u duplicitních acc u controlleru - hotovo
+TRIMAZKON - Katalog - dodělat u controlleru ukládání stejným způsobem jako u kamery a optiky - hotovo
+TRIMAZKON - Katalog - pracovat offline - předělat na excel, který se vytváří z db - hotovo
+
+
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -1093,19 +1100,12 @@ TRIMAZKON - Katalog - export do databázové tabulky
 
 
 
-TRIMAZKON - Katalog - opravit autosearch při db_erroru
-
-
-TRIMAZKON - Katalog - dodělat funkcionalitu poznámek u duplicitních acc u controlleru
-TRIMAZKON - Katalog - dodělat u controlleru ukládání stejným způsobem jako u kamery a optiky
-
-
-
-
 ??? TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama, možná přesměrovat i edity a deletions/ uplne se zbavit excelu... ??
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
 ??? návod na trimazkon
 
+
+TRIMAZKON - přidat loading při připojování do db
 
 
 

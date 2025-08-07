@@ -137,8 +137,13 @@ def get_camera_products(list_given):
 
 
 def find_camera_products_db(conn,manufacturer,not_initial = True):
+    """
+    manufacturer neovlivňuje:
+    - filtry
+    - kabely ke světlům\n
+    Accessory jsou tvořeny tak, že od daného výrobce bere zbytek najitých produktů, které ještě nejsou přiřazeny
+    """
     cursor = conn.cursor()
-
     sql = """
     SELECT description1, description2, description3, typenr, id
     FROM dbo.tblPart
@@ -189,6 +194,7 @@ def find_camera_products_db(conn,manufacturer,not_initial = True):
     # all_light_list = Tools.find_list(filtered_part_list, ["osv","svet","svět"], ["prosv","kabel","držák","filtr","světelný ","světle ","senzor","závěs","podsvět","modul","závora","integrované"])
     combined = db_all_producs_sorted["light_list"] + filtered_part_list
     db_all_producs_sorted["light_list"] = sorted(combined, key=lambda x: x["type"])
+    # db_all_producs_sorted["light_list"] = sorted(filtered_part_list, key=lambda x: x["type"])
     # db_all_producs_sorted["all_lights_list"] = filtered_part_list
 
     if not_initial:

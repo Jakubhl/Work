@@ -21,9 +21,12 @@ import copy
 import json
 import tkinter.font as tkFont
 import pyodbc
+from collections import Counter
+import time
+import threading
 
 initial_path = ""
-testing = False
+testing = True
 
 if testing:
     customtkinter.set_appearance_mode("dark")
@@ -427,6 +430,15 @@ class Tools:
                     None
                     )
         return index
+
+    @classmethod
+    def find_duplicities(cls,db_list,param_given="type"):
+        """
+        give whole db array
+        """
+        types = [d[param_given] for d in db_list]
+        counts = Counter(types)
+        return [t for t, count in counts.items() if count > 1]
 
 class Save_prog_metadata:
     def __init__(self,console,controller_database=[],station_list=[],project_name="",xml_file_path=""):
@@ -1945,15 +1957,23 @@ class ToplevelWindow:
                                 (self.controller_database, self.controller_notes_database, controller_entry),
                                 (self.whole_accessory_database, self.accessory_notes_database, hw_type_entry),
                             ]
-
+                            device_added = False
                             for type_db, notes_db, widget_entry in targets:
                                 if widget_entry == entry_given:
                                     for items in status: #musím projít všechny i když to jsou stejné typy... mají třeba jiné poznámky a id
-                                        if {"type":items["type"],"id":items["id"]} not in type_db:
+                                        # if {"type":items["type"],"id":items["id"]} not in type_db:
+                                        #     type_db.append({"type":items["type"],"id":items["id"]})
+                                        #     notes_db.append(items["description"])
+                                        if not any(entry.get("type") == items["type"] and entry.get("id") == items["id"] for entry in type_db):
                                             type_db.append({"type":items["type"],"id":items["id"]})
                                             notes_db.append(items["description"])
+                                            device_added = True
                                     break
 
+                            if not device_added:
+                                print("not added")
+                                return True
+                            
                             if device != "": 
                                 autosearch_engine("",device)
                             else:
@@ -1961,17 +1981,18 @@ class ToplevelWindow:
 
                             # entry_given.event_generate("<KeyRelease>")
                     return False
-            except Exception:
+            except Exception as eee:
+                print("chyba v server_db_presence_check",eee)
                 return False
 
-        def save_contoller():
+        def save_contoller(not_literally = False):
             db_error_found = False
             duplicity_id=None
             save_status = save_changes()
             if save_status == "db_error":
                 db_error_found = True
             controller_entered = controller_entry.get()
-            if  not any(cont["type"] == controller_entered for cont in self.controller_database) and controller_entered.replace(" ","") != "" and not server_db_part_presence(controller_entered,controller_entry,"controller"):
+            if not any(cont["type"] == controller_entered for cont in self.controller_database) and controller_entered.replace(" ","") != "" and not server_db_part_presence(controller_entered,controller_entry,"controller"):
                 controller_entry.configure(fg_color = "#bd1931",border_color = "red")
                 db_error_found = True
             else:
@@ -1982,9 +2003,14 @@ class ToplevelWindow:
                         duplicity_id = ids_on_entry[controller_entry][0]
                     else:
                         Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
-                        controller_entry.event_generate("<KeyRelease>")
+                        # controller_entry.event_generate("<KeyRelease>")
+                        autosearch_engine("","controller")
                         controller_entry.configure(fg_color = "#bd1931",border_color = "red")
                         db_error_found = True
+                else:
+                    if duplicity_id != None:
+                        ids_on_entry[controller_entry][1] = ""
+                        ids_on_entry[controller_entry][0] = 0
 
             if db_error_found:
                 return "db_error"
@@ -1996,6 +2022,8 @@ class ToplevelWindow:
             except Exception:
                 color_chosen = ""
             print("chosen color: ",color_chosen)
+            if not_literally:
+                return
             output = [controller_entry.get(),controller_name_entry.get(),color_chosen,IP_adress_entry.get(),username_entry.get(),password_entry.get(),controller["accessory_list"],notes,duplicity_id]
             close_window(window)
             self.callback_function(output)
@@ -2061,13 +2089,16 @@ class ToplevelWindow:
             """
             notes = str(notes_input3.get("0.0", tk.END))
             notes = Tools.make_wrapping(notes)
+            if notes == "\n":
+                notes = ""
             accessory_item = str(hw_type_entry.get())
             db_error_found = False
+            static_db_presence = any(acc["type"] == accessory_item for acc in self.whole_accessory_database)
 
-            if self.current_db_connection == "offline":
-                controller["accessory_list"][accessory_index]["type"] = accessory_item
+            # if self.current_db_connection == "offline":
+            #     controller["accessory_list"][accessory_index]["type"] = accessory_item
 
-            if  not any(acc["type"] == accessory_item for acc in self.whole_accessory_database) and accessory_item.replace(" ","") != "" and not server_db_part_presence(accessory_item,hw_type_entry,"accessory"):
+            if not static_db_presence and accessory_item.replace(" ","") != "" and not server_db_part_presence(accessory_item,hw_type_entry,"accessory"):
                 hw_type_entry.configure(fg_color = "#bd1931",border_color = "red")
                 db_error_found = True
             else:
@@ -2081,15 +2112,15 @@ class ToplevelWindow:
                             controller["accessory_list"][accessory_index]["description"] = notes
                             controller["accessory_list"][accessory_index]["duplicity_id"] = duplicity_id
                         except IndexError:
-                            if accessory_item != "" and notes != "\n":
+                            if accessory_item != "":
                                 new_accessory = {
-                                "type": accessory_item,
+                                "type":accessory_item,
                                 "description":notes,
                                 "duplicity_id":duplicity_id,
                                 }
                                 controller["accessory_list"].append(new_accessory)
                         except TypeError: # pokud je jako index vložen None
-                            if accessory_item != "" and notes != "\n":
+                            if accessory_item != "":
                                 new_accessory = {
                                 "type": accessory_item,
                                 "description":notes,
@@ -2097,7 +2128,6 @@ class ToplevelWindow:
                                 }
                                 controller["accessory_list"].append(new_accessory)
 
-                    # elif not "duplicity_id" in controller["accessory_list"][accessory_index]:
                     else:
                         Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
                         autosearch_engine("","accessory")
@@ -2112,20 +2142,20 @@ class ToplevelWindow:
                             ids_on_entry[hw_type_entry][1] = ""
                             ids_on_entry[hw_type_entry][0] = 0
                     except Exception as ee:
-                        print(ee)
+                        print("chyba u pripadu absence v duplicity listu",ee)
                         pass
                     try:
                         controller["accessory_list"][accessory_index]["type"] = accessory_item
                         controller["accessory_list"][accessory_index]["description"] = notes
                     except IndexError:
-                        if accessory_item != "" and notes != "\n":
+                        if accessory_item != "":
                             new_accessory = {
                             "type": accessory_item,
                             "description":notes,
                             }
                             controller["accessory_list"].append(new_accessory)
                     except TypeError: # pokud je jako index vložen None
-                        if accessory_item != "" and notes != "\n":
+                        if accessory_item != "":
                             new_accessory = {
                             "type": accessory_item,
                             "description":notes,
@@ -2133,33 +2163,33 @@ class ToplevelWindow:
                             controller["accessory_list"].append(new_accessory)
 
             if db_error_found:
+                print("db_err_found")
                 return "db_error"
-
 
         def next_accessory():
             nonlocal accessory_index
             accessory_index += 1
             if accessory_index < len(controller["accessory_list"]):
                 accessory_index -= 1
-                save_status =save_changes() # ulozit zmeny pri prepinani jeste u predesle stanice
+                save_status = save_changes() # ulozit zmeny pri prepinani jeste u predesle stanice
                 if save_status == "db_error":
                     return
                 accessory_index += 1
-                # initial_prefill() # prefill s novým indexem
+                initial_prefill() # prefill s novým indexem
 
             else: # TLACITKO +:
                 # program nedopusti pridani noveho accessory pokud neni alespon vyplnen typ nebo poznamka
                 if hw_type_entry.get() != "" or notes_input3.get("0.0", "end") != "\n":
                     accessory_index -= 1
-                    save_status =save_changes() # ulozit zmeny pri prepinani jeste u predesle stanice
+                    save_status = save_changes() # ulozit zmeny pri prepinani jeste u predesle stanice
                     if save_status == "db_error":
                         return
                     accessory_index += 1
                 else:
                     accessory_index -= 1
-                    hw_type_entry.configure(fg_color = "#343638",border_color = "#565B5E")
+                    # hw_type_entry.configure(fg_color = "#343638",border_color = "#565B5E")
 
-            initial_prefill() # prefill s novým indexem
+                initial_prefill() # prefill s novým indexem
 
         def previous_accessory():
             nonlocal accessory_index
@@ -2171,8 +2201,8 @@ class ToplevelWindow:
                     if save_status == "db_error":
                         return
                     accessory_index -= 1
-                else:
-                    hw_type_entry.configure(fg_color = "#343638",border_color = "#565B5E")
+                # else:
+                #     hw_type_entry.configure(fg_color = "#343638",border_color = "#565B5E")
 
                 initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
             else: # aby to neslo zase odznovu:
@@ -2221,7 +2251,7 @@ class ToplevelWindow:
                 event.widget.insert(tk.INSERT, 'ř')
                 return "break"  # Stop the event from inserting the original character
 
-        def manage_option_menu(e,values,values2,entry_widget,mirror=False,auto_search_call=False):
+        def manage_option_menu(e,values,values2,entry_widget,mirror=False,auto_search_call=False,device=""):
             def on_item_selected(value):
                 # if auto_search_call:
                 entry_widget.delete(0,200)
@@ -2229,28 +2259,37 @@ class ToplevelWindow:
                 ids_on_entry[entry_widget][0] = value["id"]
                 ids_on_entry[entry_widget][1] = value["type"]
                 context_window.destroy()
-                save_changes()
+                if device == "accessory":
+                    save_changes()
+                else:
+                    save_contoller(not_literally=True)
+                
 
             if len(values) == 0:
                 print("prazdne pole")
                 return
             entry_widget.update_idletasks()
             window.update_idletasks()
+
             screen_x = window.winfo_pointerx()
             screen_y = window.winfo_pointery()
-            if e !="":
-                parent_x = window.winfo_rootx()+e.x
-                parent_y = window.winfo_rooty()+e.y
-            else:
-                parent_x = window.winfo_rootx()
-                parent_y = window.winfo_rooty()
-            x = screen_x - parent_x + entry_widget.winfo_width()
-            y = screen_y - parent_y + entry_widget.winfo_height()
+            
 
             if auto_search_call:
                 mirror = False
                 screen_x = entry_widget.winfo_rootx()
                 screen_y = entry_widget.winfo_rooty() + entry_widget.winfo_height()+5
+
+            if e !="":
+                parent_x = window.winfo_rootx()+e.x
+                parent_y = window.winfo_rooty()+e.y
+            else:
+                parent_x = window.winfo_rootx()
+                # parent_x = entry_widget.master.winfo_rootx()
+                parent_y = window.winfo_rooty()
+                # parent_y = entry_widget.master.winfo_rooty()
+            x = screen_x - parent_x + entry_widget.winfo_width()
+            y = screen_y - parent_y + entry_widget.winfo_height()
 
             font = tkFont.Font(family="Arial", size=20)
             max_width_px = 40
@@ -2321,7 +2360,7 @@ class ToplevelWindow:
                     found_items_notes.append(notes_database[index])
 
             found_items = sorted(found_items, key=lambda x: x["type"])
-            manage_option_menu(e,found_items,found_items_notes,entry_widget,mirror=mirror,auto_search_call=True)
+            manage_option_menu(e,found_items,found_items_notes,entry_widget,mirror=mirror,auto_search_call=True,device=which_item)
 
         icon_small = 45
         icon_large = 49
@@ -2522,6 +2561,10 @@ class ToplevelWindow:
             refresh_button_appearance()
 
         initial_prefill()
+        # musíme znovu vyhledat duplicity, protože nepředáváme duplicity list
+        found_duplicities = Tools.find_duplicities(self.whole_accessory_database)
+        found_duplicities.extend(Tools.find_duplicities(self.controller_database))
+        self.duplicity_list.extend(found_duplicities)
         self.root.bind("<Button-1>",lambda e: close_window(window))
         global opened_subwindow
         opened_subwindow = window
@@ -2980,6 +3023,57 @@ class Catalogue_gui:
             except Exception:
                 self.root.after(0,self.tip_window.destroy)
 
+    excel_db_name = "TRIMAZKON_offline_db.xlsx"
+    @classmethod
+    def create_excel_offline_db(cls,sheet_name,row_data_list):
+        try:
+            # Pokud soubor neexistuje, vytvoříme nový
+            if not os.path.exists(initial_path + cls.excel_db_name):
+                wb = Workbook()
+            else:
+                wb = load_workbook(initial_path + cls.excel_db_name)
+
+            # Pokud list existuje, smažeme ho a vytvoříme nový se stejným jménem
+            if sheet_name in wb.sheetnames:
+                std = wb[sheet_name]
+                wb.remove(std)
+
+            ws = wb.create_sheet(title=sheet_name)
+
+            # Zápis dat řádek po řádku
+            for row in row_data_list:
+                ws.append([row["type"],row["id"],row["description"]])
+
+            # Uložíme zpět
+            wb.save(initial_path + cls.excel_db_name)
+            wb.close()
+        except Exception as e:
+            print("ERROR s ukladanim do offline excel databaze ",e)
+
+    @classmethod
+    def read_excel_offline_db(cls,sheet_name):
+        try:
+            wb = load_workbook(initial_path + cls.excel_db_name, data_only=True)
+            all_data = []
+
+            # for sheet_name in wb.sheetnames:
+                # if manufacturer in sheet_name:
+            if sheet_name not in wb.sheetnames:
+                return []
+            ws = wb[sheet_name]
+            for row in ws.iter_rows(values_only=True):
+                all_data.append({"type":row[0],
+                                "id":row[1],
+                                "description":row[2]})
+
+            wb.close()
+            return all_data
+        except Exception as e:
+            print("ERROR se čtením z offline databáze ",e)
+            return [{"type":"data error",
+                    "id":666,
+                    "description":"data error"}]
+    
     @classmethod
     def get_device_strings(cls,widget_tier):
         device_string_mapping = {
@@ -3079,6 +3173,7 @@ class Catalogue_gui:
         self.current_db_connection = None
         self.autosearch_menu = None
         self.duplicity_list = []
+        self.read_db_finish = False
         
         self.changes_made = False
         self.optic_light_option = "optic"
@@ -3101,11 +3196,49 @@ class Catalogue_gui:
             return False
 
     def read_database(self,switch_manufacturer=False):
-        from collections import Counter
+        popup = tk.Toplevel(master=self.root)
+        popup.attributes('-topmost', True)
+        geometry_string = "1000x1000+" + str(int(self.root.winfo_screenwidth()/2)-500)+ "+" + str(int(self.root.winfo_screenheight()/2)-500)
+        popup.geometry(str(geometry_string))
+        popup.label = tk.Label(popup)
+        original_image = PILImage.open(Tools.resource_path("images/loading_x.png")).convert("RGBA")
+        resized_image = original_image.resize(size=(1000, 1000))
+        image_ = ImageTk.PhotoImage(original_image)
+        popup.label.config(image=image_)  # Update label's image
+        popup.label.image = image_  # Keep a reference to the image to prevent garbage collection
+        popup.label.place(x=0, y=0, relwidth=1, relheight=1)
+        popup.wm_attributes("-transparentcolor","white")# trick to force the bg transparent
+        popup.config(bg= 'white')
+        popup.label.config(bg= 'white')
+        popup.overrideredirect(True)# hide the frame of a window
+        popup.update()
+        popup.label.update()
+        angle = 0
 
-        if self.current_db_connection == "offline":
-            self.read_database_excel()
-            return
+        def rotate_image():
+            nonlocal angle
+            angle += 10  # Adjust the rotation speed as needed
+            rotated_image = original_image.rotate(angle,expand=True)
+            image_ = ImageTk.PhotoImage(rotated_image)
+            popup.label.config(image=image_)  # Update label's image
+            popup.label.image = image_
+            popup.update()
+
+        # if self.current_db_connection == "offline":
+        #     self.read_database_excel()
+        #     return
+
+        run_background = threading.Thread(target=self.call_read_database, args=(switch_manufacturer,))
+        run_background.start()
+
+        while self.read_db_finish == False:
+            time.sleep(0.05)
+            rotate_image()
+
+        popup.destroy()
+        self.read_db_finish = False
+
+    def call_read_database(self,switch_manufacturer=False):
         if self.chosen_manufacturer == "Omron":
             manufacturer = "OMR"
         elif self.chosen_manufacturer == "Keyence":
@@ -3113,9 +3246,12 @@ class Catalogue_gui:
         elif self.chosen_manufacturer == "Cognex":
             manufacturer = "COG"
 
-        all_found_producs = read_database.find_camera_products_db(self.current_db_connection,manufacturer,not_initial=switch_manufacturer)
+        if not self.current_db_connection == "offline":
+            # def read_all_sheets(file_path):
+            all_found_producs = read_database.find_camera_products_db(self.current_db_connection,manufacturer,not_initial=switch_manufacturer)
+
         # print(all_found_producs["camera_list"])
-        def fill_lists(list_type,list_notes,db_list):
+        def fill_lists(list_type,list_notes,db_list,key_name):
             list_type.clear()
             list_notes.clear()
             seen_ids = set()
@@ -3135,6 +3271,9 @@ class Catalogue_gui:
                 list_type.append({"type":items["type"],"id":items["id"]})
                 list_notes.append(items["description"])
 
+            if not self.current_db_connection == "offline":
+                Catalogue_gui.create_excel_offline_db(manufacturer+"_"+key_name,db_list)
+
         targets = [
             (self.whole_camera_type_database, self.camera_notes_database, "camera_list"),
             (self.whole_optics_database, self.optics_notes_database, "optics_list"),
@@ -3150,11 +3289,15 @@ class Catalogue_gui:
             if switch_manufacturer:
                 if key == "filter_list" or key == "light_cable_list": # aby se to nezdržovalo znovu načítáním stejných hodnot
                     continue
-            fill_lists(list_type, list_notes, all_found_producs.get(key, []))
+            if self.current_db_connection == "offline":
+                fill_lists(list_type, list_notes, Catalogue_gui.read_excel_offline_db(manufacturer+"_"+key),key)
+            else:
+                fill_lists(list_type, list_notes, all_found_producs.get(key, []),key)
             # print(key)
 
-        print(self.whole_camera_type_database)
-
+        # print(self.whole_camera_type_database)
+        self.read_db_finish = True
+        
     def read_database_excel(self):
         """
         Stahuje aktuální databázi do adresáře
@@ -3855,7 +3998,6 @@ class Catalogue_gui:
                     entry_widget.configure(fg_color = "#343638",border_color = "#565B5E")
                     #nasledujici blok je nutný aby uživatel vybral z duplicit konkrétní id... podle popisu
                     if entry_input in self.duplicity_list:
-                        print("TO se to nerovná?",ids_on_entry[entry_widget][1],"entry inputů",entry_input)
                         if ids_on_entry[entry_widget][1] == entry_input:
                             place_to_save[duplicity_id_name] = ids_on_entry[entry_widget][0]
                             place_to_save[object_name] = entry_input
@@ -3875,7 +4017,6 @@ class Catalogue_gui:
                             ids_on_entry[entry_widget][0] = 0
                         place_to_save[object_name] = entry_input
                 
-
             if object == "station" or all_parameters:
                 self.temp_station_list[station_index]["name"] = new_name.get()
                 filtered_description = Tools.make_wrapping(str(new_description.get("1.0", tk.END)))
@@ -3984,7 +4125,6 @@ class Catalogue_gui:
                                                     "id":given_DB[index],
                                                     "notes":self.accessory_notes_database[index]})
 
-            
             cam = self.temp_station_list[station_index]["camera_list"][camera_index]
             check_acc_entry(cam,cam_acc_menu,self.whole_accessory_database,"acc")
                         
@@ -4429,6 +4569,16 @@ class Catalogue_gui:
             screen_x = child_root.winfo_pointerx()
             # screen_x = entry_widget.winfo_rootx()
             screen_y = child_root.winfo_pointery()
+
+            if auto_search_call:
+                screen_x = entry_widget.winfo_rootx()
+                screen_y = entry_widget.winfo_rooty() + entry_widget.winfo_height()+5
+
+            if acc_list:
+                if add_button != None:
+                    screen_x = add_button.winfo_rootx()
+                    screen_y = add_button.winfo_rooty() + add_button.winfo_height()+5
+
             # screen_y = entry_widget.winfo_rooty()
             if e !="":
                 parent_x = child_root.winfo_rootx()+e.x
@@ -4439,15 +4589,6 @@ class Catalogue_gui:
 
             x = screen_x - parent_x + entry_widget.winfo_width()
             y = screen_y - parent_y + entry_widget.winfo_height()
-
-            if auto_search_call:
-                screen_x = entry_widget.winfo_rootx()
-                screen_y = entry_widget.winfo_rooty() + entry_widget.winfo_height()+5
-
-            if acc_list:
-                if add_button != None:
-                    screen_x = add_button.winfo_rootx()
-                    screen_y = add_button.winfo_rooty() + add_button.winfo_height()+5
 
             font = tkFont.Font(family="Arial", size=20)
             max_width_px = 40
@@ -5494,9 +5635,9 @@ class Catalogue_gui:
         def call_db_login_window(call_export=False,initial=False):
             def db_callback(connection):
                 self.current_db_connection = connection
-                if connection == "offline":
-                    self.read_database_excel()
-                    return
+                # if connection == "offline":
+                #     self.read_database_excel()
+                #     return
                 try:
                     self.read_database()
                 except Exception as e:
