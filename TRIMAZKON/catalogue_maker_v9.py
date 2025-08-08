@@ -26,7 +26,7 @@ import time
 import threading
 
 initial_path = ""
-testing = False
+testing = True
 
 if testing:
     customtkinter.set_appearance_mode("dark")
@@ -3124,11 +3124,1233 @@ class Catalogue_gui:
         }
         return device_string_mapping.get(len(widget_tier))
 
+    class edit_object_gui:
+        """
+        Object:
+            -station
+            -camera
+            -optics
+        """
+        def __init__(self,parent,given_object:str,station_index,camera_index=None,optics_index=None,accessory_index = None,controller_index = None,all_parameters = False,new_station = False):
+            self.parent = parent
+            self.given_object = given_object
+            self.station_index = station_index
+            self.camera_index = camera_index
+            self.optics_index = optics_index
+            self.accessory_index = accessory_index
+            self.controller_index = controller_index
+            self.all_parameters = all_parameters
+            self.new_station = new_station
+            self.optic_light_option = "optic"
+            self.last_controller_index = 0
+            self.autosearch_menu = None
+
+        def server_db_part_presence(self,part,entry_given=None,selected_db_list_opt= None,device="",bypass_db_search=False):
+            """
+            Vrací True:
+            - celá server db obsahuje jeden výskyt part
+            - nebo už bylo vybráno jedno id z několika výskytů part
+            \nVrací False:
+            - je nalezeno několik výskytů part nebo vůbec žádná (a chyby)
+            """
+            if bypass_db_search:
+                return True
+            print(self.parent.duplicity_list)
+            try:
+                status = read_database.Tools.find_unknown(self.parent.current_db_connection,part)
+                print("db_status: ",status)
+                if status == "ok":
+                    Tools.add_colored_line(self.window_console,f"Položka: {part} byla nalezena v nevyfiltrované databázi","green",None,True)
+                    return True
+                elif status == "ng":
+                    Tools.add_colored_line(self.window_console,f"Položka: {part} nebyla nalezena ani v nevyfiltrované databázi","red",None,True)
+                    return False
+                else:
+                    # Tools.add_colored_line(window_console,f"Bylo nalezeno několik výskytů: {part} v nevyfiltrované databázi: {status}","red",None,True)
+                    Tools.add_colored_line(self.window_console,f"Bylo nalezeno několik výskytů: {part} v nevyfiltrované databázi, celkem: {len(status)}, zkuste konkrétněji","red",None,True)
+                    if len(status) < 30:
+                        # print(status)
+
+                        all_type_list = []
+                        for items in status:
+                            all_type_list.append(items["type"])
+
+                        # když jsou si rovny všechny typy (všechny komponenty v poli jsou rovny) = duplicity
+                        if all(x == all_type_list[0] for x in all_type_list):
+                            if all_type_list[0] not in self.parent.duplicity_list:
+                                self.parent.duplicity_list.append(all_type_list[0])
+                            # voleni databazí na základe zaškrtnutého checkboxu:
+                            if selected_db_list_opt != None:
+                                optics_entry_db_type = selected_db_list_opt[0]
+                                optics_entry_db_notes = selected_db_list_opt[1]
+                            else:
+                                optics_entry_db_type = self.parent.whole_optics_database
+                                optics_entry_db_notes = self.parent.optics_notes_database
+
+                            targets = [
+                                (self.parent.whole_camera_type_database, self.parent.camera_notes_database, self.camera_type_entry),
+                                (optics_entry_db_type, optics_entry_db_notes, self.optic_type_entry),
+                                (optics_entry_db_type, optics_entry_db_notes, self.alternative_entry),
+                                (self.parent.whole_camera_cable_database, self.parent.cable_notes_database, self.cam_cable_menu),
+                                (self.parent.whole_accessory_database, self.parent.accessory_notes_database, self.cam_acc_menu),
+                                (self.parent.whole_accessory_database, self.parent.accessory_notes_database, self.opt_acc_menu),
+                            ]
+                            device_added = False
+                            for type_db, notes_db, widget_entry in targets:
+                                if widget_entry == entry_given:
+                                    for items in status: #musím projít všechny i když to jsou stejné typy... mají třeba jiné poznámky a id
+                                        # if {"type":items["type"],"id":items["id"]} not in type_db:
+                                        if not any(entry.get("type") == items["type"] and entry.get("id") == items["id"] for entry in type_db):
+                                            type_db.append({"type":items["type"],"id":items["id"]})
+                                            notes_db.append(items["description"])
+                                            # ids_on_entry[widget_entry][0] = items["id"]
+                                            # ids_on_entry[widget_entry][1] = items["type"]
+                                            device_added = True
+                                        else:
+                                            print("already added to db")
+                                    break
+
+                            if not device_added:
+                                print("not added")
+                                return True
+                            
+                            if device != "": 
+                                self.autosearch_engine("",device)
+                            else:
+                                entry_given.event_generate("<KeyRelease>")
+
+                    return False
+            except Exception:
+                return False
+
+        def save_changes(self,no_window_shut = False,bypass_db_search=False):
+            """
+            Pokud chybí nějaké povinné pole - zčervená
+            """
+            db_error_found = False
+            def check_data_to_save(entry_input,place_to_save,entry_widget,duplicity_id_name,database_given,object_name="type",selected_db_list_opt = None,device=""):
+                nonlocal db_error_found
+                id_defined_status=False
+                entry_widget.update_idletasks()
+
+                if duplicity_id_name in place_to_save:
+                    id_defined_status = True
+
+                static_db_presence = any(item["type"] == entry_input for item in database_given)
+                if self.parent.current_db_connection == "offline":
+                    place_to_save[object_name] = entry_input
+                elif not static_db_presence and entry_input.replace(" ","") != "" and not self.server_db_part_presence(entry_input,entry_widget,selected_db_list_opt,device,bypass_db_search):
+                    entry_widget.configure(fg_color = "#bd1931",border_color = "red")
+                    db_error_found = True
+                else:
+                    entry_widget.configure(fg_color = "#343638",border_color = "#565B5E")
+                    #nasledujici blok je nutný aby uživatel vybral z duplicit konkrétní id... podle popisu
+                    if entry_input in self.parent.duplicity_list:
+                        if self.ids_on_entry[entry_widget][1] == entry_input:
+                            place_to_save[duplicity_id_name] = self.ids_on_entry[entry_widget][0]
+                            place_to_save[object_name] = entry_input
+                        else:
+                            Tools.add_colored_line(self.window_console,f"Byly nalezeny duplicity hledaného zařízení: {entry_input} - vyberte konkrétní přes kontextové menu","red",None,True)
+                            # entry_widget.event_generate("<KeyRelease>")
+                            self.autosearch_engine("",device)
+                            entry_widget.configure(fg_color = "#bd1931",border_color = "red")
+                            db_error_found = True
+                    else:
+                        if id_defined_status:
+                            del place_to_save[duplicity_id_name] # pokud zaměnín za typ, co není duplicitní!
+                            print("zaměněno za typ, co není duplicitní")
+                            self.ids_on_entry[entry_widget][1] = ""
+                            self.ids_on_entry[entry_widget][0] = 0
+                        place_to_save[object_name] = entry_input
+                
+            if self.given_object == "station" or self.all_parameters:
+                self.parent.temp_station_list[self.station_index]["name"] = self.new_name.get()
+                filtered_description = Tools.make_wrapping(str(self.new_description.get("1.0", tk.END)))
+                self.parent.temp_station_list[self.station_index]["inspection_description"] = filtered_description
+
+            if self.given_object == "camera" or self.all_parameters:
+                camera_item = str(self.camera_type_entry.get())
+                check_data_to_save(camera_item,
+                                   self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index],
+                                   self.camera_type_entry,
+                                   "cam_id",
+                                   self.parent.whole_camera_type_database,
+                                   "type",device="camera")
+
+                self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["controller"] = self.controller_entry.get()
+                current_controller = self.controller_entry.get()
+                controller_index = None
+                if str(current_controller).replace(" ","") != "":
+                    for controllers in self.parent.controller_object_list:
+                        if str(str(controllers["name"])+"("+controllers["type"]+")").replace(" ","") == str(current_controller).replace(" ",""):
+                            controller_index = self.parent.controller_object_list.index(controllers)
+                            self.last_controller_index = controller_index+1 #musíme počítat s možností nemít žádný kontroler
+                            break
+                self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["controller_index"] = controller_index
+
+
+                cable_item = str(self.cam_cable_menu.get())
+                check_data_to_save(cable_item,
+                                   self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index],
+                                   self.cam_cable_menu,
+                                   "cab_id",
+                                   self.parent.whole_camera_cable_database,
+                                   "cable",device="cables")
+
+
+                filtered_description = Tools.make_wrapping(str(self.notes_input.get("1.0", tk.END)))
+                self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["description"] = filtered_description
+                
+            if self.given_object == "optics" or "camera" or self.all_parameters:
+                optic_type = str(self.optic_type_entry.get())
+                if len(self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"]) > 0:
+                    database_list = [(self.parent.whole_filter_database,self.parent.filter_notes_database,self.filter_checkbox),
+                                     (self.parent.whole_light_cable_database,self.parent.light_cable_notes_database,self.light_cable_checkbox),
+                                     (self.parent.whole_light_database,self.parent.light_notes_database,self.light_checkbox),
+                                     (self.parent.whole_optics_database,self.parent.optics_notes_database,self.optics_checkbox)]
+                    
+                    for dbs, db_notes, chckbxs in database_list:
+                        if chckbxs.get() == 1:
+                            selected_db = dbs
+                            db_list = [dbs,db_notes]
+
+                    check_data_to_save(optic_type,
+                                   self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"][self.optics_index],
+                                   self.optic_type_entry,
+                                   "opt_id",
+                                   selected_db,
+                                   object_name="type",
+                                   selected_db_list_opt=db_list,device="optics")
+                    
+
+                    alternative_item = str(self.alternative_entry.get())
+                    check_data_to_save(alternative_item,
+                                   self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"][self.optics_index],
+                                   self.alternative_entry,
+                                   "alt_id",
+                                   selected_db,
+                                   object_name="alternative",
+                                   selected_db_list_opt=db_list,device="optics_alternative")
+
+                    filtered_description = Tools.make_wrapping(str(self.notes_input2.get("1.0", tk.END)))
+                    self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"][self.optics_index]["description"] = filtered_description
+
+            # Uložení pro případ, že se zapomene dát přidat a je to v entry (když se neklikne na tlačítko přidat, tak se provádí kontrola):
+            def check_acc_entry(device,entry_widget,given_DB,device_given):
+                nonlocal db_error_found
+                acc_given = str(entry_widget.get())
+                if acc_given:
+                    acc_list = device.setdefault("acc_list", [])
+                    if not any(acc["type"] == acc_given for acc in acc_list): # pokud je už v listu nechci znovu ověřovat duplicity - nikdy by to nepustilo dál
+                        if not any(acc["type"] == acc_given for acc in given_DB) and not self.server_db_part_presence(acc_given,entry_widget,device=device_given):
+                            entry_widget.configure(fg_color = "#bd1931",border_color = "red")
+                            db_error_found = True
+                        else:
+                            entry_widget.configure(fg_color = "#343638",border_color = "#565B5E")
+                            if acc_given in self.parent.duplicity_list:
+                                if self.ids_on_entry[entry_widget][1] == acc_given:
+                                    if not any(acc["type"] == acc_given for acc in acc_list):
+                                        acc_list.append({"type":acc_given,
+                                                        "id":self.ids_on_entry[entry_widget][0]})
+                                    
+                                else:
+                                    Tools.add_colored_line(self.window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
+                                    entry_widget.event_generate("<KeyRelease>")
+                                    entry_widget.configure(fg_color = "#bd1931",border_color = "red")
+                                    db_error_found = True
+                            else:
+                                index = Tools.find_index(given_DB,acc_given)
+                                if not any(acc["type"] == acc_given for acc in acc_list):
+                                    acc_list.append({"type":acc_given,
+                                                    "id":given_DB[index],
+                                                    "notes":self.parent.accessory_notes_database[index]})
+
+            cam = self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]
+            check_acc_entry(cam,self.cam_acc_menu,self.parent.whole_accessory_database,"acc")
+                        
+            opt = self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"][self.optics_index]
+            check_acc_entry(opt,self.opt_acc_menu,self.parent.whole_accessory_database,"acc_opt")
+
+            if db_error_found:
+                return "db_error"
+            
+            Tools.add_colored_line(self.window_console,"","green",None,True)
+
+
+            if not no_window_shut:
+                self.parent.station_list = copy.deepcopy(self.parent.temp_station_list)
+                self.parent.make_project_widgets() #refresh
+                self.parent.close_window(self.child_root)
+
+        def next_station(self):
+            self.station_index += 1
+            if self.station_index < len(self.parent.temp_station_list):
+                self.station_index -= 1
+                save_status = self.save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                if save_status == "db_error":
+                    return
+                self.station_index += 1
+                camera_index = 0
+                optics_index = 0
+                self.initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
+            else: # TLACITKO +:
+                self.station_index -= 1
+                save_status = self.save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                if save_status == "db_error":
+                    return
+                camera_index = 0
+                optics_index = 0
+                self.parent.station_list = copy.deepcopy(self.parent.temp_station_list)
+                self.close_window(self.child_root)
+                if self.station_index < 10:
+                    widget_tier = "0" + str(self.station_index)
+                else:
+                    widget_tier = str(self.station_index)
+                self.parent.manage_widgets("",widget_tier,"add_line")
+
+        def previous_station(self):
+            self.station_index -= 1
+            if self.station_index > -1:
+                self.station_index += 1
+                save_status = self.save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                if save_status == "db_error":
+                    return
+                self.station_index -= 1
+                self.camera_index = 0
+                self.optics_index = 0
+                self.initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
+            else: # aby to neslo zase odznovu:
+                self.station_index += 1
+                self.camera_index = 0
+                self.optics_index = 0
+            
+        def next_camera(self):
+            self.camera_index += 1
+            if self.camera_index < len(self.parent.temp_station_list[self.station_index]["camera_list"]):
+                self.camera_index -= 1
+                save_status = self.save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                if save_status == "db_error":
+                    return
+                self.camera_index += 1
+                self.optics_index = 0
+                self.initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
+
+            else: # TLACITKO +:
+                self.camera_index -= 1
+                save_status = self.save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice¨
+                if save_status == "db_error":
+                    return
+                self.camera_index += 1
+                self.optics_index = 0
+                self.accessory_index = 0
+                if self.station_index < 10:
+                    widget_tier_st = "0" + str(self.station_index)
+                else:
+                    widget_tier_st = str(self.station_index)
+
+                print("camera st widget tier",widget_tier_st)
+                self.parent.manage_widgets("",widget_tier_st,"add_object",open_edit=False,rewrite_temp=False)
+                self.initial_prefill() # prefill s novým indexem 
+
+        def previous_camera(self):
+            self.camera_index -= 1
+            if self.camera_index > -1:
+                self.camera_index += 1
+                save_status = self.save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                if save_status == "db_error":
+                    return
+                self.camera_index -= 1
+                self.optics_index = 0
+                self.initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
+            else: # aby to neslo zase odznovu:
+                self.camera_index += 1
+
+        def next_optic(self):
+            self.optics_index += 1
+            if self.optics_index < len(self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"]):
+                self.optics_index -= 1
+                save_status = self.save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                if save_status == "db_error":
+                    return
+                self.optics_index += 1
+                self.initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
+
+            else: # TLACITKO +:
+                self.optics_index -= 1
+                save_status = self.save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                if save_status == "db_error":
+                    return
+                self.optics_index += 1
+                if self.station_index < 10:
+                    widget_tier_st = "0" + str(self.station_index)
+                else:
+                    widget_tier_st = str(self.station_index)
+                if self.camera_index < 10:
+                    widget_tier_cam = "0" + str(self.camera_index)
+                else:
+                    widget_tier_cam = str(self.camera_index)
+                widget_tier = widget_tier_st + widget_tier_cam
+                self.parent.manage_widgets("",widget_tier,"add_object",open_edit=False,rewrite_temp=False)
+                self.initial_prefill() # prefill s novým indexem
+
+        def previous_optic(self):
+            self.optics_index -= 1
+            if self.optics_index > -1:
+                self.optics_index += 1
+                save_status = self.save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
+                if save_status == "db_error":
+                    return
+                self.optics_index -= 1
+                self.initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
+            else: # aby to neslo zase odznovu:
+                self.optics_index += 1
+
+        def close_window(self,child_root):
+            try:
+                if opened_subwindow.winfo_exists():
+                    self.parent.close_window(opened_subwindow)
+            except Exception:
+                pass
+            
+            self.parent.root.unbind("<Button-1>")
+            child_root.destroy()
+
+        def callback_new_controller(self,new_controller_data):
+            print("saving new controller: ",new_controller_data)
+            new_controller = {
+                "type": new_controller_data[0],
+                "name": new_controller_data[1],
+                "color": new_controller_data[2],
+                "ip": new_controller_data[3],
+                "username": new_controller_data[4],
+                "password": new_controller_data[5],
+                "accessory_list": new_controller_data[6],
+                "notes": new_controller_data[7],
+            }
+            if new_controller_data[8] != None:
+                new_controller["duplicity_id"] = new_controller_data[8]
+            
+            print("Nový kontroler------ ",new_controller)
+            self.parent.controller_object_list.append(new_controller)
+            new_drop_option = f"{new_controller['name']} ({new_controller['type']})"
+            self.parent.custom_controller_drop_list.append(new_drop_option)
+            self.controller_entry.configure(values = self.parent.custom_controller_drop_list)
+            self.controller_entry.set(new_drop_option)
+            self.controller_opt_menu_color("",only_color=new_controller["color"])
+            self.child_root.focus_force()
+        
+        def unselect_checkboxes(self):
+            checkbox_list = [self.optics_checkbox,self.light_checkbox,self.light_cable_checkbox,self.filter_checkbox]
+            for chckbxs in checkbox_list:
+                chckbxs.deselect()
+
+        def import_notes(self,which):
+            """
+            - camera (Kontroler, Kamera, Kabel)
+            - optics (Objektiv, Alternativní) - stejne pro: light_cable, filter, light
+            - accessory
+            """
+            def make_string(notes_list,type_list):
+                notes_string = ""
+                if current_optics != "":
+                    opt_index = Tools.find_index(type_list,current_optics)
+
+                    if opt_index != None:
+                        optic_notes = str(notes_list[opt_index])
+                        if optic_notes !="":
+                            notes_string = notes_string + "Objektiv - popis: " + optic_notes + "\n\n"
+                if current_alternative != "":
+                    alt_index = Tools.find_index(type_list,current_alternative)
+
+                    if alt_index != None:
+                        alternative_notes = str(notes_list[alt_index])
+                        if alternative_notes != "":
+                            notes_string = notes_string + "Alternativní - popis: " + alternative_notes + "\n\n"
+
+                return notes_string
+
+            if which == "camera":
+                current_camera = self.camera_type_entry.get()
+                current_cable = self.cam_cable_menu.get()
+                notes_string = ""
+                if current_camera != "":
+                    cam_index = Tools.find_index(self.parent.whole_camera_type_database,current_camera)
+                    if cam_index != None:
+                        camera_notes = self.parent.camera_notes_database[cam_index]
+                        if camera_notes != "":
+                            notes_string = notes_string + "Kamera - popis: " + camera_notes + "\n\n"
+                if current_cable != "":
+                    cab_index = Tools.find_index(self.parent.whole_camera_cable_database,current_cable)
+
+                    if cab_index != None:
+                        cable_notes = self.parent.cable_notes_database[cab_index]
+                        if cable_notes != "":
+                            notes_string = notes_string + "Kabel (" + str(current_cable) + "): " + cable_notes + "\n\n"
+                
+                self.notes_input.delete("1.0",tk.END)
+                self.notes_input.insert("1.0",notes_string)
+            
+            elif which == "optics":
+                current_optics = self.optic_type_entry.get()
+                current_alternative = self.alternative_entry.get()
+                targets = [
+                    (self.optics_checkbox,self.parent.whole_optics_database,self.parent.optics_notes_database),
+                    (self.light_checkbox,self.parent.whole_light_database,self.parent.light_notes_database),
+                    (self.light_cable_checkbox,self.parent.whole_light_cable_database,self.parent.light_cable_notes_database),
+                    (self.filter_checkbox,self.parent.whole_filter_database,self.parent.filter_notes_database),
+                ]
+                for checkbox, type_list, notes_list in targets:
+                    if checkbox.get() == 1: # vybere pouze jedno pole, které je právě zvoleno
+                        notes_string = make_string(notes_list,type_list)
+                        break
+                
+                self.notes_input2.delete("1.0",tk.END)
+                self.notes_input2.insert("1.0",str(notes_string))
+
+        def call_new_controller_gui(self):
+            window = ToplevelWindow(self.parent.root,[self.parent.controller_database,self.parent.controller_notes_database],self.callback_new_controller,self.parent.controller_object_list,[self.parent.accessory_database,self.parent.whole_accessory_database,self.parent.accessory_notes_database],current_db_connection=self.parent.current_db_connection)
+            self.parent.opened_window = window.new_controller_window(self.child_root)
+
+        def controller_opt_menu_color(self,*args,only_color = False):
+            if not only_color:
+                current_controller = str(*args)
+                if str(current_controller).replace(" ","") != "":
+                    for controllers in self.parent.controller_object_list:
+                        if controllers["color"] != "":
+                            if (controllers["name"]+"("+controllers["type"]+")").replace(" ","") == current_controller.replace(" ",""):
+                                self.controller_entry.configure(fg_color = str(controllers["color"]))
+                                break
+                else:
+                    self.controller_entry.configure(fg_color = "#636363")
+            else:
+                self.controller_entry.configure(fg_color = str(only_color))
+
+        def optics_lights_switch(self,which_checkbox="",which_refresh=None):
+            """
+            which_refresh, which_checkbox:
+            - optic
+            - light
+            - filter
+            - cable
+            """
+            def manage_entries(autosearch_str,autosearch_alt_str,type_database,notes_database):
+                self.optic_type_entry.   unbind("<KeyRelease>")
+                self.alternative_entry.  unbind("<KeyRelease>")
+                self.optic_type_entry.   bind("<KeyRelease>",lambda e: self.autosearch_engine(e,autosearch_str))
+                self.alternative_entry.  bind("<KeyRelease>",lambda e: self.autosearch_engine(e,autosearch_alt_str))
+                self.optic_search.       unbind("<Button-1>")
+                self.alternative_search. unbind("<Button-1>")
+                self.optic_search.       bind("<Button-1>",lambda e: self.manage_option_menu(e,type_database,self.optic_type_entry,mirror=True,values2=notes_database))
+                self.alternative_search. bind("<Button-1>",lambda e: self.manage_option_menu(e,type_database,self.alternative_entry,mirror=True,values2=notes_database))
+
+            targets = [
+                ("optic",self.parent.whole_optics_database,self.parent.optics_notes_database,"Typ objektivu:",self.optics_checkbox,"optics","optics_alternative"),
+                ("light",self.parent.whole_light_database,self.parent.light_notes_database,"Typ světla:",self.light_checkbox,"lights","lights_alternative"),
+                ("filter",self.parent.whole_filter_database,self.parent.filter_notes_database,"Typ filtru:",self.filter_checkbox,"filter","filter_alternative"),
+                ("cable",self.parent.whole_light_cable_database,self.parent.light_cable_notes_database,"Typ kabelu:",self.light_cable_checkbox,"light_cable","light_cable_alternative"),
+            ]
+
+            for device, type_list, notes_list, label, checkbox_widget, autosearch_str, autosearch_alt_str in targets:
+                if device == which_checkbox or device == which_refresh:
+                    self.optic_light_option = device
+                    self.optic_type.configure(text = label)
+                    self.unselect_checkboxes()
+                    checkbox_widget.select()
+                    manage_entries(autosearch_str,autosearch_alt_str,type_list,notes_list)
+                    break
+
+        def remaping_characters(self,event):
+            remap = {
+                'ì': 'ě',
+                'è': 'č',
+                'ø': 'ř'
+            }
+
+            if event.char in remap:
+                widget = event.widget
+                replacement = remap[event.char]
+
+                # Zjistit, zda je něco vybráno
+                try:
+                    selection_start = widget.index("sel.first")
+                    selection_end = widget.index("sel.last")
+                    widget.delete(selection_start, selection_end)
+                    widget.insert(selection_start, replacement)
+                except tk.TclError:
+                    # Pokud nic není vybrané, vlož na pozici kurzoru
+                    widget.insert(tk.INSERT, replacement)
+
+                return "break"
+        
+        def add_photo(self):
+            """
+            Pozor pracuje se tu s temp station listem 
+            - a bere se tu v potaz childroot
+            """
+            def add_photo_callback(updated_list,last_path):
+                self.parent.temp_station_list[self.station_index]["image_list"] = updated_list
+                self.parent.last_path_to_images = last_path
+            image_list_given = []
+            if "image_list" in self.parent.temp_station_list[self.station_index]:
+                image_list_given = self.parent.temp_station_list[self.station_index]["image_list"]
+            insert_image_class = Insert_image(self.parent.root,
+                                              self.child_root,
+                                              image_list_given,
+                                              add_photo_callback,
+                                              self.parent.default_subwindow_status,
+                                              self.parent.last_path_to_images)
+            insert_image_class.image_menu_gui()
+            
+        def call_text_wrap(self,textbox_widget):
+            wrapped_text = Tools.make_wrapping(str(textbox_widget.get("1.0", tk.END)))
+            textbox_widget.delete("0.0","end")
+            textbox_widget.insert("0.0",wrapped_text)
+
+        def manage_option_menu(self,e,values,entry_widget,values2 = [],mirror=None,auto_search_call=False,acc_list = False, add_button = None,device = "",item_given_as=""):
+            """
+            - při použití jako autosearch engine (acc_list = False) není třeba device
+            - když i deletion (show funkce - oko) musí se definovat device
+            """
+            def on_item_selected(value):
+                entry_widget.delete(0,200)
+                entry_widget.insert(0,str(value["type"]))
+                self.ids_on_entry[entry_widget][0] = value["id"]
+                self.ids_on_entry[entry_widget][1] = value["type"]
+
+                if item_given_as == "acc":
+                    self.add_acc(e,entry_widget,"camera")
+                elif item_given_as == "acc_opt":
+                    self.add_acc(e,entry_widget,"optics")
+                else:
+                    self.save_changes(no_window_shut=True,bypass_db_search=False)
+                window.destroy()
+
+            def remove_row(value):
+                if device == "camera":
+                    to_remove = self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["acc_list"].index(value)
+                    self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["acc_list"].pop(to_remove)
+                elif device == "optics":
+                    to_remove = self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"][self.optics_index]["acc_list"].index(value)
+                    self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"][self.optics_index]["acc_list"].pop(to_remove)
+
+                window.destroy()
+                self.show_acc(e,device)
+
+            if len(values) == 0:
+                return
+            entry_widget.update_idletasks()
+            self.child_root.update_idletasks()
+            screen_x = self.child_root.winfo_pointerx()
+            screen_y = self.child_root.winfo_pointery()
+
+            if auto_search_call:
+                screen_x = entry_widget.winfo_rootx()
+                screen_y = entry_widget.winfo_rooty() + entry_widget.winfo_height()+5
+
+            if acc_list:
+                if add_button != None:
+                    screen_x = add_button.winfo_rootx()
+                    screen_y = add_button.winfo_rooty() + add_button.winfo_height()+5
+
+            # screen_y = entry_widget.winfo_rooty()
+            if e !="":
+                parent_x = self.child_root.winfo_rootx()+e.x
+                parent_y = self.child_root.winfo_rooty()+e.y
+            else:
+                parent_x = self.child_root.winfo_rootx()
+                parent_y = self.child_root.winfo_rooty()
+
+            x = screen_x - parent_x + entry_widget.winfo_width()
+            y = screen_y - parent_y + entry_widget.winfo_height()
+            font = tkFont.Font(family="Arial", size=20)
+            max_width_px = 40
+            try:
+                max_width_px = max(font.measure(str(val["type"])) for val in values) + 40  # Add some padding
+            except Exception as e:
+                pass
+            window = customtkinter.CTkToplevel(self.child_root)
+            window.overrideredirect(True)
+            window.configure(bg="black")
+            if acc_list:
+                max_width_px += 100
+                listbox = FakeContextMenu(window, values, values2, command=on_item_selected, width=max_width_px, del_option=True,del_cmd=remove_row)
+            else:
+                listbox = FakeContextMenu(window, values, values2, mirror=mirror, command=on_item_selected, width=max_width_px)
+                
+            listbox.pack(fill="both",expand=True)
+            self.child_root.bind("<Button-1>", lambda e: window.destroy(), "+")
+            max_visible_items = 50
+            visible_items = min(len(values), max_visible_items)
+            total_height = visible_items * int(listbox.one_button_height)+20
+            self.child_root.update_idletasks()
+            if total_height > self.child_root._current_height-20-y:
+                total_height = self.child_root._current_height-20-y
+
+            if mirror == True: #priznak aby pri maximalizovani nelezlo mimo obrazovku (doprava)
+                screen_x=screen_x-max_width_px
+            window.geometry(f"{max_width_px}x{total_height}+{screen_x}+{screen_y}")
+            if auto_search_call:
+                self.autosearch_menu = window
+
+        def autosearch_engine(self,e,which_item):
+            """
+            which_item:
+            - camera
+            - optics
+            - optics_alternative
+            - lights
+            - lights_alternative
+            - cables
+            - acc
+            - acc_opt
+            - light_cable
+            - light_cable_alternative
+            - filter
+            - filter_alternative
+            """
+            if self.autosearch_menu != None:
+                self.autosearch_menu.destroy()
+                self.autosearch_menu = None
+
+            item_config = {
+                "camera": (self.camera_type_entry,                   self.parent.whole_camera_type_database,      self.parent.camera_notes_database),
+                "optics": (self.optic_type_entry,                    self.parent.whole_optics_database,           self.parent.optics_notes_database),
+                "optics_alternative": (self.alternative_entry,       self.parent.whole_optics_database,           self.parent.optics_notes_database),
+                "lights": (self.optic_type_entry,                    self.parent.whole_light_database,            self.parent.light_notes_database),
+                "lights_alternative": (self.alternative_entry,       self.parent.whole_light_database,            self.parent.light_notes_database),
+                "cables": (self.cam_cable_menu,                      self.parent.whole_camera_cable_database,     self.parent.cable_notes_database),
+                "acc": (self.cam_acc_menu,                           self.parent.whole_accessory_database,        self.parent.accessory_notes_database),
+                "acc_opt": (self.opt_acc_menu,                       self.parent.whole_accessory_database,        self.parent.accessory_notes_database),
+                "light_cable": (self.optic_type_entry,               self.parent.whole_light_cable_database,      self.parent.light_cable_notes_database),
+                "light_cable_alternative": (self.alternative_entry,  self.parent.whole_light_cable_database,      self.parent.light_cable_notes_database),
+                "filter": (self.optic_type_entry,                    self.parent.whole_filter_database,           self.parent.filter_notes_database),
+                "filter_alternative": (self.alternative_entry,       self.parent.whole_filter_database,           self.parent.filter_notes_database),
+            }
+
+            if which_item in item_config:
+                entry_widget, database, notes_database = item_config[which_item]
+            else:
+                raise ValueError(f"Unknown item type: {which_item}")
+
+            entry_widget.update_idletasks()
+            currently_inserted = str(entry_widget.get()).strip().lower()
+            if len(str(currently_inserted))==0:
+                return
+            found_itemss = []
+            found_items_notes = []
+            for items in database:
+                item_str = str(items["type"]).lower()
+                if currently_inserted in str(item_str):
+                    found_itemss.append(items)
+                    index = Tools.find_index(database,items["id"],param_given="id")
+                    found_items_notes.append(notes_database[index])
+            found_itemss = sorted(found_itemss, key=lambda x: x["type"])
+            self.manage_option_menu(e,found_itemss,entry_widget,found_items_notes,auto_search_call=True,item_given_as=which_item)
+
+        def add_acc(self,e,entry_widget,device):
+            """
+            device:
+            - camera
+            - optics
+            """
+            if device == "camera":
+                device_obj = self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]
+                # entry_widget = cam_acc_menu
+            else:
+                device_obj = self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"][self.optics_index]
+                # entry_widget = opt_acc_menu
+
+            acc_item = str(entry_widget.get())
+            device_obj.setdefault("acc_list", [])
+            if acc_item:
+                acc_list = device_obj["acc_list"]
+                # if not any(acc["type"] == acc_item for acc in acc_list):
+                if not any(acc["type"] == acc_item for acc in self.parent.whole_accessory_database) and acc_item.replace(" ","") != "" and not self.server_db_part_presence(acc_item,entry_widget,"acc"):
+                    entry_widget.configure(fg_color = "#bd1931",border_color = "red")
+                    return "db_error"
+                else:
+                    entry_widget.configure(fg_color = "#343638",border_color = "#565B5E")
+                    if acc_item in self.parent.duplicity_list:
+                        if self.ids_on_entry[entry_widget][1] == acc_item:
+                            index = Tools.find_index(self.parent.whole_accessory_database,self.ids_on_entry[entry_widget][0],param_given="id")
+                            acc_list.append({"type":acc_item,
+                                            "id":self.ids_on_entry[entry_widget][0],
+                                            "notes":self.parent.accessory_notes_database[index]})
+                            
+                            self.ids_on_entry[entry_widget][0] = 0
+                            self.ids_on_entry[entry_widget][1] = ""
+                            
+                        else:
+                            Tools.add_colored_line(self.window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
+                            if device == "camera":
+                                self.autosearch_engine(e,"acc")
+                            else:
+                                self.autosearch_engine(e,"acc_opt")
+
+                            entry_widget.configure(fg_color = "#bd1931",border_color = "red")
+                            # db_error_found = True
+                    else:
+                        index = Tools.find_index(self.parent.whole_accessory_database,acc_item)
+                        if index != None:
+                            acc_list.append({"type":acc_item,
+                                                "id":self.parent.whole_accessory_database[index],
+                                                "notes":self.parent.accessory_notes_database[index]})
+
+        def show_acc(self,e,device):
+            """
+            device:
+            - camera
+            - optics
+            """
+            print(self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index])
+            
+            if device == "camera":
+                device_obj = self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]
+                entry_widget = self.cam_acc_menu
+                add_button = self.cam_acc_show
+            else:
+                device_obj = self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"][self.optics_index]
+                entry_widget = self.opt_acc_menu
+                add_button = self.opt_acc_show
+
+            current_acc_list = []
+            current_acc_notes_list = []
+            device_obj.setdefault("acc_list", [])
+            current_acc_list = device_obj["acc_list"]
+            print("current acc list",current_acc_list)
+            for accsrs in current_acc_list:
+                current_acc_notes_list.append(accsrs["notes"])
+            if len(current_acc_list) > 0:
+                self.manage_option_menu(e,current_acc_list,entry_widget,current_acc_notes_list,acc_list=True,add_button = add_button,device=device)
+
+        def refresh_counters(self):
+            try:
+                counter_cam_state = str(self.camera_index+1) + "/" + str(len(self.parent.temp_station_list[self.station_index]["camera_list"]))
+                self.counter_cam.configure(text = counter_cam_state)
+            except Exception:
+                pass
+            try:
+                counter_opt_state = str(self.optics_index+1) + "/" + str(len(self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"]))
+                self.counter_opt.configure(text = counter_opt_state)
+            except Exception:
+                pass
+
+        def refresh_button_appearance(self):
+            def unbind_tooltip(widget):
+                widget.unbind("<Enter>")
+                widget.unbind("<Leave>")
+                widget.unbind("<Button-1>")
+
+            def config_buttons(button_left,button_right,index,max_array_value,product = "stanice"):
+                if index ==0:
+                    button_left.event_generate("<Button-1>")
+                    button_left.unbind("<Enter>")
+                    button_left.configure(text = "",fg_color = "#636363")
+                else:
+                    button_left.configure(text = "<",fg_color = "#636363")
+                    if self.parent.show_tooltip == "ano":
+                        unbind_tooltip(button_left)
+                        self.child_root.after(100, lambda: Catalogue_gui.ToolTip(button_left,f" Předcházející {product} ",self.child_root,subwindow_status=True))
+
+                if index == max_array_value:
+                    button_right.configure(text = "+",fg_color = "green")
+                    if self.parent.show_tooltip == "ano":
+                        unbind_tooltip(button_right)
+                        self.child_root.after(100, lambda: Catalogue_gui.ToolTip(button_right,f" Nová {product} ",self.child_root,subwindow_status=True))
+                else:
+                    button_right.configure(text = ">",fg_color = "#636363")
+                    if self.parent.show_tooltip == "ano":
+                        unbind_tooltip(button_right)
+                        self.child_root.after(100, lambda: Catalogue_gui.ToolTip(button_right,f" Další {product} ",self.child_root,subwindow_status=True))
+
+            config_buttons(self.button_prev_st,  self.button_next_st, self.station_index,len(self.parent.temp_station_list)-1)
+            config_buttons(self.button_prev_cam, self.button_next_cam,self.camera_index,len(self.parent.temp_station_list[self.station_index]["camera_list"])-1,product="kamera")
+            config_buttons(self.button_prev_opt, self.button_next_opt,self.optics_index,len(self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"])-1,product="optika")
+
+        def initial_prefill(self):
+            database_list = [(self.parent.whole_filter_database,"filter",self.filter_checkbox),
+                            (self.parent.whole_light_database,"light",self.light_checkbox),
+                            (self.parent.whole_light_cable_database,"cable",self.light_cable_checkbox),
+                            (self.parent.whole_optics_database,"optic",self.optics_checkbox)]
+            self.new_name.delete(0,300)
+            self.new_name.insert(0,str(self.parent.temp_station_list[self.station_index]["name"]))
+            self.new_description.delete("0.0","end")
+            self.new_description.insert("0.0",str(self.parent.temp_station_list[self.station_index]["inspection_description"]))
+
+            # initial prefill - camera:
+            try:
+                if len(self.parent.temp_station_list[self.station_index]["camera_list"]) == 0:
+                    self.camera_type_entry.delete(0,300)
+                    self.controller_entry.set("")
+                    self.cam_cable_menu.delete(0,300)
+                    self.notes_input.delete("1.0",tk.END)
+
+                self.camera_type_entry.delete(0,300)
+                cam_from_dict = self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]
+                self.camera_type_entry.insert(0,str(cam_from_dict["type"]))
+                if "cam_id" in cam_from_dict:
+                    self.ids_on_entry[self.camera_type_entry][0] = cam_from_dict["cam_id"]
+                    self.ids_on_entry[self.camera_type_entry][1] = cam_from_dict["type"]
+                if str(cam_from_dict["controller"]) in self.parent.custom_controller_drop_list:
+                    self.controller_entry.set(str(cam_from_dict["controller"]))
+                self.cam_cable_menu.delete(0,300)
+                self.cam_cable_menu.insert(0,str(cam_from_dict["cable"]))
+                if "cab_id" in cam_from_dict:
+                    self.ids_on_entry[self.cam_cable_menu][0] = cam_from_dict["cab_id"]
+                    self.ids_on_entry[self.cam_cable_menu][1] = cam_from_dict["cable"]
+                self.notes_input.delete("1.0",tk.END)
+                self.notes_input.insert("1.0",str(cam_from_dict["description"]))
+                self.cam_acc_menu.delete(0,300)
+            except TypeError as typeerr_msg:
+                # print("ERROR: ",typeerr_msg)
+                self.camera_index = 0
+                if len(self.parent.temp_station_list[self.station_index]["camera_list"]) > 0:
+                    self.camera_type_entry.delete(0,300)
+                    cam_from_dict = self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]
+                    self.camera_type_entry.insert(0,str(cam_from_dict["type"]))
+                    if "cam_id" in cam_from_dict:
+                        self.ids_on_entry[self.camera_type_entry][0] = cam_from_dict["cam_id"]
+                        self.ids_on_entry[self.camera_type_entry][1] = cam_from_dict["type"]
+                    if self.last_controller_index < len(self.parent.custom_controller_drop_list)-1:
+                        self.controller_entry.set(self.parent.custom_controller_drop_list[self.last_controller_index])
+                    
+                    try:
+                        assigned_controller_index = int(cam_from_dict["controller_index"])
+                        self.controller_entry.set(self.parent.custom_controller_drop_list[assigned_controller_index])
+                    except Exception:
+                        pass
+
+                    self.cam_cable_menu.delete(0,300)
+                    self.cam_cable_menu.insert(0,str(cam_from_dict["cable"]))
+                    if "cab_id" in cam_from_dict:
+                        self.ids_on_entry[self.cam_cable_menu][0] = cam_from_dict["cab_id"]
+                        self.ids_on_entry[self.cam_cable_menu][1] = cam_from_dict["cable"]
+                    self.notes_input.delete("1.0",tk.END)
+                    self.notes_input.insert("1.0",str(cam_from_dict["description"]))
+                    self.cam_acc_menu.delete(0,300)
+            except IndexError:
+                self.camera_index = 0
+                # bypass aby vychazeli indexy... neni osetřeno proti nule (kamer nebo objektivů) skoro nikde
+                station_with_new_camera = self.parent.make_new_object("camera",object_to_edit=self.parent.temp_station_list[self.station_index])
+                self.parent.temp_station_list[self.station_index] = station_with_new_camera
+
+            # initial prefill - optics:
+            try:
+                optic_from_dict = self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"][self.optics_index]
+                self.optic_type_entry.delete(0,300)
+                self.optic_type_entry.insert(0,optic_from_dict["type"])
+                if "opt_id" in optic_from_dict:
+                    self.ids_on_entry[self.optic_type_entry][0] = optic_from_dict["opt_id"]
+                    self.ids_on_entry[self.optic_type_entry][1] = optic_from_dict["type"]
+                self.alternative_entry.delete(0,300)
+                self.alternative_entry.insert(0,optic_from_dict["alternative"])
+                if "alt_id" in optic_from_dict:
+                    self.ids_on_entry[self.alternative_entry][0] = optic_from_dict["alt_id"]
+                    self.ids_on_entry[self.alternative_entry][1] = optic_from_dict["alternative"]
+                for database, device, checkbox in database_list:
+                    # if optic_type in database:
+                    if any(opt["type"] == optic_from_dict["type"] for opt in database):
+                        if checkbox.get() == 1:
+                            self.optics_lights_switch(which_refresh=device)
+                        else:
+                            self.optics_lights_switch(device)
+                        break
+
+                self.notes_input2.delete("1.0",tk.END)
+                self.notes_input2.insert("1.0",str(self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"][self.optics_index]["description"]))
+                self.opt_acc_menu.delete(0,300)
+            except TypeError:
+                self.optics_index = 0
+                optic_from_dict = self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"][self.optics_index]
+                if len(self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"]) > 0:
+                    self.optic_type_entry.delete(0,300)
+                    self.optic_type_entry.insert(0,optic_from_dict["type"])
+                    if "opt_id" in optic_from_dict:
+                        self.ids_on_entry[self.optic_type_entry][0] = optic_from_dict["opt_id"]
+                        self.ids_on_entry[self.optic_type_entry][1] = optic_from_dict["type"]
+                    self.alternative_entry.delete(0,300)
+                    self.alternative_entry.insert(0,optic_from_dict["alternative"])
+                    if "alt_id" in optic_from_dict:
+                        self.ids_on_entry[self.alternative_entry][0] = optic_from_dict["alt_id"]
+                        self.ids_on_entry[self.alternative_entry][1] = optic_from_dict["alternative"]
+
+                    for database, device, checkbox in database_list:
+                        # if optic_type in database:
+                        if any(opt["type"] == optic_from_dict["type"] for opt in database):
+                            if checkbox.get() == 1:
+                                self.optics_lights_switch(which_refresh=device)
+                            else:
+                                self.optics_lights_switch(device)
+                            break
+                    self.notes_input2.delete("1.0",tk.END)
+                    self.notes_input2.insert("1.0",str(self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"][self.optics_index]["description"]))
+                    self.opt_acc_menu.delete(0,300)
+            except Exception:
+                self.optics_index = 0
+
+            #nulování nepoužité entry historie
+            for key in self.ids_on_entry:
+                if str(key.get()) != str(self.ids_on_entry[key][1]):
+                    self.ids_on_entry[key] = [0, ""]
+
+            self.refresh_counters()
+            self.refresh_button_appearance()
+            self.controller_opt_menu_color(self.controller_entry.get())
+
+        def create_widgets(self):
+            self.child_root = customtkinter.CTkToplevel()
+            icon_small = 45
+            icon_large = 49
+            # STANICE ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+            window_main_frame =         customtkinter.CTkFrame(master = self.child_root,corner_radius=0,fg_color="#212121")
+            station_frame =             customtkinter.CTkFrame(master = window_main_frame,corner_radius=0,border_width=3)
+            station_name_label =        customtkinter.CTkLabel(master = station_frame,text = "Název stanice:",font=("Arial",22,"bold"))
+            name_frame =                customtkinter.CTkFrame(master = station_frame,corner_radius=0)
+            self.button_prev_st =            customtkinter.CTkButton(master = name_frame,text = "<",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: self.previous_station())
+            self.new_name =                  customtkinter.CTkEntry(master = name_frame,font=("Arial",22),height=50,corner_radius=0)
+            self.button_next_st =            customtkinter.CTkButton(master = name_frame,text = ">",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: self.next_station())
+            self.button_prev_st.             pack(pady = 5, padx = 0,anchor="w",expand=False,side="left")
+            self.new_name.                   pack(pady = 5, padx = 0,anchor="w",expand=True,side="left",fill="x")
+            self.button_next_st.             pack(pady = 5, padx = 0,anchor="w",expand=False,side="left")
+            button_add_photo =          customtkinter.CTkButton(master = station_frame,text = "Přiřadit/ zobrazit fotografii",font=("Arial",22,"bold"),height=50,corner_radius=0,command=lambda: self.add_photo())
+            description_label_frame =   customtkinter.CTkFrame(master = station_frame,corner_radius=0,fg_color="#212121")
+            inspection_description =    customtkinter.CTkLabel(master = description_label_frame,text = "Popis inspekce:",font=("Arial",22,"bold"))
+            wrap_text_btn =             customtkinter.CTkButton(master = description_label_frame,text = "Zarovnat text",font=("Arial",22,"bold"),width = 100,height=30,corner_radius=0,command=lambda: self.call_text_wrap(self.new_description))
+            inspection_description.     pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
+            wrap_text_btn.              pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
+            self.new_description =           customtkinter.CTkTextbox(master = station_frame,font=("Arial",22),width=450,height=600,corner_radius=0)
+            station_name_label.         pack(pady=(15,5),padx=10,anchor="w",expand=False,side = "top")
+            name_frame.                 pack(pady = 5, padx = 5,anchor="w",expand=False,side="top",fill="x")
+            button_add_photo.           pack(pady=(5,5),padx=10,anchor="w",expand=False,side = "top",fill="x")
+            description_label_frame.    pack(pady = 0, padx = 3,anchor="w",expand=False,side="top",fill="x")
+            self.new_description.            pack(pady = 5, padx = 10,expand=True,side="top",fill="both")
+            self.new_name.                   bind("<Key>",self.remaping_characters)
+            self.new_description.            bind("<Key>",self.remaping_characters)
+
+            # KAMERY ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+            camera_frame =              customtkinter.CTkFrame(master = window_main_frame,corner_radius=0,border_width=3)
+            counter_frame_cam =         customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
+            self.button_prev_cam =           customtkinter.CTkButton(master = counter_frame_cam,text = "<",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: self.previous_camera())
+            self.counter_cam =               customtkinter.CTkLabel(master = counter_frame_cam,text = "0/0",font=("Arial",22,"bold"))
+            self.button_next_cam =           customtkinter.CTkButton(master = counter_frame_cam,text = ">",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: self.next_camera())
+            self.button_prev_cam.            pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
+            self.counter_cam.                pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
+            self.button_next_cam.            pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
+            camera_type =               customtkinter.CTkLabel(master = camera_frame,text = "Typ kamery:",font=("Arial",22,"bold"))
+            option_menu_frame_cam =     customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
+            self.camera_type_entry =         customtkinter.CTkEntry(master = option_menu_frame_cam,font=("Arial",22),height=50,corner_radius=0)
+            camera_search =             customtkinter.CTkLabel(master = option_menu_frame_cam,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
+            camera_search.              bind("<Enter>",lambda e: camera_search._image.configure(size=(icon_large,icon_large)))
+            camera_search.              bind("<Leave>",lambda e: camera_search._image.configure(size=(icon_small,icon_small)))
+            camera_search.              bind("<Button-1>",lambda e: self.manage_option_menu(e,self.parent.whole_camera_type_database,self.camera_type_entry,values2=self.parent.camera_notes_database))
+            self.camera_type_entry.          pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
+            camera_search.              pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+            self.camera_type_entry.          bind("<KeyRelease>",lambda e: self.autosearch_engine(e,"camera"))
+
+            cam_cable =                 customtkinter.CTkLabel(master = camera_frame,text = "Kabel ke kameře:",font=("Arial",22,"bold"))
+            option_menu_frame_cable =   customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
+            self.cam_cable_menu =            customtkinter.CTkEntry(master = option_menu_frame_cable,font=("Arial",22),height=50,corner_radius=0)
+            cable_search =              customtkinter.CTkLabel(master = option_menu_frame_cable,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
+            cable_search.               bind("<Enter>",lambda e: cable_search._image.configure(size=(icon_large,icon_large)))
+            cable_search.               bind("<Leave>",lambda e: cable_search._image.configure(size=(icon_small,icon_small)))
+            cable_search.               bind("<Button-1>",lambda e: self.manage_option_menu(e,self.parent.whole_camera_cable_database,self.cam_cable_menu,self.parent.cable_notes_database))
+            self.cam_cable_menu.             pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
+            cable_search.               pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+            self.cam_cable_menu.             bind("<KeyRelease>",lambda e: self.autosearch_engine(e,"cables"))
+
+            cam_acc =                   customtkinter.CTkLabel(master = camera_frame,text = "Příslušenství ke kameře:",font=("Arial",22,"bold"))
+            option_menu_frame_cam_acc = customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
+            self.cam_acc_menu =              customtkinter.CTkEntry(master = option_menu_frame_cam_acc,font=("Arial",22),height=50,corner_radius=0)
+            cam_acc_search =            customtkinter.CTkLabel(master = option_menu_frame_cam_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
+            cam_acc_search.             bind("<Enter>",lambda e: cam_acc_search._image.configure(size=(icon_large,icon_large)))
+            cam_acc_search.             bind("<Leave>",lambda e: cam_acc_search._image.configure(size=(icon_small,icon_small)))
+            cam_acc_search.             bind("<Button-1>",lambda e: self.manage_option_menu(e,self.parent.whole_accessory_database,self.cam_acc_menu,self.parent.accessory_notes_database))
+            self.cam_acc_menu.               pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
+            cam_acc_search.             pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+            self.cam_acc_menu.               bind("<KeyRelease>",lambda e: self.autosearch_engine(e,"acc"))
+            self.cam_acc_add =               customtkinter.CTkLabel(master = option_menu_frame_cam_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/green_plus.png")),size=(icon_small,icon_small)),bg_color="#212121")
+            self.cam_acc_add.                bind("<Enter>",lambda e: self.cam_acc_add._image.configure(size=(icon_large,icon_large)))
+            self.cam_acc_add.                bind("<Leave>",lambda e: self.cam_acc_add._image.configure(size=(icon_small,icon_small)))
+            self.cam_acc_add.                bind("<Button-1>",lambda e: self.add_acc(e,self.cam_acc_menu,"camera"))
+            self.cam_acc_add.                pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+            self.cam_acc_show =              customtkinter.CTkLabel(master = option_menu_frame_cam_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/show.png")),size=(icon_small,icon_small)),bg_color="#212121")
+            self.cam_acc_show.               bind("<Enter>",lambda e: self.cam_acc_show._image.configure(size=(icon_large,icon_large)))
+            self.cam_acc_show.               bind("<Leave>",lambda e: self.cam_acc_show._image.configure(size=(icon_small,icon_small)))
+            self.cam_acc_show.               bind("<Button-1>",lambda e: self.show_acc(e,"camera"))
+            self.cam_acc_show.               pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+
+            controller =                customtkinter.CTkLabel(master = camera_frame,text = "Kontroler:",font=("Arial",22,"bold"))
+            controller_frame =          customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
+            self.controller_entry =          customtkinter.CTkOptionMenu(master = controller_frame,font=("Arial",22),dropdown_font=("Arial",22),width=280,height=50,values=self.parent.custom_controller_drop_list,corner_radius=0,fg_color="#212121",command=self.controller_opt_menu_color)
+            new_controller =            customtkinter.CTkButton(master = controller_frame,text = "Přidat",font=("Arial",22,"bold"),width = 80,height=50,corner_radius=0,command=lambda: self.call_new_controller_gui())
+            self.controller_entry.           pack(pady = 5, padx = (10,0),anchor="w",expand=True,side="left",fill="x")
+            new_controller.             pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
+            note_label_frame =          customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
+            note_label =                customtkinter.CTkLabel(master = note_label_frame,text = "Poznámky:",font=("Arial",22,"bold"))
+            import_notes_btn =          customtkinter.CTkButton(master = note_label_frame,text = "Import z databáze",font=("Arial",22,"bold"),width = 100,height=30,corner_radius=0,command=lambda: self.import_notes("camera"))
+            wrap_text_btn2 =            customtkinter.CTkButton(master = note_label_frame,text = "Zarovnat text",font=("Arial",22,"bold"),width = 100,height=30,corner_radius=0,command=lambda: self.call_text_wrap(self.notes_input))
+            note_label.                 pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
+            import_notes_btn.           pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
+            wrap_text_btn2.             pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
+            self.notes_input =               customtkinter.CTkTextbox(master = camera_frame,font=("Arial",22),corner_radius=0,width=450,height=450)
+            counter_frame_cam.          pack(pady=(10,0),padx= 3,anchor="n",expand=False,side="top")
+            camera_type.                pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
+            option_menu_frame_cam.      pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
+            cam_cable.                  pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
+            option_menu_frame_cable.    pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
+            cam_acc.                    pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
+            option_menu_frame_cam_acc.  pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
+            controller.                 pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
+            controller_frame.           pack(pady = 0, padx = 3,anchor="w",expand=False,side="top",fill="x")
+            new_controller.             pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
+            note_label_frame.           pack(pady = 0, padx = 3,anchor="w",expand=False,side="top",fill="x")
+            self.notes_input.                pack(pady = 5, padx = 10,expand=True,side="top",fill="both")
+            self.notes_input.                bind("<Key>",self.remaping_characters)
+
+            # OPTIKA --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+            optics_frame =              customtkinter.CTkFrame(master = window_main_frame,corner_radius=0,border_width=3)
+            counter_frame_optics =      customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
+            self.button_prev_opt =           customtkinter.CTkButton(master = counter_frame_optics,text = "<",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: self.previous_optic())
+            self.counter_opt =               customtkinter.CTkLabel(master = counter_frame_optics,text = "0/0",font=("Arial",22,"bold"))
+            self.button_next_opt =      customtkinter.CTkButton(master = counter_frame_optics,text = ">",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: self.next_optic())
+            self.button_prev_opt.            pack(pady = 0, padx = (5,0),anchor="w",side="left")
+            self.counter_opt.                pack(pady = 0, padx = (5,0),anchor="w",side="left")
+            self.button_next_opt.       pack(pady = 0, padx = (5,0),anchor="w",side="left")
+            checkbox_frame =            customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
+            self.light_checkbox =            customtkinter.CTkCheckBox(master = checkbox_frame, text = "Světla",font=("Arial",22,"bold"),command=lambda:self.optics_lights_switch("light"))
+            self.optics_checkbox =           customtkinter.CTkCheckBox(master = checkbox_frame, text = "Objektivy",font=("Arial",22,"bold"),command=lambda:self.optics_lights_switch("optic"))
+            self.filter_checkbox =           customtkinter.CTkCheckBox(master = checkbox_frame, text = "Filtry/\nkroužky",font=("Arial",22,"bold"),command=lambda:self.optics_lights_switch("filter"))
+            self.light_cable_checkbox =      customtkinter.CTkCheckBox(master = checkbox_frame, text = "Další\nkabely",font=("Arial",22,"bold"),command=lambda:self.optics_lights_switch("cable"))
+            self.light_checkbox.             pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
+            self.optics_checkbox.            pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
+            self.filter_checkbox.            pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
+            self.light_cable_checkbox.       pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
+            self.optic_type =                customtkinter.CTkLabel(master = optics_frame,text = "Typ objektivu:",font=("Arial",22,"bold"))
+            option_menu_frame_optic =   customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
+            self.optic_type_entry =          customtkinter.CTkEntry(master = option_menu_frame_optic,font=("Arial",22),height=50,corner_radius=0)
+            self.optic_search =              customtkinter.CTkLabel(master = option_menu_frame_optic,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
+            self.optic_search.               bind("<Enter>",lambda e: self.optic_search._image.configure(size=(icon_large,icon_large)))
+            self.optic_search.               bind("<Leave>",lambda e: self.optic_search._image.configure(size=(icon_small,icon_small)))
+            self.optic_search.               bind("<Button-1>",lambda e: self.manage_option_menu(e,self.parent.whole_optics_database,self.optic_type_entry,mirror=True,values2=self.parent.optics_notes_database))
+            self.optic_type_entry.           pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
+            self.optic_search.               pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+            self.optic_type_entry.           bind("<KeyRelease>",lambda e: self.autosearch_engine(e,"optics"))
+            alternative_type =          customtkinter.CTkLabel(master = optics_frame,text = "Alternativa:",font=("Arial",22,"bold"))
+            option_menu_frame_alternative = customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
+            self.alternative_entry =         customtkinter.CTkEntry(master = option_menu_frame_alternative,font=("Arial",22),height=50,corner_radius=0)
+            
+            self.alternative_search =        customtkinter.CTkLabel(master = option_menu_frame_alternative,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
+            self.alternative_search.         bind("<Enter>",lambda e: self.alternative_search._image.configure(size=(icon_large,icon_large)))
+            self.alternative_search.         bind("<Leave>",lambda e: self.alternative_search._image.configure(size=(icon_small,icon_small)))
+            self.alternative_search.         bind("<Button-1>",lambda e: self.manage_option_menu(e,self.parent.whole_optics_database,self.alternative_entry,mirror=True,values2=self.parent.optics_notes_database))
+            self.alternative_entry.          pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
+            self.alternative_search.         pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+            self.alternative_entry.          bind("<KeyRelease>",lambda e: self.autosearch_engine(e,"optics_alternative"))
+
+            opt_acc =                   customtkinter.CTkLabel(master = optics_frame,text = "Příslušenství k optice:",font=("Arial",22,"bold"))
+            option_menu_frame_opt_acc = customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
+            self.opt_acc_menu =              customtkinter.CTkEntry(master = option_menu_frame_opt_acc,font=("Arial",22),height=50,corner_radius=0)
+            opt_acc_search =            customtkinter.CTkLabel(master = option_menu_frame_opt_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
+            opt_acc_search.             bind("<Enter>",lambda e: opt_acc_search._image.configure(size=(icon_large,icon_large)))
+            opt_acc_search.             bind("<Leave>",lambda e: opt_acc_search._image.configure(size=(icon_small,icon_small)))
+            opt_acc_search.             bind("<Button-1>",lambda e: self.manage_option_menu(e,self.parent.whole_accessory_database,self.opt_acc_menu,mirror=True,values2=self.parent.accessory_notes_database))
+            self.opt_acc_menu.               pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
+            opt_acc_search.             pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+            self.opt_acc_menu.               bind("<KeyRelease>",lambda e: self.autosearch_engine(e,"acc_opt"))
+            self.opt_acc_add =               customtkinter.CTkLabel(master = option_menu_frame_opt_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/green_plus.png")),size=(icon_small,icon_small)),bg_color="#212121")
+            self.opt_acc_add.                bind("<Enter>",lambda e: self.opt_acc_add._image.configure(size=(icon_large,icon_large)))
+            self.opt_acc_add.                bind("<Leave>",lambda e: self.opt_acc_add._image.configure(size=(icon_small,icon_small)))
+            self.opt_acc_add.                bind("<Button-1>",lambda e: self.add_acc(e,self.opt_acc_menu,"optics"))
+            self.opt_acc_add.                pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+            self.opt_acc_show =              customtkinter.CTkLabel(master = option_menu_frame_opt_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/show.png")),size=(icon_small,icon_small)),bg_color="#212121")
+            self.opt_acc_show.               bind("<Enter>",lambda e: self.opt_acc_show._image.configure(size=(icon_large,icon_large)))
+            self.opt_acc_show.               bind("<Leave>",lambda e: self.opt_acc_show._image.configure(size=(icon_small,icon_small)))
+            self.opt_acc_show.               bind("<Button-1>",lambda e: self.show_acc(e,"optics"))
+            self.opt_acc_show.               pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
+            
+            note2_label_frame =         customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
+            note2_label =               customtkinter.CTkLabel(master = note2_label_frame,text = "Poznámky:",font=("Arial",22,"bold"))
+            import_notes2_btn =         customtkinter.CTkButton(master = note2_label_frame,text = "Import z databáze",font=("Arial",22,"bold"),width = 100,height=30,corner_radius=0,command=lambda: self.import_notes("optics"))
+            wrap_text_btn3 =            customtkinter.CTkButton(master = note2_label_frame,text = "Zarovnat text",font=("Arial",22,"bold"),width = 100,height=30,corner_radius=0,command=lambda: self.call_text_wrap(self.notes_input2))
+            note2_label.                pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
+            import_notes2_btn.          pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
+            wrap_text_btn3.             pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
+            self.notes_input2 =              customtkinter.CTkTextbox(master = optics_frame,font=("Arial",22),width=450,height=450,corner_radius=0,wrap= "word")
+            counter_frame_optics.       pack(pady=(10,0),padx=3,anchor="n",side = "top")
+            checkbox_frame.             pack(pady = 5, padx = 10,anchor="n",expand=False,side="top")
+            self.optic_type.                 pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
+            option_menu_frame_optic.    pack(pady = (5,0), padx = 10,anchor="w",expand=False,side="top",fill="x")
+            alternative_type.           pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
+            option_menu_frame_alternative.pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
+            opt_acc.                    pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
+            option_menu_frame_opt_acc.  pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
+            note2_label_frame.          pack(pady = 0, padx = 3,anchor="w",expand=False,side="top",fill="x")
+            self.notes_input2.               pack(pady = 5, padx = 10,expand=True,side="top",fill="both")
+            self.notes_input2.               bind("<Key>",self.remaping_characters)
+            self.optics_lights_switch(which_refresh=self.optic_light_option)
+
+            self.ids_on_entry = {
+                self.cam_acc_menu:[0,""],
+                self.opt_acc_menu:[0,""],
+                self.camera_type_entry:[0,""],
+                self.cam_cable_menu:[0,""],
+                self.optic_type_entry:[0,""],
+                self.alternative_entry:[0,""]
+            }
+
+            self.initial_prefill()
+            bottom_frame = customtkinter.CTkFrame(master = self.child_root,corner_radius=0)
+            self.window_console = tk.Text(bottom_frame, wrap="none", height=1,background="#212121",font=("Arial",22),state=tk.DISABLED,foreground="#565B5E",borderwidth=3)
+            button_frame = customtkinter.CTkFrame(master = bottom_frame,corner_radius=0)
+            self.window_console.pack(pady = (0,5), padx =5,anchor="w",expand=True,fill="x",side="top",ipady=3,ipadx=5)           
+            self.child_root.after(200, lambda: self.child_root.iconbitmap(self.parent.app_icon_path))
+
+            if self.given_object == "station":
+                self.child_root.title("Editování stanice: " + str(self.parent.temp_station_list[self.station_index]["name"]))
+                station_frame   .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
+                camera_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
+                optics_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
+
+            elif self.given_object == "camera":
+                self.child_root.title("Editování kamery: " + str(self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["type"]))
+                camera_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
+                optics_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
+
+            elif self.given_object == "optics":
+                self.child_root.title("Editování optiky: " + str(self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"][self.optics_index]["type"]))
+                optics_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
+
+            button_save =   customtkinter.CTkButton(master = button_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: self.save_changes())
+            button_exit =   customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: self.close_window(self.child_root))
+            button_exit     .pack(pady = 10, padx = (5,10),anchor="e",expand=False,side="right")
+            button_save     .pack(pady = 10, padx = 5,anchor="e",expand=False,side="right")
+            button_frame    .pack(pady = 0, padx = 0,fill="x",anchor="s",expand=False,side="top")
+            window_main_frame.pack(pady = 0, padx = 0,fill="both",side="top",expand=True)
+            bottom_frame    .pack(pady = 0, padx = 0,fill="x",side="top",expand=False)
+
+            if self.parent.default_subwindow_status == 1:
+                self.child_root.state('zoomed')
+
+            if self.parent.show_tooltip == "ano":
+                Catalogue_gui.ToolTip(wrap_text_btn," Zarovnat text na rozměr buňky ",  self.child_root,subwindow_status=True)
+                Catalogue_gui.ToolTip(wrap_text_btn2," Zarovnat text na rozměr buňky ", self.child_root,subwindow_status=True)
+                Catalogue_gui.ToolTip(wrap_text_btn3," Zarovnat text na rozměr buňky ", self.child_root,subwindow_status=True,reverse=True)
+                Catalogue_gui.ToolTip(self.cam_acc_show," Zobrazit navolený seznam ",    self.child_root,subwindow_status=True)
+                Catalogue_gui.ToolTip(self.opt_acc_show," Zobrazit navolený seznam ",    self.child_root,subwindow_status=True,reverse=True)
+                Catalogue_gui.ToolTip(self.cam_acc_add," Přidat zvolené příslušenství ", self.child_root,subwindow_status=True)
+                Catalogue_gui.ToolTip(self.opt_acc_add," Přidat zvolené příslušenství ", self.child_root,subwindow_status=True,reverse=True)
+
+            self.child_root.update()
+            self.child_root.update_idletasks()
+            self.child_root.focus_force()
+            self.child_root.focus()
+            self.parent.opened_window = self.child_root
+     
     def __init__(self,root,
                  download_status,
                  callback_function,
                  window_size,
-                initial_path_given):
+                 initial_path_given):
         
         self.root = root
         Tools.set_zoom(80,self.root)
@@ -3203,18 +4425,15 @@ class Catalogue_gui:
         self.light_cable_notes_database = []
         self.last_xml_filename = ""
         self.last_path_input = ""
-        self.last_controller_index = 0
         self.opened_window = ""
         self.copy_memory = ""
         self.copy_widget_tier = None
         self.leave_expanded_widget = None
         self.leave_expanded_widget_tier = None
         self.current_db_connection = None
-        self.autosearch_menu = None
         self.duplicity_list = []
         
         self.changes_made = False
-        self.optic_light_option = "optic"
         self.detailed_view = False
         self.last_scroll_position = 0.0
         self.widget_list = [] #lists of every widget by station
@@ -3880,1347 +5099,6 @@ class Catalogue_gui:
         #refresh
         self.make_project_widgets()
 
-    def edit_object_gui_new(self,object:str,station_index,camera_index = None,optics_index = None,accessory_index = None,controller_index = None,all_parameters = False,new_station = False):
-        """
-        Object:
-        - station
-        - camera
-        - optics
-        """
-        
-        def server_db_part_presence(part,entry_given=None,selected_db_list_opt= None,device="",bypass_db_search=False):
-            """
-            Vrací True:
-            - celá server db obsahuje jeden výskyt part
-            - nebo už bylo vybráno jedno id z několika výskytů part
-            \nVrací False:
-            - je nalezeno několik výskytů part nebo vůbec žádná (a chyby)
-            """
-            nonlocal ids_on_entry
-            if bypass_db_search:
-                return True
-            try:
-                status = read_database.Tools.find_unknown(self.current_db_connection,part)
-                print("db_status: ",status)
-                if status == "ok":
-                    Tools.add_colored_line(window_console,f"Položka: {part} byla nalezena v nevyfiltrované databázi","green",None,True)
-                    return True
-                elif status == "ng":
-                    Tools.add_colored_line(window_console,f"Položka: {part} nebyla nalezena ani v nevyfiltrované databázi","red",None,True)
-                    return False
-                else:
-                    # Tools.add_colored_line(window_console,f"Bylo nalezeno několik výskytů: {part} v nevyfiltrované databázi: {status}","red",None,True)
-                    Tools.add_colored_line(window_console,f"Bylo nalezeno několik výskytů: {part} v nevyfiltrované databázi, celkem: {len(status)}, zkuste konkrétněji","red",None,True)
-                    if len(status) < 30:
-                        # print(status)
-
-                        all_type_list = []
-                        for items in status:
-                            all_type_list.append(items["type"])
-
-                        # když jsou si rovny všechny typy (všechny komponenty v poli jsou rovny) = duplicity
-                        if all(x == all_type_list[0] for x in all_type_list):
-                            # if set(all_type_list) == set(self.duplicity_list)
-
-                            if all_type_list[0] not in self.duplicity_list:
-                                self.duplicity_list.append(all_type_list[0])
-                            # else:
-                            #     return True
-
-                            # voleni databazí na základe zaškrtnutého checkboxu:
-                            if selected_db_list_opt != None:
-                                optics_entry_db_type = selected_db_list_opt[0]
-                                optics_entry_db_notes = selected_db_list_opt[1]
-                            else:
-                                optics_entry_db_type = self.whole_optics_database
-                                optics_entry_db_notes = self.optics_notes_database
-
-                            targets = [
-                                (self.whole_camera_type_database, self.camera_notes_database, camera_type_entry),
-                                (optics_entry_db_type, optics_entry_db_notes, optic_type_entry),
-                                (optics_entry_db_type, optics_entry_db_notes, alternative_entry),
-                                (self.whole_camera_cable_database, self.cable_notes_database, cam_cable_menu),
-                                (self.whole_accessory_database, self.accessory_notes_database, cam_acc_menu),
-                                (self.whole_accessory_database, self.accessory_notes_database, opt_acc_menu),
-                            ]
-                            device_added = False
-                            for type_db, notes_db, widget_entry in targets:
-                                if widget_entry == entry_given:
-                                    for items in status: #musím projít všechny i když to jsou stejné typy... mají třeba jiné poznámky a id
-                                        # if {"type":items["type"],"id":items["id"]} not in type_db:
-                                        if not any(entry.get("type") == items["type"] and entry.get("id") == items["id"] for entry in type_db):
-                                            type_db.append({"type":items["type"],"id":items["id"]})
-                                            notes_db.append(items["description"])
-                                            # ids_on_entry[widget_entry][0] = items["id"]
-                                            # ids_on_entry[widget_entry][1] = items["type"]
-                                            device_added = True
-                                        else:
-                                            print("already added to db")
-                                    break
-
-                            if not device_added:
-                                print("not added")
-                                return True
-                            
-                            if device != "": 
-                                autosearch_engine("",device)
-                            else:
-                                entry_given.event_generate("<KeyRelease>")
-
-                    return False
-            except Exception:
-                return False
-
-        def save_changes(no_window_shut = False,bypass_db_search=False):
-            """
-            Pokud chybí nějaké povinné pole - zčervená
-            """
-            db_error_found = False
-
-            def check_data_to_save(entry_input,place_to_save,entry_widget,duplicity_id_name,database_given,object_name="type",selected_db_list_opt = None,device=""):
-                nonlocal db_error_found
-                nonlocal ids_on_entry
-                id_defined_status=False
-                entry_widget.update_idletasks()
-
-                if duplicity_id_name in place_to_save:
-                    id_defined_status = True
-
-
-                static_db_presence = any(item["type"] == entry_input for item in database_given)
-                if self.current_db_connection == "offline":
-                    place_to_save[object_name] = entry_input
-                elif not static_db_presence and entry_input.replace(" ","") != "" and not server_db_part_presence(entry_input,entry_widget,selected_db_list_opt,device,bypass_db_search):
-                    entry_widget.configure(fg_color = "#bd1931",border_color = "red")
-                    db_error_found = True
-                else:
-                    entry_widget.configure(fg_color = "#343638",border_color = "#565B5E")
-                    #nasledujici blok je nutný aby uživatel vybral z duplicit konkrétní id... podle popisu
-                    if entry_input in self.duplicity_list:
-                        if ids_on_entry[entry_widget][1] == entry_input:
-                            place_to_save[duplicity_id_name] = ids_on_entry[entry_widget][0]
-                            place_to_save[object_name] = entry_input
-
-                        # elif not id_defined_status:
-                        else:
-                            Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení: {entry_input} - vyberte konkrétní přes kontextové menu","red",None,True)
-                            # entry_widget.event_generate("<KeyRelease>")
-                            autosearch_engine("",device)
-                            entry_widget.configure(fg_color = "#bd1931",border_color = "red")
-                            db_error_found = True
-                    else:
-                        if id_defined_status:
-                            del place_to_save[duplicity_id_name] # pokud zaměnín za typ, co není duplicitní!
-                            print("zaměněno za typ, co není duplicitní")
-                            ids_on_entry[entry_widget][1] = ""
-                            ids_on_entry[entry_widget][0] = 0
-                        place_to_save[object_name] = entry_input
-                
-            if object == "station" or all_parameters:
-                self.temp_station_list[station_index]["name"] = new_name.get()
-                filtered_description = Tools.make_wrapping(str(new_description.get("1.0", tk.END)))
-                self.temp_station_list[station_index]["inspection_description"] = filtered_description
-
-            if object == "camera" or all_parameters:
-                camera_item = str(camera_type_entry.get())
-                check_data_to_save(camera_item,
-                                   self.temp_station_list[station_index]["camera_list"][camera_index],
-                                   camera_type_entry,
-                                   "cam_id",
-                                   self.whole_camera_type_database,
-                                   "type",device="camera")
-
-                self.temp_station_list[station_index]["camera_list"][camera_index]["controller"] = controller_entry.get()
-                current_controller = controller_entry.get()
-                controller_index = None
-                if str(current_controller).replace(" ","") != "":
-                    for controllers in self.controller_object_list:
-                        if str(str(controllers["name"])+"("+controllers["type"]+")").replace(" ","") == str(current_controller).replace(" ",""):
-                            controller_index = self.controller_object_list.index(controllers)
-                            self.last_controller_index = controller_index+1 #musíme počítat s možností nemít žádný kontroler
-                            break
-                self.temp_station_list[station_index]["camera_list"][camera_index]["controller_index"] = controller_index
-
-
-                cable_item = str(cam_cable_menu.get())
-                check_data_to_save(cable_item,
-                                   self.temp_station_list[station_index]["camera_list"][camera_index],
-                                   cam_cable_menu,
-                                   "cab_id",
-                                   self.whole_camera_cable_database,
-                                   "cable",device="cables")
-
-
-                filtered_description = Tools.make_wrapping(str(notes_input.get("1.0", tk.END)))
-                self.temp_station_list[station_index]["camera_list"][camera_index]["description"] = filtered_description
-                
-            if object == "optics" or "camera" or all_parameters:
-                optic_type = str(optic_type_entry.get())
-                if len(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"]) > 0:
-                    database_list = [(self.whole_filter_database,self.filter_notes_database,filter_checkbox),
-                                     (self.whole_light_cable_database,self.light_cable_notes_database,light_cable_checkbox),
-                                     (self.whole_light_database,self.light_notes_database,light_checkbox),
-                                     (self.whole_optics_database,self.optics_notes_database,optics_checkbox)]
-                    
-                    for dbs, db_notes, chckbxs in database_list:
-                        if chckbxs.get() == 1:
-                            selected_db = dbs
-                            db_list = [dbs,db_notes]
-
-                    check_data_to_save(optic_type,
-                                   self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index],
-                                   optic_type_entry,
-                                   "opt_id",
-                                   selected_db,
-                                   object_name="type",
-                                   selected_db_list_opt=db_list,device="optics")
-                    
-
-                    alternative_item = str(alternative_entry.get())
-                    check_data_to_save(alternative_item,
-                                   self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index],
-                                   alternative_entry,
-                                   "alt_id",
-                                   selected_db,
-                                   object_name="alternative",
-                                   selected_db_list_opt=db_list,device="optics_alternative")
-
-                    filtered_description = Tools.make_wrapping(str(notes_input2.get("1.0", tk.END)))
-                    self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"] = filtered_description
-
-            # Uložení pro případ, že se zapomene dát přidat a je to v entry (když se neklikne na tlačítko přidat, tak se provádí kontrola):
-            def check_acc_entry(device,entry_widget,given_DB,device_given):
-                nonlocal db_error_found
-                acc_given = str(entry_widget.get())
-                if acc_given:
-                    acc_list = device.setdefault("acc_list", [])
-                    if not any(acc["type"] == acc_given for acc in acc_list): # pokud je už v listu nechci znovu ověřovat duplicity - nikdy by to nepustilo dál
-                        if not any(acc["type"] == acc_given for acc in given_DB) and not server_db_part_presence(acc_given,entry_widget,device=device_given):
-                            entry_widget.configure(fg_color = "#bd1931",border_color = "red")
-                            db_error_found = True
-                        else:
-                            entry_widget.configure(fg_color = "#343638",border_color = "#565B5E")
-                            if acc_given in self.duplicity_list:
-                                if ids_on_entry[entry_widget][1] == acc_given:
-                                    if not any(acc["type"] == acc_given for acc in acc_list):
-                                        acc_list.append({"type":acc_given,
-                                                        "id":ids_on_entry[entry_widget][0]})
-                                    
-                                else:
-                                    Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
-                                    entry_widget.event_generate("<KeyRelease>")
-                                    entry_widget.configure(fg_color = "#bd1931",border_color = "red")
-                                    db_error_found = True
-                            else:
-                                # index = next(
-                                #     (i for i, acc in enumerate(self.whole_accessory_database)
-                                #     if acc["type"] == acc_given),
-                                #     None
-                                # )
-                                index = Tools.find_index(given_DB,acc_given)
-
-                                if not any(acc["type"] == acc_given for acc in acc_list):
-                                    acc_list.append({"type":acc_given,
-                                                    "id":given_DB[index],
-                                                    "notes":self.accessory_notes_database[index]})
-
-            cam = self.temp_station_list[station_index]["camera_list"][camera_index]
-            check_acc_entry(cam,cam_acc_menu,self.whole_accessory_database,"acc")
-                        
-            opt = self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]
-            check_acc_entry(opt,opt_acc_menu,self.whole_accessory_database,"acc_opt")
-
-            if db_error_found:
-                return "db_error"
-            
-            Tools.add_colored_line(window_console,"","green",None,True)
-
-            # for key in ids_on_entry:
-            #     ids_on_entry[key] = [0, ""]
-
-            if not no_window_shut:
-                self.station_list = copy.deepcopy(self.temp_station_list)
-                self.make_project_widgets() #refresh
-                self.close_window(child_root)
-
-        def next_station():
-            nonlocal station_index
-            nonlocal camera_index
-            nonlocal optics_index
-
-            station_index += 1
-            if station_index < len(self.temp_station_list):
-                station_index -= 1
-                save_status = save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
-                if save_status == "db_error":
-                    return
-                station_index += 1
-                camera_index = 0
-                optics_index = 0
-                initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
-            else: # TLACITKO +:
-                station_index -= 1
-                save_status = save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
-                if save_status == "db_error":
-                    return
-                camera_index = 0
-                optics_index = 0
-                self.station_list = copy.deepcopy(self.temp_station_list)
-                close_window(child_root)
-                if station_index < 10:
-                    widget_tier = "0" + str(station_index)
-                else:
-                    widget_tier = str(station_index)
-                self.manage_widgets("",widget_tier,"add_line")
-
-        def previous_station():
-            nonlocal station_index
-            nonlocal camera_index
-            nonlocal optics_index
-            station_index -= 1
-            if station_index > -1:
-                station_index += 1
-                save_status = save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
-                if save_status == "db_error":
-                    return
-                station_index -= 1
-                camera_index = 0
-                optics_index = 0
-                initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
-            else: # aby to neslo zase odznovu:
-                station_index += 1
-                camera_index = 0
-                optics_index = 0
-            
-        def next_camera():
-            nonlocal station_index
-            nonlocal camera_index
-            nonlocal optics_index
-            camera_index += 1
-            if camera_index < len(self.temp_station_list[station_index]["camera_list"]):
-                camera_index -= 1
-                save_status = save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
-                if save_status == "db_error":
-                    return
-                camera_index += 1
-                optics_index = 0
-                initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
-
-            else: # TLACITKO +:
-                camera_index -= 1
-                save_status = save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice¨
-                if save_status == "db_error":
-                    return
-                camera_index += 1
-                optics_index = 0
-                accessory_index = 0
-                if station_index < 10:
-                    widget_tier_st = "0" + str(station_index)
-                else:
-                    widget_tier_st = str(station_index)
-
-                print("camera st widget tier",widget_tier_st)
-                self.manage_widgets("",widget_tier_st,"add_object",open_edit=False,rewrite_temp=False)
-                initial_prefill() # prefill s novým indexem 
-
-        def previous_camera():
-            nonlocal station_index
-            nonlocal camera_index
-            nonlocal optics_index
-            camera_index -= 1
-            if camera_index > -1:
-                camera_index += 1
-                save_status = save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
-                if save_status == "db_error":
-                    return
-                camera_index -= 1
-                optics_index = 0
-                initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
-            else: # aby to neslo zase odznovu:
-                camera_index += 1
-
-        def next_optic():
-            nonlocal station_index
-            nonlocal camera_index
-            nonlocal optics_index
-            optics_index += 1
-            if optics_index < len(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"]):
-                optics_index -= 1
-                save_status = save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
-                if save_status == "db_error":
-                    return
-                optics_index += 1
-                initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
-
-            else: # TLACITKO +:
-                optics_index -= 1
-                save_status = save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
-                if save_status == "db_error":
-                    return
-                optics_index += 1
-                if station_index < 10:
-                    widget_tier_st = "0" + str(station_index)
-                else:
-                    widget_tier_st = str(station_index)
-                if camera_index < 10:
-                    widget_tier_cam = "0" + str(camera_index)
-                else:
-                    widget_tier_cam = str(camera_index)
-                widget_tier = widget_tier_st + widget_tier_cam
-                self.manage_widgets("",widget_tier,"add_object",open_edit=False,rewrite_temp=False)
-                initial_prefill() # prefill s novým indexem
-
-        def previous_optic():
-            nonlocal station_index
-            nonlocal camera_index
-            nonlocal optics_index
-            optics_index -= 1
-            if optics_index > -1:
-                optics_index += 1
-                save_status = save_changes(no_window_shut=True) # ulozit zmeny pri prepinani jeste u predesle stanice
-                if save_status == "db_error":
-                    return
-                optics_index -= 1
-                initial_prefill() # prefill s novým indexem - index se prenese i do ukládání
-            else: # aby to neslo zase odznovu:
-                optics_index += 1
-
-        def close_window(child_root):
-            try:
-                if opened_subwindow.winfo_exists():
-                    self.close_window(opened_subwindow)
-            except Exception:
-                pass
-            
-            self.root.unbind("<Button-1>")
-            child_root.destroy()
-
-        def callback_new_controller(new_controller_data):
-            print("saving new controller: ",new_controller_data)
-            new_controller = {
-                "type": new_controller_data[0],
-                "name": new_controller_data[1],
-                "color": new_controller_data[2],
-                "ip": new_controller_data[3],
-                "username": new_controller_data[4],
-                "password": new_controller_data[5],
-                "accessory_list": new_controller_data[6],
-                "notes": new_controller_data[7],
-            }
-            if new_controller_data[8] != None:
-                new_controller["duplicity_id"] = new_controller_data[8]
-            
-            print("Nový kontroler------ ",new_controller)
-            self.controller_object_list.append(new_controller)
-            new_drop_option = f"{new_controller['name']} ({new_controller['type']})"
-            self.custom_controller_drop_list.append(new_drop_option)
-            controller_entry.configure(values = self.custom_controller_drop_list)
-            controller_entry.set(new_drop_option)
-            controller_opt_menu_color("",only_color=new_controller["color"])
-            child_root.focus_force()
-        
-        def unselect_checkboxes():
-            checkbox_list = [optics_checkbox,light_checkbox,light_cable_checkbox,filter_checkbox]
-            for chckbxs in checkbox_list:
-                chckbxs.deselect()
-
-        def import_notes(which):
-            """
-            - camera (Kontroler, Kamera, Kabel)
-            - optics (Objektiv, Alternativní) - stejne pro: light_cable, filter, light
-            - accessory
-            """
-            def make_string(notes_list,type_list):
-                notes_string = ""
-                if current_optics != "":
-                    # optic_notes = str(notes_list[type_list.index(current_optics)])
-                    # opt_index = next(
-                    #     (i for i, opt in enumerate(type_list)
-                    #     if opt["type"] == current_optics),
-                    #     None
-                    # )
-                    opt_index = Tools.find_index(type_list,current_optics)
-
-                    if opt_index != None:
-                        optic_notes = str(notes_list[opt_index])
-                        if optic_notes !="":
-                            notes_string = notes_string + "Objektiv - popis: " + optic_notes + "\n\n"
-                if current_alternative != "":
-                    # alternative_notes = str(notes_list[type_list.index(current_alternative)])
-                    # alt_index = next(
-                    #     (i for i, alt in enumerate(type_list)
-                    #     if alt["type"] == current_alternative),
-                    #     None
-                    # )
-                    alt_index = Tools.find_index(type_list,current_alternative)
-
-                    if alt_index != None:
-                        alternative_notes = str(notes_list[alt_index])
-                        if alternative_notes != "":
-                            notes_string = notes_string + "Alternativní - popis: " + alternative_notes + "\n\n"
-
-                return notes_string
-
-            if which == "camera":
-                current_camera = camera_type_entry.get()
-                current_cable = cam_cable_menu.get()
-                notes_string = ""
-                if current_camera != "":
-                    # camera_notes = str(self.camera_notes_database[self.whole_camera_type_database.index(current_camera)])
-                    # cam_index = next(
-                    #     (i for i, cam in enumerate(self.whole_camera_type_database)
-                    #     if cam["type"] == current_camera),
-                    #     None
-                    # )
-                    cam_index = Tools.find_index(self.whole_camera_type_database,current_camera)
-
-                    if cam_index != None:
-                        camera_notes = self.camera_notes_database[cam_index]
-                        if camera_notes != "":
-                            notes_string = notes_string + "Kamera - popis: " + camera_notes + "\n\n"
-                if current_cable != "":
-                    # cable_notes = str(self.cable_notes_database[self.whole_camera_cable_database.index(current_cable)])
-                    # cab_index = next(
-                    #     (i for i, cab in enumerate(self.whole_camera_cable_database)
-                    #     if cab["type"] == current_cable),
-                    #     None
-                    # )
-                    cab_index = Tools.find_index(self.whole_camera_cable_database,current_cable)
-
-                    if cab_index != None:
-                        cable_notes = self.cable_notes_database[cab_index]
-                        if cable_notes != "":
-                            notes_string = notes_string + "Kabel (" + str(current_cable) + "): " + cable_notes + "\n\n"
-                
-                notes_input.delete("1.0",tk.END)
-                notes_input.insert("1.0",notes_string)
-            
-            elif which == "optics":
-                current_optics = optic_type_entry.get()
-                current_alternative = alternative_entry.get()
-                targets = [
-                    (optics_checkbox,self.whole_optics_database,self.optics_notes_database),
-                    (light_checkbox,self.whole_light_database,self.light_notes_database),
-                    (light_cable_checkbox,self.whole_light_cable_database,self.light_cable_notes_database),
-                    (filter_checkbox,self.whole_filter_database,self.filter_notes_database),
-                ]
-                for checkbox, type_list, notes_list in targets:
-                    if checkbox.get() == 1: # vybere pouze jedno pole, které je právě zvoleno
-                        notes_string = make_string(notes_list,type_list)
-                        break
-                
-                notes_input2.delete("1.0",tk.END)
-                notes_input2.insert("1.0",str(notes_string))
-
-        def call_new_controller_gui():
-            window = ToplevelWindow(self.root,[self.controller_database,self.controller_notes_database],callback_new_controller,self.controller_object_list,[self.accessory_database,self.whole_accessory_database,self.accessory_notes_database],current_db_connection=self.current_db_connection)
-            self.opened_window = window.new_controller_window(child_root)
-
-        def controller_opt_menu_color(*args,only_color = False):
-            nonlocal controller_entry
-            if not only_color:
-                current_controller = str(*args)
-                if str(current_controller).replace(" ","") != "":
-                    for controllers in self.controller_object_list:
-                        if controllers["color"] != "":
-                            if (controllers["name"]+"("+controllers["type"]+")").replace(" ","") == current_controller.replace(" ",""):
-                                controller_entry.configure(fg_color = str(controllers["color"]))
-                                break
-                else:
-                    controller_entry.configure(fg_color = "#636363")
-            else:
-                controller_entry.configure(fg_color = str(only_color))
-
-        def optics_lights_switch(which_checkbox="",which_refresh=None):
-            """
-            which_refresh, which_checkbox:
-            - optic
-            - light
-            - filter
-            - cable
-            """
-            def manage_entries(autosearch_str,autosearch_alt_str,type_database,notes_database):
-                optic_type_entry.   unbind("<KeyRelease>")
-                alternative_entry.  unbind("<KeyRelease>")
-                optic_type_entry.   bind("<KeyRelease>",lambda e: autosearch_engine(e,autosearch_str))
-                alternative_entry.  bind("<KeyRelease>",lambda e: autosearch_engine(e,autosearch_alt_str))
-                optic_search.       unbind("<Button-1>")
-                alternative_search. unbind("<Button-1>")
-                optic_search.       bind("<Button-1>",lambda e: manage_option_menu(e,type_database,optic_type_entry,mirror=True,values2=notes_database))
-                alternative_search. bind("<Button-1>",lambda e: manage_option_menu(e,type_database,alternative_entry,mirror=True,values2=notes_database))
-
-            targets = [
-                ("optic",self.whole_optics_database,self.optics_notes_database,"Typ objektivu:",optics_checkbox,"optics","optics_alternative"),
-                ("light",self.whole_light_database,self.light_notes_database,"Typ světla:",light_checkbox,"lights","lights_alternative"),
-                ("filter",self.whole_filter_database,self.filter_notes_database,"Typ filtru:",filter_checkbox,"filter","filter_alternative"),
-                ("cable",self.whole_light_cable_database,self.light_cable_notes_database,"Typ kabelu:",light_cable_checkbox,"light_cable","light_cable_alternative"),
-            ]
-
-            for device, type_list, notes_list, label, checkbox_widget, autosearch_str, autosearch_alt_str in targets:
-                if device == which_checkbox or device == which_refresh:
-                    self.optic_light_option = device
-                    optic_type.configure(text = label)
-                    unselect_checkboxes()
-                    checkbox_widget.select()
-                    manage_entries(autosearch_str,autosearch_alt_str,type_list,notes_list)
-                    break
-
-        def remaping_characters(event):
-            remap = {
-                'ì': 'ě',
-                'è': 'č',
-                'ø': 'ř'
-            }
-
-            if event.char in remap:
-                widget = event.widget
-                replacement = remap[event.char]
-
-                # Zjistit, zda je něco vybráno
-                try:
-                    selection_start = widget.index("sel.first")
-                    selection_end = widget.index("sel.last")
-                    widget.delete(selection_start, selection_end)
-                    widget.insert(selection_start, replacement)
-                except tk.TclError:
-                    # Pokud nic není vybrané, vlož na pozici kurzoru
-                    widget.insert(tk.INSERT, replacement)
-
-                return "break"
-        
-        def add_photo():
-            """
-            Pozor pracuje se tu s temp station listem 
-            - a bere se tu v potaz childroot
-            """
-            def add_photo_callback(updated_list,last_path):
-                self.temp_station_list[station_index]["image_list"] = updated_list
-                self.last_path_to_images = last_path
-            image_list_given = []
-            if "image_list" in self.temp_station_list[station_index]:
-                image_list_given = self.temp_station_list[station_index]["image_list"]
-            insert_image_class = Insert_image(self.root,
-                                              child_root,
-                                              image_list_given,
-                                              add_photo_callback,
-                                              self.default_subwindow_status,
-                                              self.last_path_to_images)
-            insert_image_class.image_menu_gui()
-            
-        def call_text_wrap(textbox_widget):
-            wrapped_text = Tools.make_wrapping(str(textbox_widget.get("1.0", tk.END)))
-            textbox_widget.delete("0.0","end")
-            textbox_widget.insert("0.0",wrapped_text)
-
-        def manage_option_menu(e,values,entry_widget,values2 = [],mirror=None,auto_search_call=False,acc_list = False, add_button = None,device = "",item_given_as=""):
-            """
-            - při použití jako autosearch engine (acc_list = False) není třeba device
-            - když i deletion (show funkce - oko) musí se definovat device
-            """
-            nonlocal ids_on_entry
-            
-            def on_item_selected(value):
-                nonlocal ids_on_entry
-                entry_widget.delete(0,200)
-                entry_widget.insert(0,str(value["type"]))
-                ids_on_entry[entry_widget][0] = value["id"]
-                ids_on_entry[entry_widget][1] = value["type"]
-
-                # child_root.after(0,Tools.add_colored_line(window_console,f"","white",None,True))
-                # child_root.after(0,entry_widget.configure(fg_color = "#343638",border_color = "#565B5E"))
-                # print(entry_widget.cget("fg_color"))
-                # entry_widget.update_idletasks()
-
-
-                # child_root.after(200, lambda: save_changes(no_window_shut=True,bypass_db_search=True))
-                # save_changes(no_window_shut=True,bypass_db_search=True)
-
-                
-
-                if item_given_as == "acc":
-                    # cam_acc_add.event_generate("<Button-1>")
-                    add_acc(e,entry_widget,"camera")
-                elif item_given_as == "acc_opt":
-                    # opt_acc_add.event_generate("<Button-1>")
-                    add_acc(e,entry_widget,"optics")
-                else:
-                    save_changes(no_window_shut=True,bypass_db_search=False)
-
-                window.destroy()
-
-            def remove_row(value):
-                # try:
-                if device == "camera":
-                    to_remove = self.temp_station_list[station_index]["camera_list"][camera_index]["acc_list"].index(value)
-                    self.temp_station_list[station_index]["camera_list"][camera_index]["acc_list"].pop(to_remove)
-                elif device == "optics":
-                    to_remove = self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["acc_list"].index(value)
-                    self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["acc_list"].pop(to_remove)
-
-                window.destroy()
-                # self.root.after(0,lambda e: show_acc(event_e,"camera"))
-                show_acc(e,device)
-
-            if len(values) == 0:
-                return
-            entry_widget.update_idletasks()
-            child_root.update_idletasks()
-            screen_x = child_root.winfo_pointerx()
-            # screen_x = entry_widget.winfo_rootx()
-            screen_y = child_root.winfo_pointery()
-
-            if auto_search_call:
-                screen_x = entry_widget.winfo_rootx()
-                screen_y = entry_widget.winfo_rooty() + entry_widget.winfo_height()+5
-
-            if acc_list:
-                if add_button != None:
-                    screen_x = add_button.winfo_rootx()
-                    screen_y = add_button.winfo_rooty() + add_button.winfo_height()+5
-
-            # screen_y = entry_widget.winfo_rooty()
-            if e !="":
-                parent_x = child_root.winfo_rootx()+e.x
-                parent_y = child_root.winfo_rooty()+e.y
-            else:
-                parent_x = child_root.winfo_rootx()
-                parent_y = child_root.winfo_rooty()
-
-            x = screen_x - parent_x + entry_widget.winfo_width()
-            y = screen_y - parent_y + entry_widget.winfo_height()
-
-            font = tkFont.Font(family="Arial", size=20)
-            max_width_px = 40
-            try:
-                max_width_px = max(font.measure(str(val["type"])) for val in values) + 40  # Add some padding
-            except Exception as e:
-                pass
-            window = customtkinter.CTkToplevel(child_root)
-            window.overrideredirect(True)
-            window.configure(bg="black")
-            if acc_list:
-                max_width_px += 100
-                listbox = FakeContextMenu(window, values, values2, command=on_item_selected, width=max_width_px, del_option=True,del_cmd=remove_row)
-            else:
-                # listbox = FakeContextMenu(window, values, command=on_item_selected, width=max_width_px)
-                listbox = FakeContextMenu(window, values, values2, mirror=mirror, command=on_item_selected, width=max_width_px)
-                
-            listbox.pack(fill="both",expand=True)
-            child_root.bind("<Button-1>", lambda e: window.destroy(), "+")
-
-            max_visible_items = 50
-            visible_items = min(len(values), max_visible_items)
-            total_height = visible_items * int(listbox.one_button_height)+20
-            child_root.update_idletasks()
-            if total_height > child_root._current_height-20-y:
-                total_height = child_root._current_height-20-y
-
-            if mirror == True: #priznak aby pri maximalizovani nelezlo mimo obrazovku (doprava)
-                screen_x=screen_x-max_width_px
-            window.geometry(f"{max_width_px}x{total_height}+{screen_x}+{screen_y}")
-            if auto_search_call:
-                self.autosearch_menu = window
-
-        def autosearch_engine(e,which_item):
-            """
-            which_item:
-            - camera
-            - optics
-            - optics_alternative
-            - lights
-            - lights_alternative
-            - cables
-            - acc
-            - acc_opt
-            - light_cable
-            - light_cable_alternative
-            - filter
-            - filter_alternative
-            """
-            if self.autosearch_menu != None:
-                self.autosearch_menu.destroy()
-                self.autosearch_menu = None
-
-            item_config = {
-                "camera": (camera_type_entry, self.whole_camera_type_database, self.camera_notes_database),
-                "optics": (optic_type_entry, self.whole_optics_database, self.optics_notes_database),
-                "optics_alternative": (alternative_entry, self.whole_optics_database, self.optics_notes_database),
-                "lights": (optic_type_entry, self.whole_light_database, self.light_notes_database),
-                "lights_alternative": (alternative_entry, self.whole_light_database, self.light_notes_database),
-                "cables": (cam_cable_menu, self.whole_camera_cable_database, self.cable_notes_database),
-                "acc": (cam_acc_menu, self.whole_accessory_database, self.accessory_notes_database),
-                "acc_opt": (opt_acc_menu, self.whole_accessory_database, self.accessory_notes_database),
-                "light_cable": (optic_type_entry, self.whole_light_cable_database, self.light_cable_notes_database),
-                "light_cable_alternative": (alternative_entry, self.whole_light_cable_database, self.light_cable_notes_database),
-                "filter": (optic_type_entry, self.whole_filter_database, self.filter_notes_database),
-                "filter_alternative": (alternative_entry, self.whole_filter_database, self.filter_notes_database),
-            }
-
-            if which_item in item_config:
-                entry_widget, database, notes_database = item_config[which_item]
-            else:
-                raise ValueError(f"Unknown item type: {which_item}")
-
-            entry_widget.update_idletasks()
-            currently_inserted = str(entry_widget.get()).strip().lower()
-            if len(str(currently_inserted))==0:
-                return
-            found_itemss = []
-            found_items_notes = []
-            for items in database:
-                item_str = str(items["type"]).lower()
-                if currently_inserted in str(item_str):
-                # if item_str.startswith(currently_inserted):
-                    found_itemss.append(items)
-                    # index = next(
-                    #     (i for i, itms in enumerate(database)
-                    #     if itms["id"] == items["id"]),
-                    #     None
-                    # )
-                    index = Tools.find_index(database,items["id"],param_given="id")
-
-                    # found_items_notes.append(notes_database[database.index(str(items))])
-                    found_items_notes.append(notes_database[index])
-
-            found_itemss = sorted(found_itemss, key=lambda x: x["type"])
-            # print(found_itemss)
-            manage_option_menu(e,found_itemss,entry_widget,found_items_notes,auto_search_call=True,item_given_as=which_item)
-
-        def add_acc(e,entry_widget,device):
-            """
-            device:
-            - camera
-            - optics
-            """
-            nonlocal ids_on_entry
-            if device == "camera":
-                device_obj = self.temp_station_list[station_index]["camera_list"][camera_index]
-                # entry_widget = cam_acc_menu
-            else:
-                device_obj = self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]
-                # entry_widget = opt_acc_menu
-
-            acc_item = str(entry_widget.get())
-            device_obj.setdefault("acc_list", [])
-            if acc_item:
-                acc_list = device_obj["acc_list"]
-                # if not any(acc["type"] == acc_item for acc in acc_list):
-                if not any(acc["type"] == acc_item for acc in self.whole_accessory_database) and acc_item.replace(" ","") != "" and not server_db_part_presence(acc_item,entry_widget,"acc"):
-                    entry_widget.configure(fg_color = "#bd1931",border_color = "red")
-                    return "db_error"
-                else:
-                    entry_widget.configure(fg_color = "#343638",border_color = "#565B5E")
-                    if acc_item in self.duplicity_list:
-                        if ids_on_entry[entry_widget][1] == acc_item:
-                            # if not any(acc["type"] == acc_item for acc in acc_list):
-                            # index = next(
-                            #     (i for i, acc in enumerate(self.whole_accessory_database)
-                            #     if acc["id"] == ids_on_entry[entry_widget][0]),
-                            #     None
-                            # )
-                            index = Tools.find_index(self.whole_accessory_database,ids_on_entry[entry_widget][0],param_given="id")
-
-                            acc_list.append({"type":acc_item,
-                                            "id":ids_on_entry[entry_widget][0],
-                                            "notes":self.accessory_notes_database[index]})
-                            
-                            ids_on_entry[entry_widget][0] = 0
-                            ids_on_entry[entry_widget][1] = ""
-                            
-                        else:
-                            Tools.add_colored_line(window_console,f"Byly nalezeny duplicity hledaného zařízení - vyberte konkrétní přes kontextové menu","red",None,True)
-                            # entry_widget.event_generate("<KeyRelease>")
-                            if device == "camera":
-                                autosearch_engine(e,"acc")
-                            else:
-                                autosearch_engine(e,"acc_opt")
-
-                            entry_widget.configure(fg_color = "#bd1931",border_color = "red")
-                            # db_error_found = True
-                    else:
-                        # index = next(
-                        #     (i for i, acc in enumerate(self.whole_accessory_database)
-                        #     if acc["type"] == acc_item),
-                        #     None
-                        # )
-                        index = Tools.find_index(self.whole_accessory_database,acc_item)
-                        if index != None:
-                            # if not any(acc["type"] == acc_item for acc in acc_list):
-                            acc_list.append({"type":acc_item,
-                                                "id":self.whole_accessory_database[index],
-                                                "notes":self.accessory_notes_database[index]})
-
-        def show_acc(e,device):
-            """
-            device:
-            - camera
-            - optics
-            """
-            print(self.temp_station_list[station_index]["camera_list"][camera_index])
-            
-            if device == "camera":
-                device_obj = self.temp_station_list[station_index]["camera_list"][camera_index]
-                entry_widget = cam_acc_menu
-                add_button = cam_acc_show
-            else:
-                device_obj = self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]
-                entry_widget = opt_acc_menu
-                add_button = opt_acc_show
-
-            current_acc_list = []
-            current_acc_notes_list = []
-            device_obj.setdefault("acc_list", [])
-            current_acc_list = device_obj["acc_list"]
-            print("current acc list",current_acc_list)
-            for accsrs in current_acc_list:
-                current_acc_notes_list.append(accsrs["notes"])
-            if len(current_acc_list) > 0:
-                manage_option_menu(e,current_acc_list,entry_widget,current_acc_notes_list,acc_list=True,add_button = add_button,device=device)
-
-        child_root = customtkinter.CTkToplevel()
-        icon_small = 45
-        icon_large = 49
-        # STANICE ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        window_main_frame =         customtkinter.CTkFrame(master = child_root,corner_radius=0,fg_color="#212121")
-        station_frame =             customtkinter.CTkFrame(master = window_main_frame,corner_radius=0,border_width=3)
-        station_name_label =        customtkinter.CTkLabel(master = station_frame,text = "Název stanice:",font=("Arial",22,"bold"))
-        name_frame =                customtkinter.CTkFrame(master = station_frame,corner_radius=0)
-        button_prev_st =            customtkinter.CTkButton(master = name_frame,text = "<",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: previous_station())
-        new_name =                  customtkinter.CTkEntry(master = name_frame,font=("Arial",22),height=50,corner_radius=0)
-        button_next_st =            customtkinter.CTkButton(master = name_frame,text = ">",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: next_station())
-        button_prev_st.             pack(pady = 5, padx = 0,anchor="w",expand=False,side="left")
-        new_name.                   pack(pady = 5, padx = 0,anchor="w",expand=True,side="left",fill="x")
-        button_next_st.             pack(pady = 5, padx = 0,anchor="w",expand=False,side="left")
-        button_add_photo =          customtkinter.CTkButton(master = station_frame,text = "Přiřadit/ zobrazit fotografii",font=("Arial",22,"bold"),height=50,corner_radius=0,command=lambda: add_photo())
-        description_label_frame =   customtkinter.CTkFrame(master = station_frame,corner_radius=0,fg_color="#212121")
-        inspection_description =    customtkinter.CTkLabel(master = description_label_frame,text = "Popis inspekce:",font=("Arial",22,"bold"))
-        wrap_text_btn =             customtkinter.CTkButton(master = description_label_frame,text = "Zarovnat text",font=("Arial",22,"bold"),width = 100,height=30,corner_radius=0,command=lambda: call_text_wrap(new_description))
-        inspection_description.     pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
-        wrap_text_btn.              pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
-        new_description =           customtkinter.CTkTextbox(master = station_frame,font=("Arial",22),width=450,height=600,corner_radius=0)
-        station_name_label.         pack(pady=(15,5),padx=10,anchor="w",expand=False,side = "top")
-        name_frame.                 pack(pady = 5, padx = 5,anchor="w",expand=False,side="top",fill="x")
-        button_add_photo.           pack(pady=(5,5),padx=10,anchor="w",expand=False,side = "top",fill="x")
-        description_label_frame.    pack(pady = 0, padx = 3,anchor="w",expand=False,side="top",fill="x")
-        new_description.            pack(pady = 5, padx = 10,expand=True,side="top",fill="both")
-        new_name.                   bind("<Key>",remaping_characters)
-        new_description.            bind("<Key>",remaping_characters)
-
-        # KAMERY ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        camera_frame =              customtkinter.CTkFrame(master = window_main_frame,corner_radius=0,border_width=3)
-        counter_frame_cam =         customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
-        button_prev_cam =           customtkinter.CTkButton(master = counter_frame_cam,text = "<",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: previous_camera())
-        counter_cam =               customtkinter.CTkLabel(master = counter_frame_cam,text = "0/0",font=("Arial",22,"bold"))
-        button_next_cam =           customtkinter.CTkButton(master = counter_frame_cam,text = ">",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: next_camera())
-        button_prev_cam.            pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
-        counter_cam.                pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
-        button_next_cam.            pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
-        camera_type =               customtkinter.CTkLabel(master = camera_frame,text = "Typ kamery:",font=("Arial",22,"bold"))
-        option_menu_frame_cam =     customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
-        camera_type_entry =         customtkinter.CTkEntry(master = option_menu_frame_cam,font=("Arial",22),height=50,corner_radius=0)
-        camera_search =             customtkinter.CTkLabel(master = option_menu_frame_cam,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
-        camera_search.              bind("<Enter>",lambda e: camera_search._image.configure(size=(icon_large,icon_large)))
-        camera_search.              bind("<Leave>",lambda e: camera_search._image.configure(size=(icon_small,icon_small)))
-        camera_search.              bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_camera_type_database,camera_type_entry,values2=self.camera_notes_database))
-        camera_type_entry.          pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
-        camera_search.              pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
-        camera_type_entry.          bind("<KeyRelease>",lambda e: autosearch_engine(e,"camera"))
-
-        cam_cable =                 customtkinter.CTkLabel(master = camera_frame,text = "Kabel ke kameře:",font=("Arial",22,"bold"))
-        option_menu_frame_cable =   customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
-        cam_cable_menu =            customtkinter.CTkEntry(master = option_menu_frame_cable,font=("Arial",22),height=50,corner_radius=0)
-        cable_search =              customtkinter.CTkLabel(master = option_menu_frame_cable,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
-        cable_search.               bind("<Enter>",lambda e: cable_search._image.configure(size=(icon_large,icon_large)))
-        cable_search.               bind("<Leave>",lambda e: cable_search._image.configure(size=(icon_small,icon_small)))
-        cable_search.               bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_camera_cable_database,cam_cable_menu,self.cable_notes_database))
-        cam_cable_menu.             pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
-        cable_search.               pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
-        cam_cable_menu.             bind("<KeyRelease>",lambda e: autosearch_engine(e,"cables"))
-
-        cam_acc =                   customtkinter.CTkLabel(master = camera_frame,text = "Příslušenství ke kameře:",font=("Arial",22,"bold"))
-        option_menu_frame_cam_acc = customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
-        cam_acc_menu =              customtkinter.CTkEntry(master = option_menu_frame_cam_acc,font=("Arial",22),height=50,corner_radius=0)
-        cam_acc_search =            customtkinter.CTkLabel(master = option_menu_frame_cam_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
-        cam_acc_search.             bind("<Enter>",lambda e: cam_acc_search._image.configure(size=(icon_large,icon_large)))
-        cam_acc_search.             bind("<Leave>",lambda e: cam_acc_search._image.configure(size=(icon_small,icon_small)))
-        cam_acc_search.             bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_accessory_database,cam_acc_menu,self.accessory_notes_database))
-        cam_acc_menu.               pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
-        cam_acc_search.             pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
-        cam_acc_menu.               bind("<KeyRelease>",lambda e: autosearch_engine(e,"acc"))
-
-        cam_acc_add =               customtkinter.CTkLabel(master = option_menu_frame_cam_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/green_plus.png")),size=(icon_small,icon_small)),bg_color="#212121")
-        cam_acc_add.                bind("<Enter>",lambda e: cam_acc_add._image.configure(size=(icon_large,icon_large)))
-        cam_acc_add.                bind("<Leave>",lambda e: cam_acc_add._image.configure(size=(icon_small,icon_small)))
-        cam_acc_add.                bind("<Button-1>",lambda e: add_acc(e,cam_acc_menu,"camera"))
-        cam_acc_add.                pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
-
-        cam_acc_show =              customtkinter.CTkLabel(master = option_menu_frame_cam_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/show.png")),size=(icon_small,icon_small)),bg_color="#212121")
-        cam_acc_show.               bind("<Enter>",lambda e: cam_acc_show._image.configure(size=(icon_large,icon_large)))
-        cam_acc_show.               bind("<Leave>",lambda e: cam_acc_show._image.configure(size=(icon_small,icon_small)))
-        cam_acc_show.               bind("<Button-1>",lambda e: show_acc(e,"camera"))
-        cam_acc_show.               pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
-
-        controller =                customtkinter.CTkLabel(master = camera_frame,text = "Kontroler:",font=("Arial",22,"bold"))
-        controller_frame =          customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
-        controller_entry =          customtkinter.CTkOptionMenu(master = controller_frame,font=("Arial",22),dropdown_font=("Arial",22),width=280,height=50,values=self.custom_controller_drop_list,corner_radius=0,fg_color="#212121",command=controller_opt_menu_color)
-        new_controller =            customtkinter.CTkButton(master = controller_frame,text = "Přidat",font=("Arial",22,"bold"),width = 80,height=50,corner_radius=0,command=lambda: call_new_controller_gui())
-        controller_entry.           pack(pady = 5, padx = (10,0),anchor="w",expand=True,side="left",fill="x")
-        new_controller.             pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
-        note_label_frame =          customtkinter.CTkFrame(master = camera_frame,corner_radius=0,fg_color="#212121")
-        note_label =                customtkinter.CTkLabel(master = note_label_frame,text = "Poznámky:",font=("Arial",22,"bold"))
-        import_notes_btn =          customtkinter.CTkButton(master = note_label_frame,text = "Import z databáze",font=("Arial",22,"bold"),width = 100,height=30,corner_radius=0,command=lambda: import_notes("camera"))
-        wrap_text_btn2 =            customtkinter.CTkButton(master = note_label_frame,text = "Zarovnat text",font=("Arial",22,"bold"),width = 100,height=30,corner_radius=0,command=lambda: call_text_wrap(notes_input))
-        note_label.                 pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
-        import_notes_btn.           pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
-        wrap_text_btn2.             pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
-        notes_input =               customtkinter.CTkTextbox(master = camera_frame,font=("Arial",22),corner_radius=0,width=450,height=450)
-        counter_frame_cam.          pack(pady=(10,0),padx= 3,anchor="n",expand=False,side="top")
-        camera_type.                pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
-        option_menu_frame_cam.      pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
-        cam_cable.                  pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
-        option_menu_frame_cable.    pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
-        cam_acc.                    pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
-        option_menu_frame_cam_acc.  pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
-        controller.                 pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
-        controller_frame.           pack(pady = 0, padx = 3,anchor="w",expand=False,side="top",fill="x")
-        new_controller.             pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
-        note_label_frame.           pack(pady = 0, padx = 3,anchor="w",expand=False,side="top",fill="x")
-        notes_input.                pack(pady = 5, padx = 10,expand=True,side="top",fill="both")
-        notes_input.                bind("<Key>",remaping_characters)
-
-        # OPTIKA --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        optics_frame =              customtkinter.CTkFrame(master = window_main_frame,corner_radius=0,border_width=3)
-        counter_frame_optics =      customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
-        button_prev_opt =           customtkinter.CTkButton(master = counter_frame_optics,text = "<",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: previous_optic())
-        counter_opt =               customtkinter.CTkLabel(master = counter_frame_optics,text = "0/0",font=("Arial",22,"bold"))
-        self.button_next_opt =      customtkinter.CTkButton(master = counter_frame_optics,text = ">",font=("Arial",22,"bold"),width = 30,height=50,corner_radius=0,command=lambda: next_optic())
-        button_prev_opt.            pack(pady = 0, padx = (5,0),anchor="w",side="left")
-        counter_opt.                pack(pady = 0, padx = (5,0),anchor="w",side="left")
-        self.button_next_opt.       pack(pady = 0, padx = (5,0),anchor="w",side="left")
-        checkbox_frame =            customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
-        light_checkbox =            customtkinter.CTkCheckBox(master = checkbox_frame, text = "Světla",font=("Arial",22,"bold"),command=lambda:optics_lights_switch("light"))
-        optics_checkbox =           customtkinter.CTkCheckBox(master = checkbox_frame, text = "Objektivy",font=("Arial",22,"bold"),command=lambda:optics_lights_switch("optic"))
-        filter_checkbox =           customtkinter.CTkCheckBox(master = checkbox_frame, text = "Filtry/\nkroužky",font=("Arial",22,"bold"),command=lambda:optics_lights_switch("filter"))
-        light_cable_checkbox =      customtkinter.CTkCheckBox(master = checkbox_frame, text = "Další\nkabely",font=("Arial",22,"bold"),command=lambda:optics_lights_switch("cable"))
-        light_checkbox.             pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
-        optics_checkbox.            pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
-        filter_checkbox.            pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
-        light_cable_checkbox.       pack(pady = 0, padx = (5,0),anchor="w",expand=False,side="left")
-        optic_type =                customtkinter.CTkLabel(master = optics_frame,text = "Typ objektivu:",font=("Arial",22,"bold"))
-        option_menu_frame_optic =   customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
-        optic_type_entry =          customtkinter.CTkEntry(master = option_menu_frame_optic,font=("Arial",22),height=50,corner_radius=0)
-        optic_search =              customtkinter.CTkLabel(master = option_menu_frame_optic,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
-        optic_search.               bind("<Enter>",lambda e: optic_search._image.configure(size=(icon_large,icon_large)))
-        optic_search.               bind("<Leave>",lambda e: optic_search._image.configure(size=(icon_small,icon_small)))
-        optic_search.               bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_optics_database,optic_type_entry,mirror=True,values2=self.optics_notes_database))
-        optic_type_entry.           pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
-        optic_search.               pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
-        optic_type_entry.           bind("<KeyRelease>",lambda e: autosearch_engine(e,"optics"))
-        alternative_type =          customtkinter.CTkLabel(master = optics_frame,text = "Alternativa:",font=("Arial",22,"bold"))
-        option_menu_frame_alternative = customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
-        alternative_entry =         customtkinter.CTkEntry(master = option_menu_frame_alternative,font=("Arial",22),height=50,corner_radius=0)
-        
-        alternative_search =        customtkinter.CTkLabel(master = option_menu_frame_alternative,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
-        alternative_search.         bind("<Enter>",lambda e: alternative_search._image.configure(size=(icon_large,icon_large)))
-        alternative_search.         bind("<Leave>",lambda e: alternative_search._image.configure(size=(icon_small,icon_small)))
-        alternative_search.         bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_optics_database,alternative_entry,mirror=True,values2=self.optics_notes_database))
-        alternative_entry.          pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
-        alternative_search.         pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
-        alternative_entry.          bind("<KeyRelease>",lambda e: autosearch_engine(e,"optics_alternative"))
-
-        opt_acc =                   customtkinter.CTkLabel(master = optics_frame,text = "Příslušenství k optice:",font=("Arial",22,"bold"))
-        option_menu_frame_opt_acc = customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
-        opt_acc_menu =              customtkinter.CTkEntry(master = option_menu_frame_opt_acc,font=("Arial",22),height=50,corner_radius=0)
-        opt_acc_search =            customtkinter.CTkLabel(master = option_menu_frame_opt_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/SearchWhite.png")),size=(icon_small,icon_small)),bg_color="#212121")
-        opt_acc_search.             bind("<Enter>",lambda e: opt_acc_search._image.configure(size=(icon_large,icon_large)))
-        opt_acc_search.             bind("<Leave>",lambda e: opt_acc_search._image.configure(size=(icon_small,icon_small)))
-        opt_acc_search.             bind("<Button-1>",lambda e: manage_option_menu(e,self.whole_accessory_database,opt_acc_menu,mirror=True,values2=self.accessory_notes_database))
-        opt_acc_menu.               pack(pady = 5, padx = (5,5),anchor="w",expand=True,side="left",fill="x")
-        opt_acc_search.             pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
-        opt_acc_menu.               bind("<KeyRelease>",lambda e: autosearch_engine(e,"acc_opt"))
-        opt_acc_add =               customtkinter.CTkLabel(master = option_menu_frame_opt_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/green_plus.png")),size=(icon_small,icon_small)),bg_color="#212121")
-        opt_acc_add.                bind("<Enter>",lambda e: opt_acc_add._image.configure(size=(icon_large,icon_large)))
-        opt_acc_add.                bind("<Leave>",lambda e: opt_acc_add._image.configure(size=(icon_small,icon_small)))
-        opt_acc_add.                bind("<Button-1>",lambda e: add_acc(e,opt_acc_menu,"optics"))
-        opt_acc_add.                pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
-        opt_acc_show =              customtkinter.CTkLabel(master = option_menu_frame_opt_acc,width=icon_large,text = "",image =customtkinter.CTkImage(PILImage.open(Tools.resource_path("images/show.png")),size=(icon_small,icon_small)),bg_color="#212121")
-        opt_acc_show.               bind("<Enter>",lambda e: opt_acc_show._image.configure(size=(icon_large,icon_large)))
-        opt_acc_show.               bind("<Leave>",lambda e: opt_acc_show._image.configure(size=(icon_small,icon_small)))
-        opt_acc_show.               bind("<Button-1>",lambda e: show_acc(e,"optics"))
-        opt_acc_show.               pack(pady = 5, padx = (5,0),anchor="w",expand=False,side="left")
-        
-        note2_label_frame =         customtkinter.CTkFrame(master = optics_frame,corner_radius=0,fg_color="#212121")
-        note2_label =               customtkinter.CTkLabel(master = note2_label_frame,text = "Poznámky:",font=("Arial",22,"bold"))
-        import_notes2_btn =         customtkinter.CTkButton(master = note2_label_frame,text = "Import z databáze",font=("Arial",22,"bold"),width = 100,height=30,corner_radius=0,command=lambda: import_notes("optics"))
-        wrap_text_btn3 =            customtkinter.CTkButton(master = note2_label_frame,text = "Zarovnat text",font=("Arial",22,"bold"),width = 100,height=30,corner_radius=0,command=lambda: call_text_wrap(notes_input2))
-        note2_label.                pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
-        import_notes2_btn.          pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
-        wrap_text_btn3.             pack(pady = 5, padx = (10,0),anchor="w",expand=False,side="left")
-        notes_input2 =              customtkinter.CTkTextbox(master = optics_frame,font=("Arial",22),width=450,height=450,corner_radius=0,wrap= "word")
-        counter_frame_optics.       pack(pady=(10,0),padx=3,anchor="n",side = "top")
-        checkbox_frame.             pack(pady = 5, padx = 10,anchor="n",expand=False,side="top")
-        optic_type.                 pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
-        option_menu_frame_optic.    pack(pady = (5,0), padx = 10,anchor="w",expand=False,side="top",fill="x")
-        alternative_type.           pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
-        option_menu_frame_alternative.pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
-        opt_acc.                    pack(pady = 5, padx = 10,anchor="w",expand=False,side="top")
-        option_menu_frame_opt_acc.  pack(pady = 5, padx = 10,anchor="w",expand=False,side="top",fill="x")
-        note2_label_frame.          pack(pady = 0, padx = 3,anchor="w",expand=False,side="top",fill="x")
-        notes_input2.               pack(pady = 5, padx = 10,expand=True,side="top",fill="both")
-        notes_input2.               bind("<Key>",remaping_characters)
-        optics_lights_switch(which_refresh=self.optic_light_option)
-
-        ids_on_entry = {
-            cam_acc_menu:[0,""],
-            opt_acc_menu:[0,""],
-            camera_type_entry:[0,""],
-            cam_cable_menu:[0,""],
-            optic_type_entry:[0,""],
-            alternative_entry:[0,""]
-        }
-
-        def refresh_counters():
-            nonlocal station_index
-            nonlocal optics_index
-            nonlocal camera_index
-            nonlocal counter_cam
-            nonlocal counter_opt
-
-            try:
-                counter_cam_state = str(camera_index+1) + "/" + str(len(self.temp_station_list[station_index]["camera_list"]))
-                counter_cam.configure(text = counter_cam_state)
-            except Exception:
-                pass
-            try:
-                counter_opt_state = str(optics_index+1) + "/" + str(len(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"]))
-                counter_opt.configure(text = counter_opt_state)
-            except Exception:
-                pass
-
-        def refresh_button_appearance():
-            nonlocal station_index
-            nonlocal camera_index
-            nonlocal optics_index
-            nonlocal button_prev_st
-            nonlocal button_next_st
-            nonlocal button_prev_cam
-            nonlocal button_next_cam
-            nonlocal button_prev_opt
-
-            def unbind_tooltip(widget):
-                widget.unbind("<Enter>")
-                widget.unbind("<Leave>")
-                widget.unbind("<Button-1>")
-
-            def config_buttons(button_left,button_right,index,max_array_value,product = "stanice"):
-                if index ==0:
-                    button_left.event_generate("<Button-1>")
-                    button_left.unbind("<Enter>")
-                    button_left.configure(text = "",fg_color = "#636363")
-                else:
-                    button_left.configure(text = "<",fg_color = "#636363")
-                    if self.show_tooltip == "ano":
-                        unbind_tooltip(button_left)
-                        child_root.after(100, lambda: Catalogue_gui.ToolTip(button_left,f" Předcházející {product} ",child_root,subwindow_status=True))
-
-                if index == max_array_value:
-                    button_right.configure(text = "+",fg_color = "green")
-                    if self.show_tooltip == "ano":
-                        unbind_tooltip(button_right)
-                        child_root.after(100, lambda: Catalogue_gui.ToolTip(button_right,f" Nová {product} ",child_root,subwindow_status=True))
-                else:
-                    button_right.configure(text = ">",fg_color = "#636363")
-                    if self.show_tooltip == "ano":
-                        unbind_tooltip(button_right)
-                        child_root.after(100, lambda: Catalogue_gui.ToolTip(button_right,f" Další {product} ",child_root,subwindow_status=True))
-
-            config_buttons(button_prev_st,button_next_st,station_index,len(self.temp_station_list)-1)
-            config_buttons(button_prev_cam,button_next_cam,camera_index,len(self.temp_station_list[station_index]["camera_list"])-1,product="kamera")
-            config_buttons(button_prev_opt,self.button_next_opt,optics_index,len(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"])-1,product="optika")
-
-        def initial_prefill():
-            nonlocal station_index
-            nonlocal camera_index
-            nonlocal optics_index
-            nonlocal accessory_index
-            nonlocal ids_on_entry
-            database_list = [(self.whole_filter_database,"filter",filter_checkbox),
-                             (self.whole_light_database,"light",light_checkbox),
-                             (self.whole_light_cable_database,"cable",light_cable_checkbox),
-                             (self.whole_optics_database,"optic",optics_checkbox)]
-            new_name.delete(0,300)
-            new_name.insert(0,str(self.temp_station_list[station_index]["name"]))
-            new_description.delete("0.0","end")
-            new_description.insert("0.0",str(self.temp_station_list[station_index]["inspection_description"]))
-
-            # initial prefill - camera:
-            try:
-                if len(self.temp_station_list[station_index]["camera_list"]) == 0:
-                    camera_type_entry.delete(0,300)
-                    controller_entry.set("")
-                    cam_cable_menu.delete(0,300)
-                    notes_input.delete("1.0",tk.END)
-
-                camera_type_entry.delete(0,300)
-                cam_from_dict = self.temp_station_list[station_index]["camera_list"][camera_index]
-                camera_type_entry.insert(0,str(cam_from_dict["type"]))
-                if "cam_id" in cam_from_dict:
-                    ids_on_entry[camera_type_entry][0] = cam_from_dict["cam_id"]
-                    ids_on_entry[camera_type_entry][1] = cam_from_dict["type"]
-                if str(cam_from_dict["controller"]) in self.custom_controller_drop_list:
-                    controller_entry.set(str(cam_from_dict["controller"]))
-                cam_cable_menu.delete(0,300)
-                cam_cable_menu.insert(0,str(cam_from_dict["cable"]))
-                if "cab_id" in cam_from_dict:
-                    ids_on_entry[cam_cable_menu][0] = cam_from_dict["cab_id"]
-                    ids_on_entry[cam_cable_menu][1] = cam_from_dict["cable"]
-                notes_input.delete("1.0",tk.END)
-                notes_input.insert("1.0",str(cam_from_dict["description"]))
-                cam_acc_menu.delete(0,300)
-            except TypeError as typeerr_msg:
-                # print("ERROR: ",typeerr_msg)
-                camera_index = 0
-                if len(self.temp_station_list[station_index]["camera_list"]) > 0:
-                    camera_type_entry.delete(0,300)
-                    cam_from_dict = self.temp_station_list[station_index]["camera_list"][camera_index]
-                    camera_type_entry.insert(0,str(cam_from_dict["type"]))
-                    if "cam_id" in cam_from_dict:
-                        ids_on_entry[camera_type_entry][0] = cam_from_dict["cam_id"]
-                        ids_on_entry[camera_type_entry][1] = cam_from_dict["type"]
-                    if self.last_controller_index < len(self.custom_controller_drop_list)-1:
-                        controller_entry.set(self.custom_controller_drop_list[self.last_controller_index])
-                    
-                    try:
-                        assigned_controller_index = int(cam_from_dict["controller_index"])
-                        controller_entry.set(self.custom_controller_drop_list[assigned_controller_index])
-                    except Exception:
-                        pass
-
-                    cam_cable_menu.delete(0,300)
-                    cam_cable_menu.insert(0,str(cam_from_dict["cable"]))
-                    if "cab_id" in cam_from_dict:
-                        ids_on_entry[cam_cable_menu][0] = cam_from_dict["cab_id"]
-                        ids_on_entry[cam_cable_menu][1] = cam_from_dict["cable"]
-                    notes_input.delete("1.0",tk.END)
-                    notes_input.insert("1.0",str(cam_from_dict["description"]))
-                    cam_acc_menu.delete(0,300)
-            except IndexError:
-                camera_index = 0
-                # bypass aby vychazeli indexy... neni osetřeno proti nule (kamer nebo objektivů) skoro nikde
-                station_with_new_camera = self.make_new_object("camera",object_to_edit=self.temp_station_list[station_index])
-                self.temp_station_list[station_index] = station_with_new_camera
-
-            # initial prefill - optics:
-            try:
-                optic_from_dict = self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]
-                optic_type_entry.delete(0,300)
-                optic_type_entry.insert(0,optic_from_dict["type"])
-                if "opt_id" in optic_from_dict:
-                    ids_on_entry[optic_type_entry][0] = optic_from_dict["opt_id"]
-                    ids_on_entry[optic_type_entry][1] = optic_from_dict["type"]
-                alternative_entry.delete(0,300)
-                alternative_entry.insert(0,optic_from_dict["alternative"])
-                if "alt_id" in optic_from_dict:
-                    ids_on_entry[alternative_entry][0] = optic_from_dict["alt_id"]
-                    ids_on_entry[alternative_entry][1] = optic_from_dict["alternative"]
-                for database, device, checkbox in database_list:
-                    # if optic_type in database:
-                    if any(opt["type"] == optic_from_dict["type"] for opt in database):
-                        if checkbox.get() == 1:
-                            optics_lights_switch(which_refresh=device)
-                        else:
-                            optics_lights_switch(device)
-                        break
-
-                notes_input2.delete("1.0",tk.END)
-                notes_input2.insert("1.0",str(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"]))
-                opt_acc_menu.delete(0,300)
-            except TypeError:
-                optics_index = 0
-                optic_from_dict = self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]
-                if len(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"]) > 0:
-                    optic_type_entry.delete(0,300)
-                    optic_type_entry.insert(0,optic_from_dict["type"])
-                    if "opt_id" in optic_from_dict:
-                        ids_on_entry[optic_type_entry][0] = optic_from_dict["opt_id"]
-                        ids_on_entry[optic_type_entry][1] = optic_from_dict["type"]
-                    alternative_entry.delete(0,300)
-                    alternative_entry.insert(0,optic_from_dict["alternative"])
-                    if "alt_id" in optic_from_dict:
-                        ids_on_entry[alternative_entry][0] = optic_from_dict["alt_id"]
-                        ids_on_entry[alternative_entry][1] = optic_from_dict["alternative"]
-
-                    for database, device, checkbox in database_list:
-                        # if optic_type in database:
-                        if any(opt["type"] == optic_from_dict["type"] for opt in database):
-                            if checkbox.get() == 1:
-                                optics_lights_switch(which_refresh=device)
-                            else:
-                                optics_lights_switch(device)
-                            break
-                    notes_input2.delete("1.0",tk.END)
-                    notes_input2.insert("1.0",str(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["description"]))
-                    opt_acc_menu.delete(0,300)
-            except Exception:
-                optics_index = 0
-
-            #nulování nepoužité entry historie
-            for key in ids_on_entry:
-                if str(key.get()) != str(ids_on_entry[key][1]):
-                    ids_on_entry[key] = [0, ""]
-
-            refresh_counters()
-            refresh_button_appearance()
-            controller_opt_menu_color(controller_entry.get())
-
-        initial_prefill()
-        bottom_frame = customtkinter.CTkFrame(master = child_root,corner_radius=0)
-        window_console = tk.Text(bottom_frame, wrap="none", height=1,background="#212121",font=("Arial",22),state=tk.DISABLED,foreground="#565B5E",borderwidth=3)
-        button_frame = customtkinter.CTkFrame(master = bottom_frame,corner_radius=0)
-        window_console.pack(pady = (0,5), padx =5,anchor="w",expand=True,fill="x",side="top",ipady=3,ipadx=5)           
-        child_root.after(200, lambda: child_root.iconbitmap(self.app_icon_path))
-
-        if object == "station":
-            child_root.title("Editování stanice: " + str(self.temp_station_list[station_index]["name"]))
-            station_frame   .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
-            camera_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
-            optics_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
-
-        elif object == "camera":
-            child_root.title("Editování kamery: " + str(self.temp_station_list[station_index]["camera_list"][camera_index]["type"]))
-            camera_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
-            optics_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
-
-        elif object == "optics":
-            child_root.title("Editování optiky: " + str(self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optics_index]["type"]))
-            optics_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
-
-        button_save =   customtkinter.CTkButton(master = button_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: save_changes())
-        button_exit =   customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: close_window(child_root))
-        button_exit     .pack(pady = 10, padx = (5,10),anchor="e",expand=False,side="right")
-        button_save     .pack(pady = 10, padx = 5,anchor="e",expand=False,side="right")
-        button_frame    .pack(pady = 0, padx = 0,fill="x",anchor="s",expand=False,side="top")
-        window_main_frame.pack(pady = 0, padx = 0,fill="both",side="top",expand=True)
-        bottom_frame    .pack(pady = 0, padx = 0,fill="x",side="top",expand=False)
-
-        if self.default_subwindow_status == 1:
-            child_root.state('zoomed')
-
-        if self.show_tooltip == "ano":
-            Catalogue_gui.ToolTip(wrap_text_btn," Zarovnat text na rozměr buňky ",child_root,subwindow_status=True)
-            Catalogue_gui.ToolTip(wrap_text_btn2," Zarovnat text na rozměr buňky ",child_root,subwindow_status=True)
-            Catalogue_gui.ToolTip(wrap_text_btn3," Zarovnat text na rozměr buňky ",child_root,subwindow_status=True,reverse=True)
-            Catalogue_gui.ToolTip(cam_acc_show," Zobrazit navolený seznam ",child_root,subwindow_status=True)
-            Catalogue_gui.ToolTip(opt_acc_show," Zobrazit navolený seznam ",child_root,subwindow_status=True,reverse=True)
-            Catalogue_gui.ToolTip(cam_acc_add," Přidat zvolené příslušenství ",child_root,subwindow_status=True)
-            Catalogue_gui.ToolTip(opt_acc_add," Přidat zvolené příslušenství ",child_root,subwindow_status=True,reverse=True)
-
-        child_root.update()
-        child_root.update_idletasks()
-        child_root.focus_force()
-        child_root.focus()
-        self.opened_window = child_root
-        
     def edit_object(self,args,widget_tier,new_station = False,rewrite_temp = False):
         if rewrite_temp:
             self.temp_station_list = copy.deepcopy(self.station_list)
@@ -5253,7 +5131,8 @@ class Catalogue_gui:
         if len(widget_tier) == 2: #01-99 stanice
             station_index = int(widget_tier[:2])
             if new_station:
-                self.edit_object_gui_new("station",(len(self.temp_station_list)-1),all_parameters=True,new_station=new_station)
+                edit_object_gui_inst = self.edit_object_gui(self,"station",(len(self.temp_station_list)-1),all_parameters=True,new_station=new_station)
+                edit_object_gui_inst.create_widgets()
             else:
                 print("editing",self.temp_station_list[station_index])
                 # kdyz nova kamera, chci rovnou editovat tu nově přidanou
@@ -5261,7 +5140,9 @@ class Catalogue_gui:
                 camera_index = 0
                 if current_cam_count > 0:
                     camera_index = current_cam_count-1
-                self.edit_object_gui_new("station",station_index,camera_index,all_parameters=True)
+                    
+                edit_object_gui_inst = self.edit_object_gui(self,"station",station_index,camera_index,all_parameters=True)
+                edit_object_gui_inst.create_widgets()
 
         elif len(widget_tier) == 4: # 0101-9999 kamery
             station_index = int(widget_tier[:2])
@@ -5272,14 +5153,16 @@ class Catalogue_gui:
             optic_index = 0
             if current_optics_count > 0:
                 optic_index = current_optics_count-1
-            self.edit_object_gui_new("camera",station_index,camera_index,optic_index)
+            edit_object_gui_inst = self.edit_object_gui(self,"camera",station_index,camera_index,optic_index)
+            edit_object_gui_inst.create_widgets()
 
         elif len(widget_tier) == 6: # 010101-999999 optika
             station_index = int(widget_tier[:2])
             camera_index = int(widget_tier[2:4])
             optic_index = int(widget_tier[4:])
             print("editing",self.temp_station_list[station_index]["camera_list"][camera_index]["optics_list"][optic_index])
-            self.edit_object_gui_new("optics",station_index,camera_index,optic_index)
+            edit_object_gui_inst = self.edit_object_gui(self,"optics",station_index,camera_index,optic_index)
+            edit_object_gui_inst.create_widgets()
         
         elif len(widget_tier) == 7: # xxxxc01-xxxxc99 kontolery
             controller_index = int(widget_tier[5:7])

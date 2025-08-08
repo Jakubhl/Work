@@ -22,7 +22,9 @@
         "convert_bmp_dir_name": "Konvertovane_BMP",
         "convert_jpg_dir_name": "Konvertovane_JPG",
         "sorting_safe_mode": "ano",
-        "path_history_list": [],
+        "path_history_list": [
+            "D:/515/St_30_old/"
+        ],
         "path_history_list_conv": []
     },
     "del_settings": {
@@ -39,7 +41,9 @@
             2024
         ],
         "to_delete_dir_name": "Ke_smazani",
-        "path_history_list": []
+        "path_history_list": [
+            "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/"
+        ]
     },
     "image_browser_settings": {
         "selected_option": 2,

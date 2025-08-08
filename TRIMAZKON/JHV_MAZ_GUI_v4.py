@@ -1,7 +1,7 @@
 import customtkinter
 import os
 import time
-from PIL import Image
+from PIL import Image, ImageTk
 import Deleting_option_v2 as Deleting
 import trimazkon_tray_MAZ_v3 as trimazkon_tray
 import sharepoint_download as download_database
@@ -34,8 +34,8 @@ exe_path = sys.executable
 exe_name = os.path.basename(exe_path)
 config_filename = "config_MAZ.json"
 app_name = "jhv_MAZ"
-app_version = "1.0.8"
-trimazkon_version = "4.3.8"
+app_version = "1.0.9"
+trimazkon_version = "4.3.9"
 loop_request = False
 root = None
 print("exe name: ",exe_name)
@@ -1606,6 +1606,50 @@ class Tools:
         else:
             return "up to date"
 
+    class loading_routine:
+        def __init__(self,root,no_loop = False):
+            self.root = root
+            self.stop_loading = False
+            self.angle = 0
+            self.no_loop = no_loop
+            # self.main()
+
+        def create_window(self):
+            self.top = customtkinter.CTkToplevel(self.root)
+            geometry_string = "1000x1000+" + str(int(self.root.winfo_screenwidth()/2)-500)+ "+" + str(int(self.root.winfo_screenheight()/2)-500)
+            self.top.geometry(geometry_string)
+            self.top.overrideredirect(True)
+            self.top.wm_attributes('-alpha', 0.8)  # 0.0 = úplně průhledné, 1.0 = neprůhledné
+            self.top.wm_attributes("-transparentcolor", self.top["bg"])
+            self.original_image = Image.open(Tools.resource_path("images/loading_xx.png")).resize((150, 150))
+            # self.original_image = Image.open(Tools.resource_path("images/loading_x.png")).resize((100, 100))
+            tk_image = ImageTk.PhotoImage(self.original_image)
+            self.loading_label = customtkinter.CTkLabel(master = self.top,text = "",image =tk_image)
+            self.loading_label.pack(expand=True)
+            
+        def rotate_image(self):
+            self.angle +=10
+            rotated = self.original_image.rotate(self.angle)
+            tk_rotated = ImageTk.PhotoImage(rotated)
+            self.loading_label.configure(image=tk_rotated)
+            self.loading_label.image_ref = tk_rotated  # udržet referenci
+            self.top.update()
+
+        def main(self):
+            self.create_window()
+            self.top.grab_set()
+            if not self.no_loop:
+                while self.stop_loading == False:
+                    time.sleep(0.05)
+                    self.rotate_image()
+
+                self.top.grab_release()
+                self.top.destroy()
+
+        def close_all(self):
+            self.top.grab_release()
+            self.top.destroy()
+
 initial_path = Tools.get_init_path()
 print("init path: ",initial_path)
 app_icon = Tools.resource_path('images/logo_TRIMAZKON.ico')
@@ -3019,8 +3063,12 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
         if self.selected_language == "en":
             output_messages = running_deleting.output_eng
 
+        loading_instance = Tools.loading_routine(self.root,no_loop=True)
+        loading_instance.main()
+
         while not running_deleting.finish or completed == False:
             time.sleep(0.01)
+            loading_instance.rotate_image()
             if int(len(output_messages)) > previous_len:
                 new_row = str(output_messages[previous_len])
                 if "Mazání dokončeno" in new_row or "Zkontrolováno" in new_row or "Deleting complete" in new_row or "checked" in new_row:
@@ -3039,6 +3087,7 @@ class Deleting_option: # Umožňuje mazat soubory podle nastavených specifikac�
             if running_deleting.finish and (int(len(output_messages)) == previous_len):
                 completed = True
         
+        loading_instance.close_all()
         run_del_background.join()
 
     def call_browseDirectories(self): # Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)

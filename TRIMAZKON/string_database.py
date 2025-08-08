@@ -461,6 +461,16 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - redukce novějších souborů nově seřazuje od nejstarších 
     (původně podle windows)
     """
+        ,"\nVerze 4.3.9 (08.08.2025)"
+        ,
+  """ 
+  Katalog:
+    - opravy u konfigurace kontroleru
+    - možnost pracovat offline - db ze serveru se automaticky zálohuje do excelu
+    - přidány loading animace
+  TRIMAZKON - mazání, třídění
+    - přidána loading animace
+    """
 ]
 
 

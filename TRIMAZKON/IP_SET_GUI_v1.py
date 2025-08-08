@@ -54,7 +54,7 @@ exe_name = os.path.basename(exe_path)
 config_filename = "jhv_IP.json"
 app_name = "jhv_IP"
 app_version = "1.0.2"
-trimazkon_version = "4.3.8"
+trimazkon_version = "4.3.9"
 loop_request = False
 root = None
 print("exe name: ",exe_name)

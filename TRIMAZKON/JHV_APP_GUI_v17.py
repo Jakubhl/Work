@@ -49,7 +49,7 @@ class initial_tools:
         else:
             return path
 
-testing = False
+testing = True
 
 global_recources_load_error = False
 global_licence_load_error = False
@@ -57,7 +57,7 @@ exe_path = sys.executable
 exe_name = os.path.basename(exe_path)
 config_filename = "TRIMAZKON.json"
 app_name = "TRIMAZKON"
-app_version = "4.3.8"
+app_version = "4.3.9"
 loop_request = False
 root = None
 print("exe name: ",exe_name)
@@ -1871,6 +1871,51 @@ if not open_image_only:
                 Subwindows.download_new_version_window(max_sharepoint_version_str,new_version_log,force_update=force_update)
             else:
                 return "up to date"
+
+        class loading_routine:
+            def __init__(self,root,no_loop = False):
+                self.root = root
+                self.stop_loading = False
+                self.angle = 0
+                self.no_loop = no_loop
+                # self.main()
+
+            def create_window(self):
+                self.top = customtkinter.CTkToplevel(self.root)
+                geometry_string = "1000x1000+" + str(int(self.root.winfo_screenwidth()/2)-500)+ "+" + str(int(self.root.winfo_screenheight()/2)-500)
+                self.top.geometry(geometry_string)
+                self.top.overrideredirect(True)
+                self.top.wm_attributes('-alpha', 0.8)  # 0.0 = úplně průhledné, 1.0 = neprůhledné
+                self.top.wm_attributes("-transparentcolor", self.top["bg"])
+                self.original_image = Image.open(Tools.resource_path("images/loading_xx.png")).resize((150, 150))
+                # self.original_image = Image.open(Tools.resource_path("images/loading_x.png")).resize((100, 100))
+                tk_image = ImageTk.PhotoImage(self.original_image)
+                self.loading_label = customtkinter.CTkLabel(master = self.top,text = "",image =tk_image)
+                self.loading_label.pack(expand=True)
+                
+            def rotate_image(self):
+                self.angle +=10
+                rotated = self.original_image.rotate(self.angle)
+                tk_rotated = ImageTk.PhotoImage(rotated)
+                self.loading_label.configure(image=tk_rotated)
+                self.loading_label.image_ref = tk_rotated  # udržet referenci
+                self.top.update()
+
+            def main(self):
+                self.create_window()
+                self.top.grab_set()
+                if not self.no_loop:
+                    while self.stop_loading == False:
+                        time.sleep(0.05)
+                        self.rotate_image()
+
+                    self.top.grab_release()
+                    self.top.destroy()
+
+            def close_all(self):
+                self.top.grab_release()
+                self.top.destroy()
+
 
 class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
     """
@@ -5983,8 +6028,12 @@ if not open_image_only:
             if self.selected_language == "en":
                 output_messages = running_deleting.output_eng
 
+            loading_instance = Tools.loading_routine(self.root,no_loop=True)
+            loading_instance.main()
+
             while not running_deleting.finish or completed == False:
                 time.sleep(0.01)
+                loading_instance.rotate_image()
                 if int(len(output_messages)) > previous_len:
                     new_row = str(output_messages[previous_len])
                     if "Mazání dokončeno" in new_row or "Zkontrolováno" in new_row or "Deleting complete" in new_row or "checked" in new_row:
@@ -6002,7 +6051,8 @@ if not open_image_only:
 
                 if running_deleting.finish and (int(len(output_messages)) == previous_len):
                     completed = True
-            
+
+            loading_instance.close_all()
             run_del_background.join()
 
         def call_browseDirectories(self): # Volání průzkumníka souborů (kliknutí na tlačítko EXPLORER)
@@ -6998,30 +7048,6 @@ if not open_image_only:
             else:
                 self.safe_mode = "ano"
 
-            popup = tk.Toplevel(master=root)
-            popup.attributes('-topmost', True)
-            geometry_string = "1000x1000+" + str(int(root.winfo_screenwidth()/2)-500)+ "+" + str(int(root.winfo_screenheight()/2)-500)
-            popup.geometry(str(geometry_string))
-            popup.label = tk.Label(popup)
-            image_ = ImageTk.PhotoImage(self.original_image)
-            popup.label.config(image=image_)  # Update label's image
-            popup.label.image = image_  # Keep a reference to the image to prevent garbage collection
-            popup.label.place(x=0, y=0, relwidth=1, relheight=1)
-            popup.wm_attributes("-transparentcolor","white")# trick to force the bg transparent
-            popup.config(bg= 'white')
-            popup.label.config(bg= 'white')
-            popup.overrideredirect(True)# hide the frame of a window
-            popup.update()
-            popup.label.update()
-
-            def rotate_image():
-                self.angle += 10  # Adjust the rotation speed as needed
-                rotated_image = self.original_image.rotate(self.angle)
-                image_ = ImageTk.PhotoImage(rotated_image)
-                popup.label.config(image=image_)  # Update label's image
-                popup.label.image = image_
-                popup.update()
-
             def call_trideni_main(whole_instance):
                 whole_instance.main()
 
@@ -7051,10 +7077,12 @@ if not open_image_only:
             output_text2 = ""
             previous_console2_text = []
             previous_progres = 0
+            loading_instance = Tools.loading_routine(self.root,no_loop=True)
+            loading_instance.main()
 
             while not running_program.finish or completed == False:
                 time.sleep(0.05)
-                rotate_image()
+                loading_instance.rotate_image()
                 #progress bar:
                 if running_program.progress != previous_progres:
                     self.loading_bar.set(value = running_program.progress/100)
@@ -7094,9 +7122,9 @@ if not open_image_only:
                 if running_program.finish and len(running_program.output_list) == output_list_increment and running_program.output_console2 == previous_console2_text and int(self.loading_bar.get())== 1:
                     completed = True
             
+            loading_instance.close_all()
             self.console.update_idletasks()
             run_background.join()
-            popup.destroy()
 
         def clear_frame(self,frame): # mazání widgets v daném framu
             for widget in frame.winfo_children():

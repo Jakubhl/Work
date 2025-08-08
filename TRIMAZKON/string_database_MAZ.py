@@ -22,6 +22,9 @@ change_log_list = ["Verze 1.0.0 (21.01.2025)",
     """ 
     - Při redukci novějších souborů (možnost 2.) mazání postupuje 
     od nejstarších\n"""
+    "\nVerze 1.0.9 (08.08.2025)",
+    """ 
+    - Přidána loading animace\n"""
 ]
 
 

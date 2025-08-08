@@ -1085,7 +1085,8 @@ TRIMAZKON - Katalog - dodělat funkcionalitu poznámek u duplicitních acc u con
 TRIMAZKON - Katalog - dodělat u controlleru ukládání stejným způsobem jako u kamery a optiky - hotovo
 TRIMAZKON - Katalog - pracovat offline - předělat na excel, který se vytváří z db - hotovo
 
-
+9:38 AM 8/8/2025
+TRIMAZKON - přidat loading při připojování do db - vytvořena loading class - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -1105,7 +1106,7 @@ TRIMAZKON - Katalog - export do databázové tabulky
 ??? návod na trimazkon
 
 
-TRIMAZKON - přidat loading při připojování do db
+
 
 
 
