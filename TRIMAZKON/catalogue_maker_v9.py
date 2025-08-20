@@ -26,7 +26,7 @@ import time
 import threading
 
 initial_path = ""
-testing = True
+testing = False
 
 if testing:
     customtkinter.set_appearance_mode("dark")
@@ -452,6 +452,7 @@ class Tools:
             geometry_string = "1000x1000+" + str(int(self.root.winfo_screenwidth()/2)-500)+ "+" + str(int(self.root.winfo_screenheight()/2)-500)
             self.top.geometry(geometry_string)
             self.top.overrideredirect(True)
+            self.top.attributes('-toolwindow', True)
             self.top.wm_attributes('-alpha', 0.8)  # 0.0 = úplně průhledné, 1.0 = neprůhledné
             self.top.wm_attributes("-transparentcolor", self.top["bg"])
             self.original_image = PILImage.open(Tools.resource_path("images/loading_xx.png")).resize((150, 150))
@@ -3296,7 +3297,6 @@ class Catalogue_gui:
                                    "cab_id",
                                    self.parent.whole_camera_cable_database,
                                    "cable",device="cables")
-
 
                 filtered_description = Tools.make_wrapping(str(self.notes_input.get("1.0", tk.END)))
                 self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["description"] = filtered_description

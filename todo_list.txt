@@ -1087,6 +1087,17 @@ TRIMAZKON - Katalog - pracovat offline - předělat na excel, který se vytvář
 
 9:38 AM 8/8/2025
 TRIMAZKON - přidat loading při připojování do db - vytvořena loading class - hotovo
+mazání - přidána loading animace (i do jhv_MAZ)
+
+10:07 AM 8/20/2025
+ip_setting - nejde system tray? - jde
+ip_setting - loading - hotovo
+ip_setting - oprava chyb - tlačítko refresh pripojeni disků
+ip_setting - oprava chyb - nebylo možné kopírovat předchozí projekt ip i disky
+converting - ošetřeno proti delšímu trvání
+converting - loading - hotovo
+
+
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -1101,12 +1112,14 @@ TRIMAZKON - Katalog - export do databázové tabulky
 
 
 
+ošetřit mazání proti tomu, když je soubor otevřený - stačí složka
+
+
+
+
 ??? TRIMAZKON - ip_setting - udělat samostatnej json config s ip adresama a diskama, možná přesměrovat i edity a deletions/ uplne se zbavit excelu... ??
 ??? TRIMAZKON - přidat stahování - stáhne pár fotek z každé složky a vytvoří její kopii někde jinde (možnost pozastavit)
 ??? návod na trimazkon
-
-
-
 
 
 

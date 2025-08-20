@@ -45,7 +45,7 @@ class initial_tools:
         else:
             return path
 
-testing = False
+testing = True
 
 global_recources_load_error = False
 global_licence_load_error = False
@@ -396,894 +396,894 @@ class WindowsBalloonTip:
         PostQuitMessage(0)  # Terminate the app.
 
 class Tools:
-        task_name = "jhv_IP_startup_tray_setup"
-        config_json_filename = config_filename
-        setting_list_name = "Settings_recources"
-        Tray_thread_name = "Main_app_tray_thread"
-        registry_key_path = "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\WindowsTrmzkn"
+    task_name = "jhv_IP_startup_tray_setup"
+    config_json_filename = config_filename
+    setting_list_name = "Settings_recources"
+    Tray_thread_name = "Main_app_tray_thread"
+    registry_key_path = "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\WindowsTrmzkn"
 
-        @classmethod
-        def path_check(cls,path_raw,only_repair = None):
-            path=path_raw
-            backslash = "\\"
-            if backslash[0] in path:
-                newPath = path.replace(backslash[0], '/')
-                path = newPath
-            if path.endswith('/') == False:
-                newPath = path + "/"
-                path = newPath
-            #oprava mezery v nazvu
-            path = r"{}".format(path)
-            if not os.path.exists(path) and only_repair == None:
-                return False
-            else:
-                return path
+    @classmethod
+    def path_check(cls,path_raw,only_repair = None):
+        path=path_raw
+        backslash = "\\"
+        if backslash[0] in path:
+            newPath = path.replace(backslash[0], '/')
+            path = newPath
+        if path.endswith('/') == False:
+            newPath = path + "/"
+            path = newPath
+        #oprava mezery v nazvu
+        path = r"{}".format(path)
+        if not os.path.exists(path) and only_repair == None:
+            return False
+        else:
+            return path
 
-        @classmethod
-        def resource_path(cls,relative_path):
-            """ Get the absolute path to a resource, works for dev and for PyInstaller """
-            # if hasattr(sys, '_MEIPASS'):
-            #     return os.path.join(sys._MEIPASS, relative_path)
-            # return os.path.join(os.path.abspath("."), relative_path)
-            BASE_DIR = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.abspath(".")
-            return os.path.join(BASE_DIR, relative_path)
+    @classmethod
+    def resource_path(cls,relative_path):
+        """ Get the absolute path to a resource, works for dev and for PyInstaller """
+        # if hasattr(sys, '_MEIPASS'):
+        #     return os.path.join(sys._MEIPASS, relative_path)
+        # return os.path.join(os.path.abspath("."), relative_path)
+        BASE_DIR = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.abspath(".")
+        return os.path.join(BASE_DIR, relative_path)
+    
+    @classmethod
+    def create_new_json_config(cls,default_value_list,load_values_only = False):
+        new_app_settings = {"default_path": default_value_list[2],
+                            "maximalized": default_value_list[7],
+                            "show_changelog": default_value_list[12],
+                            "app_zoom": default_value_list[14],
+                            "app_zoom_checkbox": default_value_list[15],
+                            "tray_icon_startup": default_value_list[16],
+                            # "path_history_list": default_value_list[17],
+                            "default_language": default_value_list[17],}
         
-        @classmethod
-        def create_new_json_config(cls,default_value_list,load_values_only = False):
-            new_app_settings = {"default_path": default_value_list[2],
-                                "maximalized": default_value_list[7],
-                                "show_changelog": default_value_list[12],
-                                "app_zoom": default_value_list[14],
-                                "app_zoom_checkbox": default_value_list[15],
-                                "tray_icon_startup": default_value_list[16],
-                                # "path_history_list": default_value_list[17],
-                                "default_language": default_value_list[17],}
-            
-            new_sort_conv_settings = {"supported_formats_sorting": default_value_list[0],
-                                    "prefix_function": default_value_list[5],
-                                    "prefix_camera": default_value_list[6],
-                                    "max_pallets": default_value_list[8],
-                                    "temp_dir_name": default_value_list[9][0],
-                                    "pairs_dir_name": default_value_list[9][1],
-                                    "convert_bmp_dir_name": default_value_list[9][3],
-                                    "convert_jpg_dir_name": default_value_list[9][4],
-                                    "sorting_safe_mode": default_value_list[10],
-                                    "path_history_list": default_value_list[18],
-                                    "path_history_list_conv": default_value_list[18],}
-            
-            new_del_settings = {"supported_formats_deleting": default_value_list[1],
-                                "default_files_to_keep": default_value_list[3],
-                                "default_cutoff_date": default_value_list[4],
-                                "to_delete_dir_name": default_value_list[9][2],
-                                "path_history_list": default_value_list[19],}
-            
-            new_image_browser_settings = {"selected_option": default_value_list[11][0],
-                                        "zoom_step": default_value_list[11][1],
-                                        "movement_step": default_value_list[11][2],
-                                        "show_image_film": default_value_list[11][3],
-                                        "image_film_count": default_value_list[11][4],
-                                        "copyed_dir_name": default_value_list[9][5],
-                                        "moved_dir_name": default_value_list[9][6],
-                                        "path_history_list": default_value_list[20],}
-            
-            new_catalogue_settings = {"database_filename": default_value_list[13][0],
-                                    "catalogue_filename": default_value_list[13][1],
-                                    "metadata_filename": default_value_list[13][2],
-                                    "subwindow_behav": default_value_list[13][3],
-                                    "default_export_suffix": default_value_list[13][4],
-                                    "default_path": default_value_list[13][5],
-                                    "render_mode": default_value_list[13][6],
-                                    "path_history_list": default_value_list[21],}
-            
-            new_ip_settings = {"default_ip_interface": default_value_list[22][0],
-                                "favorite_ip_window_status": default_value_list[22][1],
-                                "disk_or_ip_window": default_value_list[22][2],
-                                "default_window_size": default_value_list[22][3],
-                                "init_disk_refresh": default_value_list[22][4],
-                                "editable_notes": default_value_list[22][5],
-                                "disk_persistent": default_value_list[22][6],
-                                "auto_order_when_edit": default_value_list[22][7],
-                                "ask_to_delete": default_value_list[22][8],}
-            
-            output_object = {"app_settings": new_app_settings,
-                        "sort_conv_settings": new_sort_conv_settings,
-                        "del_settings": new_del_settings,
-                        "image_browser_settings": new_image_browser_settings,
-                        "catalogue_settings": new_catalogue_settings,
-                        "ip_settings": new_ip_settings}
-            
-            if load_values_only:
-                return output_object
-
-            with open(initial_path+cls.config_json_filename, "w") as file:
-                json.dump(output_object, file, indent=4)
-            
+        new_sort_conv_settings = {"supported_formats_sorting": default_value_list[0],
+                                "prefix_function": default_value_list[5],
+                                "prefix_camera": default_value_list[6],
+                                "max_pallets": default_value_list[8],
+                                "temp_dir_name": default_value_list[9][0],
+                                "pairs_dir_name": default_value_list[9][1],
+                                "convert_bmp_dir_name": default_value_list[9][3],
+                                "convert_jpg_dir_name": default_value_list[9][4],
+                                "sorting_safe_mode": default_value_list[10],
+                                "path_history_list": default_value_list[18],
+                                "path_history_list_conv": default_value_list[18],}
+        
+        new_del_settings = {"supported_formats_deleting": default_value_list[1],
+                            "default_files_to_keep": default_value_list[3],
+                            "default_cutoff_date": default_value_list[4],
+                            "to_delete_dir_name": default_value_list[9][2],
+                            "path_history_list": default_value_list[19],}
+        
+        new_image_browser_settings = {"selected_option": default_value_list[11][0],
+                                    "zoom_step": default_value_list[11][1],
+                                    "movement_step": default_value_list[11][2],
+                                    "show_image_film": default_value_list[11][3],
+                                    "image_film_count": default_value_list[11][4],
+                                    "copyed_dir_name": default_value_list[9][5],
+                                    "moved_dir_name": default_value_list[9][6],
+                                    "path_history_list": default_value_list[20],}
+        
+        new_catalogue_settings = {"database_filename": default_value_list[13][0],
+                                "catalogue_filename": default_value_list[13][1],
+                                "metadata_filename": default_value_list[13][2],
+                                "subwindow_behav": default_value_list[13][3],
+                                "default_export_suffix": default_value_list[13][4],
+                                "default_path": default_value_list[13][5],
+                                "render_mode": default_value_list[13][6],
+                                "path_history_list": default_value_list[21],}
+        
+        new_ip_settings = {"default_ip_interface": default_value_list[22][0],
+                            "favorite_ip_window_status": default_value_list[22][1],
+                            "disk_or_ip_window": default_value_list[22][2],
+                            "default_window_size": default_value_list[22][3],
+                            "init_disk_refresh": default_value_list[22][4],
+                            "editable_notes": default_value_list[22][5],
+                            "disk_persistent": default_value_list[22][6],
+                            "auto_order_when_edit": default_value_list[22][7],
+                            "ask_to_delete": default_value_list[22][8],}
+        
+        output_object = {"app_settings": new_app_settings,
+                    "sort_conv_settings": new_sort_conv_settings,
+                    "del_settings": new_del_settings,
+                    "image_browser_settings": new_image_browser_settings,
+                    "catalogue_settings": new_catalogue_settings,
+                    "ip_settings": new_ip_settings}
+        
+        if load_values_only:
             return output_object
 
-        @classmethod
-        def read_json_config(cls): # Funkce vraci data z configu
-            """
-            Funkce vrací data z konfiguračního souboru
+        with open(initial_path+cls.config_json_filename, "w") as file:
+            json.dump(output_object, file, indent=4)
+        
+        return output_object
 
-            data jsou v pořadí:
+    @classmethod
+    def read_json_config(cls): # Funkce vraci data z configu
+        """
+        Funkce vrací data z konfiguračního souboru
 
-            APP SETTINGS\n
-            - default_path
-            - maximalized
-            - show_changelog
-            - app_zoom
-            - app_zoom_checkbox
-            - tray_icon_startup
-            - default_language
-            - tooltip_status
-            - ignored_version
-            \nSORT AND CONV SETTINGS\n
-            - supported_formats_sorting
-            - prefix_function
-            - prefix_camera
-            - max_pallets
-            - temp_dir_name
-            - pairs_dir_name
-            - convert_bmp_dir_name
-            - convert_jpg_dir_name
-            - sorting_safe_mode
-            - path_history_list
-            \nDEL SETTINGS\n
-            - supported_formats_deleting
-            - default_files_to_keep
-            - default_cutoff_date
-            - to_delete_dir_name
-            - path_history_list
-            \nIMAGE BROWSER SETTINGS\n
-            - selected_option
-            - zoom_step
-            - movement_step
-            - show_image_film
-            - image_film_count
-            - copyed_dir_name
-            - moved_dir_name
-            - path_history_list
-            \nCATALOGUE SETTINGS\n
-            - database_filename
-            - catalogue_filename
-            - metadata_filename
-            - subwindow_behav
-            - default_export_suffix
-            - default_path
-            - render_mode
-            - path_history_list
-            \nIP SETTINGS\n
-            - default_ip_interface
-            - favorite_ip_window_status
-            - disk_or_ip_window
-            - default_window_size
-            - init_disk_refresh
-            - editable_notes
-            - disk_persistent
-            - auto_order_when_edit
-            - ask_to_delete
-            """
-            global global_recources_load_error
-            default_setting_parameters = ip_set_changelog.default_setting_database_param
-            # default_labels = ip_set_changelog.default_setting_database
+        data jsou v pořadí:
 
-            if os.path.exists(initial_path+cls.config_json_filename):
-                try:
-                    output_data = []
-                    with open(initial_path+cls.config_json_filename, "r") as file:
-                        output_data = json.load(file)
+        APP SETTINGS\n
+        - default_path
+        - maximalized
+        - show_changelog
+        - app_zoom
+        - app_zoom_checkbox
+        - tray_icon_startup
+        - default_language
+        - tooltip_status
+        - ignored_version
+        \nSORT AND CONV SETTINGS\n
+        - supported_formats_sorting
+        - prefix_function
+        - prefix_camera
+        - max_pallets
+        - temp_dir_name
+        - pairs_dir_name
+        - convert_bmp_dir_name
+        - convert_jpg_dir_name
+        - sorting_safe_mode
+        - path_history_list
+        \nDEL SETTINGS\n
+        - supported_formats_deleting
+        - default_files_to_keep
+        - default_cutoff_date
+        - to_delete_dir_name
+        - path_history_list
+        \nIMAGE BROWSER SETTINGS\n
+        - selected_option
+        - zoom_step
+        - movement_step
+        - show_image_film
+        - image_film_count
+        - copyed_dir_name
+        - moved_dir_name
+        - path_history_list
+        \nCATALOGUE SETTINGS\n
+        - database_filename
+        - catalogue_filename
+        - metadata_filename
+        - subwindow_behav
+        - default_export_suffix
+        - default_path
+        - render_mode
+        - path_history_list
+        \nIP SETTINGS\n
+        - default_ip_interface
+        - favorite_ip_window_status
+        - disk_or_ip_window
+        - default_window_size
+        - init_disk_refresh
+        - editable_notes
+        - disk_persistent
+        - auto_order_when_edit
+        - ask_to_delete
+        """
+        global global_recources_load_error
+        default_setting_parameters = ip_set_changelog.default_setting_database_param
+        # default_labels = ip_set_changelog.default_setting_database
 
-                    if not "tooltip_status" in output_data.get("app_settings", {}):
-                        Tools.save_to_json_config("ano","app_settings","tooltip_status")
-                        output_data["app_settings"].setdefault("tooltip_status", "ano")
-                    # print("config data: ", output_data, len(output_data))
-                    return output_data
-
-                except Exception as e:
-                    print(f"Nejdřív zavřete soubor {cls.config_json_filename} Chyba: {e}")   
-                    print("Budou načteny defaultní hodnoty")
-                    global_recources_load_error = True
-                    output_array = Tools.create_new_json_config(default_setting_parameters,load_values_only=True)
-                    return output_array
-            else:
-                print(f"Chybí konfigurační soubor {cls.config_json_filename}, bude vytvořen")
-                output_array = Tools.create_new_json_config(default_setting_parameters)
-                return output_array
-            
-        @classmethod
-        def save_to_json_config(cls,input_data,which_settings,which_parameter,language_force = "cz"): # Funkce zapisuje data do souboru configu
-            """
-            Funkce zapisuje data do konfiguračního souboru
-
-            vraci vystupni zpravu: report
-
-            which_settings je bud: 
-            - app_settings
-            - sort_conv_settings
-            - del_settings
-            - image_browser_settings
-            - catalogue_settings
-            - ip_settings
-
-            \nwhich_parameter je bud:
-            \nAPP_SETTINGS\n
-            - default_path
-            - maximalized
-            - show_changelog
-            - app_zoom
-            - app_zoom_checkbox
-            - tray_icon_startup
-            - default_language
-            - tooltip_status
-            - ignored_version
-            \nSORT_CONV_SETTINGS\n
-            - supported_formats_sorting
-            - prefix_function
-            - prefix_camera
-            - max_pallets
-            - temp_dir_name
-            - pairs_dir_name
-            - convert_bmp_dir_name
-            - convert_jpg_dir_name
-            - sorting_safe_mode
-            - path_history_list
-            \nDEL_SETTINGS\n
-            - supported_formats_deleting
-            - default_files_to_keep
-            - default_cutoff_date
-            - to_delete_dir_name
-            - path_history_list
-            \nIMAGE_BROWSER_SETTINGS\n
-            - selected_option
-            - zoom_step
-            - movement_step
-            - show_image_film
-            - image_film_count
-            - copyed_dir_name
-            - moved_dir_name
-            - path_history_list
-            \nCATALOGUE_SETTINGS\n
-            - database_filename
-            - catalogue_filename
-            - metadata_filename
-            - subwindow_behav
-            - default_export_suffix
-            - default_path
-            - render_mode
-            \nIP_SETTINGS\n
-            - default_ip_interface
-            - favorite_ip_window_status
-            - disk_or_ip_window
-            - default_window_size
-            - init_disk_refresh
-            - editable_notes
-            - disk_persistent
-            - auto_order_when_edit
-            - ask_to_delete
-            """
-
-            def filter_unwanted_chars(to_filter_data, directory = False,formats = False):
-                unwanted_chars = ["\n","\"","\'","[","]"]
-                if directory:
-                    unwanted_chars = ["\n","\"","\'","[","]","\\","/"]
-                if formats:
-                    unwanted_chars = ["\n","\"","\'","[","]"," ",".","/","\\"]
-
-                filtered_data = ""
-                for letters in to_filter_data:
-                    if letters not in unwanted_chars:
-                        filtered_data += letters
-                return filtered_data
-            
-            def get_input_data_format():
-                if isinstance(input_data,list):
-                    return input_data
-                elif isinstance(input_data,str):
-                    return str(input_data)
-                elif isinstance(input_data,int):
-                    return int(input_data)
-            
-            if os.path.exists(initial_path + cls.config_json_filename):
+        if os.path.exists(initial_path+cls.config_json_filename):
+            try:
+                output_data = []
                 with open(initial_path+cls.config_json_filename, "r") as file:
-                    config_data = json.load(file)
+                    output_data = json.load(file)
 
-                report = ""
-                if which_settings == "app_settings":
-                    if which_parameter == "default_path":
-                        report = (f"Základní cesta přenastavena na: {str(input_data)}")
-                    config_data[which_settings][which_parameter] = get_input_data_format()
+                if not "tooltip_status" in output_data.get("app_settings", {}):
+                    Tools.save_to_json_config("ano","app_settings","tooltip_status")
+                    output_data["app_settings"].setdefault("tooltip_status", "ano")
+                # print("config data: ", output_data, len(output_data))
+                return output_data
 
-                elif which_settings == "sort_conv_settings":
-                    supported_formats_sorting = config_data[which_settings]["supported_formats_sorting"]
-                    print("found formats: ", supported_formats_sorting)
-
-                    if which_parameter == "add_supported_sorting_formats":
-                        corrected_input = filter_unwanted_chars(str(input_data),formats=True)
-                        if str(corrected_input) not in supported_formats_sorting:
-                            supported_formats_sorting.append(str(corrected_input))
-                            report =  (f"Byl přidán formát: \"{corrected_input}\" do podporovaných formátů pro možnosti třídění")
-                            if language_force == "en":
-                                report =  (f"Added format: \"{corrected_input}\" to supported formats for sorting options")
-                            # rewrite_value("supported_formats_sorting",supported_formats_sorting)
-                            config_data[which_settings]["supported_formats_sorting"] = supported_formats_sorting
-                        else:
-                            report =  (f"Formát: \"{corrected_input}\" je již součástí podporovaných formátů možností třídění")
-                            if language_force == "en":
-                                report =  (f"Format: \"{corrected_input}\" is already part of the supported sorting option formats")
-                        
-                    elif which_parameter == "pop_supported_sorting_formats":
-                        # poped = 0
-                        found = False
-                        range_to = len(supported_formats_sorting)
-                        for i in range(0,range_to):
-                            if i < range_to:
-                                if str(input_data) == supported_formats_sorting[i] and len(str(input_data)) == len(supported_formats_sorting[i]):
-                                    supported_formats_sorting.pop(i)
-                                    report =  (f"Z podporovaných formátů možností třídění byl odstraněn formát: \".{input_data}\"")
-                                    if language_force == "en":
-                                        report =  (f"The format \".{input_data}\" has been removed from the supported sorting option formats")
-                                    found = True
-                                    # rewrite_value("supported_formats_sorting",supported_formats_sorting)
-                                    config_data[which_settings]["supported_formats_sorting"] = supported_formats_sorting
-                                    break
-
-                        if found == False:
-                            report =  (f"Formát: \"{input_data}\" nebyl nalezen v podporovaných formátech možností třídění, nemůže tedy být odstraněn")
-                            if language_force == "en":
-                                report =  (f"The format \".{input_data}\" was not found in the supported sorting option formats, so it cannot be deleted")
-
-                    else:
-                        config_data[which_settings][which_parameter] = get_input_data_format()
-
-                elif which_settings == "del_settings":
-                    supported_formats_deleting = config_data[which_settings]["supported_formats_deleting"]
-                    print("found formats: ", supported_formats_deleting)
-
-                    if which_parameter == "add_supported_deleting_formats":
-                        corrected_input = filter_unwanted_chars(str(input_data),formats=True)
-                        if str(corrected_input) not in supported_formats_deleting:
-                            supported_formats_deleting.append(str(corrected_input))
-                            report =  (f"Byl přidán formát: \"{corrected_input}\" do podporovaných formátů pro možnosti mazání")
-                            if language_force == "en":
-                                report =  (f"Added format: \"{corrected_input}\" to supported formats for deletion options")
-                            # rewrite_value("supported_formats_deleting",supported_formats_deleting)
-                            config_data[which_settings]["supported_formats_deleting"] = supported_formats_deleting
-                        else:
-                            report =  (f"Formát: \"{corrected_input}\" je již součástí podporovaných formátů možností mazání")
-                            if language_force == "en":
-                                report =  (f"Format: \"{corrected_input}\" is already part of the supported delete option formats")
-                        
-                    elif which_parameter == "pop_supported_deleting_formats":
-                        # poped = 0
-                        found = False
-                        range_to = len(supported_formats_deleting)
-                        for i in range(0,range_to):
-                            if i < range_to:
-                                if str(input_data) == supported_formats_deleting[i] and len(str(input_data)) == len(supported_formats_deleting[i]):
-                                    supported_formats_deleting.pop(i)
-                                    report =  (f"Z podporovaných formátů možností mazání byl odstraněn formát: \".{input_data}\"")
-                                    if language_force == "en":
-                                        report =  (f"The format \".{input_data}\" has been removed from the supported delete option formats")
-                                    found = True
-                                    # rewrite_value("supported_formats_deleting",supported_formats_deleting)
-                                    config_data[which_settings]["supported_formats_deleting"] = supported_formats_deleting
-                                    break
-
-                        if found == False:
-                            report =  (f"Formát: \"{input_data}\" nebyl nalezen v podporovaných formátech možností mazání, nemůže tedy být odstraněn")
-                            if language_force == "en":
-                                report =  (f"The format \".{input_data}\" was not found in the supported delete option formats, so it cannot be deleted")
-                    
-                    else:
-                        config_data[which_settings][which_parameter] = get_input_data_format()
-
-                elif which_settings == "image_browser_settings":
-                    config_data[which_settings][which_parameter] = get_input_data_format()
-
-                elif which_settings == "catalogue_settings":
-                    config_data[which_settings][which_parameter] = get_input_data_format()
-
-                elif which_settings == "ip_settings":
-                    config_data[which_settings][which_parameter] = get_input_data_format()
-                                
-                with open(initial_path+cls.config_json_filename, "w") as file:
-                    json.dump(config_data, file, indent=4)
-
-                return report
-            
-            else:
-                print("Chybí konfigurační soubor (nelze ukládat změny)")
-                return "Chybí konfigurační soubor (nelze ukládat změny)"
-    
-        @classmethod
-        def browseDirectories(cls,visible_files,start_path=None): # Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
-            """
-            Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
-
-            Vstupní data:
-
-            0: visible_files = "all" / "only_dirs"\n
-            1: start_path = None -optimalni, docasne se ulozi posledni nastavena cesta v exploreru
-
-            Výstupní data:
-
-            0: výstupní chybová hlášení
-            1: opravená cesta
-            2: nazev vybraneho souboru (option: all)
-            """
-            corrected_path = ""
-            output= ""
-            name_of_selected_file = ""
-
-            if start_path == None:
-                start_path = Tools.read_json_config()["app_settings"]["default_path"] #defaultni cesta
-            else: # byla zadana docasna cesta pro explorer
-                checked_path = Tools.path_check(start_path)
-                if checked_path == False:
-                    output = "Změněná dočasná základní cesta pro explorer již neexistuje"
-                    start_path = Tools.read_json_config()["app_settings"]["default_path"] #defaultni cesta
-                else:
-                    start_path = checked_path
-
-            if start_path != False:
-                if not os.path.exists(start_path):
-                    start_path = ""
-                    output="Konfigurační soubor obsahuje neplatnou cestu"
-
-            else:
-                output="Chybí konfigurační soubor config_TRIMAZKON.xlsx s počáteční cestou...\n"
-                start_path=""
-
-            # pripad vyberu files, aby byly viditelne
-            if visible_files == "all":
-                if(start_path != ""):
-                    foldername_path = filedialog.askopenfile(initialdir = start_path,title = "Klikněte na soubor v požadované cestě")
-                    path_to_directory= ""
-                    if foldername_path != None:
-                        path_to_file = str(foldername_path.name)
-                        path_to_file_split = path_to_file.split("/")
-                        i=0
-                        for parts in path_to_file_split:
-                            i+=1
-                            if i<len(path_to_file_split):
-                                if i == 1:
-                                    path_to_directory = path_to_directory + parts
-                                else:
-                                    path_to_directory = path_to_directory +"/"+ parts
-                            else:
-                                name_of_selected_file = parts
-                    else:
-                        output = "Přes explorer nebyla vložena žádná cesta"
-                else:           
-                    foldername_path = filedialog.askopenfile(initialdir = "/",title = "Klikněte na soubor v požadované cestě")
-                    path_to_directory= ""
-                    if foldername_path != None:
-                        path_to_file = str(foldername_path.name)
-                        path_to_file_split = path_to_file.split("/")
-                        i=0
-                        for parts in path_to_file_split:
-                            i+=1
-                            if i<len(path_to_file_split):
-                                if i == 1:
-                                    path_to_directory = path_to_directory + parts
-                                else:
-                                    path_to_directory = path_to_directory +"/"+ parts
-                            else:
-                                name_of_selected_file = parts
-                    else:
-                        output = "Přes explorer nebyla vložena žádná cesta"
-
-            # pripad vyberu slozek
-            if visible_files == "only_dirs":
-                if(start_path != ""):
-                    path_to_directory = filedialog.askdirectory(initialdir = start_path, title = "Vyberte adresář")
-                    if path_to_directory == None or path_to_directory == "":
-                        output = "Přes explorer nebyla vložena žádná cesta"
-                else:
-                    path_to_directory = filedialog.askdirectory(initialdir = "/", title = "Vyberte adresář")
-                    if path_to_directory == None or path_to_directory == "":
-                        output = "Přes explorer nebyla vložena žádná cesta"
-
-            check = Tools.path_check(path_to_directory)
-            corrected_path = check
-            return [output,corrected_path,name_of_selected_file]
-
-        @classmethod
-        def add_colored_line(cls,text_widget, text, color,font=None,delete_line = None,no_indent=None,sameline=False):
-            """
-            Vloží řádek do console
-            """
-            try:
-                text_widget.configure(state=tk.NORMAL)
-                if font == None:
-                    font = ("Arial",16)
-                if delete_line != None:
-                    text_widget.delete("current linestart","current lineend")
-                    text_widget.tag_configure(color, foreground=color,font=font)
-                    text_widget.insert("current lineend",text, color)
-                else:
-                    text_widget.tag_configure(color, foreground=color,font=font)
-                    if no_indent:
-                        if sameline:
-                            text_widget.insert(tk.END,text, color)
-                        else:
-                            text_widget.insert(tk.END,text+"\n", color)
-                    else:
-                        if sameline:
-                            text_widget.insert(tk.END,"    > "+ text, color)
-                        else:
-                            text_widget.insert(tk.END,"    > "+ text+"\n", color)
-
-                text_widget.configure(state=tk.DISABLED)
             except Exception as e:
-                print(f"Error při psaní do konzole: {e}")
+                print(f"Nejdřív zavřete soubor {cls.config_json_filename} Chyba: {e}")   
+                print("Budou načteny defaultní hodnoty")
+                global_recources_load_error = True
+                output_array = Tools.create_new_json_config(default_setting_parameters,load_values_only=True)
+                return output_array
+        else:
+            print(f"Chybí konfigurační soubor {cls.config_json_filename}, bude vytvořen")
+            output_array = Tools.create_new_json_config(default_setting_parameters)
+            return output_array
+        
+    @classmethod
+    def save_to_json_config(cls,input_data,which_settings,which_parameter,language_force = "cz"): # Funkce zapisuje data do souboru configu
+        """
+        Funkce zapisuje data do konfiguračního souboru
 
-        @classmethod
-        def save_path(cls,console,path_entered,which_settings = ""):
-            path_given = path_entered
-            path_checked = Tools.path_check(path_given)
-            if path_checked != False and path_checked != "/":
-                console_input = Tools.save_to_json_config(path_checked,"app_settings","default_path")
-                Tools.add_colored_line(console,console_input,"green",None,True)
-                if which_settings != "":
-                    if which_settings == "convert_option":
-                        Tools.add_new_path_to_history(path_checked,"path_history_list_conv")
+        vraci vystupni zpravu: report
+
+        which_settings je bud: 
+        - app_settings
+        - sort_conv_settings
+        - del_settings
+        - image_browser_settings
+        - catalogue_settings
+        - ip_settings
+
+        \nwhich_parameter je bud:
+        \nAPP_SETTINGS\n
+        - default_path
+        - maximalized
+        - show_changelog
+        - app_zoom
+        - app_zoom_checkbox
+        - tray_icon_startup
+        - default_language
+        - tooltip_status
+        - ignored_version
+        \nSORT_CONV_SETTINGS\n
+        - supported_formats_sorting
+        - prefix_function
+        - prefix_camera
+        - max_pallets
+        - temp_dir_name
+        - pairs_dir_name
+        - convert_bmp_dir_name
+        - convert_jpg_dir_name
+        - sorting_safe_mode
+        - path_history_list
+        \nDEL_SETTINGS\n
+        - supported_formats_deleting
+        - default_files_to_keep
+        - default_cutoff_date
+        - to_delete_dir_name
+        - path_history_list
+        \nIMAGE_BROWSER_SETTINGS\n
+        - selected_option
+        - zoom_step
+        - movement_step
+        - show_image_film
+        - image_film_count
+        - copyed_dir_name
+        - moved_dir_name
+        - path_history_list
+        \nCATALOGUE_SETTINGS\n
+        - database_filename
+        - catalogue_filename
+        - metadata_filename
+        - subwindow_behav
+        - default_export_suffix
+        - default_path
+        - render_mode
+        \nIP_SETTINGS\n
+        - default_ip_interface
+        - favorite_ip_window_status
+        - disk_or_ip_window
+        - default_window_size
+        - init_disk_refresh
+        - editable_notes
+        - disk_persistent
+        - auto_order_when_edit
+        - ask_to_delete
+        """
+
+        def filter_unwanted_chars(to_filter_data, directory = False,formats = False):
+            unwanted_chars = ["\n","\"","\'","[","]"]
+            if directory:
+                unwanted_chars = ["\n","\"","\'","[","]","\\","/"]
+            if formats:
+                unwanted_chars = ["\n","\"","\'","[","]"," ",".","/","\\"]
+
+            filtered_data = ""
+            for letters in to_filter_data:
+                if letters not in unwanted_chars:
+                    filtered_data += letters
+            return filtered_data
+        
+        def get_input_data_format():
+            if isinstance(input_data,list):
+                return input_data
+            elif isinstance(input_data,str):
+                return str(input_data)
+            elif isinstance(input_data,int):
+                return int(input_data)
+        
+        if os.path.exists(initial_path + cls.config_json_filename):
+            with open(initial_path+cls.config_json_filename, "r") as file:
+                config_data = json.load(file)
+
+            report = ""
+            if which_settings == "app_settings":
+                if which_parameter == "default_path":
+                    report = (f"Základní cesta přenastavena na: {str(input_data)}")
+                config_data[which_settings][which_parameter] = get_input_data_format()
+
+            elif which_settings == "sort_conv_settings":
+                supported_formats_sorting = config_data[which_settings]["supported_formats_sorting"]
+                print("found formats: ", supported_formats_sorting)
+
+                if which_parameter == "add_supported_sorting_formats":
+                    corrected_input = filter_unwanted_chars(str(input_data),formats=True)
+                    if str(corrected_input) not in supported_formats_sorting:
+                        supported_formats_sorting.append(str(corrected_input))
+                        report =  (f"Byl přidán formát: \"{corrected_input}\" do podporovaných formátů pro možnosti třídění")
+                        if language_force == "en":
+                            report =  (f"Added format: \"{corrected_input}\" to supported formats for sorting options")
+                        # rewrite_value("supported_formats_sorting",supported_formats_sorting)
+                        config_data[which_settings]["supported_formats_sorting"] = supported_formats_sorting
                     else:
-                        Tools.add_new_path_to_history(path_checked,which_settings)
+                        report =  (f"Formát: \"{corrected_input}\" je již součástí podporovaných formátů možností třídění")
+                        if language_force == "en":
+                            report =  (f"Format: \"{corrected_input}\" is already part of the supported sorting option formats")
+                    
+                elif which_parameter == "pop_supported_sorting_formats":
+                    # poped = 0
+                    found = False
+                    range_to = len(supported_formats_sorting)
+                    for i in range(0,range_to):
+                        if i < range_to:
+                            if str(input_data) == supported_formats_sorting[i] and len(str(input_data)) == len(supported_formats_sorting[i]):
+                                supported_formats_sorting.pop(i)
+                                report =  (f"Z podporovaných formátů možností třídění byl odstraněn formát: \".{input_data}\"")
+                                if language_force == "en":
+                                    report =  (f"The format \".{input_data}\" has been removed from the supported sorting option formats")
+                                found = True
+                                # rewrite_value("supported_formats_sorting",supported_formats_sorting)
+                                config_data[which_settings]["supported_formats_sorting"] = supported_formats_sorting
+                                break
 
-            elif path_checked != "/":
-                Tools.add_colored_line(console,f"Zadaná cesta: {path_given} nebyla nalezena, nebude tedy uložena","red",None,True)
-            elif path_checked == "/":
-                Tools.add_colored_line(console,"Nebyla vložena žádná cesta k souborům","red",None,True)
+                    if found == False:
+                        report =  (f"Formát: \"{input_data}\" nebyl nalezen v podporovaných formátech možností třídění, nemůže tedy být odstraněn")
+                        if language_force == "en":
+                            report =  (f"The format \".{input_data}\" was not found in the supported sorting option formats, so it cannot be deleted")
 
-        @classmethod
-        def clear_console(cls,text_widget,from_where=None):
-            """
-            Vymaže celou consoli
-            """
-            if from_where == None:
-                from_where = 1.0
+                else:
+                    config_data[which_settings][which_parameter] = get_input_data_format()
+
+            elif which_settings == "del_settings":
+                supported_formats_deleting = config_data[which_settings]["supported_formats_deleting"]
+                print("found formats: ", supported_formats_deleting)
+
+                if which_parameter == "add_supported_deleting_formats":
+                    corrected_input = filter_unwanted_chars(str(input_data),formats=True)
+                    if str(corrected_input) not in supported_formats_deleting:
+                        supported_formats_deleting.append(str(corrected_input))
+                        report =  (f"Byl přidán formát: \"{corrected_input}\" do podporovaných formátů pro možnosti mazání")
+                        if language_force == "en":
+                            report =  (f"Added format: \"{corrected_input}\" to supported formats for deletion options")
+                        # rewrite_value("supported_formats_deleting",supported_formats_deleting)
+                        config_data[which_settings]["supported_formats_deleting"] = supported_formats_deleting
+                    else:
+                        report =  (f"Formát: \"{corrected_input}\" je již součástí podporovaných formátů možností mazání")
+                        if language_force == "en":
+                            report =  (f"Format: \"{corrected_input}\" is already part of the supported delete option formats")
+                    
+                elif which_parameter == "pop_supported_deleting_formats":
+                    # poped = 0
+                    found = False
+                    range_to = len(supported_formats_deleting)
+                    for i in range(0,range_to):
+                        if i < range_to:
+                            if str(input_data) == supported_formats_deleting[i] and len(str(input_data)) == len(supported_formats_deleting[i]):
+                                supported_formats_deleting.pop(i)
+                                report =  (f"Z podporovaných formátů možností mazání byl odstraněn formát: \".{input_data}\"")
+                                if language_force == "en":
+                                    report =  (f"The format \".{input_data}\" has been removed from the supported delete option formats")
+                                found = True
+                                # rewrite_value("supported_formats_deleting",supported_formats_deleting)
+                                config_data[which_settings]["supported_formats_deleting"] = supported_formats_deleting
+                                break
+
+                    if found == False:
+                        report =  (f"Formát: \"{input_data}\" nebyl nalezen v podporovaných formátech možností mazání, nemůže tedy být odstraněn")
+                        if language_force == "en":
+                            report =  (f"The format \".{input_data}\" was not found in the supported delete option formats, so it cannot be deleted")
+                
+                else:
+                    config_data[which_settings][which_parameter] = get_input_data_format()
+
+            elif which_settings == "image_browser_settings":
+                config_data[which_settings][which_parameter] = get_input_data_format()
+
+            elif which_settings == "catalogue_settings":
+                config_data[which_settings][which_parameter] = get_input_data_format()
+
+            elif which_settings == "ip_settings":
+                config_data[which_settings][which_parameter] = get_input_data_format()
+                            
+            with open(initial_path+cls.config_json_filename, "w") as file:
+                json.dump(config_data, file, indent=4)
+
+            return report
+        
+        else:
+            print("Chybí konfigurační soubor (nelze ukládat změny)")
+            return "Chybí konfigurační soubor (nelze ukládat změny)"
+
+    @classmethod
+    def browseDirectories(cls,visible_files,start_path=None): # Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
+        """
+        Funkce spouští průzkumníka systému windows pro definování cesty, kde má program pracovat
+
+        Vstupní data:
+
+        0: visible_files = "all" / "only_dirs"\n
+        1: start_path = None -optimalni, docasne se ulozi posledni nastavena cesta v exploreru
+
+        Výstupní data:
+
+        0: výstupní chybová hlášení
+        1: opravená cesta
+        2: nazev vybraneho souboru (option: all)
+        """
+        corrected_path = ""
+        output= ""
+        name_of_selected_file = ""
+
+        if start_path == None:
+            start_path = Tools.read_json_config()["app_settings"]["default_path"] #defaultni cesta
+        else: # byla zadana docasna cesta pro explorer
+            checked_path = Tools.path_check(start_path)
+            if checked_path == False:
+                output = "Změněná dočasná základní cesta pro explorer již neexistuje"
+                start_path = Tools.read_json_config()["app_settings"]["default_path"] #defaultni cesta
+            else:
+                start_path = checked_path
+
+        if start_path != False:
+            if not os.path.exists(start_path):
+                start_path = ""
+                output="Konfigurační soubor obsahuje neplatnou cestu"
+
+        else:
+            output="Chybí konfigurační soubor config_TRIMAZKON.xlsx s počáteční cestou...\n"
+            start_path=""
+
+        # pripad vyberu files, aby byly viditelne
+        if visible_files == "all":
+            if(start_path != ""):
+                foldername_path = filedialog.askopenfile(initialdir = start_path,title = "Klikněte na soubor v požadované cestě")
+                path_to_directory= ""
+                if foldername_path != None:
+                    path_to_file = str(foldername_path.name)
+                    path_to_file_split = path_to_file.split("/")
+                    i=0
+                    for parts in path_to_file_split:
+                        i+=1
+                        if i<len(path_to_file_split):
+                            if i == 1:
+                                path_to_directory = path_to_directory + parts
+                            else:
+                                path_to_directory = path_to_directory +"/"+ parts
+                        else:
+                            name_of_selected_file = parts
+                else:
+                    output = "Přes explorer nebyla vložena žádná cesta"
+            else:           
+                foldername_path = filedialog.askopenfile(initialdir = "/",title = "Klikněte na soubor v požadované cestě")
+                path_to_directory= ""
+                if foldername_path != None:
+                    path_to_file = str(foldername_path.name)
+                    path_to_file_split = path_to_file.split("/")
+                    i=0
+                    for parts in path_to_file_split:
+                        i+=1
+                        if i<len(path_to_file_split):
+                            if i == 1:
+                                path_to_directory = path_to_directory + parts
+                            else:
+                                path_to_directory = path_to_directory +"/"+ parts
+                        else:
+                            name_of_selected_file = parts
+                else:
+                    output = "Přes explorer nebyla vložena žádná cesta"
+
+        # pripad vyberu slozek
+        if visible_files == "only_dirs":
+            if(start_path != ""):
+                path_to_directory = filedialog.askdirectory(initialdir = start_path, title = "Vyberte adresář")
+                if path_to_directory == None or path_to_directory == "":
+                    output = "Přes explorer nebyla vložena žádná cesta"
+            else:
+                path_to_directory = filedialog.askdirectory(initialdir = "/", title = "Vyberte adresář")
+                if path_to_directory == None or path_to_directory == "":
+                    output = "Přes explorer nebyla vložena žádná cesta"
+
+        check = Tools.path_check(path_to_directory)
+        corrected_path = check
+        return [output,corrected_path,name_of_selected_file]
+
+    @classmethod
+    def add_colored_line(cls,text_widget, text, color,font=None,delete_line = None,no_indent=None,sameline=False):
+        """
+        Vloží řádek do console
+        """
+        try:
             text_widget.configure(state=tk.NORMAL)
-            text_widget.delete(from_where, tk.END)
-            text_widget.configure(state=tk.DISABLED)
+            if font == None:
+                font = ("Arial",16)
+            if delete_line != None:
+                text_widget.delete("current linestart","current lineend")
+                text_widget.tag_configure(color, foreground=color,font=font)
+                text_widget.insert("current lineend",text, color)
+            else:
+                text_widget.tag_configure(color, foreground=color,font=font)
+                if no_indent:
+                    if sameline:
+                        text_widget.insert(tk.END,text, color)
+                    else:
+                        text_widget.insert(tk.END,text+"\n", color)
+                else:
+                    if sameline:
+                        text_widget.insert(tk.END,"    > "+ text, color)
+                    else:
+                        text_widget.insert(tk.END,"    > "+ text+"\n", color)
 
-        @classmethod
-        def check_task_existence_in_TS(cls,taskname):
-            process = subprocess.Popen(f'schtasks /query /tn \"{taskname}\" /v /fo LIST',
-                                                    stdout=subprocess.PIPE,
-                                                    stderr=subprocess.PIPE,
-                                                    creationflags=subprocess.CREATE_NO_WINDOW)
-            stdout, stderr = process.communicate()
+            text_widget.configure(state=tk.DISABLED)
+        except Exception as e:
+            print(f"Error při psaní do konzole: {e}")
+
+    @classmethod
+    def save_path(cls,console,path_entered,which_settings = ""):
+        path_given = path_entered
+        path_checked = Tools.path_check(path_given)
+        if path_checked != False and path_checked != "/":
+            console_input = Tools.save_to_json_config(path_checked,"app_settings","default_path")
+            Tools.add_colored_line(console,console_input,"green",None,True)
+            if which_settings != "":
+                if which_settings == "convert_option":
+                    Tools.add_new_path_to_history(path_checked,"path_history_list_conv")
+                else:
+                    Tools.add_new_path_to_history(path_checked,which_settings)
+
+        elif path_checked != "/":
+            Tools.add_colored_line(console,f"Zadaná cesta: {path_given} nebyla nalezena, nebude tedy uložena","red",None,True)
+        elif path_checked == "/":
+            Tools.add_colored_line(console,"Nebyla vložena žádná cesta k souborům","red",None,True)
+
+    @classmethod
+    def clear_console(cls,text_widget,from_where=None):
+        """
+        Vymaže celou consoli
+        """
+        if from_where == None:
+            from_where = 1.0
+        text_widget.configure(state=tk.NORMAL)
+        text_widget.delete(from_where, tk.END)
+        text_widget.configure(state=tk.DISABLED)
+
+    @classmethod
+    def check_task_existence_in_TS(cls,taskname):
+        process = subprocess.Popen(f'schtasks /query /tn \"{taskname}\" /v /fo LIST',
+                                                stdout=subprocess.PIPE,
+                                                stderr=subprocess.PIPE,
+                                                creationflags=subprocess.CREATE_NO_WINDOW)
+        stdout, stderr = process.communicate()
+        try:
+            stdout_str = stdout.decode('utf-8')
+            stderr_str = stderr.decode('utf-8')
+            data = str(stdout_str)
+            error_data = str(stderr_str)
+        except UnicodeDecodeError:
             try:
-                stdout_str = stdout.decode('utf-8')
-                stderr_str = stderr.decode('utf-8')
+                stdout_str = stdout.decode('cp1250')
+                stderr_str = stderr.decode('cp1250')
                 data = str(stdout_str)
                 error_data = str(stderr_str)
             except UnicodeDecodeError:
-                try:
-                    stdout_str = stdout.decode('cp1250')
-                    stderr_str = stderr.decode('cp1250')
-                    data = str(stdout_str)
-                    error_data = str(stderr_str)
-                except UnicodeDecodeError:
-                    data = str(stdout)
-                    error_data = str(stderr)
-            if "ERROR" in error_data or "CHYBA" in error_data:
-                return False
-            else:
-                return True
-        
-        @classmethod
-        def is_thread_running(cls,name):
-            print(threading.enumerate())
-            for thread in threading.enumerate():
-                if thread.name == name:
-                    return True
+                data = str(stdout)
+                error_data = str(stderr)
+        if "ERROR" in error_data or "CHYBA" in error_data:
             return False
+        else:
+            return True
+    
+    @classmethod
+    def is_thread_running(cls,name):
+        print(threading.enumerate())
+        for thread in threading.enumerate():
+            if thread.name == name:
+                return True
+        return False
 
-        @classmethod
-        def tray_startup_cmd(cls):
-            """
-            Sepnutí aplikace v system tray nabídce
+    @classmethod
+    def tray_startup_cmd(cls):
+        """
+        Sepnutí aplikace v system tray nabídce
 
-            """
-            if Tools.is_thread_running(cls.Tray_thread_name): # Pokud tray aplikace už běží nezapínej novou
-                print("tray app is already running")
-                return
+        """
+        if Tools.is_thread_running(cls.Tray_thread_name): # Pokud tray aplikace už běží nezapínej novou
+            print("tray app is already running")
+            return
 
-            print("tray app is not running yet")
-            def call_tray_class():
-                tray_app_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
-                tray_app_instance.main()
+        print("tray app is not running yet")
+        def call_tray_class():
+            tray_app_instance = trimazkon_tray.tray_app_service(initial_path,app_icon,exe_name,config_filename)
+            tray_app_instance.main()
 
-            blocking_task = threading.Thread(target=call_tray_class,name=cls.Tray_thread_name)
-            blocking_task.start()
-            print(threading.enumerate())
+        blocking_task = threading.Thread(target=call_tray_class,name=cls.Tray_thread_name)
+        blocking_task.start()
+        print(threading.enumerate())
 
-        @classmethod
-        def establish_startup_tray(cls):
-            """
-            Sets the startup task of switching on the tray application icon
-            - if it doesnt exist already
-            """
-            
-            task_presence = Tools.check_task_existence_in_TS(cls.task_name)
-            print("task presence: ",task_presence)
-
-            if not task_presence:
-                path_app_location = str(initial_path + exe_name)
-                task_command = "\"" + path_app_location + " run_tray" + "\" /sc onlogon"
-                process = subprocess.Popen(f"schtasks /Create /TN {cls.task_name} /TR {task_command}",
-                                            stdout=subprocess.PIPE,
-                                            stderr=subprocess.PIPE,
-                                            creationflags=subprocess.CREATE_NO_WINDOW)
-                
-                stdout, stderr = process.communicate()
-                output_message = "out"+str(stdout) +"err"+str(stderr)
-                print(output_message)
-                if "Access is denied" in output_message or "stup byl odep" in output_message:
-                    return "need_access"
-                
-            Tools.tray_startup_cmd() # init sepnutí po prvním zavedení tasku
+    @classmethod
+    def establish_startup_tray(cls):
+        """
+        Sets the startup task of switching on the tray application icon
+        - if it doesnt exist already
+        """
         
-        @classmethod
-        def remove_task_from_TS(cls,name_of_task):
-            cmd_command = f"schtasks /Delete /TN {name_of_task} /F"
-            # subprocess.call(cmd_command,shell=True,text=True)
+        task_presence = Tools.check_task_existence_in_TS(cls.task_name)
+        print("task presence: ",task_presence)
 
-            process = subprocess.Popen(cmd_command,
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE,
-                                    creationflags=subprocess.CREATE_NO_WINDOW)
-                
+        if not task_presence:
+            path_app_location = str(initial_path + exe_name)
+            task_command = "\"" + path_app_location + " run_tray" + "\" /sc onlogon"
+            process = subprocess.Popen(f"schtasks /Create /TN {cls.task_name} /TR {task_command}",
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
+                                        creationflags=subprocess.CREATE_NO_WINDOW)
+            
             stdout, stderr = process.communicate()
             output_message = "out"+str(stdout) +"err"+str(stderr)
             print(output_message)
-            if "Access is denied" in output_message:
+            if "Access is denied" in output_message or "stup byl odep" in output_message:
                 return "need_access"
-
-        @classmethod
-        def is_admin(cls):
-            try:
-                return ctypes.windll.shell32.IsUserAnAdmin()
-            except:
-                return False
-
-        @classmethod
-        def get_init_path(cls):
-            initial_path = Tools.path_check(Tools.resource_path(os.getcwd()))
-            if len(sys.argv) > 1: #spousteni pres cmd (kliknuti na obrazek) nebo task scheduler - mazání
-                raw_path = str(sys.argv[0])
-                initial_path = Tools.path_check(raw_path,True)
-                initial_path_splitted = initial_path.split("/")
-                initial_path = ""
-                for i in range(0,len(initial_path_splitted)-2):
-                    initial_path += str(initial_path_splitted[i])+"/"
-
-            initial_path.replace("//","/")
-            return initial_path
-
-        @classmethod
-        def check_trial_existance(cls):
-            try:
-                key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, cls.registry_key_path, 0, winreg.KEY_READ)
-                return True
-            except FileNotFoundError:
-                return False
-            except Exception:
-                return False
-
-        @classmethod
-        def check_licence(cls):
-            global global_licence_load_error
-
-            check_trial = Tools.check_trial_period()
-            if "Trial active" in str(check_trial):
-                global_licence_load_error = False
-                return check_trial
-
-            with open(Tools.resource_path("public.pem"), "rb") as f:
-                public_key = serialization.load_pem_public_key(f.read())
-
-            if os.path.exists(initial_path + "/license.lic"):
-                with open(initial_path + "/license.lic", "r") as f:
-                    lines = f.readlines()
-            else:
-                global_licence_load_error = True
-                return "verification error"
-            licence_data = lines[0].strip()  # První řádek je expirace
-            signature = bytes.fromhex(lines[1].strip())  # Druhý řádek je podpis
-            try:
-                public_key.verify(
-                    signature,
-                    licence_data.encode(),
-                    padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
-                    hashes.SHA256()
-                )
-                
-                exp_date = datetime.datetime.strptime(licence_data.split(":")[1], "%d.%m.%Y")
-                hwid_lic = licence_data.split("|")[0]
-                if hwid_lic != Tools.get_volume_serial():
-                    print("now valid hwid")
-                    global_licence_load_error = True
-                    return "verification error"
-
-                if exp_date >= datetime.datetime.today():
-                    print(f"License valid until: {exp_date.date()}")
-                    global_licence_load_error = False
-                    return exp_date.date()
-                else:
-                    global_licence_load_error = True
-                    return f"EXPIRED: {exp_date.date()}"
-
-            except Exception as e:
-                print("License verification error!", e)
-                global_licence_load_error = True
-                return "verification error"
-
-        @classmethod
-        def get_volume_serial(cls):
-            # Get system drive letter (e.g., "C:")
-            drive_letter = subprocess.check_output(
-                'wmic os get systemdrive', shell=True
-            ).decode().split("\n")[1].strip().replace(":", "")
             
-            c = wmi.WMI()
-            
-            # Find the physical disk corresponding to the system drive
-            for disk in c.Win32_DiskDrive():
-                for partition in disk.associators("Win32_DiskDriveToDiskPartition"):
-                    for logical_disk in partition.associators("Win32_LogicalDiskToPartition"):
-                        if logical_disk.DeviceID == f"{drive_letter}:":  # Match the system drive
-                            serial_number = disk.SerialNumber.strip()  # Get serial number
-                            return serial_number.rstrip(".")
-
-            return None  # Return None if not found
-
-        @classmethod
-        def set_zoom(cls,zoom_factor,root):
-            try:
-                root.after(0, lambda: customtkinter.set_widget_scaling(zoom_factor / 100))
-                # customtkinter.set_widget_scaling(zoom_factor / 100)
-            except Exception as e:
-                print(f"error with zoom scaling: {e}")
-            
-            root.tk.call('tk', 'scaling', zoom_factor / 100)
+        Tools.tray_startup_cmd() # init sepnutí po prvním zavedení tasku
     
-        @classmethod
-        def terminate_pid(cls,pid:int):
-            print("pid to terminate: ",pid)
+    @classmethod
+    def remove_task_from_TS(cls,name_of_task):
+        cmd_command = f"schtasks /Delete /TN {name_of_task} /F"
+        # subprocess.call(cmd_command,shell=True,text=True)
 
-            try:
-                process = psutil.Process(pid)
-                process.terminate()
-                process.wait(timeout=5)
-                print(f"Process with PID {pid} terminated.")
-            except psutil.NoSuchProcess:
-                print(f"No process with PID {pid} found.")
-            except psutil.AccessDenied:
-                print(f"Permission denied to terminate PID {pid}.")
-            except psutil.TimeoutExpired:
-                print(f"Process with PID {pid} did not terminate in time.")
+        process = subprocess.Popen(cmd_command,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                creationflags=subprocess.CREATE_NO_WINDOW)
+            
+        stdout, stderr = process.communicate()
+        output_message = "out"+str(stdout) +"err"+str(stderr)
+        print(output_message)
+        if "Access is denied" in output_message:
+            return "need_access"
+
+    @classmethod
+    def is_admin(cls):
+        try:
+            return ctypes.windll.shell32.IsUserAnAdmin()
+        except:
+            return False
+
+    @classmethod
+    def get_init_path(cls):
+        initial_path = Tools.path_check(Tools.resource_path(os.getcwd()))
+        if len(sys.argv) > 1: #spousteni pres cmd (kliknuti na obrazek) nebo task scheduler - mazání
+            raw_path = str(sys.argv[0])
+            initial_path = Tools.path_check(raw_path,True)
+            initial_path_splitted = initial_path.split("/")
+            initial_path = ""
+            for i in range(0,len(initial_path_splitted)-2):
+                initial_path += str(initial_path_splitted[i])+"/"
+
+        initial_path.replace("//","/")
+        return initial_path
+
+    @classmethod
+    def check_trial_existance(cls):
+        try:
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, cls.registry_key_path, 0, winreg.KEY_READ)
+            return True
+        except FileNotFoundError:
+            return False
+        except Exception:
+            return False
+
+    @classmethod
+    def check_licence(cls):
+        global global_licence_load_error
+
+        check_trial = Tools.check_trial_period()
+        if "Trial active" in str(check_trial):
+            global_licence_load_error = False
+            return check_trial
+
+        with open(Tools.resource_path("public.pem"), "rb") as f:
+            public_key = serialization.load_pem_public_key(f.read())
+
+        if os.path.exists(initial_path + "/license.lic"):
+            with open(initial_path + "/license.lic", "r") as f:
+                lines = f.readlines()
+        else:
+            global_licence_load_error = True
+            return "verification error"
+        licence_data = lines[0].strip()  # První řádek je expirace
+        signature = bytes.fromhex(lines[1].strip())  # Druhý řádek je podpis
+        try:
+            public_key.verify(
+                signature,
+                licence_data.encode(),
+                padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+                hashes.SHA256()
+            )
+            
+            exp_date = datetime.datetime.strptime(licence_data.split(":")[1], "%d.%m.%Y")
+            hwid_lic = licence_data.split("|")[0]
+            if hwid_lic != Tools.get_volume_serial():
+                print("now valid hwid")
+                global_licence_load_error = True
+                return "verification error"
+
+            if exp_date >= datetime.datetime.today():
+                print(f"License valid until: {exp_date.date()}")
+                global_licence_load_error = False
+                return exp_date.date()
+            else:
+                global_licence_load_error = True
+                return f"EXPIRED: {exp_date.date()}"
+
+        except Exception as e:
+            print("License verification error!", e)
+            global_licence_load_error = True
+            return "verification error"
+
+    @classmethod
+    def get_volume_serial(cls):
+        # Get system drive letter (e.g., "C:")
+        drive_letter = subprocess.check_output(
+            'wmic os get systemdrive', shell=True
+        ).decode().split("\n")[1].strip().replace(":", "")
         
-        @classmethod
-        def add_new_path_to_history(cls,new_path,which_settings):
-            if new_path == "delete_history":
-                Tools.save_to_json_config([],which_settings,"path_history_list")
-                return
-            elif new_path == "delete_history_conv":
-                Tools.save_to_json_config([],which_settings,"path_history_list_conv")
-                return
+        c = wmi.WMI()
+        
+        # Find the physical disk corresponding to the system drive
+        for disk in c.Win32_DiskDrive():
+            for partition in disk.associators("Win32_DiskDriveToDiskPartition"):
+                for logical_disk in partition.associators("Win32_LogicalDiskToPartition"):
+                    if logical_disk.DeviceID == f"{drive_letter}:":  # Match the system drive
+                        serial_number = disk.SerialNumber.strip()  # Get serial number
+                        return serial_number.rstrip(".")
 
-            if which_settings == "convert_settings":
-                which_settings = "sort_conv_settings"
-                parameter_name = "path_history_list_conv"
-            else:
-                parameter_name = "path_history_list"
+        return None  # Return None if not found
 
-            current_paths = Tools.read_json_config()[which_settings][parameter_name]
-            if new_path not in current_paths:
-                if len(current_paths) > 9:
-                    current_paths.pop()
-                # current_paths.append(str(new_path))
-                current_paths.insert(0,str(new_path))
-                Tools.save_to_json_config(current_paths,which_settings,parameter_name)
+    @classmethod
+    def set_zoom(cls,zoom_factor,root):
+        try:
+            root.after(0, lambda: customtkinter.set_widget_scaling(zoom_factor / 100))
+            # customtkinter.set_widget_scaling(zoom_factor / 100)
+        except Exception as e:
+            print(f"error with zoom scaling: {e}")
+        
+        root.tk.call('tk', 'scaling', zoom_factor / 100)
 
-        @classmethod
-        def store_installation_date(cls,refresh_callback):
-            try:
-                key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, cls.registry_key_path)
-                install_date = datetime.datetime.now().strftime("%Y-%m-%d")
-                winreg.SetValueEx(key, "InstallDate", 0, winreg.REG_SZ, install_date)
-                winreg.CloseKey(key)
-                print("Installation date stored.")
-                refresh_callback()
-            except Exception as e:
-                print("Error storing installation date:", e)
+    @classmethod
+    def terminate_pid(cls,pid:int):
+        print("pid to terminate: ",pid)
 
-        @classmethod
-        def check_trial_period(cls):
-            try:
-                key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, cls.registry_key_path)
-                install_date_str, _ = winreg.QueryValueEx(key, "InstallDate")
-                install_date = datetime.datetime.strptime(install_date_str, "%Y-%m-%d")
-                trial_period = datetime.timedelta(days=30)
-                expiration_date = install_date + trial_period
-                current_date = datetime.datetime.now()
-                winreg.CloseKey(key)
+        try:
+            process = psutil.Process(pid)
+            process.terminate()
+            process.wait(timeout=5)
+            print(f"Process with PID {pid} terminated.")
+        except psutil.NoSuchProcess:
+            print(f"No process with PID {pid} found.")
+        except psutil.AccessDenied:
+            print(f"Permission denied to terminate PID {pid}.")
+        except psutil.TimeoutExpired:
+            print(f"Process with PID {pid} did not terminate in time.")
+    
+    @classmethod
+    def add_new_path_to_history(cls,new_path,which_settings):
+        if new_path == "delete_history":
+            Tools.save_to_json_config([],which_settings,"path_history_list")
+            return
+        elif new_path == "delete_history_conv":
+            Tools.save_to_json_config([],which_settings,"path_history_list_conv")
+            return
 
-                if current_date > expiration_date:
-                    print("Trial expired. Please purchase the full version.")
-                    return False
-                else:
-                    remaining_days = (expiration_date - current_date).days
-                    print(f"Trial active. {remaining_days} days remaining.")
-                    return f"Trial active. {remaining_days} days remaining."
+        if which_settings == "convert_settings":
+            which_settings = "sort_conv_settings"
+            parameter_name = "path_history_list_conv"
+        else:
+            parameter_name = "path_history_list"
 
-            except FileNotFoundError:
-                print("Installation date not found. Trial might have been tampered with.")
+        current_paths = Tools.read_json_config()[which_settings][parameter_name]
+        if new_path not in current_paths:
+            if len(current_paths) > 9:
+                current_paths.pop()
+            # current_paths.append(str(new_path))
+            current_paths.insert(0,str(new_path))
+            Tools.save_to_json_config(current_paths,which_settings,parameter_name)
+
+    @classmethod
+    def store_installation_date(cls,refresh_callback):
+        try:
+            key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, cls.registry_key_path)
+            install_date = datetime.datetime.now().strftime("%Y-%m-%d")
+            winreg.SetValueEx(key, "InstallDate", 0, winreg.REG_SZ, install_date)
+            winreg.CloseKey(key)
+            print("Installation date stored.")
+            refresh_callback()
+        except Exception as e:
+            print("Error storing installation date:", e)
+
+    @classmethod
+    def check_trial_period(cls):
+        try:
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, cls.registry_key_path)
+            install_date_str, _ = winreg.QueryValueEx(key, "InstallDate")
+            install_date = datetime.datetime.strptime(install_date_str, "%Y-%m-%d")
+            trial_period = datetime.timedelta(days=30)
+            expiration_date = install_date + trial_period
+            current_date = datetime.datetime.now()
+            winreg.CloseKey(key)
+
+            if current_date > expiration_date:
+                print("Trial expired. Please purchase the full version.")
                 return False
-            except Exception as e:
-                print("Error checking trial period:", e)
-                return False
-
-        @classmethod
-        def open_manual_ip_setting_window(cls):
-            def output_callback(output_message):
-                WindowsBalloonTip("Proveden pokus o změnu IP adresy",
-                    str(output_message),
-                    app_icon)
-            ip_set_instance = IP_setting.main(None,None,None,initial_path,None,config_filename,True)
-            ip_set_instance.IP_tools.manual_ip_setting(app_icon_path=app_icon,output_callback=output_callback)
-
-        @classmethod
-        def check_for_new_app_version(cls,language_given = "cz",force_update=False):
-            new_version_log_name = "new_version_log.txt"
-            version_list = []
-            current_app_version = trimazkon_version.replace(".","")
-            current_app_version = int(current_app_version)
-            print("current version: ",current_app_version)
-            sharepoint_instance = download_database.database("",search_for_version=True)
-            installer_name_list = sharepoint_instance.output
-            if len(installer_name_list) > 0:
-                for names in installer_name_list:
-                    if names == new_version_log_name:
-                        continue
-                    name_splitted = names.split("-")
-                    if name_splitted[0] == "TRIMAZKON":
-                        version_list.append(name_splitted[1])
-                    elif testing and name_splitted[0] == "dummy_version":
-                        version_list.append(name_splitted[1])
-
-            version_list_int = []
-            for versions in version_list:
-                versions = versions.replace(".","")
-                version_list_int.append(int(versions))
-
-            print("version list: ",version_list_int)
-            if len(version_list_int) == 0:
-                return "up to date"
-            max_sharepoint_version = max(version_list_int)
-            if current_app_version < max_sharepoint_version:
-                print("new_version_available")
-                if language_given == "en":
-                    root.title(f"{app_name} v_{app_version} (version is not up to date)")
-                else:
-                    root.title(f"{app_name} v_{app_version} (neaktuální verze)")
-                sharepoint_instance = download_database.database(new_version_log_name,get_new_version_log=True)
-                new_version_log = sharepoint_instance.output
-                max_sharepoint_version = str(max_sharepoint_version)
-                max_sharepoint_version_str = max_sharepoint_version[0]+"."+max_sharepoint_version[1]+"."+max_sharepoint_version[2]
-                config_data = Tools.read_json_config()
-                if not force_update:
-                    if "ignored_version" in config_data["app_settings"]:
-                        ignored_version = config_data["app_settings"]["ignored_version"]
-                        print(ignored_version, max_sharepoint_version_str)
-                        if max_sharepoint_version_str == ignored_version:
-                            return
-                Subwindows.download_new_version_window(max_sharepoint_version_str,new_version_log,force_update=force_update)
             else:
-                return "up to date"
+                remaining_days = (expiration_date - current_date).days
+                print(f"Trial active. {remaining_days} days remaining.")
+                return f"Trial active. {remaining_days} days remaining."
+
+        except FileNotFoundError:
+            print("Installation date not found. Trial might have been tampered with.")
+            return False
+        except Exception as e:
+            print("Error checking trial period:", e)
+            return False
+
+    @classmethod
+    def open_manual_ip_setting_window(cls):
+        def output_callback(output_message):
+            WindowsBalloonTip("Proveden pokus o změnu IP adresy",
+                str(output_message),
+                app_icon)
+        ip_set_instance = IP_setting.main(None,None,None,initial_path,None,config_filename,True)
+        ip_set_instance.IP_tools.manual_ip_setting(app_icon_path=app_icon,output_callback=output_callback)
+
+    @classmethod
+    def check_for_new_app_version(cls,language_given = "cz",force_update=False):
+        new_version_log_name = "new_version_log.txt"
+        version_list = []
+        current_app_version = trimazkon_version.replace(".","")
+        current_app_version = int(current_app_version)
+        print("current version: ",current_app_version)
+        sharepoint_instance = download_database.database("",search_for_version=True)
+        installer_name_list = sharepoint_instance.output
+        if len(installer_name_list) > 0:
+            for names in installer_name_list:
+                if names == new_version_log_name:
+                    continue
+                name_splitted = names.split("-")
+                if name_splitted[0] == "TRIMAZKON":
+                    version_list.append(name_splitted[1])
+                elif testing and name_splitted[0] == "dummy_version":
+                    version_list.append(name_splitted[1])
+
+        version_list_int = []
+        for versions in version_list:
+            versions = versions.replace(".","")
+            version_list_int.append(int(versions))
+
+        print("version list: ",version_list_int)
+        if len(version_list_int) == 0:
+            return "up to date"
+        max_sharepoint_version = max(version_list_int)
+        if current_app_version < max_sharepoint_version:
+            print("new_version_available")
+            if language_given == "en":
+                root.title(f"{app_name} v_{app_version} (version is not up to date)")
+            else:
+                root.title(f"{app_name} v_{app_version} (neaktuální verze)")
+            sharepoint_instance = download_database.database(new_version_log_name,get_new_version_log=True)
+            new_version_log = sharepoint_instance.output
+            max_sharepoint_version = str(max_sharepoint_version)
+            max_sharepoint_version_str = max_sharepoint_version[0]+"."+max_sharepoint_version[1]+"."+max_sharepoint_version[2]
+            config_data = Tools.read_json_config()
+            if not force_update:
+                if "ignored_version" in config_data["app_settings"]:
+                    ignored_version = config_data["app_settings"]["ignored_version"]
+                    print(ignored_version, max_sharepoint_version_str)
+                    if max_sharepoint_version_str == ignored_version:
+                        return
+            Subwindows.download_new_version_window(max_sharepoint_version_str,new_version_log,force_update=force_update)
+        else:
+            return "up to date"
 
 class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
     """

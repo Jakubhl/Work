@@ -9,7 +9,7 @@ import time
 import threading
 import psutil
 import socket
-from PIL import Image
+from PIL import Image, ImageTk
 import sys
 import ctypes
 import winreg
@@ -430,7 +430,57 @@ class Tools:
             if str(projects['name']) == str(project_name):
                 return projects
         return False
-    
+
+    class loading_routine:
+        def __init__(self,root,no_loop = False):
+            self.root = root
+            self.stop_loading = False
+            self.angle = 0
+            self.no_loop = no_loop
+            # self.main()
+
+        def create_window(self):
+            self.top = customtkinter.CTkToplevel(self.root)
+            geometry_string = "1000x1000+" + str(int(self.root.winfo_screenwidth()/2)-500)+ "+" + str(int(self.root.winfo_screenheight()/2)-500)
+            self.top.geometry(geometry_string)
+            self.top.overrideredirect(True)
+            self.top.attributes('-toolwindow', True)
+            self.top.wm_attributes('-alpha', 0.8)  # 0.0 = úplně průhledné, 1.0 = neprůhledné
+            self.top.wm_attributes("-transparentcolor", self.top["bg"])
+            self.original_image = Image.open(Tools.resource_path("images/loading_xx.png")).resize((150, 150))
+            # self.original_image = Image.open(Tools.resource_path("images/loading_x.png")).resize((100, 100))
+            tk_image = ImageTk.PhotoImage(self.original_image)
+            self.loading_label = customtkinter.CTkLabel(master = self.top,text = "",image =tk_image)
+            self.loading_label.pack(expand=True)
+            
+        def rotate_image(self):
+            self.angle -=10
+            rotated = self.original_image.rotate(self.angle)
+            tk_rotated = ImageTk.PhotoImage(rotated)
+            self.loading_label.configure(image=tk_rotated)
+            self.loading_label.image_ref = tk_rotated  # udržet referenci
+            self.top.update()
+
+        def main(self):
+            self.create_window()
+            self.top.grab_set()
+
+            def rotate_worker():
+                while not self.stop_loading:
+                    time.sleep(0.05)
+                    self.top.after(0, self.rotate_image)  # UI volání do main threadu
+                    # self.rotate_image()  # UI volání do main threadu
+                self.top.after(0, lambda: (self.top.grab_release(), self.top.destroy()))
+
+            if not self.no_loop:
+                self._t = threading.Thread(target=rotate_worker, daemon=True)
+                self.top.after(0,self._t.start())
+                # self._t.start()
+
+        def close_all(self):
+            self.top.grab_release()
+            self.top.destroy()
+
 class main:
     class DM_tools:  
         @classmethod
@@ -1088,7 +1138,7 @@ class main:
         def bind_it(self):
             self.widget.bind("<Enter>",lambda e,widget = self.widget: self.really_entering(e,widget))
             self.widget.bind("<Leave>",lambda e,widget = self.widget: self.really_leaving(e,widget))
-            self.widget.bind("<Button-1>",lambda e: self.just_destroy(e))
+            self.widget.bind("<Button-1>",lambda e: self.just_destroy(e,self.widget))
 
         def just_destroy(self,e,widget,unbind=True):
             # if self.tip_window:
@@ -1329,7 +1379,7 @@ class main:
                             frame.configure(border_color="#636363")
                     self.selected_list_disk = []
                     self.remember_to_change_back = []
-                    self.last_managed_project = None
+                    # self.last_managed_project = None
 
                 except Exception as e:
                     print("chyba při odebírání focusu: ",e)
@@ -1406,7 +1456,7 @@ class main:
                     param_frame.configure(fg_color = "black") # <= init
 
                     for i in range(0,len(non_persistant_disks)):
-                        if non_persistant_disks[i][0:1] == str(self.all_project_list[y][1]):
+                        if non_persistant_disks[i][0:1] == str(self.all_project_list[y]["disk_letter"]):
                             drive_status = main.DM_tools.check_network_drive_status(non_persistant_disks[i])
                             if drive_status == True:
                                 online_disks.append(non_persistant_disks[i][0:1])
@@ -1774,8 +1824,9 @@ class main:
                     switch_down()
 
             def copy_previous_project():
+                print(self.last_managed_project)
                 try:
-                    if self.last_managed_project['name'] == "":
+                    if str(self.last_managed_project['name']) == "":
                         Tools.add_colored_line(self.console,"Není vybrán žádný projekt","red",None,True)
                         return
                     self.last_inserted_password = str(self.last_managed_project['password'])
@@ -2080,6 +2131,8 @@ class main:
             ftp_adress = str(project["ftp"])
             user = str(project["user"])
             password = str(project["password"])
+            loading_inst = Tools.loading_routine(self.root,no_loop=True)
+            loading_inst.main()
 
             delete_command = "net use " + Drive_letter + ": /del"
             subprocess.run(delete_command, shell=True)
@@ -2110,12 +2163,15 @@ class main:
 
             time_start = time.time()
             while connection_status==None:
+                loading_inst.rotate_image()
+                self.root.update()
                 time.sleep(0.05)
                 if time.time() - time_start > 3:
                     print("terminated due to runtime error")
                     break
 
             if connection_status == 0:
+                loading_inst.close_all()
                 Tools.add_colored_line(self.main_console,f"Disk úspěšně připojen","green",None,True)
                 self.refresh_explorer()
                 self.refresh_disk_statuses()
@@ -2128,6 +2184,7 @@ class main:
 
                 open_explorer(Drive_letter + ":\\")
             else:
+                loading_inst.close_all()
                 Tools.add_colored_line(self.main_console,f"Připojení selhalo (ixon? musí být zvolena alespoň 1 složka na disku...)","red",None,True)
 
         def show_context_menu(self,event,project,flag=""):
@@ -3386,7 +3443,7 @@ class main:
             child_root.focus_force()
             self.root.bind("<Button-1>",lambda e: child_root.destroy(),"+")
         
-        def make_sure_ip_changed(self,interface_name,ip):
+        def make_sure_ip_changed(self,interface_name,ip,loading_inst):
             def run_as_admin():
                 # Vyžádání admin práv: nefunkční ve vscode
                 def is_admin():
@@ -3398,38 +3455,49 @@ class main:
                 if not is_admin():
                     ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(["admin_ip_setting",str(pid)]), None, 1)
                     sys.exit()
+
             def open_app_as_admin_prompt():
                 def close_prompt(child_root):
+                    child_root.grab_release()
                     child_root.destroy()
-                child_root = customtkinter.CTkToplevel()
+                child_root = customtkinter.CTkToplevel(fg_color="#212121")
                 child_root.after(200, lambda: child_root.iconbitmap(Tools.resource_path(self.app_icon)))
                 self.opened_window = child_root
                 x = self.root.winfo_rootx()
                 y = self.root.winfo_rooty()
-                child_root.geometry(f"620x150+{x+300}+{y+300}")  
+                # child_root.geometry(f"620x150+{x+300}+{y+300}")  
                 child_root.title("Upozornění")
-                proceed_label = customtkinter.CTkLabel(master = child_root,text = "Přejete si znovu spustit aplikaci, jako administrátor?",font=("Arial",25))
-                button_yes =    customtkinter.CTkButton(master = child_root,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: run_as_admin())
-                button_no =     customtkinter.CTkButton(master = child_root,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
-                proceed_label   .pack(pady=(15,0),padx=10,anchor="w",expand=False,side = "top")
-                button_no       .pack(pady = 5, padx = 10,anchor="w",expand=False,side="right")
-                button_yes      .pack(pady = 5, padx = 10,anchor="w",expand=False,side="right")
+                label_frame =       customtkinter.CTkFrame(master = child_root,corner_radius=0)
+                proceed_label =     customtkinter.CTkLabel(master = label_frame,text = "Přejete si znovu spustit aplikaci, jako administrátor?",font=("Arial",25))
+                warning_icon =      customtkinter.CTkLabel(master = label_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/warning.png")),size=(50,50)),bg_color="#212121")
+                warning_icon.       pack(pady=10,padx=30,anchor="n",side = "left")
+                proceed_label.      pack(pady=5,padx=(0,10),anchor="w",side = "left")
+                button_frame =      customtkinter.CTkFrame(master = child_root,corner_radius=0)
+
+                button_yes =        customtkinter.CTkButton(master = button_frame,text = "ANO",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda: run_as_admin())
+                button_no =         customtkinter.CTkButton(master = button_frame,text = "Zrušit",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+                button_no.          pack(pady = 5, padx = (0,10),anchor="e",side="right")
+                button_yes.         pack(pady = 5, padx = 10,anchor="e",side="right")
+                label_frame.        pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
+                button_frame.       pack(pady=0,padx=0,anchor="w",side = "top",fill="x",expand=True)
                 child_root.update()
                 child_root.update_idletasks()
                 child_root.focus()
                 child_root.focus_force()
-                self.root.bind("<Button-1>",lambda e: child_root.destroy(),"+")
+                child_root.grab_set()
+                self.root.bind("<Button-1>",lambda e: close_prompt(child_root),"+")
 
             interface_index = self.connection_option_list.index(interface_name)
 
             def call_subprocess():
                 try:
-
                     if ip == self.current_address_list[interface_index]:
                         Tools.add_colored_line(self.main_console,f"Pro interface {interface_name} je již tato adresa ({ip}) nastavena","orange",None,True)
+                        loading_inst.stop_loading = True
                         return
                     elif ip in self.current_address_list:
                         Tools.add_colored_line(self.main_console,f"Chyba, adresa je již používána pro jiný interface","red",None,True)
+                        loading_inst.stop_loading = True
                         return
                     win_change_ip_time = 7
                     for i in range(0,win_change_ip_time):
@@ -3438,7 +3506,7 @@ class main:
                         if ip == self.current_address_list[interface_index]: # někdy dříve než 7 sekund...
                             break
                         time.sleep(1)
-
+                    loading_inst.stop_loading = True
                     self.option_change("",silent=True)
                     if ip == self.current_address_list[interface_index]:
                         Tools.add_colored_line(self.main_console,f"IPv4 adresa u {interface_name} byla přenastavena na: {ip}","green",None,True)
@@ -3446,13 +3514,18 @@ class main:
                     else:
                         Tools.add_colored_line(self.main_console,f"Chyba, neplatná adresa nebo daný inteface odpojen od tohoto zařízení (pro nastavování odpojených interfaců spusťte aplikaci jako administrátor)","red",None,True)
                         open_app_as_admin_prompt()
+                    
                 except Exception:
+                    loading_inst.stop_loading = True
                     pass
             
             run_background = threading.Thread(target=call_subprocess,)
             run_background.start()
 
         def change_to_DHCP(self):
+            loading_inst = Tools.loading_routine(self.root)
+            loading_inst.main()
+
             def delay_the_refresh():
                 nonlocal previous_addr
                 nonlocal interface_index
@@ -3468,9 +3541,11 @@ class main:
                     i+=1
                     if i > 6:
                         Tools.add_colored_line(self.main_console,f"Chyba, u {interface} se nepodařilo změnit ip adresu (pro nastavování odpojených interfaců spusťte aplikaci jako administrátor)","red",None,True)
+                        loading_inst.stop_loading = True
                         return
                 
                 Tools.add_colored_line(self.main_console,f"IPv4 adresa interfacu: {interface} úspěšně přenastavena na DHCP (automatickou)","green",None,True)
+                loading_inst.stop_loading = True
                 self.refresh_ip_statuses()
                 return
             
@@ -3508,17 +3583,23 @@ class main:
                         print(f"Exception occurred: {str(e)}")
                 else:
                     Tools.add_colored_line(self.main_console,"Nebyl zvolen žádný interface","red",None,True)
+                    loading_inst.stop_loading = True
             else:
                 connected_interfaces = self.refresh_interfaces()
                 if interface in connected_interfaces:
                     Tools.add_colored_line(self.main_console,f"{interface} má již nastavenou DHCP","orange",None,True)
+                    loading_inst.stop_loading = True
                 else:
                     Tools.add_colored_line(self.main_console,f"Chyba, {interface} je odpojen od tohoto zařízení (pro nastavování odpojených interfaců spusťte aplikaci jako administrátor)","red",None,True)
+                    loading_inst.stop_loading = True
 
         def change_computer_ip(self,project,force_params = []):
             """
             input - force_params = [ip,mask]
             """
+            loading_inst = Tools.loading_routine(self.root)
+            loading_inst.main()
+
             def connected_interface(interface,ip,mask):
                 """
                 Když jsou vyžadována admin práva, tato funkce ověří, zda není daný interface připojen nebo součástí zařízení a zkusí znovu
@@ -3541,11 +3622,13 @@ class main:
                     if stderr_str:
                         print(f"Error occurred: {stderr_str}")
                         Tools.add_colored_line(self.main_console,f"Chyba, nebyla poskytnuta práva (dejte ANO)","red",None,True)
+                        loading_inst.stop_loading = True
                     else:
                         print(f"Command executed successfully:\n{stdout_str}")
-                        self.make_sure_ip_changed(interface_name,ip)
+                        self.make_sure_ip_changed(interface_name,ip,loading_inst)
 
                 except Exception as e:
+                    loading_inst.stop_loading = True    
                     print(f"Exception occurred: {str(e)}")
 
             if len(force_params) > 0:
@@ -3573,7 +3656,7 @@ class main:
                 if stderr_str:
                     raise subprocess.CalledProcessError(1, powershell_command, stderr_str)
 
-                self.make_sure_ip_changed(interface_name,ip)
+                self.make_sure_ip_changed(interface_name,ip,loading_inst)
 
             except subprocess.CalledProcessError as e:
                 if "Run as administrator" in str(stdout_str) or "pustit jako správce" in str(stdout_str):
@@ -3582,9 +3665,12 @@ class main:
                     connected_interface(interface_name,ip,mask)
                 elif "Invalid address" in str(stdout_str) or "Adresa není platná" in str(stdout_str):
                     Tools.add_colored_line(self.main_console,f"Chyba, neplatná IP adresa","red",None,True)
+                    loading_inst.stop_loading = True
                 else:
                     Tools.add_colored_line(self.main_console,f"Chyba, Nemáte tuto adresu již nastavenou pro jiný interface? (nebo daný interface na tomto zařízení neexistuje)","red",None,True)
+                    loading_inst.stop_loading = True
             except Exception as e:
+                loading_inst.stop_loading = True
                 # Handle any other exceptions that may occur
                 Tools.add_colored_line(self.main_console, f"Nastala neočekávaná chyba: {e}", "red", None, True)
 
@@ -3649,7 +3735,7 @@ class main:
                             frame.configure(border_color="#636363")
                     self.selected_list = []
                     self.remember_to_change_back = []
-                    self.last_managed_project = None
+                    # self.last_managed_project = None
 
                 except Exception as e:
                     print("chyba při odebírání focusu: ",e)

@@ -565,7 +565,10 @@ class whole_deleting_function:
                             self.make_dir(self.to_delete_folder,path)
                             shutil.move(path + file_list_to_be_sorted[i]["file"], path + self.to_delete_folder + '/' + file_list_to_be_sorted[i]["file"])
                     if self.testing_mode == False:
-                        os.remove(path + file_list_to_be_sorted[i]["file"])
+                        try:
+                            os.remove(path + file_list_to_be_sorted[i]["file"])
+                        except Exception as ee:
+                            print(f"soubor {file_list_to_be_sorted[i]["file"]} je právě používán\n",ee)
 
                 #///////////////////////////////////////////////////// 7/29/2025 //////////////////////////////////////////////////////////////////
                             # if newer_files_checked > self.files_to_keep:

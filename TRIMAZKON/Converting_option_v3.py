@@ -100,9 +100,9 @@ class whole_converting_function:
                     self.make_dir(self.folder_with_jpg,self.path_given)
                     command = command + " /o:" + "\"" + self.path_given + self.folder_with_jpg+ "\"" + " /f:jpg"
                 
-                if silent == None:
-                    self.output.append(f"- Bylo konvertováno: {self.converted_files-1} souborů do formátu: {which_format}")
-                    self.output.append("- Konvertování bylo dokončeno\n")
+                # if silent == None:
+                #     self.output.append(f"- Bylo konvertováno: {self.converted_files-1} souborů do formátu: {which_format}")
+                #     self.output.append("- Konvertování bylo dokončeno\n")
                 
                 #if self.view_in_browser == True:
                 command += " /h" #nezobrazovat nacitani
@@ -119,6 +119,9 @@ class whole_converting_function:
 
     def main(self):
         #output.append(f"\nProbíhá konvertování souborů v cestě: {self.path_given}\n\n")
+        silent=None
+        which_format = self.output_img_format
+
         if self.view_in_browser == True:
             found_files = []
             if type(self.selected_file) == list:
@@ -126,12 +129,15 @@ class whole_converting_function:
                     found_files.append(self.selected_file[i])
             else:
                 found_files.append(self.selected_file)
+            silent=True
+            which_format = "bmp"
             cmd_command = self.form_console_command(found_files,"bmp",True)
             
             if cmd_command != False:
                 subprocess.run(cmd_command, cwd=self.path_given) #spusteni cmd prompt
         else:
             found_files = self.get_files_to_convert()
+            
             if self.output_img_format == "jpg":
                 cmd_command = self.form_console_command(found_files,"jpg")
             if self.output_img_format == "bmp":
@@ -140,5 +146,8 @@ class whole_converting_function:
             if cmd_command != False:
                 self.processing_time = (self.converted_files-1)/10
                 subprocess.run(cmd_command, cwd=self.path_given) #spusteni cmd prompt
+        if silent == None:
+            self.output.append(f"- Bylo konvertováno: {self.converted_files-1} souborů do formátu: {which_format}")
+            self.output.append("- Konvertování bylo dokončeno\n")
         self.finish = True
 

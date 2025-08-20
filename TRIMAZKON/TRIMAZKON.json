@@ -25,7 +25,9 @@
         "path_history_list": [
             "D:/515/St_30_old/"
         ],
-        "path_history_list_conv": []
+        "path_history_list_conv": [
+            "C:/Users/jakub.hlavacek.local/Documents/OMRON FZ/USBDisk/514/160/25_08_05/826_4_zn/WMZ-04432-002A/position_4_08_05/NG/"
+        ]
     },
     "del_settings": {
         "supported_formats_deleting": [
@@ -42,6 +44,7 @@
         ],
         "to_delete_dir_name": "Ke_smazani",
         "path_history_list": [
+            "C:/Users/jakub.hlavacek.local/Documents/OMRON FZ/USBDisk/514/160/25_08_05/826_4_zn/WMZ-04432-002A/position_4_08_05/NG/Konvertovane_BMP/",
             "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/"
         ]
     },

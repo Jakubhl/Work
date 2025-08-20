@@ -1619,6 +1619,7 @@ class Tools:
             geometry_string = "1000x1000+" + str(int(self.root.winfo_screenwidth()/2)-500)+ "+" + str(int(self.root.winfo_screenheight()/2)-500)
             self.top.geometry(geometry_string)
             self.top.overrideredirect(True)
+            self.top.attributes('-toolwindow', True)
             self.top.wm_attributes('-alpha', 0.8)  # 0.0 = úplně průhledné, 1.0 = neprůhledné
             self.top.wm_attributes("-transparentcolor", self.top["bg"])
             self.original_image = Image.open(Tools.resource_path("images/loading_xx.png")).resize((150, 150))

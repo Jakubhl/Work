@@ -1332,9 +1332,17 @@ if not open_image_only:
                 if font == None:
                     font = ("Arial",16)
                 if delete_line != None:
-                    text_widget.delete("current linestart","current lineend")
-                    text_widget.tag_configure(color, foreground=color,font=font)
-                    text_widget.insert("current lineend",text, color)
+                    if sameline:
+                        # text_widget.delete("end-1c linestart", "end-1c lineend")
+                        # text_widget.tag_configure(color, foreground=color,font=font)
+                        # text_widget.insert("end-1c", text, color)
+                        text_widget.delete("3.0", "3.end")
+                        text_widget.tag_configure(color, foreground=color,font=font)
+                        text_widget.insert("3.0", text,color)
+                    else:
+                        text_widget.delete("current linestart","current lineend")
+                        text_widget.tag_configure(color, foreground=color,font=font)
+                        text_widget.insert("current lineend",text, color)
                 else:
                     text_widget.tag_configure(color, foreground=color,font=font)
                     if no_indent:
@@ -1882,9 +1890,11 @@ if not open_image_only:
 
             def create_window(self):
                 self.top = customtkinter.CTkToplevel(self.root)
+                # self.top.transient(self.root)
                 geometry_string = "1000x1000+" + str(int(self.root.winfo_screenwidth()/2)-500)+ "+" + str(int(self.root.winfo_screenheight()/2)-500)
                 self.top.geometry(geometry_string)
                 self.top.overrideredirect(True)
+                self.top.attributes('-toolwindow', True)
                 self.top.wm_attributes('-alpha', 0.8)  # 0.0 = úplně průhledné, 1.0 = neprůhledné
                 self.top.wm_attributes("-transparentcolor", self.top["bg"])
                 self.original_image = Image.open(Tools.resource_path("images/loading_xx.png")).resize((150, 150))
@@ -1894,7 +1904,7 @@ if not open_image_only:
                 self.loading_label.pack(expand=True)
                 
             def rotate_image(self):
-                self.angle +=10
+                self.angle -=10
                 rotated = self.original_image.rotate(self.angle)
                 tk_rotated = ImageTk.PhotoImage(rotated)
                 self.loading_label.configure(image=tk_rotated)
@@ -5649,12 +5659,13 @@ if not open_image_only:
                 selected_format = "jpg"
 
             def trigger_progress_bar(interval):
-                for i in range(1, 101):
-                    time.sleep(interval/100)
-                    self.loading_bar.set(value = i/100)
-                    self.root.update_idletasks()
-                    root.update_idletasks()
-                    self.bottom_frame2.update_idletasks()
+                # for i in range(1, 101):
+                    # time.sleep(interval/100)
+                # self.loading_bar.set(value = i/100)
+                self.loading_bar.set(value = interval)
+                self.root.update_idletasks()
+                root.update_idletasks()
+                self.bottom_frame2.update_idletasks()
 
             def call_converting_main(whole_instance):
                 whole_instance.main()
@@ -5671,17 +5682,27 @@ if not open_image_only:
             completed =False
             condition_met = False
             previous_len = 0
+            interval_passed = 0
+            new_row_made = False
+            loading_instance = Tools.loading_routine(self.root,no_loop=True)
+            loading_instance.main() 
+
             while not running_program.finish or completed == False:
                 time.sleep(0.05)
+                interval_passed+=0.05
+                # trigger_progress_bar(running_program.processing_time/interval_passed)
+                if self.loading_bar.get() < 0.95:
+                    self.loading_bar.set(value =interval_passed/running_program.processing_time)
+                loading_instance.rotate_image()
                 if running_program.processing_time != 0 and not condition_met:
-                    new_row = "Očekávaná doba procesu: " + str(running_program.processing_time) + " s"
+                    new_row = "Očekávaná doba procesu: " + str(running_program.processing_time) + " s (může se lišit, závisí na počtu subobrázků)"
                     Tools.add_colored_line(self.console,str(new_row),"white")
-                    run_background_loading = threading.Thread(target=trigger_progress_bar(running_program.processing_time))
-                    run_background_loading.start()
+                    # run_background_loading = threading.Thread(target=trigger_progress_bar(running_program.processing_time))
+                    # run_background_loading.start()
                     condition_met = True
                 if int(len(running_program.output)) > previous_len:
                     new_row = str(running_program.output[previous_len])
-                    if "Konvertování bylo dokončeno" in new_row:
+                    if "bylo dokon" in new_row:
                         Tools.add_colored_line(self.console,str(new_row),"green",("Arial",15,"bold"))
                     elif "cesta neobsahuje" in new_row:
                         Tools.add_colored_line(self.console,str(new_row),"red",("Arial",15,"bold"))
@@ -5694,9 +5715,19 @@ if not open_image_only:
                 self.console.see(tk.END)
 
                 if running_program.finish and (int(len(running_program.output)) == previous_len):
+                    print(running_program.output,previous_len)
                     completed = True
-                
+
+                if new_row_made:
+                    Tools.add_colored_line(self.console,f"    > Čas konvertování: {interval_passed:.2f}","white",sameline=True,delete_line=True)
+                else:
+                    Tools.add_colored_line(self.console,f"    > Čas konvertování: {interval_passed:.2f}\n","white",sameline=True,delete_line=True)
+                    new_row_made=True
+            
+            self.loading_bar.set(value = 1)
+            print("completeeed: ", interval_passed)
             self.console.update_idletasks()
+            loading_instance.close_all()
             run_background.join()
 
         def start(self):# Ověřování cesty, init, spuštění

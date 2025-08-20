@@ -63,10 +63,10 @@
         "path_history_list": []
     },
     "ip_settings": {
-        "default_ip_interface": 2,
+        "default_ip_interface": 1,
         "favorite_ip_window_status": 0,
         "disk_or_ip_window": 0,
-        "default_window_size": 0,
+        "default_window_size": 1,
         "init_disk_refresh": 1,
         "editable_notes": 1,
         "disk_persistent": 1,
