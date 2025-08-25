@@ -466,7 +466,8 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
   """ 
   Katalog:
     - opravy u konfigurace kontroleru
-    - možnost pracovat offline - db ze serveru se automaticky zálohuje do excelu
+    - možnost pracovat offline - db ze serveru se automaticky 
+    zálohuje do excelu
     - přidány loading animace
   TRIMAZKON - mazání, třídění
     - přidána loading animace
