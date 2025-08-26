@@ -1112,7 +1112,10 @@ TRIMAZKON - Katalog - export do databázové tabulky
 
 
 
-ošetřit mazání proti tomu, když je soubor otevřený - stačí složka
+ošetřit mazání proti tomu, když je soubor otevřený - stačí když je jen otevřená složka
+vyzkoušet tray s loading rutinou (ip a mazání)
+hlášku přihlášen v katalogu dát až po načítací animaci
+když dám v katalogu nová stanice - je nadepsáno editovat stanici
 
 
 

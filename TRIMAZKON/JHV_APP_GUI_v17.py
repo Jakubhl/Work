@@ -1926,7 +1926,6 @@ if not open_image_only:
                 self.top.grab_release()
                 self.top.destroy()
 
-
 class system_pipeline_communication: # vytvoření pipeline serveru s pipe názvem TRIMAZKON_pipe_ + pid (id systémového procesu)
     """
     aby bylo možné posílat běžící aplikaci parametry:
@@ -2580,12 +2579,13 @@ if not open_image_only:
 
             frame_with_logo = customtkinter.CTkFrame(master=self.root,corner_radius=0)
             # logo = customtkinter.CTkImage(Image.open(initial_path+"images/logo.png"),size=(1200, 100))
-            logo = customtkinter.CTkImage(Image.open(Tools.resource_path("images/logo.png")),size=(1200, 100))
+            # logo = customtkinter.CTkImage(Image.open(Tools.resource_path("images/logo.png")),size=(1200, 100))
+            logo = customtkinter.CTkImage(Image.open(Tools.resource_path("images/jhv_logo.png")),size=(300, 100))
             image_logo = customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
             menu_upper_frame = customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#212121")
             frame_with_buttons_right = customtkinter.CTkFrame(master=menu_upper_frame,corner_radius=0)
             frame_with_buttons = customtkinter.CTkFrame(master=menu_upper_frame,corner_radius=0)
-            frame_with_logo.pack(pady=0,padx=0,fill="both",expand=False,side = "top")
+            frame_with_logo.pack(pady=0,padx=0,fill="x",side = "top")
             image_logo.pack()
             IB_as_def_browser_path = None
             manage_images =         customtkinter.CTkButton(master = frame_with_buttons, width = 400,height=100, text = "Obrázky (správa)", command = lambda: self.call_sorting_option(),font=("Arial",25,"bold"))
@@ -5641,7 +5641,10 @@ if not open_image_only:
             """
             for frames in list_of_frames:
                 frames.pack_forget()
-                frames.grid_forget()
+                try:
+                    frames.grid_forget()
+                except Exception:
+                    pass
                 frames.destroy()
 
             if function == "menu":
@@ -5800,33 +5803,36 @@ if not open_image_only:
                 # run_conv_background.start()
                 # run_conv_background.join()
 
-            frame_with_logo =       customtkinter.CTkFrame(master=self.root,corner_radius=0)
-            logo =                  customtkinter.CTkImage(Image.open(Tools.resource_path("images/logo.png")),size=(1200, 100))
+            header_frame =          customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#212121")
+            top_frame =             customtkinter.CTkFrame(master=header_frame,corner_radius=0,fg_color="#212121")
+            frame_with_logo =       customtkinter.CTkFrame(master=top_frame,corner_radius=0)
+            logo =                  customtkinter.CTkImage(Image.open(Tools.resource_path("images/jhv_logo.png")),size=(300, 100))
             image_logo =            customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
-            frame_with_logo.        pack(pady=0,padx=0,fill="both",expand=False,side = "top")
+            frame_with_logo.        pack(pady=0,padx=0,expand=False,side = "right",anchor="e")
+            image_logo.             pack(pady = 0,padx =(0),ipadx = 20,ipady = 10,expand=False)
             image_logo.pack()
-            frame_with_cards =      customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=100)
+            frame_with_cards =      customtkinter.CTkFrame(master=top_frame,corner_radius=0,fg_color="#636363",height=100)
             self.frame_path_input = customtkinter.CTkFrame(master=self.root,corner_radius=0)
             self.bottom_frame2 =    customtkinter.CTkFrame(master=self.root,corner_radius=0)
             self.bottom_frame1 =    customtkinter.CTkFrame(master=self.root,height = 80,corner_radius=0)
-            frame_with_cards.       pack(pady=0,padx=0,fill="both",expand=False,side = "top")
-            self.frame_path_input.  pack(pady=(0,5),padx=5,fill="both",expand=False,side = "top")
-
-            list_of_frames = [self.frame_path_input,self.bottom_frame1,self.bottom_frame2,frame_with_cards,frame_with_logo]
+            top_frame.              pack(pady=0,padx=0,fill="x",side = "top")
+            list_of_frames = [header_frame,self.frame_path_input,self.bottom_frame1,self.bottom_frame2,frame_with_cards,frame_with_logo]
             shift_const = 250
-            menu_button =       customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "MENU",                  command =  lambda: self.call_extern_function(list_of_frames,function="menu"),
+            menu_button =           customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "MENU",                  command =  lambda: self.call_extern_function(list_of_frames,function="menu"),
                                                         font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
-            sorting_button =    customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Třídění souborů",      command =  lambda: self.call_extern_function(list_of_frames,function="sorting"),
+            sorting_button =        customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Třídění souborů",      command =  lambda: self.call_extern_function(list_of_frames,function="sorting"),
                                                         font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
-            deleting_button =   customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Mazání souborů",        command =  lambda: self.call_extern_function(list_of_frames,function="deleting"),
+            deleting_button =       customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Mazání souborů",        command =  lambda: self.call_extern_function(list_of_frames,function="deleting"),
                                                         font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
-            converting_button = customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Konvertování souborů",
+            converting_button =     customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Konvertování souborů",
                                                         font=("Arial",20,"bold"),corner_radius=0,fg_color="#212121",hover_color="#212121")
-            menu_button.        grid(column = 0,row=0,pady = (10,0),padx =260-shift_const,sticky = tk.W)
-            sorting_button.     grid(column = 0,row=0,pady = (10,0),padx =520-shift_const,sticky = tk.W)
-            deleting_button.    grid(column = 0,row=0,pady = (10,0),padx =780-shift_const,sticky = tk.W)
-            converting_button.  grid(column = 0,row=0,pady = (10,0),padx =1040-shift_const,sticky = tk.W)
-
+            menu_button.            pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
+            sorting_button.         pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
+            deleting_button.        pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
+            converting_button.      pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
+            frame_with_cards.       pack(pady=0,padx=0,fill="both",expand=True,side = "left",anchor="w")
+            header_frame.           pack(pady=0,padx=0,fill="both",side = "top",expand=False)
+            self.frame_path_input.  pack(pady=(0,5),padx=5,fill="both",expand=False,side = "top")
             self.checkbox_bmp =     customtkinter.CTkCheckBox(master = self.bottom_frame1, text = "Konvertovat do formátu .bmp",command=self.selected_bmp,font=("Arial",16,"bold"))
             self.checkbox_jpg =     customtkinter.CTkCheckBox(master = self.bottom_frame1, text = "Konvertovat do formátu .jpg",command=self.selected_jpg,font=("Arial",16,"bold"))
             self.checkbox_bmp.      pack(pady =10,padx=10,anchor ="w")
@@ -6859,7 +6865,7 @@ if not open_image_only:
             logo =                  customtkinter.CTkImage(Image.open(Tools.resource_path("images/jhv_logo.png")),size=(300, 100))
             image_logo =            customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
             frame_with_logo.        pack(pady=0,padx=0,expand=False,side = "left",anchor="e")
-            image_logo.             pack(pady = 0,padx =(15,0),ipadx = 20,ipady = 30,expand=False)
+            image_logo.             pack(pady = 0,padx =0,ipadx = 20,ipady = 10,expand=False)
             top_frame.              pack(pady=0,padx=0,fill="x",side = "top")
 
             frame_path_input =      customtkinter.CTkFrame(master=header_frame,corner_radius=0)
@@ -7512,22 +7518,24 @@ if not open_image_only:
                             
                     path_context_menu.tk_popup(context_menu_button.winfo_rootx(),context_menu_button.winfo_rooty()+50)
 
-            frame_with_logo =       customtkinter.CTkFrame(master=self.root,corner_radius=0)
-            logo =                  customtkinter.CTkImage(Image.open(Tools.resource_path("images/logo.png")),size=(1200, 100))
-            image_logo =            customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
-            frame_with_logo.        pack(pady=0,padx=0,fill="both",expand=False,side = "top")
-            image_logo.pack()
-            frame_with_cards = customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363",height=100)
-            frame2 =        customtkinter.CTkFrame(master=self.root,corner_radius=0)
-            upper_frame =   customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363")
-            self.frame3 =   customtkinter.CTkFrame(master=upper_frame,corner_radius=0,width=400,height = 290,fg_color="#212121")
-            self.frame4 =   customtkinter.CTkScrollableFrame(master=upper_frame,corner_radius=0,fg_color="#212121")
-            self.frame5 =   customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
-            self.frame6 =   customtkinter.CTkFrame(master=upper_frame,corner_radius=0,fg_color="#212121")
+            header_frame =      customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#212121")
+            top_frame =         customtkinter.CTkFrame(master=header_frame,corner_radius=0,fg_color="#212121")
+            frame_with_logo =   customtkinter.CTkFrame(master=top_frame,corner_radius=0)
+            logo =              customtkinter.CTkImage(Image.open(Tools.resource_path("images/jhv_logo.png")),size=(300, 100))
+            image_logo =        customtkinter.CTkLabel(master = frame_with_logo,text = "",image =logo)
+            frame_with_logo.    pack(pady=0,padx=0,expand=False,side = "right",anchor="e")
+            image_logo.         pack(pady = 0,padx =(0),ipadx = 20,ipady = 10,expand=False)
+            frame_with_cards =  customtkinter.CTkFrame(master=top_frame,corner_radius=0,fg_color="#636363",height=100)
+            frame2 =            customtkinter.CTkFrame(master=self.root,corner_radius=0)
+            upper_frame =       customtkinter.CTkFrame(master=self.root,corner_radius=0,fg_color="#636363")
+            self.frame3 =       customtkinter.CTkFrame(master=upper_frame,corner_radius=0,width=400,height = 290,fg_color="#212121")
+            self.frame4 =       customtkinter.CTkScrollableFrame(master=upper_frame,corner_radius=0,fg_color="#212121")
+            self.frame5 =       customtkinter.CTkScrollableFrame(master=self.root,corner_radius=0)
+            self.frame6 =       customtkinter.CTkFrame(master=upper_frame,corner_radius=0,fg_color="#212121")
+            top_frame.          pack(pady=0,padx=0,fill="x",side = "top")
             self.height_of_frame6 = 290
             self.width_of_frame6 = 370
-            list_of_frames = [upper_frame,frame2,self.frame3,self.frame4,self.frame5,self.frame6,frame_with_cards,frame_with_logo]
-            shift_const = 250
+            list_of_frames = [header_frame,upper_frame,frame2,self.frame3,self.frame4,self.frame5,self.frame6,frame_with_cards,frame_with_logo]
             menu_button =       customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "MENU",                  command =  lambda: self.call_extern_function(list_of_frames,function="menu"),
                                                         font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
             sorting_button =    customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Třídění souborů",
@@ -7536,45 +7544,45 @@ if not open_image_only:
                                                         font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
             converting_button = customtkinter.CTkButton(master = frame_with_cards, width = 250,height=50,text = "Konvertování souborů",  command =  lambda: self.call_extern_function(list_of_frames,function="converting"),
                                                         font=("Arial",20,"bold"),corner_radius=0,fg_color="black",hover_color="#212121")
-            menu_button.        grid(column = 0,row=0,pady = (10,0),padx =260-shift_const,sticky = tk.W)
-            sorting_button.     grid(column = 0,row=0,pady = (10,0),padx =520-shift_const,sticky = tk.W)
-            deleting_button.    grid(column = 0,row=0,pady = (10,0),padx =780-shift_const,sticky = tk.W)
-            converting_button.  grid(column = 0,row=0,pady = (10,0),padx =1040-shift_const,sticky = tk.W)
-
+            menu_button.        pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
+            sorting_button.     pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
+            deleting_button.    pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
+            converting_button.  pack(pady = (10,0),padx =(10,0),anchor = "s",side = "left")
+            frame_with_cards.   pack(pady=0,padx=0,fill="both",expand=True,side = "left",anchor="w")
+            header_frame.       pack(pady=0,padx=0,fill="both",side = "top",expand=False)
             context_menu_button  =  customtkinter.CTkButton(master =frame2, width = 50,height=50, text = "V",font=("Arial",20,"bold"),corner_radius=0,fg_color="#505050")
-            self.path_set = customtkinter.CTkEntry(master = frame2,height=50,font=("Arial",18),placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)",corner_radius=0)
-            tree =          customtkinter.CTkButton(master = frame2,height=50,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"),corner_radius=0)
-            button_save_path = customtkinter.CTkButton(master = frame2,height=50,text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get(),"sort_conv_settings"),font=("Arial",20,"bold"),corner_radius=0)
+            self.path_set =     customtkinter.CTkEntry(master = frame2,height=50,font=("Arial",18),placeholder_text="Zadejte cestu k souborům z kamery (kde se nacházejí složky se soubory nebo soubory přímo)",corner_radius=0)
+            tree =              customtkinter.CTkButton(master = frame2,height=50,text = "EXPLORER", command = self.call_browseDirectories,font=("Arial",20,"bold"),corner_radius=0)
+            button_save_path =  customtkinter.CTkButton(master = frame2,height=50,text = "Uložit cestu", command = lambda: Tools.save_path(self.console,self.path_set.get(),"sort_conv_settings"),font=("Arial",20,"bold"),corner_radius=0)
             button_open_setting = customtkinter.CTkButton(master = frame2,height=50,width=50, text = "⚙️", command = lambda: Advanced_option(self.root,windowed=True,spec_location="sorting_option"),font=(None,20),corner_radius=0)
             context_menu_button.pack(pady = 10,padx =(10,0),anchor ="w",side="left")
-            self.path_set.  pack(pady = 10,padx =(0,0),anchor ="w",side="left",fill="x",expand = True)
-            tree.           pack(pady = 10,padx =5,anchor ="w",side="left")
-            button_save_path.pack(pady = 10,padx =0,anchor ="w",side="left")
+            self.path_set.      pack(pady = 10,padx =(0,0),anchor ="w",side="left",fill="x",expand = True)
+            tree.               pack(pady = 10,padx =5,anchor ="w",side="left")
+            button_save_path.   pack(pady = 10,padx =0,anchor ="w",side="left")
             button_open_setting.pack(pady = 10,padx =(5,10),anchor ="w",side="left")
             context_menu_button.bind("<Button-1>", call_path_context_menu)
-
-            self.checkbox =  customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Třídit podle typů souborů",command = self.selected)
-            self.checkbox2 = customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Třídit podle čísla funkce (ID)",command = self.selected2)
-            self.checkbox3 = customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Třídit podle čísla kamery",command = self.selected3)
-            self.checkbox4 = customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Třídit podle čísla funkce i kamery",command = self.selected4)
-            self.checkbox5 = customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Najít dvojice (soubory se stejným ID, v řadě za sebou)",command = self.selected5)
-            self.checkbox.  pack(pady =12,padx=10,anchor ="w")
-            self.checkbox2. pack(pady =12,padx=10,anchor ="w")
-            self.checkbox3. pack(pady =12,padx=10,anchor ="w")
-            self.checkbox4. pack(pady =12,padx=10,anchor ="w")
-            self.checkbox5. pack(pady =12,padx=10,anchor ="w")
-            checkboxes =   customtkinter.CTkFrame(master=self.frame4,corner_radius=0,fg_color="#212121")
+            self.checkbox =     customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Třídit podle typů souborů",command = self.selected)
+            self.checkbox2 =    customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Třídit podle čísla funkce (ID)",command = self.selected2)
+            self.checkbox3 =    customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Třídit podle čísla kamery",command = self.selected3)
+            self.checkbox4 =    customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Třídit podle čísla funkce i kamery",command = self.selected4)
+            self.checkbox5 =    customtkinter.CTkCheckBox(master = self.frame3,font=("Arial",16), text = "Najít dvojice (soubory se stejným ID, v řadě za sebou)",command = self.selected5)
+            self.checkbox.      pack(pady =12,padx=10,anchor ="w")
+            self.checkbox2.     pack(pady =12,padx=10,anchor ="w")
+            self.checkbox3.     pack(pady =12,padx=10,anchor ="w")
+            self.checkbox4.     pack(pady =12,padx=10,anchor ="w")
+            self.checkbox5.     pack(pady =12,padx=10,anchor ="w")
+            checkboxes =        customtkinter.CTkFrame(master=self.frame4,corner_radius=0,fg_color="#212121")
             self.one_subfolder = customtkinter.CTkCheckBox(master = checkboxes,font=("Arial",16), text = "Projít 1 subsložku?",command = self.one_subfolder_checked)
-            self.checkbox6   = customtkinter.CTkCheckBox(master = checkboxes,font=("Arial",16), text = "Projít 2 subsložky?",command = self.two_subfolders_checked)
+            self.checkbox6   =  customtkinter.CTkCheckBox(master = checkboxes,font=("Arial",16), text = "Projít 2 subsložky?",command = self.two_subfolders_checked)
             self.checkbox_safe_mode = customtkinter.CTkCheckBox(master = checkboxes,font=("Arial",16), text = "Rozbalit poslední složky?",command = self.safe_mode_checked)
-            self.images2     = customtkinter.CTkLabel(master = self.frame4,text = "",height=180)
-            self.console2    = customtkinter.CTkLabel(master = self.frame4,text = " ",font=("Arial",18,"bold"))
-            self.one_subfolder.pack(pady =10,padx=10,anchor="w",side=tk.LEFT)
-            self.checkbox6. pack(pady =10,padx=10,anchor="w",side=tk.LEFT)
+            self.images2     =  customtkinter.CTkLabel(master = self.frame4,text = "",height=180)
+            self.console2    =  customtkinter.CTkLabel(master = self.frame4,text = " ",font=("Arial",18,"bold"))
+            self.one_subfolder. pack(pady =10,padx=10,anchor="w",side=tk.LEFT)
+            self.checkbox6.     pack(pady =10,padx=10,anchor="w",side=tk.LEFT)
             self.checkbox_safe_mode.pack(pady =10,padx=10,anchor="w",side=tk.LEFT)
-            checkboxes.   pack(side="top",anchor = "w",padx=(10,0))
-            self.images2.   pack(side="top",anchor = "w",padx=(10,0),pady = 10)
-            self.console2.  pack(pady =5,padx=10,side="top",anchor = "w")
+            checkboxes.         pack(side="top",anchor = "w",padx=(10,0))
+            self.images2.       pack(side="top",anchor = "w",padx=(10,0),pady = 10)
+            self.console2.      pack(pady =5,padx=10,side="top",anchor = "w")
             self.images2.propagate(0)
             self.checkbox_safe_mode.select()
             info_frame =        customtkinter.CTkFrame(master=self.frame5,height=250,corner_radius=0,fg_color="#212121")
@@ -7588,20 +7596,17 @@ if not open_image_only:
             button =            customtkinter.CTkButton(master = self.frame5, text = "SPUSTIT", command = self.start,font=("Arial",20,"bold"))
             self.loading_bar =  customtkinter.CTkProgressBar(master = self.frame5, mode='determinate',width = 800,height =20,progress_color="green",corner_radius=0)
             self.console =      tk.Text(self.frame5, wrap="word",background="black",font=("Arial",16),state=tk.DISABLED,relief="flat")
-
             button.             pack(pady =12,padx=10)
             button.             _set_dimensions(300,60)
             self.loading_bar.   pack(pady = 5,padx = 5)
             self.loading_bar.   set(value = 0)
             self.console.       pack(pady =10,padx=(10,0),side="left",fill="both",expand=True)
-            frame_with_cards.pack(pady=0,padx=0,fill="x",expand=False,side = "top")
-            frame2.         pack(pady=0,padx=5,fill="both",expand=False,side = "top")
-            self.frame3.    pack(pady=5,padx=5,fill="y",expand=False,side="left")
-            self.frame6.    pack(pady=5,padx=0,fill="y",expand=False,side="left")
-            self.frame4.    pack(pady=5,padx=5,fill="both",expand=True,side="left")
-            upper_frame.    pack(pady=0,padx=5,fill="x",expand=False,side="top")
-
-            self.frame5.    pack(pady=0,padx=5,fill="both",expand=True,side = "top")
+            frame2.             pack(pady=0,padx=5,fill="x",expand=False,side = "top")
+            self.frame3.        pack(pady=5,padx=5,fill="y",expand=False,side="left")
+            self.frame6.        pack(pady=5,padx=0,fill="y",expand=False,side="left")
+            self.frame4.        pack(pady=5,padx=5,fill="both",expand=True,side="left")
+            upper_frame.        pack(pady=0,padx=5,fill="x",expand=False,side="top")
+            self.frame5.        pack(pady=0,padx=5,fill="both",expand=True,side = "top")
             scrollbar = tk.Scrollbar(self.frame5, command=self.console.yview)
             scrollbar.pack(pady =10,side="right", fill="y")
             self.console.config(yscrollcommand=scrollbar.set)
