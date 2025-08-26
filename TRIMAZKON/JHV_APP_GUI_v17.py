@@ -49,7 +49,7 @@ class initial_tools:
         else:
             return path
 
-testing = True
+testing = False
 
 global_recources_load_error = False
 global_licence_load_error = False
@@ -81,7 +81,7 @@ if not open_image_only:
     import Sorting_option_v5 as Trideni
     import Deleting_option_v2 as Deleting
     import Converting_option_v3 as Converting
-    import catalogue_maker_v8_id_dictionary as Catalogue
+    import catalogue_maker_v9 as Catalogue
     import sharepoint_download as download_database
     import IP_setting_v6 as IP_setting
     import trimazkon_tray_v5 as trimazkon_tray
@@ -104,6 +104,7 @@ if not open_image_only:
     # import struct
     import winreg
     import pyperclip
+    import requests
 
     class Subwindows:
         @classmethod
@@ -728,6 +729,104 @@ if not open_image_only:
             text_widget =       customtkinter.CTkTextbox(master = text_frame,font=("Arial",22),corner_radius=0,wrap= "word",height=300)
             for rows in given_log:
                 text_widget.insert(tk.END,str(rows)+"\n")
+
+            console =           tk.Text(master = text_frame,background="black", wrap="none",borderwidth=0,height=0,state=tk.DISABLED,font=("Arial",20))
+            text_widget.        pack(pady=(10,0),padx=10,anchor="w",side = "top",fill="both")
+            console.            pack(pady=(10,0),padx=10,anchor="w",side = "top",fill="x")
+            text_frame.         pack(pady=0,padx=0,anchor="w",side = "top",fill="both",expand = True)
+            text_widget.        configure(state="disabled")
+            button_frame =      customtkinter.CTkFrame(master = child_root,corner_radius=0)
+            button_close =      customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+            button_dwnld =      customtkinter.CTkButton(master = button_frame,text = "Stáhnout novou verzi",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  download_the_app())
+            button_idc =        customtkinter.CTkButton(master = button_frame,text = "Tato verze mě nezajímá",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  ignore_version())
+            button_close.       pack(pady = 10, padx = (0,10),anchor="e",side="right")
+            button_dwnld.       pack(pady = 10, padx = (0,10),anchor="e",side="right")
+            if not force_update:
+                button_idc.         pack(pady = 10, padx = (0,10),anchor="e",side="right")
+            button_frame.       pack(pady=0,padx=0,anchor="w",side = "top",fill="x")
+
+            if language_given == "en":
+                button_close.configure(text = "Close")
+                button_dwnld.configure(text = "Download the new version")
+                button_idc.configure(text = "I don't care about this version")
+            child_root.update()
+            child_root.update_idletasks()
+            child_root.geometry(f"800x{child_root._current_height}")
+            child_root.focus()
+            child_root.focus_force()
+            child_root.grab_set()
+
+        @classmethod
+        def download_new_version_window_github(cls,new_version,given_log,given_url,language_given="cz",force_update = False):
+            def close_prompt(child_root):
+                child_root.grab_release()
+                child_root.destroy()
+
+            def download_the_app():
+                def call_installer(msi_path):
+                    cmd = f'timeout /t 2 && {msi_path}'
+                    subprocess.Popen(["cmd.exe", "/c", cmd],
+                                    creationflags=subprocess.CREATE_BREAKAWAY_FROM_JOB | subprocess.CREATE_NO_WINDOW)
+
+                url = given_url
+                filename = url.split("/")[-1]
+                print(f"Stahuji {filename} ...")
+                response = requests.get(url, stream=True)
+                if response.status_code == 200:
+                    os.makedirs(Tools.resource_path("Installers"), exist_ok=True)
+                    msi_path = Tools.resource_path(f"Installers/{filename}")
+                    print("msi path: ",msi_path)
+                    with open(msi_path, "wb") as local_file:
+                        for chunk in response.iter_content(chunk_size=8192):
+                            if chunk:  # některé bloky můžou být prázdné keep-alive
+                                local_file.write(chunk)
+
+                    print(f"Soubor byl úspěšně stažen z {url}")
+                    if language_given == "en":
+                        Tools.add_colored_line(console,"New installer successfully downloaded","green",delete_line=True)
+                    else:
+                        Tools.add_colored_line(console,"Nový installer byl úspěšně stažen","green",delete_line=True)
+                    call_installer(msi_path)
+                    child_root.after(1000,lambda: Tools.terminate_pid(os.getpid())) #vypnout thread i s tray aplikací
+                    return True
+                else:
+                    print(f"Nepodařilo se stáhnout {url}: {response.status_code} - {response.text}")
+                    if language_given == "en":
+                        Tools.add_colored_line(console,f"New installer download failed {url}: {response.status_code} - {response.text}","red",delete_line=True)
+                    else:
+                        Tools.add_colored_line(console,f"Nový installer se nepodařilo stáhnout {url}: {response.status_code} - {response.text}","red",delete_line=True)
+                    return False
+
+            def ignore_version():
+                Tools.save_to_json_config(str(new_version),"app_settings","ignored_version")
+                close_prompt(child_root)
+                
+            prompt_message1 = f"Je k dispozici nová verze aplikace: {new_version} !"
+            prompt_message2 = f"(Instalace nové verze zachová všechna uživatelská nastavení)\nUpgrade log:"
+            title_message = "Upozornění"
+            if language_given == "en":
+                prompt_message1 = f"New app version available: {new_version} !"
+                prompt_message2 = f"(Installing the new version will preserve all user settings)\nUpgrade log:"
+                title_message = "Notice"
+                
+            child_root = customtkinter.CTkToplevel(fg_color="#212121")
+            child_root.after(200, lambda: child_root.iconbitmap(app_icon))
+            child_root.title(title_message)
+            top_frame =         customtkinter.CTkFrame(master = child_root,corner_radius=0,fg_color="#212121")
+            warning_icon =      customtkinter.CTkLabel(master = top_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/warning.png")),size=(50,50)),bg_color="#212121")
+            label_frame =       customtkinter.CTkFrame(master = top_frame,corner_radius=0,fg_color="#212121")
+            proceed_label =     customtkinter.CTkLabel(master = label_frame,text = prompt_message1,font=("Arial",25,"bold"),anchor="w",justify="left")
+            proceed_label2 =    customtkinter.CTkLabel(master = label_frame,text = prompt_message2,font=("Arial",20),anchor="w",justify="left")
+            proceed_label.      pack(pady=(5,0),padx=10,anchor="w",side = "top")
+            proceed_label2.     pack(pady=(5,0),padx=10,anchor="w",side = "top")
+            warning_icon.       pack(pady=30,padx=30,anchor="w",side = "left")
+            label_frame.        pack(pady=0,padx=0,anchor="w",side = "right",fill="x")
+            top_frame.          pack(pady=0,padx=0,anchor="w",side = "top")
+            text_frame =        customtkinter.CTkFrame(master = child_root,corner_radius=0,fg_color="#212121")
+            text_widget =       customtkinter.CTkTextbox(master = text_frame,font=("Arial",22),corner_radius=0,wrap= "word",height=300)
+            # for rows in given_log:
+            #     text_widget.insert(tk.END,str(rows)+"\n")
+            text_widget.insert(tk.END,given_log)
 
             console =           tk.Text(master = text_frame,background="black", wrap="none",borderwidth=0,height=0,state=tk.DISABLED,font=("Arial",20))
             text_widget.        pack(pady=(10,0),padx=10,anchor="w",side = "top",fill="both")
@@ -1880,6 +1979,53 @@ if not open_image_only:
             else:
                 return "up to date"
 
+        @classmethod
+        def check_for_new_app_version_github(cls,language_given = "cz",force_update = False):
+            """
+            - porovná verze
+            - pokud novější, stáhne log, zobrazí okno
+            """
+            current_app_version = app_version.replace(".","")
+            current_app_version = int(current_app_version)
+            print("current version: ",current_app_version)
+            repo_owner = "Jakubhl"
+            repo = "Work"
+
+            url = f"https://api.github.com/repos/{repo_owner}/{repo}/releases/latest"
+            response = requests.get(url)
+            latest_version = 0
+            if response.status_code == 200:
+                data = response.json()
+                print("Latest version:", data["tag_name"])
+                latest_version = int(data["tag_name"].replace("v", "").replace(".", ""))
+                print("Release name:", data["name"])
+                print("\nRelease notes:\n", data["body"])
+                print("\nAssets:")
+                for asset in data["assets"]:
+                    print("-", asset["name"], "->", asset["browser_download_url"])
+            else:
+                print("Error:", response.status_code, response.text)
+                return "up to date"
+            
+            if latest_version > current_app_version:
+                print("new_version_available")
+                if language_given == "en":
+                    root.title(f"{app_name} v_{app_version} (version is not up to date)")
+                else:
+                    root.title(f"{app_name} v_{app_version} (neaktuální verze)")
+                new_version_log = data["body"]
+                latest_version_str = data["tag_name"].replace("v","")
+                config_data = Tools.read_json_config()
+                if not force_update:
+                    if "ignored_version" in config_data["app_settings"]:
+                        ignored_version = config_data["app_settings"]["ignored_version"]
+                        print(ignored_version, latest_version_str)
+                        if latest_version_str == ignored_version:
+                            return
+                Subwindows.download_new_version_window_github(latest_version_str,data["name"]+"\n\n"+new_version_log,given_url=asset["browser_download_url"],force_update=force_update)
+            else:
+                return "up to date"
+
         class loading_routine:
             def __init__(self,root,no_loop = False):
                 self.root = root
@@ -1911,16 +2057,31 @@ if not open_image_only:
                 self.loading_label.image_ref = tk_rotated  # udržet referenci
                 self.top.update()
 
+            # def main(self):
+            #     self.create_window()
+            #     self.top.grab_set()
+            #     if not self.no_loop:
+            #         while self.stop_loading == False:
+            #             time.sleep(0.05)
+            #             self.rotate_image()
+            #         self.top.grab_release()
+            #         self.top.destroy()
+
             def main(self):
                 self.create_window()
                 self.top.grab_set()
-                if not self.no_loop:
-                    while self.stop_loading == False:
-                        time.sleep(0.05)
-                        self.rotate_image()
 
-                    self.top.grab_release()
-                    self.top.destroy()
+                def rotate_worker():
+                    while not self.stop_loading:
+                        time.sleep(0.05)
+                        self.top.after(0, self.rotate_image)  # UI volání do main threadu
+                        # self.rotate_image()  # UI volání do main threadu
+                    self.top.after(0, lambda: (self.top.grab_release(), self.top.destroy()))
+
+                if not self.no_loop:
+                    self._t = threading.Thread(target=rotate_worker, daemon=True)
+                    self.top.after(0,self._t.start())
+                    # self._t.start()
 
             def close_all(self):
                 self.top.grab_release()
@@ -2659,8 +2820,9 @@ if not open_image_only:
                 else:
                     licence_info_status.configure(text=f"platná do {app_licence_validity}")
 
-                if (initial and not testing) or force_check_version:
-                    check_version = threading.Thread(target=Tools.check_for_new_app_version,)
+                # if (initial and not testing) or force_check_version:
+                if initial or force_check_version:
+                    check_version = threading.Thread(target=Tools.check_for_new_app_version_github,)
                     self.root.after(500,check_version.start)
 
                 # Subwindows.download_new_version_window("4.4.4","real")
@@ -5145,7 +5307,7 @@ if not open_image_only:
                     main_console.configure(text="Tooltip byl úspěšně povolen",text_color="green")
 
             def check_for_updates():
-                result = Tools.check_for_new_app_version(force_update=True)
+                result = Tools.check_for_new_app_version_github(force_update=True)
                 if str(result) == "up to date":
                     main_console.configure(text="Verze aplikace je aktuální",text_color="green")
                     if self.selected_language == "en":

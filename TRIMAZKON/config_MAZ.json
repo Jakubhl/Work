@@ -59,7 +59,11 @@
         },
         {
             "key": "default_language",
-            "value": "cz"
+            "value": "en"
+        },
+        {
+            "key": "app_settings",
+            "value": "4.3.8"
         }
     ],
     "task_list": [

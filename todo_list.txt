@@ -1097,6 +1097,14 @@ ip_setting - oprava chyb - nebylo možné kopírovat předchozí projekt ip i di
 converting - ošetřeno proti delšímu trvání
 converting - loading - hotovo
 
+2:13 PM 8/26/2025
+vyzkoušet tray s loading rutinou (ip a mazání) - hotovo
+autoupdate z githubu - hotovo
+hlášku přihlášen v katalogu dát až po načítací animaci - je to takhle správně, připojeno hned, ale dlouho to čte v db - hotovo
+když dám v katalogu nová stanice - je nadepsáno editovat stanici - hotovo
+ošetřit mazání proti tomu, když je soubor otevřený - stačí když je jen otevřená složka - hotovo
+github autoupdate dodělat u ip a maz gui - hotovo
+
 
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
@@ -1112,10 +1120,7 @@ TRIMAZKON - Katalog - export do databázové tabulky
 
 
 
-ošetřit mazání proti tomu, když je soubor otevřený - stačí když je jen otevřená složka
-vyzkoušet tray s loading rutinou (ip a mazání)
-hlášku přihlášen v katalogu dát až po načítací animaci
-když dám v katalogu nová stanice - je nadepsáno editovat stanici
+
 
 
 

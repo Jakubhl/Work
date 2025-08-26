@@ -24,6 +24,7 @@ import wmi
 # import struct
 import winreg
 import pyperclip
+import requests
 
 testing = False
 
@@ -596,7 +597,7 @@ class Subwindows:
             window.wait_window()
 
     @classmethod
-    def download_new_version_window(cls,new_version,given_log,language_given="cz",force_update = False):
+    def download_new_version_window_github(cls,new_version,given_log,given_url,language_given="cz",force_update = False):
         def close_prompt(child_root):
             child_root.grab_release()
             child_root.destroy()
@@ -607,28 +608,39 @@ class Subwindows:
                 subprocess.Popen(["cmd.exe", "/c", cmd],
                                 creationflags=subprocess.CREATE_BREAKAWAY_FROM_JOB | subprocess.CREATE_NO_WINDOW)
 
-            wanted_installer = f"TRIMAZKON-{new_version}-win64.msi"
-            sharepoint_instance = download_database.database(wanted_installer,download_new_installer=True)
-            output = str(sharepoint_instance.output)
-            if "úspěšně" in output:
-                if language_given == "en":
-                    Tools.add_colored_line(console,"New installer successfully downloaded","green",font=("Arial",22),delete_line=True)
-                else:
-                    Tools.add_colored_line(console,output,"green",font=("Arial",22),delete_line=True)
-            else:
-                if language_given == "en":
-                    Tools.add_colored_line(console,"New installer download failed","red",font=("Arial",22),delete_line=True)
-                else:
-                    Tools.add_colored_line(console,output,"red",font=("Arial",22),delete_line=True)
-            # msi_path = f"{initial_path}Installers/{wanted_installer}"
-            msi_path = f"Installers/{wanted_installer}"
-            call_installer(Tools.resource_path(msi_path))
-            child_root.after(1000,lambda: Tools.terminate_pid(os.getpid())) #vypnout thread i s tray aplikací
-            
-        def ignore_version():
-            Tools.save_to_json_config(str(new_version),"ignored_version")
-            close_prompt(child_root)
+            url = given_url
+            filename = url.split("/")[-1]
+            print(f"Stahuji {filename} ...")
+            response = requests.get(url, stream=True)
+            if response.status_code == 200:
+                os.makedirs(Tools.resource_path("Installers"), exist_ok=True)
+                msi_path = Tools.resource_path(f"Installers/{filename}")
+                print("msi path: ",msi_path)
+                with open(msi_path, "wb") as local_file:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:  # některé bloky můžou být prázdné keep-alive
+                            local_file.write(chunk)
 
+                print(f"Soubor byl úspěšně stažen z {url}")
+                if language_given == "en":
+                    Tools.add_colored_line(console,"New installer successfully downloaded","green",delete_line=True)
+                else:
+                    Tools.add_colored_line(console,"Nový installer byl úspěšně stažen","green",delete_line=True)
+                call_installer(msi_path)
+                child_root.after(1000,lambda: Tools.terminate_pid(os.getpid())) #vypnout thread i s tray aplikací
+                return True
+            else:
+                print(f"Nepodařilo se stáhnout {url}: {response.status_code} - {response.text}")
+                if language_given == "en":
+                    Tools.add_colored_line(console,f"New installer download failed {url}: {response.status_code} - {response.text}","red",delete_line=True)
+                else:
+                    Tools.add_colored_line(console,f"Nový installer se nepodařilo stáhnout {url}: {response.status_code} - {response.text}","red",delete_line=True)
+                return False
+
+        def ignore_version():
+            Tools.save_to_json_config(str(new_version),"app_settings","ignored_version")
+            close_prompt(child_root)
+            
         prompt_message1 = f"Je k dispozici nová verze aplikace: {new_version} !"
         prompt_message2 = f"(Instalace nové verze zachová všechna uživatelská nastavení)\nUpgrade log:"
         title_message = "Upozornění"
@@ -642,7 +654,7 @@ class Subwindows:
         child_root.title(title_message)
         top_frame =         customtkinter.CTkFrame(master = child_root,corner_radius=0,fg_color="#212121")
         warning_icon =      customtkinter.CTkLabel(master = top_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/warning.png")),size=(50,50)),bg_color="#212121")
-        label_frame =       customtkinter.CTkFrame(master = top_frame,corner_radius=0)
+        label_frame =       customtkinter.CTkFrame(master = top_frame,corner_radius=0,fg_color="#212121")
         proceed_label =     customtkinter.CTkLabel(master = label_frame,text = prompt_message1,font=("Arial",25,"bold"),anchor="w",justify="left")
         proceed_label2 =    customtkinter.CTkLabel(master = label_frame,text = prompt_message2,font=("Arial",20),anchor="w",justify="left")
         proceed_label.      pack(pady=(5,0),padx=10,anchor="w",side = "top")
@@ -652,8 +664,9 @@ class Subwindows:
         top_frame.          pack(pady=0,padx=0,anchor="w",side = "top")
         text_frame =        customtkinter.CTkFrame(master = child_root,corner_radius=0,fg_color="#212121")
         text_widget =       customtkinter.CTkTextbox(master = text_frame,font=("Arial",22),corner_radius=0,wrap= "word",height=300)
-        for rows in given_log:
-            text_widget.insert(tk.END,str(rows)+"\n")
+        # for rows in given_log:
+        #     text_widget.insert(tk.END,str(rows)+"\n")
+        text_widget.insert(tk.END,given_log)
 
         console =           tk.Text(master = text_frame,background="black", wrap="none",borderwidth=0,height=0,state=tk.DISABLED,font=("Arial",20))
         text_widget.        pack(pady=(10,0),padx=10,anchor="w",side = "top",fill="both")
@@ -1552,57 +1565,49 @@ class Tools:
             return False
 
     @classmethod
-    def check_for_new_app_version(cls,language_given = "cz",force_update=False):
+    def check_for_new_app_version_github(cls,language_given = "cz",force_update = False):
         """
-        - splitne podle pomlcek TRIMAZKON-4.3.4-win64.msi
-        - vezme si jen split s verzí, ověří, že na první pozici je TRIMAZKON
-        - nahradí . za nic
         - porovná verze
         - pokud novější, stáhne log, zobrazí okno
         """
-        new_version_log_name = "new_version_log.txt"
-        version_list = []
         current_app_version = trimazkon_version.replace(".","")
         current_app_version = int(current_app_version)
         print("current version: ",current_app_version)
-        sharepoint_instance = download_database.database("",search_for_version=True)
-        installer_name_list = sharepoint_instance.output
-        if len(installer_name_list) > 0:
-            for names in installer_name_list:
-                if names == new_version_log_name:
-                    continue
-                name_splitted = names.split("-")
-                if name_splitted[0] == "TRIMAZKON":
-                    version_list.append(name_splitted[1])
-                elif testing and name_splitted[0] == "dummy_version":
-                    version_list.append(name_splitted[1])
+        repo_owner = "Jakubhl"
+        repo = "Work"
 
-        version_list_int = []
-        for versions in version_list:
-            versions = versions.replace(".","")
-            version_list_int.append(int(versions))
-
-        print("version list: ",version_list_int)
-        if len(version_list_int) == 0:
+        url = f"https://api.github.com/repos/{repo_owner}/{repo}/releases/latest"
+        response = requests.get(url)
+        latest_version = 0
+        if response.status_code == 200:
+            data = response.json()
+            print("Latest version:", data["tag_name"])
+            latest_version = int(data["tag_name"].replace("v", "").replace(".", ""))
+            print("Release name:", data["name"])
+            print("\nRelease notes:\n", data["body"])
+            print("\nAssets:")
+            for asset in data["assets"]:
+                print("-", asset["name"], "->", asset["browser_download_url"])
+        else:
+            print("Error:", response.status_code, response.text)
             return "up to date"
-        max_sharepoint_version = max(version_list_int)
-        if current_app_version < max_sharepoint_version:
+        
+        if latest_version > current_app_version:
             print("new_version_available")
             if language_given == "en":
                 root.title(f"{app_name} v_{app_version} (version is not up to date)")
             else:
                 root.title(f"{app_name} v_{app_version} (neaktuální verze)")
-            sharepoint_instance = download_database.database(new_version_log_name,get_new_version_log=True)
-            new_version_log = sharepoint_instance.output
-            max_sharepoint_version = str(max_sharepoint_version)
-            max_sharepoint_version_str = max_sharepoint_version[0]+"."+max_sharepoint_version[1]+"."+max_sharepoint_version[2]
+            new_version_log = data["body"]
+            latest_version_str = data["tag_name"].replace("v","")
             config_data = Tools.read_json_config()
             if not force_update:
                 if len(config_data) == 13:
                     ignored_version = config_data[12]
-                    if max_sharepoint_version_str == ignored_version:
+                    print(ignored_version, latest_version_str)
+                    if latest_version_str == ignored_version:
                         return
-            Subwindows.download_new_version_window(max_sharepoint_version_str,new_version_log,language_given=language_given,force_update=force_update)
+            Subwindows.download_new_version_window_github(latest_version_str,data["name"]+"\n\n"+new_version_log,given_url=asset["browser_download_url"],language_given=language_given,force_update=force_update)
         else:
             return "up to date"
 
@@ -2173,7 +2178,7 @@ class main_menu:
             self.root.after(500, lambda: Subwindows.licence_window(self.check_licence,self.selected_language))
         else:
             if initial or force_check_version:
-                check_version = threading.Thread(target=Tools.check_for_new_app_version,
+                check_version = threading.Thread(target=Tools.check_for_new_app_version_github,
                                                   kwargs={"language_given": self.selected_language})
                 self.root.after(500,check_version.start)
 
@@ -2580,7 +2585,7 @@ class Advanced_option: # Umožňuje nastavit základní parametry, které uklád
                 path_context_menu.tk_popup(context_menu_button.winfo_rootx(),context_menu_button.winfo_rooty()+50)
 
         def check_for_updates():
-            result = Tools.check_for_new_app_version(force_update=True,language_given=self.selected_language)
+            result = Tools.check_for_new_app_version_github(force_update=True,language_given=self.selected_language)
             if str(result) == "up to date":
                 main_console.configure(text="Verze aplikace je aktuální",text_color="green")
                 if self.selected_language == "en":

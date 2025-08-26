@@ -52,7 +52,7 @@
   <img src="readme_images/deleting_menu.png" alt="deleting menu">
 </p>
 
-  - ukládá log provedených mazání:
+  - ukládá log provedených mazání, který je možné exportovat do .xlsx nebo .txt:
 
 <p align="center">
   <img src="readme_images/deleting_log.png" alt="deleting log">

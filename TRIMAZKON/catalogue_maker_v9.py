@@ -952,7 +952,6 @@ class ToplevelWindow:
                     update_array(uid,login_history)
                     Tools.save_to_json_config(login_history,"db_settings","username_history_list")
             
-
             if len(str(server_entry.get()).replace(" ","")) == 0:
                 Tools.add_colored_line(console,"Zadejte název serveru","red",None,True)
                 return
@@ -4306,18 +4305,27 @@ class Catalogue_gui:
             self.child_root.after(200, lambda: self.child_root.iconbitmap(self.parent.app_icon_path))
 
             if self.given_object == "station":
-                self.child_root.title("Editování stanice: " + str(self.parent.temp_station_list[self.station_index]["name"]))
+                if str(self.parent.temp_station_list[self.station_index]["name"]) == "":
+                    self.child_root.title("Nová stanice")
+                else:
+                    self.child_root.title("Editování stanice: " + str(self.parent.temp_station_list[self.station_index]["name"]))
                 station_frame   .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
                 camera_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
                 optics_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
 
             elif self.given_object == "camera":
-                self.child_root.title("Editování kamery: " + str(self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["type"]))
+                if str(self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["type"]) == "":
+                    self.child_root.title("Nová kamera")
+                else:
+                    self.child_root.title("Editování kamery: " + str(self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["type"]))
                 camera_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
                 optics_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
 
             elif self.given_object == "optics":
-                self.child_root.title("Editování optiky: " + str(self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"][self.optics_index]["type"]))
+                if str(self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"][self.optics_index]["type"]) == "":
+                    self.child_root.title("Nová optika")
+                else:
+                    self.child_root.title("Editování optiky: " + str(self.parent.temp_station_list[self.station_index]["camera_list"][self.camera_index]["optics_list"][self.optics_index]["type"]))
                 optics_frame    .pack(pady = 0, padx = 0,fill="both",anchor="n",expand=True,side="left",ipady = 3,ipadx = 3)
 
             button_save =   customtkinter.CTkButton(master = button_frame,text = "Uložit",font=("Arial",22,"bold"),width = 200,height=50,corner_radius=0,command=lambda: self.save_changes())
@@ -4516,124 +4524,6 @@ class Catalogue_gui:
 
         loading_instance.stop_loading = True
 
-    def read_database_excel(self):
-        """
-        Stahuje aktuální databázi do adresáře
-        - 1. controller_database, controller_notes_database
-        - 2. camera_database
-        - 3. optics_database
-        - 4. accessory_database
-        """
-        self.download_database_console_input = []
-        if self.chosen_manufacturer == "Omron":
-            column_index = 1
-        else:
-            column_index = 3
-
-        if "Chyba" in self.download_status or "chyba" in self.download_status or "epodařilo" in self.download_status:
-            text_color = "red"
-        else:
-            text_color = "green"
-        self.download_database_console_input.append(self.download_status)
-        self.download_database_console_input.append(text_color)
-
-        # sharepoint_database_path = Tools.resource_path(Tools.path_check(os.getcwd()) + self.default_database_filename)
-        sharepoint_database_path = initial_path + self.default_database_filename
-        print(sharepoint_database_path)
-
-        self.camera_database_pointer = 0
-        self.optics_database_pointer = 0
-        self.camera_cable_database_pointer = 0
-        self.accessory_database_pointer = 0
-        # if len(self.download_database_console_input) > 0:
-        # if text_color == "red":
-        #     return
-
-        load_failed = False
-        try:
-            wb = load_workbook(filename=sharepoint_database_path)
-        except Exception as err:
-            load_failed = True
-            self.download_database_console_input = []
-            self.download_database_console_input.append(f"Chyba - selhalo načtení databáze produktů ({sharepoint_database_path})")
-            self.download_database_console_input.append("red")
-
-        if not load_failed:
-            def fill_lists(wb,name_of_excel_sheet:str,empty_option = True):
-                """
-                - Vrací seznam produktů přečtecńých z databáze
-                    - 0 = celá, kompletní databáze produktů
-                    - 1 = databáze rozdělená podle *** ([[]])
-                    - 2 = druhý parametr - nyní poznámky - kompletní databáze
-                """
-                nonlocal column_index
-                database_section = [""]
-                section_database = []
-                whole_database = []
-                notes_database = [""]
-                if not empty_option:
-                    whole_database = []
-                    notes_database = []
-                ws = wb[name_of_excel_sheet]
-                # první parametr - typ produktu
-                row_count = 0
-                for row in ws.iter_rows(min_row=2,min_col=column_index, max_col=column_index,values_only=True):
-                    if (row[0] is not None or str(row[0]) != "None") and "***" not in str(row[0]): 
-                        database_section.append(str(row[0]))
-                        whole_database.append({"type":str(row[0]),
-                                               "id":0})
-                    elif "***" in str(row[0]):
-                        section_database.append(database_section)
-                        database_section = []
-                    row_count +=1
-                if database_section != []:
-                    section_database.append(database_section)
-
-                # druhý parametr, dolplňující poznámky
-                for row in ws.iter_rows(min_row=2,max_row=row_count+1,min_col=column_index+1, max_col=column_index+1,values_only=True):
-                    if row[0] is not None and str(row[0]) != "None": 
-                        notes_database.append(str(row[0]))
-                    else:
-                        notes_database.append("")
-                    
-                
-                return [whole_database,section_database,notes_database]
-            
-            # KONTROLERY ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-            read_database = fill_lists(wb,"Kontrolery",empty_option = False)
-            self.controller_database = read_database[0]
-            self.controller_notes_database = read_database[2]
-            # KAMERY ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-            read_database = fill_lists(wb,"Kamery",empty_option = True)
-            self.whole_camera_type_database = read_database[0]
-            self.camera_type_database = read_database[1]
-            self.camera_notes_database = read_database[2]
-            # KABELY ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-            read_database = fill_lists(wb,"Kabely",empty_option = True)
-            self.whole_camera_cable_database = read_database[0]
-            self.camera_cable_database = read_database[1]
-            self.cable_notes_database = read_database[2]
-            # OPTIKA ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-            read_database = fill_lists(wb,"Optika",empty_option = True)
-            self.whole_optics_database = read_database[0]
-            self.optics_database = read_database[1]
-            self.optics_notes_database = read_database[2]
-            # SVĚTLA ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-            try:
-                read_database = fill_lists(wb,"Světla",empty_option = True)
-                self.whole_light_database = read_database[0]
-                self.light_database = read_database[1]
-                self.light_notes_database = read_database[2]
-            except Exception:
-                print("chybí list se světly")
-
-            # PŘÍSLUŠENSTVÍ ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-            read_database = fill_lists(wb,"Přislušenství",empty_option = True)
-            self.whole_accessory_database = read_database[0]
-            self.accessory_database = read_database[1]
-            self.accessory_notes_database = read_database[2]
-            wb.close()
-        
     def clear_frame(self,frame):
         for widget in frame.winfo_children():
             widget.destroy()
@@ -5503,9 +5393,6 @@ class Catalogue_gui:
         def call_db_login_window(call_export=False,initial=False):
             def db_callback(connection):
                 self.current_db_connection = connection
-                # if connection == "offline":
-                #     self.read_database_excel()
-                #     return
                 try:
                     self.read_database()
                 except Exception as e:

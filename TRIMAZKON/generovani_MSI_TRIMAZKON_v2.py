@@ -2,6 +2,22 @@ from cx_Freeze import setup, Executable
 import sys
 import os
 
+
+def check_dependencies():
+    import JHV_APP_GUI_v17 as main_gui
+    import JHV_MAZ_GUI_v4 as jhv_maz_gui
+    import IP_SET_GUI_v1 as ip_set_gui
+
+    if not (main_gui.app_version == jhv_maz_gui.trimazkon_version == ip_set_gui.trimazkon_version):
+        raise ValueError("Version mismatch between applications")
+    if main_gui.testing == False and ip_set_gui.testing == False and jhv_maz_gui.testing == False:
+        raise ValueError("Some app has enabled testing mode")
+    if int(main_gui.app_version.replace(".","")) < int(new_version.replace(".","")):
+        raise ValueError("Version mismatch")
+    
+new_version = "4.3.9"
+# check_dependencies()
+
 # Include additional data files like images and the public.pem file
 include_files = [
     ("images", "images"),  # Include entire 'images' folder
@@ -63,10 +79,11 @@ msi_data = {"Shortcut": shortcut_table,}
             # ]}  # MSI data for shortcuts
 
 # Setup configuration
+new_product_code = "{EEEE5555-FFFF-" + "0" + str(new_version.replace(".","")) + "-GGGG-7777HHHH8888}"  # NEW every version
 setup(
     name="TRIMAZKON",
-    version="4.3.8",
-    description="TRIMAZKON v_4.3.8",
+    version=new_version,
+    description=f"TRIMAZKON v_{new_version}",
     executables=[whole_app_exe,jhv_MAZ_exe,ip_set_exe],
     # executables=[whole_app_exe],
     options={
@@ -77,7 +94,7 @@ setup(
         },
         "bdist_msi": {
             "upgrade_code": "{12345678-1234-5678-1234-567812345678}",  # Unique GUID
-            "product_code": "{EEEE5555-FFFF-0438-GGGG-7777HHHH8888}",  # NEW every version
+            "product_code": new_product_code,  # NEW every version
             "add_to_path": True,  # Do not add to system PATH
             "data": msi_data,
         },            

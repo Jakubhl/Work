@@ -461,16 +461,25 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - redukce novějších souborů nově seřazuje od nejstarších 
     (původně podle windows)
     """
-        ,"\nVerze 4.3.9 (08.08.2025)"
+        ,"\nVerze 4.3.9 (26.08.2025)"
         ,
   """ 
+  TRIMAZKON
+    - obnovení autoupdate - nově z githubu
+    - odstranění graf. značek výrobců
   Katalog:
     - opravy u konfigurace kontroleru
     - možnost pracovat offline - db ze serveru se automaticky 
     zálohuje do excelu
-    - přidány loading animace
-  TRIMAZKON - mazání, třídění
+    - oprava window titles
+  TRIMAZKON - mazání, třídění, ipsetting, katalog, konvertování:
     - přidána loading animace
+  ip_setting:
+    - oprava refresh připojení disků
+    - oprava chyb, nešlo zkopírovat předchozí projekt v editu
+  TRIMAZKON - konvertování:
+    - ošetřeno proti delšímu trvání
+    - nové hlášky o průběhu
     """
 ]
 
