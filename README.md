@@ -11,7 +11,7 @@
 	- jhv_IP.exe
 
 <p align="center">
-  <img src="readme_images/installer_setup.png" alt="installer setup" width="150">
+  <img src="readme_images/installer_setup.png" alt="installer setup">
 </p>
 
 ## Obecné vlastnosti aplikace:
