@@ -10,7 +10,9 @@
 	- jhv_MAZ.exe
 	- jhv_IP.exe
 
-![installer setup](readme_images/installer_setup.png)
+<p align="center">
+  <img src="readme_images/installer_setup.png" alt="installer setup" width="150">
+</p>
 
 ## Obecné vlastnosti aplikace:
 - vlastní .msi installer
@@ -19,9 +21,9 @@
 - autoupdate (Sharepoint)
 - pipeline komunikace
 - nabídka v System Tray (tray ikonka):
-<p align="center">
-  <img src="readme_images/tray_menu.png" alt="tray menu" width="150">
-</p>
+
+![tray menu](readme_images/tray_menu.png)
+
 - Windows baloon tip (oznámení)
 - čtení z SQL databáze
 - tooltip (doplňující informace pod kurzorem nad tlačítky)
@@ -33,27 +35,34 @@
 ## Hlavní funkce aplikace
 ### Práce se soubory:
 - Konverze souborů (obrázky se suffixem .ifz) pomocí externí aplikace do .jpg nebo .bmp
+
 <p align="center">
   <img src="readme_images/converting_menu.png" alt="converting menu">
 </p>
 
 - Třídění podle syntaxe/vzorů názvů souborů, třídění párů apod.
+
 <p align="center">
   <img src="readme_images/sorting_menu.png" alt="sorting menu">
 </p>
 
 - Mazání souborů jako služba na pozadí (využívá task scheduler, Windows baloon tip)
-  - ukládá log mazání
+  
 <p align="center">
   <img src="readme_images/deleting_menu.png" alt="deleting menu">
 </p>
+
+  - ukládá log provedených mazání:
+
 <p align="center">
   <img src="readme_images/deleting_log.png" alt="deleting log">
 </p>
+
 ### Prohlížeč obrázků na míru s podporou speciálních formátů (.ifz)
 - lze nastavit jako základní prohlížeč obrázků
 - malování přes obrázek (pro poziční kontroly)
 - možnost otevření obrázku v dalším okně
+
 <p align="center">
   <img src="readme_images/image_browser.png" alt="image browser">
 </p>
