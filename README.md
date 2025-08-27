@@ -8,7 +8,7 @@ TRIMAZKON je desktopová aplikace vyvíjená v Pythonu 3.12 (Tkinter / customtki
 - Dále se vyvinuté GUI postupně doplňovalo i o další pomocné programy.
 - V současnosti je aplikace rozdělena na tři subaplikace:
 	- TRIMAZKON.exe
-	- jhv_MAZ.exe [manuál](manual/jhv_MAZ_dokumentace.pdf)
+	- jhv_MAZ.exe [manuál](TRIMAZKON/manual/jhv_MAZ_dokumentace.pdf)
 	- jhv_IP.exe
 
 <p align="center">
