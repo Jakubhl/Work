@@ -3,6 +3,7 @@
   <img src="readme_images/logo_TRIMAZKON.png" alt="TRIMAZKON logo" width="150">
 </p>
 
+TRIMAZKON je desktopová aplikace vyvíjená v Pythonu 3.12 (Tkinter / customtkinter / subprocess / threading). Během dvou let jsem ji vytvořil od nuly – od návrhu UI/UX až po implementaci jádra. Projekt mi sloužil k osvojení objektového programování v Pythonu, návrhu vícevrstvé aplikace, práce s vlákny a integrace více modulů do jednoho GUI.
 - Vývoj aplikace byl zpočátku směrován pro zpracování velkých objemů obrázkových dat z průmyslových kamer na výrobních linkách.
 - Dále se vyvinuté GUI postupně doplňovalo i o další pomocné programy.
 - V současnosti je aplikace rozdělena na tři subaplikace:
