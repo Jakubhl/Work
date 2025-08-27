@@ -18,7 +18,7 @@
 - vlastní .msi installer
 - licencování podle HWID
 - JSON konfigurace
-- autoupdate (Sharepoint)
+- autoupdate z github (původně Sharepoint)
 - pipeline komunikace
 - nabídka v System Tray (tray ikonka):
 
@@ -84,7 +84,7 @@
 ## Tvorba katalogu komponentů včetně kusovníku (s daty z SQL)
 - GUI na sestavení katalogu + login do SQL
 - filtruje komponenty z SQL databáze podle zvoleného výrobce
-- možnost exportu do .xml, .xlsx, xlsm a do databáze, kde vytvoří tabulku
+- možnost exportu do .xml, .xlsx, .xlsm a do databáze, kde vytvoří tabulku
 - možnost importu vyexportovaného projektu .xml
 
 <p align="center">
