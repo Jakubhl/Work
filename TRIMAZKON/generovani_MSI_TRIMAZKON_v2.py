@@ -10,13 +10,14 @@ def check_dependencies():
 
     if not (main_gui.app_version == jhv_maz_gui.trimazkon_version == ip_set_gui.trimazkon_version):
         raise ValueError("Version mismatch between applications")
-    if main_gui.testing == False and ip_set_gui.testing == False and jhv_maz_gui.testing == False:
+    if main_gui.testing != False or ip_set_gui.testing != False or jhv_maz_gui.testing != False:
         raise ValueError("Some app has enabled testing mode")
     if int(main_gui.app_version.replace(".","")) < int(new_version.replace(".","")):
         raise ValueError("Version mismatch")
     
-new_version = "4.3.9"
+new_version = "4.4.0"
 # check_dependencies()
+# k=input("continue?")
 
 # Include additional data files like images and the public.pem file
 include_files = [

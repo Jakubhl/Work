@@ -4,7 +4,7 @@ import time
 from PIL import Image, ImageTk
 import Deleting_option_v2 as Deleting
 import trimazkon_tray_MAZ_v3 as trimazkon_tray
-import sharepoint_download as download_database
+# import sharepoint_download as download_database
 import string_database_MAZ
 import json
 from tkinter import filedialog
@@ -36,7 +36,10 @@ exe_name = os.path.basename(exe_path)
 config_filename = "config_MAZ.json"
 app_name = "jhv_MAZ"
 app_version = "1.0.9"
-trimazkon_version = "4.3.9"
+trimazkon_version = "4.4.0"
+github_repo_owner = "Jakubhl"
+github_repo = "Work"
+licence_email_contact = "jakub.hlavacek@jhv.cz"
 loop_request = False
 root = None
 print("exe name: ",exe_name)
@@ -134,13 +137,14 @@ class Subwindows:
         def activate_trial():
             Tools.store_installation_date(refresh_callback = check_licence_callback)
             close_prompt(child_root)
-            
+        
+        prompt_message5 = str(licence_email_contact) + " "
+
         user_HWID = Tools.get_volume_serial()
         prompt_message1 = "Nemáte platnou licenci pro spuštění aplikace jhv_MAZ."
         prompt_message2 = f"Váš HWID:"
         prompt_message3 = f"\n{user_HWID}\n"
         prompt_message4 = "odešlete na email: "
-        prompt_message5 = "jakub.hlavacek@jhv.cz "
         prompt_message6 = "s žádostí o licenci."
         title_message = "Upozornění"
 
@@ -149,7 +153,6 @@ class Subwindows:
             prompt_message2 = f"Your HWID:"
             prompt_message3 = f"\n{user_HWID}\n"
             prompt_message4 = "send to email: "
-            prompt_message5 = "jakub.hlavacek@jhv.cz "
             prompt_message6 = "with an application for a license."
             title_message = "Notice"
             
@@ -835,6 +838,10 @@ class Tools:
             {"key": "tray_icon_startup", "value": default_value_list[9]},
             {"key": "path_history_list", "value": [default_value_list[0]]},
             {"key": "default_language", "value": default_value_list[11]},
+            {"key": "ignored_version", "value": default_value_list[12]},
+            {"key": "licence_email_contact", "value": default_value_list[13]},
+            {"key": "github_repo_owner", "value": default_value_list[14]},
+            {"key": "github_repo", "value": default_value_list[15]},
         ]
         
 
@@ -861,6 +868,9 @@ class Tools:
         10 path_history_list\n
         11 default_language\n
         12 ignored_version\n
+        13 licence_email_contact\n
+        14 github_repo_owner\n
+        15 github_repo
         """
         def filter_unwanted_chars(to_filter_data, directory = False,even_space=False):
             unwanted_chars = ["\n","\"","\'","[","]"]
@@ -887,6 +897,9 @@ class Tools:
                             default_setting_parameters[9],
                             default_setting_parameters[10],
                             default_setting_parameters[11],
+                            default_setting_parameters[12],
+                            default_setting_parameters[13],
+                            default_setting_parameters[14],
                             ]
             
             print("read intern database (default values)",output_array,len(output_array))
@@ -1573,10 +1586,8 @@ class Tools:
         current_app_version = trimazkon_version.replace(".","")
         current_app_version = int(current_app_version)
         print("current version: ",current_app_version)
-        repo_owner = "Jakubhl"
-        repo = "Work"
 
-        url = f"https://api.github.com/repos/{repo_owner}/{repo}/releases/latest"
+        url = f"https://api.github.com/repos/{github_repo_owner}/{github_repo}/releases/latest"
         response = requests.get(url)
         latest_version = 0
         if response.status_code == 200:
@@ -2154,6 +2165,14 @@ class main_menu:
                 self.root.after(0, lambda:self.root.state('zoomed'))
             self.root.update()
         self.root.bind("<f>",maximalize_window)
+
+        # if "licence_email_contact" in self.config_data:
+        global licence_email_contact
+        licence_email_contact = Tools.read_json_config()[13]
+        # else:
+            # Tools.save_to_json_config(licence_email_contact,"licence_email_contact")
+        print("licence email contact: ",licence_email_contact)
+
         if global_licence_load_error:
             new_deleting.configure(state="disabled")
             task_manager.configure(state="disabled")
@@ -2178,6 +2197,18 @@ class main_menu:
             self.root.after(500, lambda: Subwindows.licence_window(self.check_licence,self.selected_language))
         else:
             if initial or force_check_version:
+                # if "github_repo_owner" in self.config_data:
+                global github_repo_owner
+                github_repo_owner = Tools.read_json_config[14]
+                # else:
+                    # Tools.save_to_json_config(github_repo_owner,"github_repo_owner")
+
+                # if "github_repo" in self.config_data:
+                global github_repo
+                github_repo = Tools.read_json_config[15]
+                # else:
+                    # Tools.save_to_json_config(github_repo,"github_repo")
+
                 check_version = threading.Thread(target=Tools.check_for_new_app_version_github,
                                                   kwargs={"language_given": self.selected_language})
                 self.root.after(500,check_version.start)

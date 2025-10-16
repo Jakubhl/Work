@@ -54,7 +54,10 @@ exe_name = os.path.basename(exe_path)
 config_filename = "jhv_IP.json"
 app_name = "jhv_IP"
 app_version = "1.0.2"
-trimazkon_version = "4.3.9"
+trimazkon_version = "4.4.0"
+github_repo_owner = "Jakubhl"
+github_repo = "Work"
+licence_email_contact = "jakub.hlavacek@jhv.cz"
 loop_request = False
 root = None
 print("exe name: ",exe_name)
@@ -69,7 +72,7 @@ import os
 import time
 from PIL import Image#, ImageTk
 # import Deleting_option_v2 as Deleting
-import sharepoint_download as download_database
+# import sharepoint_download as download_database
 import IP_setting_v6 as IP_setting
 import ip_only_tray_v1 as trimazkon_tray
 import ip_set_changelog
@@ -186,12 +189,13 @@ class Subwindows:
             Tools.store_installation_date(refresh_callback = check_licence_callback)
             close_prompt(child_root)
 
+        prompt_message5 = str(licence_email_contact) + " "
+
         user_HWID = Tools.get_volume_serial()
         prompt_message1 = f"Nemáte platnou licenci pro spuštění aplikace {app_name}."
         prompt_message2 = f"Váš HWID:"
         prompt_message3 = f"\n{user_HWID}\n"
         prompt_message4 = "odešlete na email: "
-        prompt_message5 = "jakub.hlavacek@jhv.cz "
         prompt_message6 = "s žádostí o licenci."
         title_message = "Upozornění"
 
@@ -200,7 +204,6 @@ class Subwindows:
             prompt_message2 = f"Your HWID:"
             prompt_message3 = f"\n{user_HWID}\n"
             prompt_message4 = "send to email: "
-            prompt_message5 = "jakub.hlavacek@jhv.cz "
             prompt_message6 = "with an application for a license."
             title_message = "Notice"
             
@@ -1258,10 +1261,8 @@ class Tools:
         current_app_version = trimazkon_version.replace(".","")
         current_app_version = int(current_app_version)
         print("current version: ",current_app_version)
-        repo_owner = "Jakubhl"
-        repo = "Work"
 
-        url = f"https://api.github.com/repos/{repo_owner}/{repo}/releases/latest"
+        url = f"https://api.github.com/repos/{github_repo_owner}/{github_repo}/releases/latest"
         response = requests.get(url)
         latest_version = 0
         if response.status_code == 200:
@@ -1739,6 +1740,13 @@ class main_menu:
             self.root.update()
         self.root.bind("<f>",maximalize_window)
 
+        if "licence_email_contact" in self.config_data["app_settings"]:
+            global licence_email_contact
+            licence_email_contact = self.config_data["app_settings"]["licence_email_contact"]
+        else:
+            Tools.save_to_json_config(licence_email_contact,"app_settings","licence_email_contact")
+        print("licence email contact: ",licence_email_contact)
+
         if global_licence_load_error:
             ip_setting_button.configure(state="disabled")
             advanced_button.configure(state="disabled")
@@ -1763,6 +1771,17 @@ class main_menu:
             else:
                 licence_info_status.configure(text=f"platná do {app_licence_validity}")
             if initial or force_check_version:
+                if "github_repo_owner" in self.config_data["app_settings"]:
+                    global github_repo_owner
+                    github_repo_owner = self.config_data["app_settings"]["github_repo_owner"]
+                else:
+                    Tools.save_to_json_config(github_repo_owner,"app_settings","github_repo_owner")
+
+                if "github_repo" in self.config_data["app_settings"]:
+                    global github_repo
+                    github_repo = self.config_data["app_settings"]["github_repo"]
+                else:
+                    Tools.save_to_json_config(github_repo,"app_settings","github_repo")
                 def check_version_routine():
                     check_version = threading.Thread(target=Tools.check_for_new_app_version_github,)
                     check_version.start()

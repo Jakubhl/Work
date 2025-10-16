@@ -7,7 +7,6 @@ conn_str = (
     r'Trusted_Connection=yes;'  # nebo místo toho použij UID/PWD pro SQL autentizaci
 )
 
-
 class Tools:
     @classmethod
     def filter_lang(cls,all_lang_desc,add_separator=False):
@@ -135,7 +134,6 @@ def get_camera_products(list_given):
     }
     return db_all_producs_sorted
 
-
 def find_camera_products_db(conn,manufacturer,not_initial = True):
     """
     manufacturer neovlivňuje:
@@ -246,7 +244,6 @@ def find_camera_products_db(conn,manufacturer,not_initial = True):
     
     
     return db_all_producs_sorted
-
 
 #TESTING------------------------------------------------------------------------------
 # import pyodbc

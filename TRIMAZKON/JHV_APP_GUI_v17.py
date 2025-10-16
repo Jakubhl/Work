@@ -57,7 +57,10 @@ exe_path = sys.executable
 exe_name = os.path.basename(exe_path)
 config_filename = "TRIMAZKON.json"
 app_name = "TRIMAZKON"
-app_version = "4.3.9"
+app_version = "4.4.0"
+github_repo_owner = "Jakubhl"
+github_repo = "Work"
+licence_email_contact = "jakub.hlavacek@jhv.cz"
 loop_request = False
 root = None
 print("exe name: ",exe_name)
@@ -82,7 +85,7 @@ if not open_image_only:
     import Deleting_option_v2 as Deleting
     import Converting_option_v3 as Converting
     import catalogue_maker_v9 as Catalogue
-    import sharepoint_download as download_database
+    # import sharepoint_download as download_database
     import IP_setting_v6 as IP_setting
     import trimazkon_tray_v5 as trimazkon_tray
     import string_database
@@ -198,12 +201,12 @@ if not open_image_only:
                 Tools.store_installation_date(refresh_callback = check_licence_callback)
                 close_prompt(child_root)
 
+            prompt_message5 = str(licence_email_contact) + " "
             user_HWID = Tools.get_volume_serial()
             prompt_message1 = f"Nemáte platnou licenci pro spuštění aplikace {app_name}."
             prompt_message2 = f"Váš HWID:"
             prompt_message3 = f"\n{user_HWID}\n"
             prompt_message4 = "odešlete na email: "
-            prompt_message5 = "jakub.hlavacek@jhv.cz "
             prompt_message6 = "s žádostí o licenci."
             title_message = "Upozornění"
 
@@ -212,7 +215,6 @@ if not open_image_only:
                 prompt_message2 = f"Your HWID:"
                 prompt_message3 = f"\n{user_HWID}\n"
                 prompt_message4 = "send to email: "
-                prompt_message5 = "jakub.hlavacek@jhv.cz "
                 prompt_message6 = "with an application for a license."
                 title_message = "Notice"
                 
@@ -668,93 +670,93 @@ if not open_image_only:
                 window.deiconify()
                 window.wait_window()
         
-        @classmethod
-        def download_new_version_window(cls,new_version,given_log,language_given="cz",force_update = False):
-            def close_prompt(child_root):
-                child_root.grab_release()
-                child_root.destroy()
+        # @classmethod
+        # def download_new_version_window(cls,new_version,given_log,language_given="cz",force_update = False):
+        #     def close_prompt(child_root):
+        #         child_root.grab_release()
+        #         child_root.destroy()
 
-            def download_the_app():
-                def call_installer(msi_path):
-                    cmd = f'timeout /t 2 && {msi_path}'
-                    subprocess.Popen(["cmd.exe", "/c", cmd],
-                                    creationflags=subprocess.CREATE_BREAKAWAY_FROM_JOB | subprocess.CREATE_NO_WINDOW)
+        #     def download_the_app():
+        #         def call_installer(msi_path):
+        #             cmd = f'timeout /t 2 && {msi_path}'
+        #             subprocess.Popen(["cmd.exe", "/c", cmd],
+        #                             creationflags=subprocess.CREATE_BREAKAWAY_FROM_JOB | subprocess.CREATE_NO_WINDOW)
 
-                wanted_installer = f"TRIMAZKON-{new_version}-win64.msi"
-                sharepoint_instance = download_database.database(wanted_installer,download_new_installer=True)
-                output = str(sharepoint_instance.output)
-                if "úspěšně" in output:
-                    if language_given == "en":
-                        Tools.add_colored_line(console,"New installer successfully downloaded","green",delete_line=True)
-                    else:
-                        Tools.add_colored_line(console,output,"green",delete_line=True)
-                else:
-                    if language_given == "en":
-                        Tools.add_colored_line(console,"New installer download failed","red",delete_line=True)
-                    else:
-                        Tools.add_colored_line(console,output,"red",delete_line=True)
-                # msi_path = f"{initial_path}Installers/{wanted_installer}"
-                msi_path = f"Installers/{wanted_installer}"
-                print("msi path: ",msi_path)
-                call_installer(Tools.resource_path(msi_path))
+        #         wanted_installer = f"TRIMAZKON-{new_version}-win64.msi"
+        #         sharepoint_instance = download_database.database(wanted_installer,download_new_installer=True)
+        #         output = str(sharepoint_instance.output)
+        #         if "úspěšně" in output:
+        #             if language_given == "en":
+        #                 Tools.add_colored_line(console,"New installer successfully downloaded","green",delete_line=True)
+        #             else:
+        #                 Tools.add_colored_line(console,output,"green",delete_line=True)
+        #         else:
+        #             if language_given == "en":
+        #                 Tools.add_colored_line(console,"New installer download failed","red",delete_line=True)
+        #             else:
+        #                 Tools.add_colored_line(console,output,"red",delete_line=True)
+        #         # msi_path = f"{initial_path}Installers/{wanted_installer}"
+        #         msi_path = f"Installers/{wanted_installer}"
+        #         print("msi path: ",msi_path)
+        #         call_installer(Tools.resource_path(msi_path))
 
-                child_root.after(1000,lambda: Tools.terminate_pid(os.getpid())) #vypnout thread i s tray aplikací
+        #         child_root.after(1000,lambda: Tools.terminate_pid(os.getpid())) #vypnout thread i s tray aplikací
 
-            def ignore_version():
-                Tools.save_to_json_config(str(new_version),"app_settings","ignored_version")
-                close_prompt(child_root)
+        #     def ignore_version():
+        #         Tools.save_to_json_config(str(new_version),"app_settings","ignored_version")
+        #         close_prompt(child_root)
                 
-            prompt_message1 = f"Je k dispozici nová verze aplikace: {new_version} !"
-            prompt_message2 = f"(Instalace nové verze zachová všechna uživatelská nastavení)\nUpgrade log:"
-            title_message = "Upozornění"
-            if language_given == "en":
-                prompt_message1 = f"New app version available: {new_version} !"
-                prompt_message2 = f"(Installing the new version will preserve all user settings)\nUpgrade log:"
-                title_message = "Notice"
+        #     prompt_message1 = f"Je k dispozici nová verze aplikace: {new_version} !"
+        #     prompt_message2 = f"(Instalace nové verze zachová všechna uživatelská nastavení)\nUpgrade log:"
+        #     title_message = "Upozornění"
+        #     if language_given == "en":
+        #         prompt_message1 = f"New app version available: {new_version} !"
+        #         prompt_message2 = f"(Installing the new version will preserve all user settings)\nUpgrade log:"
+        #         title_message = "Notice"
                 
-            child_root = customtkinter.CTkToplevel(fg_color="#212121")
-            child_root.after(200, lambda: child_root.iconbitmap(app_icon))
-            child_root.title(title_message)
-            top_frame =         customtkinter.CTkFrame(master = child_root,corner_radius=0,fg_color="#212121")
-            warning_icon =      customtkinter.CTkLabel(master = top_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/warning.png")),size=(50,50)),bg_color="#212121")
-            label_frame =       customtkinter.CTkFrame(master = top_frame,corner_radius=0,fg_color="#212121")
-            proceed_label =     customtkinter.CTkLabel(master = label_frame,text = prompt_message1,font=("Arial",25,"bold"),anchor="w",justify="left")
-            proceed_label2 =    customtkinter.CTkLabel(master = label_frame,text = prompt_message2,font=("Arial",20),anchor="w",justify="left")
-            proceed_label.      pack(pady=(5,0),padx=10,anchor="w",side = "top")
-            proceed_label2.     pack(pady=(5,0),padx=10,anchor="w",side = "top")
-            warning_icon.       pack(pady=30,padx=30,anchor="w",side = "left")
-            label_frame.        pack(pady=0,padx=0,anchor="w",side = "right",fill="x")
-            top_frame.          pack(pady=0,padx=0,anchor="w",side = "top")
-            text_frame =        customtkinter.CTkFrame(master = child_root,corner_radius=0,fg_color="#212121")
-            text_widget =       customtkinter.CTkTextbox(master = text_frame,font=("Arial",22),corner_radius=0,wrap= "word",height=300)
-            for rows in given_log:
-                text_widget.insert(tk.END,str(rows)+"\n")
+        #     child_root = customtkinter.CTkToplevel(fg_color="#212121")
+        #     child_root.after(200, lambda: child_root.iconbitmap(app_icon))
+        #     child_root.title(title_message)
+        #     top_frame =         customtkinter.CTkFrame(master = child_root,corner_radius=0,fg_color="#212121")
+        #     warning_icon =      customtkinter.CTkLabel(master = top_frame,text = "",image =customtkinter.CTkImage(Image.open(Tools.resource_path("images/warning.png")),size=(50,50)),bg_color="#212121")
+        #     label_frame =       customtkinter.CTkFrame(master = top_frame,corner_radius=0,fg_color="#212121")
+        #     proceed_label =     customtkinter.CTkLabel(master = label_frame,text = prompt_message1,font=("Arial",25,"bold"),anchor="w",justify="left")
+        #     proceed_label2 =    customtkinter.CTkLabel(master = label_frame,text = prompt_message2,font=("Arial",20),anchor="w",justify="left")
+        #     proceed_label.      pack(pady=(5,0),padx=10,anchor="w",side = "top")
+        #     proceed_label2.     pack(pady=(5,0),padx=10,anchor="w",side = "top")
+        #     warning_icon.       pack(pady=30,padx=30,anchor="w",side = "left")
+        #     label_frame.        pack(pady=0,padx=0,anchor="w",side = "right",fill="x")
+        #     top_frame.          pack(pady=0,padx=0,anchor="w",side = "top")
+        #     text_frame =        customtkinter.CTkFrame(master = child_root,corner_radius=0,fg_color="#212121")
+        #     text_widget =       customtkinter.CTkTextbox(master = text_frame,font=("Arial",22),corner_radius=0,wrap= "word",height=300)
+        #     for rows in given_log:
+        #         text_widget.insert(tk.END,str(rows)+"\n")
 
-            console =           tk.Text(master = text_frame,background="black", wrap="none",borderwidth=0,height=0,state=tk.DISABLED,font=("Arial",20))
-            text_widget.        pack(pady=(10,0),padx=10,anchor="w",side = "top",fill="both")
-            console.            pack(pady=(10,0),padx=10,anchor="w",side = "top",fill="x")
-            text_frame.         pack(pady=0,padx=0,anchor="w",side = "top",fill="both",expand = True)
-            text_widget.        configure(state="disabled")
-            button_frame =      customtkinter.CTkFrame(master = child_root,corner_radius=0)
-            button_close =      customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
-            button_dwnld =      customtkinter.CTkButton(master = button_frame,text = "Stáhnout novou verzi",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  download_the_app())
-            button_idc =        customtkinter.CTkButton(master = button_frame,text = "Tato verze mě nezajímá",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  ignore_version())
-            button_close.       pack(pady = 10, padx = (0,10),anchor="e",side="right")
-            button_dwnld.       pack(pady = 10, padx = (0,10),anchor="e",side="right")
-            if not force_update:
-                button_idc.         pack(pady = 10, padx = (0,10),anchor="e",side="right")
-            button_frame.       pack(pady=0,padx=0,anchor="w",side = "top",fill="x")
+        #     console =           tk.Text(master = text_frame,background="black", wrap="none",borderwidth=0,height=0,state=tk.DISABLED,font=("Arial",20))
+        #     text_widget.        pack(pady=(10,0),padx=10,anchor="w",side = "top",fill="both")
+        #     console.            pack(pady=(10,0),padx=10,anchor="w",side = "top",fill="x")
+        #     text_frame.         pack(pady=0,padx=0,anchor="w",side = "top",fill="both",expand = True)
+        #     text_widget.        configure(state="disabled")
+        #     button_frame =      customtkinter.CTkFrame(master = child_root,corner_radius=0)
+        #     button_close =      customtkinter.CTkButton(master = button_frame,text = "Zavřít",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  close_prompt(child_root))
+        #     button_dwnld =      customtkinter.CTkButton(master = button_frame,text = "Stáhnout novou verzi",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  download_the_app())
+        #     button_idc =        customtkinter.CTkButton(master = button_frame,text = "Tato verze mě nezajímá",font=("Arial",20,"bold"),width = 200,height=50,corner_radius=0,command=lambda:  ignore_version())
+        #     button_close.       pack(pady = 10, padx = (0,10),anchor="e",side="right")
+        #     button_dwnld.       pack(pady = 10, padx = (0,10),anchor="e",side="right")
+        #     if not force_update:
+        #         button_idc.         pack(pady = 10, padx = (0,10),anchor="e",side="right")
+        #     button_frame.       pack(pady=0,padx=0,anchor="w",side = "top",fill="x")
 
-            if language_given == "en":
-                button_close.configure(text = "Close")
-                button_dwnld.configure(text = "Download the new version")
-                button_idc.configure(text = "I don't care about this version")
-            child_root.update()
-            child_root.update_idletasks()
-            child_root.geometry(f"800x{child_root._current_height}")
-            child_root.focus()
-            child_root.focus_force()
-            child_root.grab_set()
+        #     if language_given == "en":
+        #         button_close.configure(text = "Close")
+        #         button_dwnld.configure(text = "Download the new version")
+        #         button_idc.configure(text = "I don't care about this version")
+        #     child_root.update()
+        #     child_root.update_idletasks()
+        #     child_root.geometry(f"800x{child_root._current_height}")
+        #     child_root.focus()
+        #     child_root.focus_force()
+        #     child_root.grab_set()
 
         @classmethod
         def download_new_version_window_github(cls,new_version,given_log,given_url,language_given="cz",force_update = False):
@@ -921,7 +923,6 @@ if not open_image_only:
             """ Handles window destruction. """
             self.cleanup()
             PostQuitMessage(0)  # Terminate the app.
-
     class Tools:
         task_name = "TRIMAZKON_startup_tray_setup"
         config_json_filename = config_filename
@@ -1790,14 +1791,15 @@ if not open_image_only:
             return output_message
 
         @classmethod
-        def set_zoom(cls,zoom_factor,root):
+        def set_zoom(cls,zoom_factor,root_given):
             try:
-                root.after(0, lambda: customtkinter.set_widget_scaling(zoom_factor / 100))
-                # customtkinter.set_widget_scaling(zoom_factor / 100)
+                # root_given.after(0, lambda: customtkinter.set_widget_scaling(float(zoom_factor) / 100))
+                customtkinter.set_widget_scaling(float(zoom_factor) / 100)
             except Exception as e:
-                print(f"error with zoom scaling: {e}")
+                pass
+                # print(f"error with zoom scaling: {e}")
             
-            root.tk.call('tk', 'scaling', zoom_factor / 100)
+            root_given.tk.call('tk', 'scaling', zoom_factor / 100)
 
         @classmethod
         def get_windows_app_zoom(cls):
@@ -1922,62 +1924,62 @@ if not open_image_only:
             ip_set_instance = IP_setting.main(None,None,None,initial_path,None,config_filename,True)
             ip_set_instance.IP_tools.manual_ip_setting(app_icon_path=app_icon,output_callback=output_callback)
 
-        @classmethod
-        def check_for_new_app_version(cls,language_given = "cz",force_update = False):
-            """
-            - splitne podle pomlcek TRIMAZKON-4.3.4-win64.msi
-            - vezme si jen split s verzí, ověří, že na první pozici je TRIMAZKON
-            - nahradí . za nic
-            - porovná verze
-            - pokud novější, stáhne log, zobrazí okno
-            """
-            new_version_log_name = "new_version_log.txt"
-            version_list = []
-            current_app_version = app_version.replace(".","")
-            current_app_version = int(current_app_version)
-            print("current version: ",current_app_version)
-            sharepoint_instance = download_database.database("",search_for_version=True)
-            installer_name_list = sharepoint_instance.output
-            if len(installer_name_list) > 0:
-                for names in installer_name_list:
-                    if names == new_version_log_name:
-                        continue
-                    name_splitted = names.split("-")
-                    if name_splitted[0] == "TRIMAZKON":
-                        version_list.append(name_splitted[1])
-                    elif testing and name_splitted[0] == "dummy_version":
-                        version_list.append(name_splitted[1])
+        # @classmethod
+        # def check_for_new_app_version(cls,language_given = "cz",force_update = False):
+        #     """
+        #     - splitne podle pomlcek TRIMAZKON-4.3.4-win64.msi
+        #     - vezme si jen split s verzí, ověří, že na první pozici je TRIMAZKON
+        #     - nahradí . za nic
+        #     - porovná verze
+        #     - pokud novější, stáhne log, zobrazí okno
+        #     """
+        #     new_version_log_name = "new_version_log.txt"
+        #     version_list = []
+        #     current_app_version = app_version.replace(".","")
+        #     current_app_version = int(current_app_version)
+        #     print("current version: ",current_app_version)
+        #     sharepoint_instance = download_database.database("",search_for_version=True)
+        #     installer_name_list = sharepoint_instance.output
+        #     if len(installer_name_list) > 0:
+        #         for names in installer_name_list:
+        #             if names == new_version_log_name:
+        #                 continue
+        #             name_splitted = names.split("-")
+        #             if name_splitted[0] == "TRIMAZKON":
+        #                 version_list.append(name_splitted[1])
+        #             elif testing and name_splitted[0] == "dummy_version":
+        #                 version_list.append(name_splitted[1])
 
-            version_list_int = []
-            for versions in version_list:
-                versions = versions.replace(".","")
-                version_list_int.append(int(versions))
+        #     version_list_int = []
+        #     for versions in version_list:
+        #         versions = versions.replace(".","")
+        #         version_list_int.append(int(versions))
 
-            print("version list: ",version_list_int)
-            if len(version_list_int) == 0:
-                print("nebylo nic nalezeno nebo chyba čtení = up to date")
-                return "up to date"
-            max_sharepoint_version = max(version_list_int)
-            if current_app_version < max_sharepoint_version:
-                print("new_version_available")
-                if language_given == "en":
-                    root.title(f"{app_name} v_{app_version} (version is not up to date)")
-                else:
-                    root.title(f"{app_name} v_{app_version} (neaktuální verze)")
-                sharepoint_instance = download_database.database(new_version_log_name,get_new_version_log=True)
-                new_version_log = sharepoint_instance.output
-                max_sharepoint_version = str(max_sharepoint_version)
-                max_sharepoint_version_str = max_sharepoint_version[0]+"."+max_sharepoint_version[1]+"."+max_sharepoint_version[2]
-                config_data = Tools.read_json_config()
-                if not force_update:
-                    if "ignored_version" in config_data["app_settings"]:
-                        ignored_version = config_data["app_settings"]["ignored_version"]
-                        print(ignored_version, max_sharepoint_version_str)
-                        if max_sharepoint_version_str == ignored_version:
-                            return
-                Subwindows.download_new_version_window(max_sharepoint_version_str,new_version_log,force_update=force_update)
-            else:
-                return "up to date"
+        #     print("version list: ",version_list_int)
+        #     if len(version_list_int) == 0:
+        #         print("nebylo nic nalezeno nebo chyba čtení = up to date")
+        #         return "up to date"
+        #     max_sharepoint_version = max(version_list_int)
+        #     if current_app_version < max_sharepoint_version:
+        #         print("new_version_available")
+        #         if language_given == "en":
+        #             root.title(f"{app_name} v_{app_version} (version is not up to date)")
+        #         else:
+        #             root.title(f"{app_name} v_{app_version} (neaktuální verze)")
+        #         sharepoint_instance = download_database.database(new_version_log_name,get_new_version_log=True)
+        #         new_version_log = sharepoint_instance.output
+        #         max_sharepoint_version = str(max_sharepoint_version)
+        #         max_sharepoint_version_str = max_sharepoint_version[0]+"."+max_sharepoint_version[1]+"."+max_sharepoint_version[2]
+        #         config_data = Tools.read_json_config()
+        #         if not force_update:
+        #             if "ignored_version" in config_data["app_settings"]:
+        #                 ignored_version = config_data["app_settings"]["ignored_version"]
+        #                 print(ignored_version, max_sharepoint_version_str)
+        #                 if max_sharepoint_version_str == ignored_version:
+        #                     return
+        #         Subwindows.download_new_version_window(max_sharepoint_version_str,new_version_log,force_update=force_update)
+        #     else:
+        #         return "up to date"
 
         @classmethod
         def check_for_new_app_version_github(cls,language_given = "cz",force_update = False):
@@ -1988,10 +1990,8 @@ if not open_image_only:
             current_app_version = app_version.replace(".","")
             current_app_version = int(current_app_version)
             print("current version: ",current_app_version)
-            repo_owner = "Jakubhl"
-            repo = "Work"
 
-            url = f"https://api.github.com/repos/{repo_owner}/{repo}/releases/latest"
+            url = f"https://api.github.com/repos/{github_repo_owner}/{github_repo}/releases/latest"
             response = requests.get(url)
             latest_version = 0
             if response.status_code == 200:
@@ -2793,6 +2793,13 @@ if not open_image_only:
                 self.root.update()
             self.root.bind("<f>",maximalize_window)
 
+            if "licence_email_contact" in self.config_data["app_settings"]:
+                global licence_email_contact
+                licence_email_contact = self.config_data["app_settings"]["licence_email_contact"]
+            else:
+                Tools.save_to_json_config(licence_email_contact,"app_settings","licence_email_contact")
+            print("licence email contact: ",licence_email_contact)
+
             if global_licence_load_error:
                 manage_images.configure(state="disabled")
                 viewer_button.configure(state="disabled")
@@ -2822,6 +2829,19 @@ if not open_image_only:
 
                 # if (initial and not testing) or force_check_version:
                 if initial or force_check_version:
+                    if "github_repo_owner" in self.config_data["app_settings"]:
+                        global github_repo_owner
+                        github_repo_owner = self.config_data["app_settings"]["github_repo_owner"]
+                    else:
+                        Tools.save_to_json_config(github_repo_owner,"app_settings","github_repo_owner")
+
+                    if "github_repo" in self.config_data["app_settings"]:
+                        global github_repo
+                        github_repo = self.config_data["app_settings"]["github_repo"]
+                    else:
+                        Tools.save_to_json_config(github_repo,"app_settings","github_repo")
+
+                        # Tools.write_json_config(self.config_data)
                     check_version = threading.Thread(target=Tools.check_for_new_app_version_github,)
                     self.root.after(500,check_version.start)
 
@@ -5241,12 +5261,12 @@ if not open_image_only:
                     # elif current_dpi == 144:
                     #     Tools.set_zoom(150,root)
                     windows_zoom = Tools.get_windows_app_zoom()
-                    Tools.set_zoom(windows_zoom,root)
+                    self.root.after(100, lambda: Tools.set_zoom(windows_zoom,self.root))
                     app_zoom_slider.configure(state = "disabled",button_color = "gray50",button_hover_color = "gray50")
                 else:
                     app_zoom_slider.configure(state = "normal",button_color = "#3a7ebf",button_hover_color = "#3a7ebf")
                     Tools.save_to_json_config("ne","app_settings","app_zoom_checkbox")
-                    Tools.set_zoom(int(app_zoom_slider.get()),root)
+                    self.root.after(100, lambda: Tools.set_zoom(int(app_zoom_slider.get()),self.root))
 
             def call_delete_path_history():
                 confirm_window_label1 = f"Opravdu si přejete odstranit historii vložených cest pro: {drop_down_options.get()}?"
@@ -5418,7 +5438,7 @@ if not open_image_only:
                     if not checkbox_app_zoom.get() == 1:
                         current_zoom = int(app_zoom_slider.get())
                         Tools.save_to_json_config(current_zoom,"app_settings","app_zoom")
-                        Tools.set_zoom(current_zoom,root)
+                        self.root.after(100,lambda: Tools.set_zoom(current_zoom,self.root))
 
                 app_zoom_slider.bind("<ButtonRelease-1>",lambda e: slider_released(e))
 
@@ -7859,6 +7879,9 @@ if not open_image_only:
             config_data = Tools.read_json_config()
             self.database_filename = str(config_data["catalogue_settings"]["database_filename"])
             self.zoom_factor = config_data["app_settings"]["app_zoom"]
+            if config_data["app_settings"]["app_zoom_checkbox"] == "ano":
+                self.zoom_factor = Tools.get_windows_app_zoom()
+
             # self.default_excel_filename = config_data["catalogue_settings"]["catalogue_filename"]
             # self.default_xml_file_name = config_data["catalogue_settings"]["metadata_filename"]
             # self.default_subwindow_status = config_data["catalogue_settings"]["subwindow_behav"]
@@ -7884,18 +7907,20 @@ if not open_image_only:
             else:
                 current_window_size = "min"
             
-            if not self.database_downloaded:
-                download = download_database.database(self.database_filename)
-                input_message = str(download.output)
-                menu.database_downloaded = True
-            else:
-                input_message = "Datábáze se stáhne znovu až po restartu TRIMAZKONU"
+            # if not self.database_downloaded:
+            #     # pokud neni stazena stahni:
+            #     download = download_database.database(self.database_filename)
+            #     input_message = str(download.output)
+            #     menu.database_downloaded = True
+            # else:
+            #     input_message = "Datábáze se stáhne znovu až po restartu TRIMAZKONU"
             
             Catalogue.Catalogue_gui(self.root,
-                                    input_message,
+                                    "",
                                     self.callback,
                                     current_window_size,
-                                    initial_path)
+                                    initial_path,
+                                    zoom_factor=self.zoom_factor)
 
     if load_gui:
         if not app_running_status:

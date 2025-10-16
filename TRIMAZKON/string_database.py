@@ -481,6 +481,18 @@ change_log_list = [" Verze 3.4 (3.3.2024)",
     - ošetřeno proti delšímu trvání
     - nové hlášky o průběhu
     """
+        ,"\nVerze 4.4.0 (16.10.2025)"
+        ,
+  """ 
+  TRIMAZKON
+    - opraven dpi scaling při přepínání mezi moduly
+    - do configu přidána možnost editovat:
+      - git repozitář
+      - git ownera
+      - email pro zaslání požadavku na licenci
+  Katalog:
+    - ošetření chybějícího excelu s offline databází
+    """
 ]
 
 

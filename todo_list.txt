@@ -1105,7 +1105,11 @@ když dám v katalogu nová stanice - je nadepsáno editovat stanici - hotovo
 ošetřit mazání proti tomu, když je soubor otevřený - stačí když je jen otevřená složka - hotovo
 github autoupdate dodělat u ip a maz gui - hotovo
 
-
+11:58 16/10/2025
+ošetřit chybějící excel db - hotovo
+otevření nastavení - pak katalog - chyba - hotovo
+dpi scaling - nereaguje hned - hotovo
+stejně tak email na odslani zadosti o licenci + odkaz na github! - hotovo
 
 _________________________________________________________________________________todo:_____________________________________________________________________________________________
 
@@ -1117,7 +1121,6 @@ TRIMAZKON - Katalog - export do databázové tabulky
 		- vyrobce
 		- popis
 	- dohledat to až při vytváření tabulky??
-
 
 
 

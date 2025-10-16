@@ -3,11 +3,14 @@
         "default_path": "C:/Users/",
         "maximalized": "ano",
         "show_changelog": "ne",
-        "app_zoom": 80,
+        "app_zoom": 130,
         "app_zoom_checkbox": "ano",
         "tray_icon_startup": "ne",
         "default_language": "cz",
-        "tooltip_status": "ano"
+        "tooltip_status": "ano",
+        "github_repo_owner": "Jakubhl",
+        "github_repo": "Work",
+        "licence_email_contact": "jakub.hlavacek@jhv.cz"
     },
     "sort_conv_settings": {
         "supported_formats_sorting": [
@@ -57,6 +60,7 @@
         "copyed_dir_name": "Kop\u00edrovan\u00e9_obr\u00e1zky",
         "moved_dir_name": "P\u0159esunut\u00e9_obr\u00e1zky",
         "path_history_list": [
+            "C:/Users/kubah/Desktop/JHV/Omron/Obrazky pro kameru/",
             "C:/Users/jakub.hlavacek.local/Desktop/JHV/Omron/Skoleni/01 Barva/OK/",
             "C:/Users/jakub.hlavacek.local/Desktop/JHV/Omron/Skoleni/01 Barva/NG/",
             "C:/Users/jakub.hlavacek.local/Pictures/Screenshots/",

@@ -417,8 +417,16 @@ class Tools:
     
     @classmethod
     def set_zoom(cls,zoom_factor,root_given):
+        # root_given.tk.call('tk', 'scaling', zoom_factor / 100)
+        # customtkinter.set_widget_scaling(zoom_factor / 100) 
+        try:
+            # root_given.after(0, lambda: customtkinter.set_widget_scaling(zoom_factor / 100))
+            customtkinter.set_widget_scaling(float(zoom_factor) / 100)
+        except Exception as e:
+            print(f"error with zoom scaling: {e}")
+        
         root_given.tk.call('tk', 'scaling', zoom_factor / 100)
-        customtkinter.set_widget_scaling(zoom_factor / 100) 
+        root_given.update_idletasks()
 
     @classmethod
     def find_index(cls,given_db,acc_given,param_given="type"):
@@ -3110,7 +3118,7 @@ class Catalogue_gui:
         except Exception as e:
             print("ERROR se čtením z offline databáze ",e)
             return [{"type":"data error",
-                    "id":666,
+                    "id":"666",
                     "description":"data error"}]
     
     @classmethod
@@ -4358,10 +4366,12 @@ class Catalogue_gui:
                  download_status,
                  callback_function,
                  window_size,
-                 initial_path_given):
+                 initial_path_given,
+                 zoom_factor):
         
         self.root = root
         Tools.set_zoom(80,self.root)
+        self.previous_zoom_factor = zoom_factor
         global initial_path
         initial_path = initial_path_given
         self.download_status = download_status
@@ -4464,9 +4474,11 @@ class Catalogue_gui:
         loading_inst = Tools.loading_routine(self.root)
         run_background = threading.Thread(target=self.call_read_database, args=(switch_manufacturer,loading_inst))
         run_background.start()
-        loading_inst.main()
+        if not self.current_db_connection == "offline":
+            loading_inst.main()
 
     def call_read_database(self,switch_manufacturer=False,loading_instance = None):
+
         if self.chosen_manufacturer == "Omron":
             manufacturer = "OMR"
         elif self.chosen_manufacturer == "Keyence":
@@ -4499,6 +4511,8 @@ class Catalogue_gui:
                 list_type.append({"type":items["type"],"id":items["id"]})
                 list_notes.append(items["description"])
 
+            print(list_type,list_notes,db_list)
+
             if not self.current_db_connection == "offline":
                 Catalogue_gui.create_excel_offline_db(manufacturer+"_"+key_name,db_list)
 
@@ -4523,6 +4537,7 @@ class Catalogue_gui:
                 fill_lists(list_type, list_notes, all_found_producs.get(key, []),key)
 
         loading_instance.stop_loading = True
+        print("end")
 
     def clear_frame(self,frame):
         for widget in frame.winfo_children():
@@ -4532,6 +4547,7 @@ class Catalogue_gui:
         """
         Funkce čistí všechny zaplněné rámečky a funguje, jako tlačítko zpět do hlavního menu trimazkonu
         """
+        Tools.set_zoom(self.previous_zoom_factor,self.root)
         self.clear_frame(self.root)
         if not  self.default_database_filename.endswith(".xlsx"):
             default_database_name_w_extension = self.default_database_filename + ".xlsx"
@@ -5393,10 +5409,10 @@ class Catalogue_gui:
         def call_db_login_window(call_export=False,initial=False):
             def db_callback(connection):
                 self.current_db_connection = connection
-                try:
-                    self.read_database()
-                except Exception as e:
-                    print(e)
+                # try:
+                self.read_database()
+                # except Exception as e:
+                    # print(e)
 
             def call_export_callback():
                 call_db_export()
