@@ -49,6 +49,10 @@ Když je desynchronizace mezi lokalem a originem.
 git reset --hard origin/main
 git clean -fd
 
+Když to chce přihlašování:
+git remote set-url origin git@github.com:Jakubhl/Work.git
+ssh-keygen -t ed25519 -C "tvůj@email.com"
+
 windows exception:
 Add-MpPreference -ExclusionPath "C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\jhv_MAZ"
 
