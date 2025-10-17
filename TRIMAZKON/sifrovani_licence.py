@@ -81,7 +81,8 @@ def check_licence():
         )
         
         # Ověření expirace
-        exp_date = datetime.datetime.strptime(licence_data.split(":")[1], "%Y-%m-%d")
+        # exp_date = datetime.datetime.strptime(licence_data.split(":")[1], "%Y-%m-%d")
+        exp_date = datetime.datetime.strptime(licence_data.split(":")[1], "%d.%m.%Y")
         if exp_date >= datetime.datetime.today():
             print(f"Licence platná do: {exp_date.date()}")
         else:
@@ -97,8 +98,8 @@ def check_licence():
 # make_licence("E823_8FA6_BF53_0001_001B_444A_48F0_774B") #honza ntb
 # make_licence("ACE4_2E00_314A_D20C_2EE4_AC00_0000_0001") #zdenda bervid ntb
 # make_licence("0025_38D6_3140_E5D1") #vojta šilar ntb
-make_licence("0000_0000_0000_0000_8CE3_8E04_03DD_B810") #kamil ntb
+# make_licence("0000_0000_0000_0000_8CE3_8E04_03DD_B810") #kamil ntb
 
 
 # make_licence("FSB5N690910705S61_00000001") #dell ntb pracovni
-# check_licence()
+check_licence()
