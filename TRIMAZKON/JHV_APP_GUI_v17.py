@@ -71,7 +71,20 @@ app_running_status = initial_tools.check_runing_app_duplicity()
 print("already opened app status (initial image?): ",app_running_status)
 open_image_only = False
 if len(sys.argv) > 1 and app_running_status == True:
-    used_cmd_calls = ["deleting","trigger_by_tray","run_tray","open_task_list","open_log_list","app_shutdown","edit_existing_task","settings_tray","settings_tray_del","admin_menu","installer_call","manual_ip_setting","admin_ip_setting"]
+    used_cmd_calls = ["deleting",
+                      "trigger_by_tray",
+                      "run_tray",
+                      "open_task_list",
+                      "open_log_list",
+                      "app_shutdown",
+                      "edit_existing_task",
+                      "settings_tray",
+                      "settings_tray_del",
+                      "admin_menu",
+                      "installer_call",
+                      "manual_ip_setting",
+                      "admin_ip_setting"
+                      ]
     if str(sys.argv[1]) not in used_cmd_calls:
         if sys.argv[0] != sys.argv[1]:
             open_image_only = True
@@ -923,6 +936,7 @@ if not open_image_only:
             """ Handles window destruction. """
             self.cleanup()
             PostQuitMessage(0)  # Terminate the app.
+    
     class Tools:
         task_name = "TRIMAZKON_startup_tray_setup"
         config_json_filename = config_filename
