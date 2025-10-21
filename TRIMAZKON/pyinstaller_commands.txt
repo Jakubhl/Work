@@ -44,6 +44,8 @@ C:\Users\jakub.hlavacek.local\Desktop\test\trimazkon_tray_v2.exe C:/Users/jakub.
 Registry pro odmazání historie default aplikací:
 HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.png
 Computer\HKEY_CLASSES_ROOT\Applications\
+trial:
+Computer\HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\WindowsTrmzkn
 
 Když je desynchronizace mezi lokalem a originem.
 git reset --hard origin/main
@@ -55,6 +57,7 @@ ssh-keygen -t ed25519 -C "tvůj@email.com"
 
 windows exception:
 Add-MpPreference -ExclusionPath "C:\Users\jakub.hlavacek.local\Desktop\JHV\Work\jhv_MAZ"
+Get-MpPreference | Select-Object -ExpandProperty ExclusionPath
 
 python generovani_MSI_TRIMAZKON_v2.py bdist_msi
 
@@ -68,8 +71,7 @@ INSTALL_OPTION2 = "1" jhv_ip
 INSTALL_OPTION3 = "1" jhv_MAZ
 - nezapomenout na product code v property - aby instalace odstranila starou verzi
 
-trial:
-Computer\HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\WindowsTrmzkn
+
 
 
 
